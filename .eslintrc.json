@@ -1,0 +1,22 @@
+{
+  "extends": "eslint:recommended",
+  "parser": "babel-eslint",
+  "parserOptions": {
+    "ecmaVersion": 6,
+    "sourceType": "module",
+    "allowImportExportEverywhere": true
+  },
+  "rules": {
+    "no-console": "off",
+    "no-console": "off",
+    "no-var": "error",
+    "semi": "error",
+    "strict": "error"
+  },
+  "env": {
+    "browser": true,
+    "es6": true
+  },
+  "globals": {
+  }
+}

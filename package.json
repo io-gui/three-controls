@@ -1,0 +1,58 @@
+{
+  "name": "three.js-controls",
+  "version": "0.95.0",
+  "description": "JavaScript 3D library",
+  "main": "build/three.js-controls",
+  "repository": "arodic/three.js-controls",
+  "jsnext:main": "build/three.module.js",
+  "module": "build/three.module.js",
+  "files": [
+    "package.json",
+    "LICENSE",
+    "README.md",
+    "build/three.js-controls",
+    "src",
+  ],
+  "directories": {
+    "src": "source",
+    "build": "build"
+  },
+  "eslintConfig": {
+    "extends": "eslint:recommended"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "lint": "eslint src",
+    "uglify": "uglifyjs build/io.js > build/io.min.js",
+    "build": "eslint src && rollup -c && npm run uglify",
+  },
+  "keywords": [
+    "three",
+    "three.js-controls"
+  ],
+  "author": "Aleksandar Aki Rodic",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/arodic/three.js-controls/issues"
+  },
+  "homepage": "https://github.com/arodic/three.js-controls/",
+  "devDependencies": {
+    "babel-eslint": "^8.2.3",
+    "babel-plugin-transform-object-rest-spread": "^6.26.0",
+    "eslint": "^4.1.1",
+    "rollup": "^0.59.4",
+    "uglify-es": "^3.3.9"
+  },
+  "jspm": {
+    "files": [
+      "package.json",
+      "LICENSE",
+      "README.md",
+      "build/three.js-controls"
+    ],
+    "directories": {
+    }
+  }
+}
