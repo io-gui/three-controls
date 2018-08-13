@@ -1,13 +1,16 @@
+import path from 'path';
+
 export default [
   {
-    input: 'src/three.js-controls.js',
+    input: 'src/Controls.js',
     experimentalDynamicImport: true,
     output: [
       {
         format: 'es',
-        file: 'build/three.js-controls.js',
+        file: 'build/Controls.js',
         indent: '  '
       }
-    ]
+    ],
+    external: [ path.resolve('../three.js/build/three.module.js') ]
   }
 ];

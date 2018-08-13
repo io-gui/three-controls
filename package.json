@@ -1,7 +1,7 @@
 {
   "name": "three.js-controls",
   "version": "0.95.0",
-  "description": "JavaScript 3D library",
+  "description": "Three.js controls ported and refactored from three.js controls.",
   "main": "build/three.js-controls",
   "repository": "arodic/three.js-controls",
   "jsnext:main": "build/three.module.js",
@@ -11,7 +11,7 @@
     "LICENSE",
     "README.md",
     "build/three.js-controls",
-    "src",
+    "src"
   ],
   "directories": {
     "src": "source",
@@ -25,8 +25,8 @@
   },
   "scripts": {
     "lint": "eslint src",
-    "uglify": "uglifyjs build/io.js > build/io.min.js",
-    "build": "eslint src && rollup -c && npm run uglify",
+    "buble": "buble build/Controls.js --output build/Controls_1.js --no modules",
+    "build": "eslint src && rollup -c"
   },
   "keywords": [
     "three",
@@ -40,19 +40,8 @@
   "homepage": "https://github.com/arodic/three.js-controls/",
   "devDependencies": {
     "babel-eslint": "^8.2.3",
-    "babel-plugin-transform-object-rest-spread": "^6.26.0",
     "eslint": "^4.1.1",
     "rollup": "^0.59.4",
     "uglify-es": "^3.3.9"
-  },
-  "jspm": {
-    "files": [
-      "package.json",
-      "LICENSE",
-      "README.md",
-      "build/three.js-controls"
-    ],
-    "directories": {
-    }
   }
 }
