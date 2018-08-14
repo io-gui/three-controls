@@ -1,4 +1,4 @@
-import {Vector2} from "../../../three.js/build/three.module.js";
+import {Vector2} from "../../three.js/build/three.module.js";
 
 class Pointer {
   constructor() {

@@ -1,5 +1,4 @@
-import * as THREE from "../../../three.js/build/three.module.js";
-import {Control} from "./Control.js"
+import {Control} from "../Control.js";
 
 export class OrbitControlsDepricated extends Control {
 	// Deprication warnings
@@ -23,11 +22,11 @@ export class OrbitControlsDepricated extends Control {
 	getPolarAngle() {
 		console.warn( '.getPolarAngle() has been depricated. Use .polarAngle instead.' );
 		return this.polarAngle;
-	};
+	}
 	getAzimuthalAngle() {
 		console.warn( '.getAzimuthalAngle() has been depricated. Use .azimuthalAngle instead.' );
 		return this.azimuthalAngle;
-	};
+	}
 	get center() {
 		console.warn( '.center has been renamed to .target' );
 		return this.target;

@@ -10,29 +10,27 @@ export class TransformControlsPlane extends THREE.Mesh {
 
 		this.type = 'TransformControlsPlane';
 
-		var unitX = new THREE.Vector3( 1, 0, 0 );
-		var unitY = new THREE.Vector3( 0, 1, 0 );
-		var unitZ = new THREE.Vector3( 0, 0, 1 );
+		const unitX = new THREE.Vector3( 1, 0, 0 );
+		const unitY = new THREE.Vector3( 0, 1, 0 );
+		const unitZ = new THREE.Vector3( 0, 0, 1 );
 
-		var tempVector = new THREE.Vector3();
-		var dirVector = new THREE.Vector3();
-		var alignVector = new THREE.Vector3();
-		var tempMatrix = new THREE.Matrix4();
-		var identityQuaternion = new THREE.Quaternion();
+		const tempVector = new THREE.Vector3();
+		const dirVector = new THREE.Vector3();
+		const alignVector = new THREE.Vector3();
+		const tempMatrix = new THREE.Matrix4();
+		const identityQuaternion = new THREE.Quaternion();
 
 		this.updateMatrixWorld = function() {
 
-			var space = this.space;
-
 			this.position.copy( this.worldPosition );
 
-			if ( this.mode === 'scale' ) space = 'local'; // scale always oriented to local rotation
+			if ( this.mode === 'scale' ) this.space = 'local'; // scale always oriented to local rotation
 
-			unitX.set( 1, 0, 0 ).applyQuaternion( space === "local" ? this.worldQuaternion : identityQuaternion );
-			unitY.set( 0, 1, 0 ).applyQuaternion( space === "local" ? this.worldQuaternion : identityQuaternion );
-			unitZ.set( 0, 0, 1 ).applyQuaternion( space === "local" ? this.worldQuaternion : identityQuaternion );
+			unitX.set( 1, 0, 0 ).applyQuaternion( this.space === "local" ? this.worldQuaternion : identityQuaternion );
+			unitY.set( 0, 1, 0 ).applyQuaternion( this.space === "local" ? this.worldQuaternion : identityQuaternion );
+			unitZ.set( 0, 0, 1 ).applyQuaternion( this.space === "local" ? this.worldQuaternion : identityQuaternion );
 
-			// Align the plane for current transform mode, axis and space.
+			// Align the plane for current transform mode, axis and this.space.
 
 			alignVector.copy( unitY );
 

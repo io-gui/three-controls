@@ -8,7 +8,7 @@ export class TransformControlsGizmo extends THREE.Object3D {
 
 		// shared materials
 
-		var gizmoMaterial = new THREE.MeshBasicMaterial({
+		const gizmoMaterial = new THREE.MeshBasicMaterial({
 			depthTest: false,
 			depthWrite: false,
 			transparent: true,
@@ -16,7 +16,7 @@ export class TransformControlsGizmo extends THREE.Object3D {
 			fog: false
 		});
 
-		var gizmoLineMaterial = new THREE.LineBasicMaterial({
+		const gizmoLineMaterial = new THREE.LineBasicMaterial({
 			depthTest: false,
 			depthWrite: false,
 			transparent: true,
@@ -26,75 +26,75 @@ export class TransformControlsGizmo extends THREE.Object3D {
 
 		// Make unique material for each axis/color
 
-		var matInvisible = gizmoMaterial.clone();
+		const matInvisible = gizmoMaterial.clone();
 		matInvisible.opacity = 0.15;
 
-		var matHelper = gizmoMaterial.clone();
+		const matHelper = gizmoMaterial.clone();
 		matHelper.opacity = 0.33;
 
-		var matRed = gizmoMaterial.clone();
+		const matRed = gizmoMaterial.clone();
 		matRed.color.set( 0xff0000 );
 
-		var matGreen = gizmoMaterial.clone();
+		const matGreen = gizmoMaterial.clone();
 		matGreen.color.set( 0x00ff00 );
 
-		var matBlue = gizmoMaterial.clone();
+		const matBlue = gizmoMaterial.clone();
 		matBlue.color.set( 0x0000ff );
 
-		var matWhiteTransperent = gizmoMaterial.clone();
+		const matWhiteTransperent = gizmoMaterial.clone();
 		matWhiteTransperent.opacity = 0.25;
 
-		var matYellowTransparent = matWhiteTransperent.clone();
+		const matYellowTransparent = matWhiteTransperent.clone();
 		matYellowTransparent.color.set( 0xffff00 );
 
-		var matCyanTransparent = matWhiteTransperent.clone();
+		const matCyanTransparent = matWhiteTransperent.clone();
 		matCyanTransparent.color.set( 0x00ffff );
 
-		var matMagentaTransparent = matWhiteTransperent.clone();
+		const matMagentaTransparent = matWhiteTransperent.clone();
 		matMagentaTransparent.color.set( 0xff00ff );
 
-		var matYellow = gizmoMaterial.clone();
+		const matYellow = gizmoMaterial.clone();
 		matYellow.color.set( 0xffff00 );
 
-		var matLineRed = gizmoLineMaterial.clone();
+		const matLineRed = gizmoLineMaterial.clone();
 		matLineRed.color.set( 0xff0000 );
 
-		var matLineGreen = gizmoLineMaterial.clone();
+		const matLineGreen = gizmoLineMaterial.clone();
 		matLineGreen.color.set( 0x00ff00 );
 
-		var matLineBlue = gizmoLineMaterial.clone();
+		const matLineBlue = gizmoLineMaterial.clone();
 		matLineBlue.color.set( 0x0000ff );
 
-		var matLineCyan = gizmoLineMaterial.clone();
+		const matLineCyan = gizmoLineMaterial.clone();
 		matLineCyan.color.set( 0x00ffff );
 
-		var matLineMagenta = gizmoLineMaterial.clone();
+		const matLineMagenta = gizmoLineMaterial.clone();
 		matLineMagenta.color.set( 0xff00ff );
 
-		var matLineYellow = gizmoLineMaterial.clone();
+		const matLineYellow = gizmoLineMaterial.clone();
 		matLineYellow.color.set( 0xffff00 );
 
-		var matLineGray = gizmoLineMaterial.clone();
+		const matLineGray = gizmoLineMaterial.clone();
 		matLineGray.color.set( 0x787878);
 
-		var matLineYellowTransparent = matLineYellow.clone();
+		const matLineYellowTransparent = matLineYellow.clone();
 		matLineYellowTransparent.opacity = 0.25;
 
 		// reusable geometry
 
-		var arrowGeometry = new THREE.CylinderBufferGeometry( 0, 0.05, 0.2, 12, 1, false);
+		const arrowGeometry = new THREE.CylinderBufferGeometry( 0, 0.05, 0.2, 12, 1, false);
 
-		var scaleHandleGeometry = new THREE.BoxBufferGeometry( 0.125, 0.125, 0.125);
+		const scaleHandleGeometry = new THREE.BoxBufferGeometry( 0.125, 0.125, 0.125);
 
-		var lineGeometry = new THREE.BufferGeometry( );
+		const lineGeometry = new THREE.BufferGeometry( );
 		lineGeometry.addAttribute('position', new THREE.Float32BufferAttribute( [ 0, 0, 0,	1, 0, 0 ], 3 ) );
 
-		var CircleGeometry = function( radius, arc ) {
+		function CircleGeometry( radius, arc ) {
 
-			var geometry = new THREE.BufferGeometry( );
-			var vertices = [];
+			const geometry = new THREE.BufferGeometry( );
+			const vertices = [];
 
-			for ( var i = 0; i <= 64 * arc; ++i ) {
+			for ( let i = 0; i <= 64 * arc; ++i ) {
 
 				vertices.push( 0, Math.cos( i / 32 * Math.PI ) * radius, Math.sin( i / 32 * Math.PI ) * radius );
 
@@ -104,23 +104,23 @@ export class TransformControlsGizmo extends THREE.Object3D {
 
 			return geometry;
 
-		};
+		}
 
 		// Special geometry for transform helper. If scaled with position vector it spans from [0,0,0] to position
 
-		var TranslateHelperGeometry = function() {
+		function TranslateHelperGeometry() {
 
-			var geometry = new THREE.BufferGeometry()
+			const geometry = new THREE.BufferGeometry();
 
 			geometry.addAttribute('position', new THREE.Float32BufferAttribute( [ 0, 0, 0, 1, 1, 1 ], 3 ) );
 
 			return geometry;
 
-		};
+		}
 
 		// Gizmo definitions - custom hierarchy definitions for setupGizmo() function
 
-		var gizmoTranslate = {
+		const gizmoTranslate = {
 			X: [
 				[ new THREE.Mesh( arrowGeometry, matRed ), [ 1, 0, 0 ], [ 0, 0, -Math.PI / 2 ], null, 'fwd' ],
 				[ new THREE.Mesh( arrowGeometry, matRed ), [ 1, 0, 0 ], [ 0, 0, Math.PI / 2 ], null, 'bwd' ],
@@ -156,7 +156,7 @@ export class TransformControlsGizmo extends THREE.Object3D {
 			]
 		};
 
-		var pickerTranslate = {
+		const pickerTranslate = {
 			X: [
 				[ new THREE.Mesh( new THREE.CylinderBufferGeometry( 0.2, 0, 1, 4, 1, false ), matInvisible ), [ 0.6, 0, 0 ], [ 0, 0, -Math.PI / 2 ] ]
 			],
@@ -180,7 +180,7 @@ export class TransformControlsGizmo extends THREE.Object3D {
 			]
 		};
 
-		var helperTranslate = {
+		const helperTranslate = {
 			START: [
 				[ new THREE.Mesh( new THREE.OctahedronBufferGeometry( 0.01, 2 ), matHelper ), null, null, null, 'helper' ]
 			],
@@ -201,7 +201,7 @@ export class TransformControlsGizmo extends THREE.Object3D {
 			]
 		};
 
-		var gizmoRotate = {
+		const gizmoRotate = {
 			X: [
 				[ new THREE.Line( CircleGeometry( 1, 0.5 ), matLineRed ) ],
 				[ new THREE.Mesh( new THREE.OctahedronBufferGeometry( 0.04, 0 ), matRed ), [ 0, 0, 0.99 ], null, [ 1, 3, 1 ] ],
@@ -226,13 +226,13 @@ export class TransformControlsGizmo extends THREE.Object3D {
 			]
 		};
 
-		var helperRotate = {
+		const helperRotate = {
 			AXIS: [
 				[ new THREE.Line( lineGeometry, matHelper.clone() ), [ -1e3, 0, 0 ], null, [ 1e6, 1, 1 ], 'helper' ]
 			]
 		};
 
-		var pickerRotate = {
+		const pickerRotate = {
 			X: [
 				[ new THREE.Mesh( new THREE.TorusBufferGeometry( 1, 0.1, 4, 24 ), matInvisible ), [ 0, 0, 0 ], [ 0, -Math.PI / 2, -Math.PI / 2 ] ],
 			],
@@ -250,7 +250,7 @@ export class TransformControlsGizmo extends THREE.Object3D {
 			]
 		};
 
-		var gizmoScale = {
+		const gizmoScale = {
 			X: [
 				[ new THREE.Mesh( scaleHandleGeometry, matRed ), [ 0.8, 0, 0 ], [ 0, 0, -Math.PI / 2 ] ],
 				[ new THREE.Line( lineGeometry, matLineRed ), null, null, [ 0.8, 1, 1 ] ]
@@ -289,7 +289,7 @@ export class TransformControlsGizmo extends THREE.Object3D {
 			]
 		};
 
-		var pickerScale = {
+		const pickerScale = {
 			X: [
 				[ new THREE.Mesh( new THREE.CylinderBufferGeometry( 0.2, 0, 0.8, 4, 1, false ), matInvisible ), [ 0.5, 0, 0 ], [ 0, 0, -Math.PI / 2 ] ]
 			],
@@ -319,7 +319,7 @@ export class TransformControlsGizmo extends THREE.Object3D {
 			]
 		};
 
-		var helperScale = {
+		const helperScale = {
 			X: [
 				[ new THREE.Line( lineGeometry, matHelper.clone() ), [ -1e3, 0, 0 ], null, [ 1e6, 1, 1 ], 'helper' ]
 			],
@@ -333,19 +333,19 @@ export class TransformControlsGizmo extends THREE.Object3D {
 
 		// Creates an Object3D with gizmos described in custom hierarchy definition.
 
-		var setupGizmo = function( gizmoMap ) {
+		function setupGizmo( gizmoMap ) {
 
-			var gizmo = new THREE.Object3D();
+			const gizmo = new THREE.Object3D();
 
-			for ( var name in gizmoMap ) {
+			for ( let name in gizmoMap ) {
 
-				for ( var i = gizmoMap[ name ].length; i--; ) {
+				for ( let i = gizmoMap[ name ].length; i--; ) {
 
-					var object = gizmoMap[ name ][ i ][ 0 ].clone();
-					var position = gizmoMap[ name ][ i ][ 1 ];
-					var rotation = gizmoMap[ name ][ i ][ 2 ];
-					var scale = gizmoMap[ name ][ i ][ 3 ];
-					var tag = gizmoMap[ name ][ i ][ 4 ];
+					const object = gizmoMap[ name ][ i ][ 0 ].clone();
+					const position = gizmoMap[ name ][ i ][ 1 ];
+					const rotation = gizmoMap[ name ][ i ][ 2 ];
+					const scale = gizmoMap[ name ][ i ][ 3 ];
+					const tag = gizmoMap[ name ][ i ][ 4 ];
 
 					// name and tag properties are essential for picking and updating logic.
 					object.name = name;
@@ -363,7 +363,7 @@ export class TransformControlsGizmo extends THREE.Object3D {
 
 					object.updateMatrix();
 
-					var tempGeometry = object.geometry.clone();
+					const tempGeometry = object.geometry.clone();
 					tempGeometry.applyMatrix(object.matrix);
 					object.geometry = tempGeometry;
 
@@ -379,22 +379,22 @@ export class TransformControlsGizmo extends THREE.Object3D {
 
 			return gizmo;
 
-		};
+		}
 
 		// Reusable utility variables
 
-		var tempVector = new THREE.Vector3( 0, 0, 0 );
-		var tempEuler = new THREE.Euler();
-		var alignVector = new THREE.Vector3( 0, 1, 0 );
-		var zeroVector = new THREE.Vector3( 0, 0, 0 );
-		var lookAtMatrix = new THREE.Matrix4();
-		var tempQuaternion = new THREE.Quaternion();
-		var tempQuaternion2 = new THREE.Quaternion();
-		var identityQuaternion = new THREE.Quaternion();
+		const tempVector = new THREE.Vector3( 0, 0, 0 );
+		const tempEuler = new THREE.Euler();
+		const alignVector = new THREE.Vector3( 0, 1, 0 );
+		const zeroVector = new THREE.Vector3( 0, 0, 0 );
+		const lookAtMatrix = new THREE.Matrix4();
+		const tempQuaternion = new THREE.Quaternion();
+		const tempQuaternion2 = new THREE.Quaternion();
+		const identityQuaternion = new THREE.Quaternion();
 
-		var unitX = new THREE.Vector3( 1, 0, 0 );
-		var unitY = new THREE.Vector3( 0, 1, 0 );
-		var unitZ = new THREE.Vector3( 0, 0, 1 );
+		const unitX = new THREE.Vector3( 1, 0, 0 );
+		const unitY = new THREE.Vector3( 0, 1, 0 );
+		const unitZ = new THREE.Vector3( 0, 0, 1 );
 
 		// Gizmo creation
 
@@ -422,11 +422,9 @@ export class TransformControlsGizmo extends THREE.Object3D {
 
 		this.updateMatrixWorld = function () {
 
-			var space = this.space;
+			if ( this.mode === 'scale' ) this.space = 'local'; // scale always oriented to local rotation
 
-			if ( this.mode === 'scale' ) space = 'local'; // scale always oriented to local rotation
-
-			var quaternion = space === "local" ? this.worldQuaternion : identityQuaternion;
+			const quaternion = this.space === "local" ? this.worldQuaternion : identityQuaternion;
 
 			// Show only gizmos for current transform mode
 
@@ -439,14 +437,14 @@ export class TransformControlsGizmo extends THREE.Object3D {
 			this.helper[ "scale" ].visible = this.mode === "scale";
 
 
-			var handles = [];
+			let handles = [];
 			handles = handles.concat( this.picker[ this.mode ].children );
 			handles = handles.concat( this.gizmo[ this.mode ].children );
 			handles = handles.concat( this.helper[ this.mode ].children );
 
-			for ( var i = 0; i < handles.length; i++ ) {
+			for ( let i = 0; i < handles.length; i++ ) {
 
-				var handle = handles[i];
+				const handle = handles[i];
 
 				// hide aligned to camera
 
@@ -454,7 +452,7 @@ export class TransformControlsGizmo extends THREE.Object3D {
 				handle.rotation.set( 0, 0, 0 );
 				handle.position.copy( this.worldPosition );
 
-				var eyeDistance = this.worldPosition.distanceTo( this.cameraPosition);
+				const eyeDistance = this.worldPosition.distanceTo( this.cameraPosition);
 				handle.scale.set( 1, 1, 1 ).multiplyScalar( eyeDistance * this.size / 7 );
 
 				// TODO: simplify helpers and consider decoupling from gizmo
@@ -572,9 +570,9 @@ export class TransformControlsGizmo extends THREE.Object3D {
 
 					// Hide translate and scale axis facing the camera
 
-					var AXIS_HIDE_TRESHOLD = 0.99;
-					var PLANE_HIDE_TRESHOLD = 0.2;
-					var AXIS_FLIP_TRESHOLD = -0.4;
+					const AXIS_HIDE_TRESHOLD = 0.99;
+					const PLANE_HIDE_TRESHOLD = 0.2;
+					const AXIS_FLIP_TRESHOLD = -0.4;
 
 
 					if ( handle.name === 'X' || handle.name === 'XYZX' ) {

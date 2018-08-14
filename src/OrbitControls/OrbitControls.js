@@ -8,7 +8,7 @@
  */
 
 import * as THREE from "../../../three.js/build/three.module.js";
-import {OrbitControlsDepricated} from "./OrbitControlsDepricated.js"
+import {OrbitControlsDepricated} from "./OrbitControlsDepricated.js";
 
 const STATE = { NONE: - 1, ROTATE: 0, DOLLY: 1, PAN: 2 };
 const KEYS = { LEFT: 37, UP: 38, RIGHT: 39, BOTTOM: 40 }; // The four arrow keys
@@ -77,14 +77,14 @@ export class OrbitControls extends OrbitControlsDepricated {
 		this._scale = 1;
 
 		this.addEventListener( 'autoRotate-changed', ( event ) => {
-			if ( this.autoRotate ) {
+			if ( event.value ) {
 				this._sphericalInertia.theta = this.autoRotateSpeed;
 				this.needsUpdate = true;
 			}
 		} );
 
 		this.addEventListener( 'needsUpdate-changed', ( event ) => {
-			if (event.value) this.startAnimation();
+			if ( event.value ) this.startAnimation();
 		} );
 
 		this.update(0);
@@ -187,28 +187,27 @@ export class OrbitControls extends OrbitControlsDepricated {
 				this.state = STATE.NONE;
 				break;
 			case 1:
-				let pointer = pointers[0];
-				switch ( pointer.button ) {
+				switch ( pointers[0].button ) {
 					case BUTTON.LEFT:
-						if ( pointers.ctrlKey || pointers.metaKey ) {
+						if ( pointers[0].ctrlKey || pointers[0].metaKey ) {
 							if ( this.enablePan === false ) return;
 							this.state = STATE.PAN;
-							this.pan( pointer ); // TODO: correct scale
+							this.pan( pointers[0] ); // TODO: correct scale
 						} else {
 							if ( this.enableRotate === false ) return;
 							this.state = STATE.ROTATE;
-							this.rotate( pointer );
+							this.rotate( pointers[0] );
 						}
 						break;
 					case BUTTON.MIDDLE:
 						if ( this.enableZoom === false ) return;
 						this.state = STATE.DOLLY;
-						this.dolly( pointer.movement.y );
+						this.dolly( pointers[0].movement.y );
 						break;
 					case BUTTON.RIGHT:
 						if ( this.enablePan === false ) return;
 						this.state = STATE.PAN;
-						this.pan( pointer ); // TODO: correct scale
+						this.pan( pointers[0] ); // TODO: correct scale
 						break;
 				}
 				break;
@@ -237,7 +236,7 @@ export class OrbitControls extends OrbitControlsDepricated {
 		}
 	}
 	onPointerUp( pointers ) {
-	 if ( pointers.length === 0 ) this.state = STATE.NONE;
+		if ( pointers.length === 0 ) this.state = STATE.NONE;
 	}
 	onKeyDown( event ) {
 		if ( this.enableKeys === false || this.enablePan === false ) return;
@@ -269,7 +268,7 @@ export class OrbitControls extends OrbitControlsDepricated {
 	pan( pointer ) {
 		if ( this.object.isPerspectiveCamera ) {
 			tempVector.copy( this.object.position ).sub( this.target );
-			var targetDistance = tempVector.length();
+			let targetDistance = tempVector.length();
 			// half of the fov is center to top of screen
 			targetDistance *= Math.tan( ( this.object.fov / 2 ) * Math.PI / 180.0 );
 			// we use only clientHeight here so aspect ratio does not distort speed

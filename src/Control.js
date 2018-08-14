@@ -2,7 +2,7 @@
  * @author arodic / https://github.com/arodic
  */
 
-import {Object3D} from "../../../three.js/build/three.module.js";
+import {Object3D} from "../../three.js/build/three.module.js";
 import {ControlPointers} from "./ControlPointers.js";
 
 export class Control extends Object3D {
@@ -22,7 +22,7 @@ export class Control extends Object3D {
 			"pointers": new ControlPointers()
 		});
 
-		var scope = this;
+		const scope = this;
 
 		function _onContextMenu(event) {
 			if (!scope.enabled) return;
@@ -67,7 +67,7 @@ export class Control extends Object3D {
 				document.removeEventListener("mousemove", _onMove, false);
 				document.removeEventListener("mouseup", _onUp, false);
 				return;
-			};
+			}
 			scope.pointers.update(event, domElement);
 			scope.onPointerMove(scope.pointers);
 			scope.dispatchEvent({ type: "pointermove" }); // TODO: detail/value?
@@ -148,18 +148,19 @@ export class Control extends Object3D {
 	animate( timestep ) {
 		if (this._animationActive) this._rafID = requestAnimationFrame( () => {
 			const time = performance.now();
-			this.animate( time - this._animationTime )
+			timestep = time - this._animationTime;
+			this.animate( timestep );
 			this._animationTime = time;
 		} );
 	}
 	stopAnimation() {
-		this._animationActive = false
+		this._animationActive = false;
 		cancelAnimationFrame(this._rafID);
 	}
 
 	// Defined getter, setter and store for a property
 	defineProperty(propName, defaultValue) {
-		var propValue = defaultValue;
+		let propValue = defaultValue;
 		Object.defineProperty(this, propName, {
 			get: function() {
 				return propValue !== undefined ? propValue : defaultValue;
@@ -179,7 +180,7 @@ export class Control extends Object3D {
 		});
 	}
 	defineProperties(props) {
-		for (var prop in props) {
+		for (let prop in props) {
 			this.defineProperty(prop, props[prop]);
 		}
 	}

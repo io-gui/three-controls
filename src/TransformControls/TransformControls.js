@@ -3,19 +3,19 @@
  */
 
 import * as THREE from "../../../three.js/build/three.module.js";
-import {Control} from "./Control.js"
-import {TransformControlsGizmo} from "./TransformControlsGizmo.js"
-import {TransformControlsPlane} from "./TransformControlsPlane.js"
+import {Control} from "../Control.js";
+import {TransformControlsGizmo} from "./TransformControlsGizmo.js";
+import {TransformControlsPlane} from "./TransformControlsPlane.js";
 
 export class TransformControls extends Control {
 	constructor( camera, domElement ) {
 
 		super( domElement );
 
-		var _gizmo = new TransformControlsGizmo();
+		const _gizmo = new TransformControlsGizmo();
 		this.add( _gizmo );
 
-		var _plane = new TransformControlsPlane();
+		const _plane = new TransformControlsPlane();
 		this.add( _plane );
 
 		// Define properties with getters/setter
@@ -26,7 +26,7 @@ export class TransformControls extends Control {
 		this.addEventListener('change', function ( event ) {
 			_plane[event.prop] = event.value;
 			_gizmo[event.prop] = event.value;
-		})
+		});
 
 		this.defineProperties({
 			camera: camera,
@@ -43,49 +43,49 @@ export class TransformControls extends Control {
 			hideZ: false
 		});
 
-		var changeEvent = { type: "change" };
+		const changeEvent = { type: "change" };
 
 		// Reusable utility variables
 
-		var ray = new THREE.Raycaster();
+		const ray = new THREE.Raycaster();
 
-		var _tempVector = new THREE.Vector3();
-		var _tempVector2 = new THREE.Vector3();
-		var _tempQuaternion = new THREE.Quaternion();
-		var _unit = {
+		const _tempVector = new THREE.Vector3();
+		const _tempVector2 = new THREE.Vector3();
+		const _tempQuaternion = new THREE.Quaternion();
+		const _unit = {
 			X: new THREE.Vector3( 1, 0, 0 ),
 			Y: new THREE.Vector3( 0, 1, 0 ),
 			Z: new THREE.Vector3( 0, 0, 1 )
-		}
-		var _identityQuaternion = new THREE.Quaternion();
-		var _alignVector = new THREE.Vector3();
+		};
+		const _identityQuaternion = new THREE.Quaternion();
+		const _alignVector = new THREE.Vector3();
 
-		var pointStart = new THREE.Vector3();
-		var pointEnd = new THREE.Vector3();
-		var rotationAxis = new THREE.Vector3();
-		var rotationAngle = 0;
+		const pointStart = new THREE.Vector3();
+		const pointEnd = new THREE.Vector3();
+		const rotationAxis = new THREE.Vector3();
+		let rotationAngle = 0;
 
-		var cameraPosition = new THREE.Vector3();
-		var cameraQuaternion = new THREE.Quaternion();
-		var cameraScale = new THREE.Vector3();
+		const cameraPosition = new THREE.Vector3();
+		const cameraQuaternion = new THREE.Quaternion();
+		const cameraScale = new THREE.Vector3();
 
-		var parentPosition = new THREE.Vector3();
-		var parentQuaternion = new THREE.Quaternion();
-		var parentScale = new THREE.Vector3();
+		const parentPosition = new THREE.Vector3();
+		const parentQuaternion = new THREE.Quaternion();
+		const parentScale = new THREE.Vector3();
 
-		var worldPositionStart = new THREE.Vector3();
-		var worldQuaternionStart = new THREE.Quaternion();
-		var worldScaleStart = new THREE.Vector3();
+		const worldPositionStart = new THREE.Vector3();
+		const worldQuaternionStart = new THREE.Quaternion();
+		const worldScaleStart = new THREE.Vector3();
 
-		var worldPosition = new THREE.Vector3();
-		var worldQuaternion = new THREE.Quaternion();
-		var worldScale = new THREE.Vector3();
+		const worldPosition = new THREE.Vector3();
+		const worldQuaternion = new THREE.Quaternion();
+		const worldScale = new THREE.Vector3();
 
-		var eye = new THREE.Vector3();
+		const eye = new THREE.Vector3();
 
-		var _positionStart = new THREE.Vector3();
-		var _quaternionStart = new THREE.Quaternion();
-		var _scaleStart = new THREE.Vector3();
+		const _positionStart = new THREE.Vector3();
+		const _quaternionStart = new THREE.Quaternion();
+		const _scaleStart = new THREE.Vector3();
 
 		// TODO: remove properties unused in plane and gizmo
 
@@ -140,7 +140,7 @@ export class TransformControls extends Control {
 
 			ray.setFromCamera( pointer.position, this.camera );
 
-			var intersect = ray.intersectObjects( _gizmo.picker[ this.mode ].children, true )[ 0 ] || false;
+			const intersect = ray.intersectObjects( _gizmo.picker[ this.mode ].children, true )[ 0 ] || false;
 
 			if ( intersect ) {
 
@@ -152,7 +152,7 @@ export class TransformControls extends Control {
 
 			}
 
-		}
+		};
 
 		this.onPointerDown = function( pointers ) {
 
@@ -164,25 +164,23 @@ export class TransformControls extends Control {
 
 				ray.setFromCamera( pointer.position, this.camera );
 
-				var planeIntersect = ray.intersectObjects( [ _plane ], true )[ 0 ] || false;
+				const planeIntersect = ray.intersectObjects( [ _plane ], true )[ 0 ] || false;
 
 				if ( planeIntersect ) {
 
-					var space = this.space;
-
 					if ( this.mode === 'scale') {
 
-						space = 'local';
+						this.space = 'local';
 
 					} else if ( this.axis === 'E' ||  this.axis === 'XYZE' ||  this.axis === 'XYZ' ) {
 
-						space = 'world';
+						this.space = 'world';
 
 					}
 
-					if ( space === 'local' && this.mode === 'rotate' ) {
+					if ( this.space === 'local' && this.mode === 'rotate' ) {
 
-						var snap = this.rotationSnap;
+						const snap = this.rotationSnap;
 
 						if ( this.axis === 'X' && snap ) this.object.rotation.x = Math.round( this.object.rotation.x / snap ) * snap;
 						if ( this.axis === 'Y' && snap ) this.object.rotation.y = Math.round( this.object.rotation.y / snap ) * snap;
@@ -201,7 +199,7 @@ export class TransformControls extends Control {
 
 					pointStart.copy( planeIntersect.point ).sub( worldPositionStart );
 
-					if ( space === 'local' ) pointStart.applyQuaternion( worldQuaternionStart.clone().inverse() );
+					if ( this.space === 'local' ) pointStart.applyQuaternion( worldQuaternionStart.clone().inverse() );
 
 				}
 
@@ -209,7 +207,7 @@ export class TransformControls extends Control {
 
 			}
 
-		}
+		};
 
 		this.onPointerMove = function( pointers ) {
 
@@ -234,7 +232,7 @@ export class TransformControls extends Control {
 
 			ray.setFromCamera( pointer.position, this.camera );
 
-			var planeIntersect = ray.intersectObjects( [ _plane ], true )[ 0 ] || false;
+			const planeIntersect = ray.intersectObjects( [ _plane ], true )[ 0 ] || false;
 
 			if ( planeIntersect === false ) return;
 
@@ -318,7 +316,7 @@ export class TransformControls extends Control {
 
 				if ( axis.search( 'XYZ' ) !== -1 ) {
 
-					var d = pointEnd.length() / pointStart.length();
+					let d = pointEnd.length() / pointStart.length();
 
 					if ( pointEnd.dot( pointStart ) < 0 ) d *= -1;
 
@@ -346,11 +344,11 @@ export class TransformControls extends Control {
 
 			} else if ( mode === 'rotate' ) {
 
-				var ROTATION_SPEED = 20 / worldPosition.distanceTo( _tempVector.setFromMatrixPosition( this.camera.matrixWorld ) );
+				const ROTATION_SPEED = 20 / worldPosition.distanceTo( _tempVector.setFromMatrixPosition( this.camera.matrixWorld ) );
 
-				var quaternion = this.space === "local" ? worldQuaternion : _identityQuaternion;
+				const quaternion = this.space === "local" ? worldQuaternion : _identityQuaternion;
 
-				var unit = _unit[ axis ];
+				const unit = _unit[ axis ];
 
 				if ( axis === 'E' ) {
 
@@ -370,8 +368,8 @@ export class TransformControls extends Control {
 
 					rotationAxis.copy( unit );
 
-					_tempVector = unit.clone();
-					_tempVector2 = pointEnd.clone().sub( pointStart );
+					_tempVector.copy( unit );
+					_tempVector2.copy( pointEnd ).sub( pointStart );
 					if ( space === 'local' ) {
 						_tempVector.applyQuaternion( quaternion );
 						_tempVector2.applyQuaternion( worldQuaternionStart );
@@ -404,7 +402,7 @@ export class TransformControls extends Control {
 
 			this.dispatchEvent( changeEvent );
 
-		}
+		};
 
 		this.onPointerUp = function( pointers ) {
 
@@ -416,7 +414,8 @@ export class TransformControls extends Control {
 
 			if ( pointer.button === undefined ) this.axis = null;
 
-		}
+		};
+
 	}
 	// Deprication warnings
 	addEventListener( type, listener ) {
