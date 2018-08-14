@@ -1,5 +1,5 @@
 {
-  "extends": "eslint:recommended",
+  "extends": "mdcs",
   "parser": "babel-eslint",
   "parserOptions": {
     "ecmaVersion": 6,
@@ -15,7 +15,5 @@
   "env": {
     "browser": true,
     "es6": true
-  },
-  "globals": {
   }
 }

@@ -24,9 +24,7 @@
     "access": "public"
   },
   "scripts": {
-    "lint": "eslint src",
-    "buble": "buble build/Controls.js --output build/Controls_1.js --no modules",
-    "build": "eslint src && rollup -c"
+    "build": "eslint src && rollup -c && eslint build --fix"
   },
   "keywords": [
     "three",
@@ -41,6 +39,7 @@
   "devDependencies": {
     "babel-eslint": "^8.2.3",
     "eslint": "^4.1.1",
+    "eslint-config-mdcs": "^4.2.3",
     "rollup": "^0.59.4",
     "uglify-es": "^3.3.9"
   }

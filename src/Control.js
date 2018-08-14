@@ -193,13 +193,13 @@ export class Control extends Object3D {
 		this.object = undefined;
 		this.visible = false;
 	}
-	onContextMenu(event) { event; }
-	onPointerHover(pointer) { pointer; }
-	onPointerDown(pointer) { pointer; }
-	onPointerMove(pointer) { pointer; }
-	onPointerUp(pointer) { pointer; }
-	onPointerLeave(pointer) { pointer; }
-	onKeyDown(event) { event; }
-	onKeyUp(event) { event; }
-	onWheel(event) { event; }
+	onContextMenu() {} // event
+	onPointerHover() {} // pointer
+	onPointerDown() {} // pointer
+	onPointerMove() {} // pointer
+	onPointerUp() {} // pointer
+	onPointerLeave() {} // pointer
+	onKeyDown() {} // event
+	onKeyUp() {} // event
+	onWheel() {} // event
 }
