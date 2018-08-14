@@ -10,7 +10,7 @@ import * as THREE from "../../../three.js/build/three.module.js";
 import {CameraControls} from "./CameraControls.js";
 
 /*
- * This set of controls performs orbiting, dollying (zooming), and panning.
+ * This set of controls performs orbiting, dollying, and panning.
  *
  *    Orbit - left mouse / touch: one-finger move
  *    Dolly - middle mouse, or mousewheel / touch: two-finger spread or squish
@@ -24,7 +24,7 @@ const EPS = 0.000001;
 
 // Temp variables
 const eye = new THREE.Vector3();
-const panDirection = new THREE.Vector2();
+const panDirection = new THREE.Vector3();
 const eyeDirection = new THREE.Vector3();
 const rotationAxis = new THREE.Vector3();
 const rotationQuat = new THREE.Quaternion();
@@ -44,145 +44,37 @@ export class TrackballControls extends CameraControls {
 			maxDistance: Infinity // PerspectiveCamera dolly limit
 		});
 	}
+
 	update( timestep, orbit, pan, dolly ) {
 		super.update( timestep );
-		console.log(orbit)
-		const angle = orbit.length();
-		if ( angle ) {
-			eye.copy( this.object.position ).sub( this.target );
-			eyeDirection.copy( eye ).normalize();
-			upDirection.copy( this.object.up ).normalize();
-			sideDirection.crossVectors( upDirection, eyeDirection ).normalize();
-			upDirection.setLength( orbit.y );
-			sideDirection.setLength( orbit.x );
-			moveDirection.copy( upDirection.add( sideDirection ) );
-			rotationAxis.crossVectors( moveDirection, eye ).normalize();
-			rotationQuat.setFromAxisAngle( rotationAxis, angle );
-			eye.applyQuaternion( rotationQuat );
-			this.object.up.applyQuaternion( rotationQuat );
-		}
+		// eye.subVectors( this.object.position, this.target );
 
+		eye.copy( this.object.position ).sub( this.target );
+
+		// Orbit
+		eyeDirection.copy( eye ).normalize();
+		upDirection.copy( this.object.up ).normalize();
+		sideDirection.crossVectors( upDirection, eyeDirection ).normalize();
+		upDirection.setLength( orbit.y );
+		sideDirection.setLength( orbit.x );
+		moveDirection.copy( upDirection.add( sideDirection ) );
+		rotationAxis.crossVectors( moveDirection, eye ).normalize();
+		rotationQuat.setFromAxisAngle( rotationAxis, orbit.length() );
+		eye.applyQuaternion( rotationQuat );
+		this.object.up.applyQuaternion( rotationQuat );
+
+		// Dolly
+		let dollyScale = ( dolly > 0 ) ? 1 - dolly : 1 / ( 1 + dolly );
+		eye.multiplyScalar( dollyScale );
+
+		// Pan
+		panDirection.copy( eye ).cross( this.object.up ).setLength( pan.x * eye.length() );
+		panDirection.add( upDirection.copy( this.object.up ).setLength( -pan.y * eye.length() ) );
+		this.object.position.add( panDirection );
+		this.target.add( panDirection );
+
+		this.object.position.addVectors( this.target, eye );
 		this.object.lookAt( this.target );
-
 		this.dispatchEvent( changeEvent );
 	}
-	// rotate( dir ) {
-
-	// 	// TODO: damping
-	// }
-	// zoomCamera() {
-	// 	var factor;
-	// 	if ( this.state === STATE.TOUCH_DOLLY_PAN ) {
-	// 		factor = _touchZoomDistanceStart / _touchZoomDistanceEnd;
-	// 		_touchZoomDistanceStart = _touchZoomDistanceEnd;
-	// 		eye.multiplyScalar( factor );
-	// 	} else {
-	// 		factor = 1.0 + ( _zoomEnd.y - _zoomStart.y ) * this.zoomSpeed;
-	// 		if ( factor !== 1.0 && factor > 0.0 ) {
-	// 			eye.multiplyScalar( factor );
-	// 		}
-	// 		if ( this.staticMoving ) {
-	// 			_zoomStart.copy( _zoomEnd );
-	// 		} else {
-	// 			_zoomStart.y += ( _zoomEnd.y - _zoomStart.y ) * this.dampingFactor;
-	// 		}
-	// 	}
-	// }
-	// panCamera() {
-	// 	mouseChange.copy( _panEnd ).sub( _panStart );
-	// 	if ( mouseChange.lengthSq() ) {
-	// 		mouseChange.multiplyScalar( eye.length() * this.panSpeed );
-	// 		pan.copy( eye ).cross( this.object.up ).setLength( mouseChange.x );
-	// 		pan.add( up.copy( this.object.up ).setLength( mouseChange.y ) );
-	// 		this.object.position.add( pan );
-	// 		this.target.add( pan );
-	// 		if ( this.staticMoving ) {
-	// 			_panStart.copy( _panEnd );
-	// 		} else {
-	// 			_panStart.add( mouseChange.subVectors( _panEnd, _panStart ).multiplyScalar( this.dampingFactor ) );
-	// 		}
-	// 	}
-	// }
-	// checkDistances() {
-	// 	if ( this.enableZoom || this.enablePan ) {
-	// 		if ( eye.lengthSq() > this.maxDistance * this.maxDistance ) {
-	// 			this.object.position.addVectors( this.target, eye.setLength( this.maxDistance ) );
-	// 			_zoomStart.copy( _zoomEnd );
-	// 		}
-	// 		if ( eye.lengthSq() < this.minDistance * this.minDistance ) {
-	// 			this.object.position.addVectors( this.target, eye.setLength( this.minDistance ) );
-	// 			_zoomStart.copy( _zoomEnd );
-	// 		}
-	// 	}
-	// }
-	// onPointerMove( pointers ) {
-	// 	eye.subVectors( this.object.position, this.target );
-	// 	switch ( pointers.length ) {
-	// 		case 1:
-	// 			switch ( pointers[0].button ) {
-	// 				case BUTTON.LEFT:
-	// 					if ( pointers[0].ctrlKey || pointers[0].metaKey ) {
-	// 						if ( this.enablePan === false ) return;
-	// 						this.state = STATE.PAN;
-	// 						this.pan( pointers[0] ); // TODO: correct scale
-	// 					} else {
-	// 						if ( this.enableRotate === false ) return;
-	// 						this.state = STATE.ROTATE;
-	// 						this.rotate( pointers[0].movement );
-	// 					}
-	// 					break;
-	// 				case BUTTON.MIDDLE:
-	// 					if ( this.enableZoom === false ) return;
-	// 					this.state = STATE.DOLLY;
-	// 					this.dolly( pointers[0].movement.y );
-	// 					break;
-	// 				case BUTTON.RIGHT:
-	// 					if ( this.enablePan === false ) return;
-	// 					this.state = STATE.PAN;
-	// 					this.pan( pointers[0].movement ); // TODO: correct scale
-	// 					break;
-	// 			}
-	// 			break;
-	// 		default: // 2 or more
-	// 			// two-fingered touch: dolly-pan
-	// 			if ( this.enableZoom === false && this.enablePan === false ) return;
-	// 			this.state = STATE.TOUCH_DOLLY_PAN;
-	// 			if ( this.enableZoom ) {
-	// 				var distance = pointers[0].position.distanceTo( pointers[1].position );
-	// 				var prevDistance = pointers[0].previous.distanceTo( pointers[1].previous );
-	// 				this.dolly( (prevDistance - distance) * this.zoomSpeed );
-	// 			}
-	// 			if ( this.enablePan ) {
-	// 				panDirection.copy(pointers[0].movement).add(pointers[1].movement).multiplyScalar( this.panSpeed );
-	// 				this.pan( panDirection ); // TODO: unhack
-	// 			}
-	// 			break;
-	// 	}
-	// 	// this.update();
-	// }
-	// keydown( event ) {
-	// 	if ( this.state !== STATE.NONE ) {
-	// 		return;
-	// 	} else if ( event.keyCode === KEYS[ STATE.ROTATE ] && this.enableRotate ) {
-	// 		this.state = STATE.ROTATE;
-	// 	} else if ( event.keyCode === KEYS[ STATE.DOLLY ] && this.enableZoom ) {
-	// 		this.state = STATE.DOLLY;
-	// 	} else if ( event.keyCode === KEYS[ STATE.PAN ] && this.enablePan ) {
-	// 		this.state = STATE.PAN;
-	// 	}
-	// }
-	// mousewheel( event ) {
-	// 	if ( !this.enableZoom ) return;
-	// 	switch ( event.deltaMode ) {
-	// 		case 2: // Dolly in pages
-	// 			_zoomStart.y -= event.deltaY * 0.025;
-	// 			break;
-	// 		case 1: // Dolly in lines
-	// 			_zoomStart.y -= event.deltaY * 0.01;
-	// 			break;
-	// 		default: // undefined, 0, assume pixels
-	// 			_zoomStart.y -= event.deltaY * 0.00025;
-	// 			break;
-	// 	}
-	// }
 }
