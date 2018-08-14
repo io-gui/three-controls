@@ -1,4 +1,4 @@
-import { Vector3, Quaternion, Spherical, MOUSE, Vector2 } from '../../../three.js/build/three.module.js';
+import { Vector3, Quaternion, MOUSE, Vector2 } from '../../../three.js/build/three.module.js';
 import { Control } from '../Control.js';
 
 /**
@@ -452,35 +452,35 @@ class CameraControls extends Control {
 }
 
 /**
- * @author qiao / https://github.com/qiao
- * @author mrdoob / http://mrdoob.com
- * @author alteredq / http://alteredqualia.com/
- * @author WestLangley / http://github.com/WestLangley
- * @author erich666 / http://erichaines.com
- * @author arodic / http://github.com/arodic
+ * @author Eberhard Graether / http://egraether.com/
+ * @author Mark Lundin 	/ http://mark-lundin.com
+ * @author Simone Manini / http://daron1337.github.io
+ * @author Luca Antiga 	/ http://lantiga.github.io
+ * @author arodic / https://github.com/arodic
  */
 
 /*
  * This set of controls performs orbiting, dollying, and panning.
- * Unlike TrackballControls, it maintains the "up" direction object.up ( +Y by default ).
  *
- *  Orbit - left mouse / touch: one-finger move
- *  Dolly - middle mouse, or mousewheel / touch: two-finger spread or squish
- *  Pan - right mouse, or left mouse + ctrlKey/altKey, wasd, or arrow keys / touch: two-finger move
+ *    Orbit - left mouse / touch: one-finger move
+ *    Dolly - middle mouse, or mousewheel / touch: two-finger spread or squish
+ *    Pan - right mouse, or left mouse + ctrl/metaKey, wasd, or arrow keys / touch: two-finger move
  */
 
 // Temp variables
 const eye = new Vector3();
-const offset = new Vector3();
-const offset2 = new Vector3();
-const unitY = new Vector3( 0, 1, 0 );
-const tempQuat = new Quaternion();
-const tempQuatInverse = tempQuat.clone().inverse();
+const panDirection = new Vector3();
+const eyeDirection = new Vector3();
+const rotationAxis = new Vector3();
+const rotationQuat = new Quaternion();
+const upDirection = new Vector3();
+const sideDirection = new Vector3();
+const moveDirection = new Vector3();
 
 // events
 const changeEvent = { type: 'change' };
 
-class OrbitControls extends CameraControls {
+class TrackballControls extends CameraControls {
 
 	constructor( object, domElement ) {
 
@@ -488,128 +488,46 @@ class OrbitControls extends CameraControls {
 
 		this.defineProperties( {
 			minDistance: 0, // PerspectiveCamera dolly limit
-			maxDistance: Infinity, // PerspectiveCamera dolly limit
-			minZoom: 0, // OrthographicCamera zoom limit
-			maxZoom: Infinity, // OrthographicCamera zoom limit
-			minPolarAngle: 0, // radians ( 0 to Math.PI )
-			maxPolarAngle: Math.PI, // radians ( 0 to Math.PI )
-			minAzimuthAngle: - Infinity, // radians ( -Math.PI to Math.PI )
-			maxAzimuthAngle: Infinity, // radians ( -Math.PI to Math.PI )
-			screenSpacePanning: false
+			maxDistance: Infinity // PerspectiveCamera dolly limit
 		} );
 
-		// Internals
-		this._spherical = new Spherical();
-
 	}
+
 	update( timestep, orbit, pan, dolly ) {
 
 		super.update( timestep );
+		// eye.subVectors( this.object.position, this.target );
 
-		// camera.up is the orbit axis
-		tempQuat.setFromUnitVectors( this.object.up, unitY );
-		tempQuatInverse.copy( tempQuat ).inverse();
 		eye.copy( this.object.position ).sub( this.target );
-		// rotate eye to "y-axis-is-up" space
-		eye.applyQuaternion( tempQuat );
-		// angle from z-axis around y-axis
-		this._spherical.setFromVector3( eye );
-		this._spherical.theta -= orbit.x;
-		this._spherical.phi += orbit.y;
-		// restrict theta to be between desired limits
-		this._spherical.theta = Math.max( this.minAzimuthAngle, Math.min( this.maxAzimuthAngle, this._spherical.theta ) );
-		// restrict phi to be between desired limits
-		this._spherical.phi = Math.max( this.minPolarAngle, Math.min( this.maxPolarAngle, this._spherical.phi ) );
 
+		// Orbit
+		eyeDirection.copy( eye ).normalize();
+		upDirection.copy( this.object.up ).normalize();
+		sideDirection.crossVectors( upDirection, eyeDirection ).normalize();
+		upDirection.setLength( orbit.y );
+		sideDirection.setLength( orbit.x );
+		moveDirection.copy( upDirection.add( sideDirection ) );
+		rotationAxis.crossVectors( moveDirection, eye ).normalize();
+		rotationQuat.setFromAxisAngle( rotationAxis, orbit.length() );
+		eye.applyQuaternion( rotationQuat );
+		this.object.up.applyQuaternion( rotationQuat );
+
+		// Dolly
 		let dollyScale = ( dolly > 0 ) ? 1 - dolly : 1 / ( 1 + dolly );
-		if ( this.object.isPerspectiveCamera ) {
+		eye.multiplyScalar( dollyScale );
 
-			this._spherical.radius /= dollyScale;
+		// Pan
+		panDirection.copy( eye ).cross( this.object.up ).setLength( pan.x * eye.length() );
+		panDirection.add( upDirection.copy( this.object.up ).setLength( - pan.y * eye.length() ) );
+		this.object.position.add( panDirection );
+		this.target.add( panDirection );
 
-		} else if ( this.object.isOrthographicCamera ) {
-
-			this.object.zoom = Math.max( this.minZoom, Math.min( this.maxZoom, this.object.zoom * dollyScale ) );
-
-		}
-		this.object.updateProjectionMatrix();
-
-		this._spherical.makeSafe();
-		// restrict radius to be between desired limits
-		this._spherical.radius = Math.max( this.minDistance, Math.min( this.maxDistance, this._spherical.radius ) );
-
-		// move target to panned location
-
-		let panLeftDist;
-		let panUpDist;
-		if ( this.object.isPerspectiveCamera ) {
-
-			// half of the fov is center to top of screen
-			let fovFactor = Math.tan( ( this.object.fov / 2 ) * Math.PI / 180.0 );
-			panLeftDist = pan.x * eye.length() * fovFactor;
-			panUpDist = - pan.y * eye.length() * fovFactor;
-
-		} else if ( this.object.isOrthographicCamera ) {
-
-			panLeftDist = pan.x * ( this.object.right - this.object.left ) / this.object.zoom;
-			panUpDist = - pan.y * ( this.object.top - this.object.bottom ) / this.object.zoom;
-
-		}
-
-		// panLeft
-		offset.setFromMatrixColumn( this.object.matrix, 0 );
-		offset.multiplyScalar( - panLeftDist );
-		offset2.copy( offset );
-
-		// panUp
-		if ( this.screenSpacePanning ) {
-
-			offset.setFromMatrixColumn( this.object.matrix, 1 );
-
-		} else {
-
-			offset.setFromMatrixColumn( this.object.matrix, 0 );
-			offset.crossVectors( this.object.up, offset );
-
-		}
-		offset.multiplyScalar( panUpDist );
-		offset2.add( offset );
-
-
-		this.target.add( offset2 );
-		offset.setFromSpherical( this._spherical );
-		// rotate offset back to "camera-up-vector-is-up" space
-		offset.applyQuaternion( tempQuatInverse );
-		this.object.position.copy( this.target ).add( offset );
+		this.object.position.addVectors( this.target, eye );
 		this.object.lookAt( this.target );
-
 		this.dispatchEvent( changeEvent );
-
-	}
-	// utility getters
-	get polarAngle() {
-
-		return this._spherical.phi;
-
-	}
-	get azimuthalAngle() {
-
-		return this._spherical.theta;
-
-	}
-	// Deprication warnings
-	getPolarAngle() {
-
-		console.warn( '.getPolarAngle() has been depricated. Use .polarAngle instead.' );
-		return this.polarAngle;
-
-	}
-	getAzimuthalAngle() {
-
-		console.warn( '.getAzimuthalAngle() has been depricated. Use .azimuthalAngle instead.' );
-		return this.azimuthalAngle;
 
 	}
 
 }
 
-export { OrbitControls };
+export { TrackballControls };

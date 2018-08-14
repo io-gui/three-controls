@@ -2,6 +2,18 @@ import path from 'path';
 
 export default [
   {
+    input: 'src/Control.js',
+    output: [
+      {
+        format: 'es',
+        cleanup: false,
+        file: 'build/Control.js',
+        indent: '  '
+      }
+    ],
+    external: [ path.resolve('../three.js/build/three.module.js') ]
+  },
+  {
     input: 'src/TransformControls/TransformControls.js',
     output: [
       {
@@ -11,10 +23,13 @@ export default [
         indent: '  '
       }
     ],
-    external: [ path.resolve('../three.js/build/three.module.js') ]
+    external: [
+      path.resolve('../three.js/build/three.module.js'),
+      path.resolve('./src/Control.js')
+    ]
   },
   {
-    input: 'src/OrbitControls/OrbitControls.js',
+    input: 'src/CameraControls/OrbitControls.js',
     output: [
       {
         format: 'es',
@@ -23,6 +38,24 @@ export default [
         indent: '  '
       }
     ],
-    external: [ path.resolve('../three.js/build/three.module.js') ]
+    external: [
+      path.resolve('../three.js/build/three.module.js'),
+      path.resolve('./src/Control.js')
+    ]
+  },
+  {
+    input: 'src/CameraControls/TrackballControls.js',
+    output: [
+      {
+        format: 'es',
+        cleanup: false,
+        file: 'build/TrackballControls.js',
+        indent: '  '
+      }
+    ],
+    external: [
+      path.resolve('../three.js/build/three.module.js'),
+      path.resolve('./src/Control.js')
+    ]
   }
 ];

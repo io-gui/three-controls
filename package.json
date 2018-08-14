@@ -24,6 +24,7 @@
     "access": "public"
   },
   "scripts": {
+    "lint": "eslint src --fix",
     "build": "eslint src && rollup -c && eslint build --fix"
   },
   "keywords": [

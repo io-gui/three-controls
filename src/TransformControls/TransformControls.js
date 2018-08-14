@@ -270,7 +270,7 @@ export class TransformControls extends Control {
 	onPointerUp( pointers ) {
 		if ( pointers.length === 0) {
 			this.dragging = false;
-			this.axis = null
+			this.axis = null;
 		} else {
 			if ( pointers[0].button === undefined ) this.axis = null;
 		}

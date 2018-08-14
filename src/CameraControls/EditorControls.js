@@ -20,8 +20,6 @@ const delta = new THREE.Vector3();
 const box = new THREE.Box3();
 
 const normalMatrix = new THREE.Matrix3();
-const pointer = new THREE.Vector2();
-const pointerOld = new THREE.Vector2();
 const spherical = new THREE.Spherical();
 
 export class EditorControls extends Control {
@@ -40,7 +38,7 @@ export class EditorControls extends Control {
 		this.dispatchEvent( changeEvent );
 	}
 	focus( target ) {
-		var distance;
+		let distance;
 		box.setFromObject( target );
 		if ( box.isEmpty() === false ) {
 			this.center.copy( box.getCenter() );
@@ -51,13 +49,13 @@ export class EditorControls extends Control {
 			distance = 0.1;
 		}
 		delta.set( 0, 0, 1 );
-		delta.applyQuaternion( object.quaternion );
+		delta.applyQuaternion( this.object.quaternion );
 		delta.multiplyScalar( distance * 4 );
 		this.object.position.copy( this.center ).add( delta );
 		this.dispatchEvent( changeEvent );
 	}
 	pan( delta ) {
-		var distance = this.object.position.distanceTo( this.center );
+		let distance = this.object.position.distanceTo( this.center );
 		delta.multiplyScalar( distance * this.panSpeed );
 		delta.applyMatrix3( normalMatrix.getNormalMatrix( this.object.matrix ) );
 		this.object.position.add( delta );
@@ -65,7 +63,7 @@ export class EditorControls extends Control {
 		this.dispatchEvent( changeEvent );
 	}
 	zoom( delta ) {
-		var distance = this.object.position.distanceTo( this.center );
+		let distance = this.object.position.distanceTo( this.center );
 		delta.multiplyScalar( distance * this.zoomSpeed );
 		if ( delta.length() > distance ) return;
 		delta.applyMatrix3( normalMatrix.getNormalMatrix( this.object.matrix ) );
@@ -85,6 +83,8 @@ export class EditorControls extends Control {
 	}
 
 	onPointerMove( pointers ) {
+		let distance;
+		let prevDistance;
 		switch ( pointers.length ) {
 			case 1:
 				if ( pointers[0].button === 0 ) {
@@ -96,8 +96,8 @@ export class EditorControls extends Control {
 				}
 				break;
 			case 2:
-				var distance = pointers[0].position.distanceTo( pointers[1].position );
-				var prevDistance = pointers[0].previous.distanceTo( pointers[1].previous );
+				distance = pointers[0].position.distanceTo( pointers[1].position );
+				prevDistance = pointers[0].previous.distanceTo( pointers[1].previous );
 				this.zoom( delta.set( 0, 0, prevDistance - distance ) );
 				break;
 		}

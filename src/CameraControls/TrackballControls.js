@@ -17,11 +17,6 @@ import {CameraControls} from "./CameraControls.js";
  *    Pan - right mouse, or left mouse + ctrl/metaKey, wasd, or arrow keys / touch: two-finger move
  */
 
-const STATE = { NONE: - 1, ROTATE: 0, DOLLY: 1, PAN: 2, TOUCH_DOLLY_PAN: 3 };
-const KEYS = { LEFT: 37, UP: 38, RIGHT: 39, BOTTOM: 40, A: 65, S: 83, D: 68 }; // Direction keys
-const BUTTON = { LEFT: THREE.MOUSE.LEFT, MIDDLE: THREE.MOUSE.MIDDLE, RIGHT: THREE.MOUSE.RIGHT }; // Mouse buttons
-const EPS = 0.000001;
-
 // Temp variables
 const eye = new THREE.Vector3();
 const panDirection = new THREE.Vector3();
