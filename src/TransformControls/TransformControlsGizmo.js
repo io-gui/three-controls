@@ -133,7 +133,7 @@ export class TransformControlsGizmo extends THREE.Object3D {
 			],
 			Z: [
 				[ new THREE.Mesh( arrowGeometry, matBlue ), [ 0, 0, 1 ], [ Math.PI / 2, 0, 0 ], null, 'fwd' ],
-				[ new THREE.Mesh( arrowGeometry, matBlue ), [ 0, 0, 2 ], [ -Math.PI / 2, 0, 0 ], null, 'bwd' ],
+				[ new THREE.Mesh( arrowGeometry, matBlue ), [ 0, 0, 1 ], [ -Math.PI / 2, 0, 0 ], null, 'bwd' ],
 				[ new THREE.Line( lineGeometry, matLineBlue ), null, [ 0, -Math.PI / 2, 0 ] ]
 			],
 			XYZ: [
@@ -573,7 +573,6 @@ export class TransformControlsGizmo extends THREE.Object3D {
 					const AXIS_HIDE_TRESHOLD = 0.99;
 					const PLANE_HIDE_TRESHOLD = 0.2;
 					const AXIS_FLIP_TRESHOLD = -0.4;
-
 
 					if ( handle.name === 'X' || handle.name === 'XYZX' ) {
 						if ( Math.abs( alignVector.copy( unitX ).applyQuaternion( quaternion ).dot( this.eye ) ) > AXIS_HIDE_TRESHOLD ) {
