@@ -50,7 +50,7 @@ export class TransformControls extends Control {
 			rotationSnap: null,
 			space: "world",
 			size: 1,
-			dragging: false,
+			active: false,
 			hideX: false,
 			hideY: false,
 			hideZ: false,
@@ -90,7 +90,7 @@ export class TransformControls extends Control {
 	}
 	onPointerHover( pointers ) {
 		let pointer = pointers[0];
-		if ( this.object === undefined || this.dragging === true || ( pointer.button !== undefined && pointer.button !== 0 ) ) return;
+		if ( this.object === undefined || this.active === true || ( pointer.button !== undefined && pointer.button !== 0 ) ) return;
 		_ray.setFromCamera( pointer.position, this.camera );
 		const intersect = _ray.intersectObjects( this._gizmo.picker[ this.mode ].children, true )[ 0 ] || false;
 		if ( intersect ) {
@@ -101,7 +101,7 @@ export class TransformControls extends Control {
 	}
 	onPointerDown( pointers ) {
 		let pointer = pointers[0];
-		if ( this.object === undefined || this.dragging === true || ( pointer.button !== undefined && pointer.button !== 0 ) ) return;
+		if ( this.object === undefined || this.active === true || ( pointer.button !== undefined && pointer.button !== 0 ) ) return;
 		if ( ( pointer.button === 0 || pointer.button === undefined ) && this.axis !== null ) {
 			_ray.setFromCamera( pointer.position, this.camera );
 			const planeIntersect = _ray.intersectObjects( [ this._plane ], true )[ 0 ] || false;
@@ -126,7 +126,7 @@ export class TransformControls extends Control {
 				this.pointStart.copy( planeIntersect.point ).sub( this.worldPositionStart );
 				if ( this.space === 'local' ) this.pointStart.applyQuaternion( this.worldQuaternionStart.clone().inverse() );
 			}
-			this.dragging = true;
+			this.active = true;
 		}
 	}
 	onPointerMove( pointers ) {
@@ -144,7 +144,7 @@ export class TransformControls extends Control {
 			space = 'world';
 		}
 
-		if ( object === undefined || axis === null || this.dragging === false || ( pointer.button !== undefined && pointer.button !== 0 ) ) return;
+		if ( object === undefined || axis === null || this.active === false || ( pointer.button !== undefined && pointer.button !== 0 ) ) return;
 
 		_ray.setFromCamera( pointer.position, this.camera );
 
@@ -269,7 +269,7 @@ export class TransformControls extends Control {
 	}
 	onPointerUp( pointers ) {
 		if ( pointers.length === 0) {
-			this.dragging = false;
+			this.active = false;
 			this.axis = null;
 		} else {
 			if ( pointers[0].button === undefined ) this.axis = null;
@@ -279,10 +279,10 @@ export class TransformControls extends Control {
 	addEventListener( type, listener ) {
 		super.addEventListener( type, listener );
 		if ( type === "mouseDown" ) {
-			console.warn( '"mouseDown" event depricated, use "dragging-changed" or "pointerdown" event instead.' );
+			console.warn( '"mouseDown" event depricated, use "active-changed" or "pointerdown" event instead.' );
 		}
 		if ( type === "mouseUp" ) {
-			console.warn( '"mouseUp" event depricated, use "dragging-changed" or "pointerup" event instead.' );
+			console.warn( '"mouseUp" event depricated, use "active-changed" or "pointerup" event instead.' );
 		}
 		if ( type === "objectChange" ) {
 			console.warn( '"objectChange" event depricated, use "change" event instead.' );

@@ -8,7 +8,7 @@
  */
 
 import * as THREE from "../../../three.js/build/three.module.js";
-import {CameraControls} from "./CameraControls.js";
+import {ViewportControls} from "./ViewportControls.js";
 
 /*
  * This set of controls performs orbiting, dollying, and panning.
@@ -30,7 +30,7 @@ const tempQuatInverse = tempQuat.clone().inverse();
 // events
 const changeEvent = { type: 'change' };
 
-export class OrbitControls extends CameraControls {
+export class OrbitControls extends ViewportControls {
 	constructor( object, domElement ) {
 		super( object, domElement );
 

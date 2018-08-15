@@ -6,7 +6,7 @@ import * as THREE from "../../../three.js/build/three.module.js";
 import {Control} from "../Control.js";
 
 /*
- * CameraControls is a base class for controls performing orbiting, dollying, and panning.
+ * ViewportControls is a base class for controls performing orbiting, dollying, and panning.
  *
  *    Orbit - left mouse / touch: one-finger move
  *    Dolly - middle mouse, or mousewheel / touch: two-finger spread or squish
@@ -27,7 +27,7 @@ function dampTo( source, target, smoothing, dt ) {
 	return source * ( 1 - t ) + target * t;
 }
 
-export class CameraControls extends Control {
+export class ViewportControls extends Control {
 	constructor( object, domElement ) {
 		super( domElement );
 
@@ -137,6 +137,8 @@ export class CameraControls extends Control {
 		this._orbitOffset.set( 0, 0 );
 		this._panOffset.set( 0, 0 );
 		this._dollyOffset = 0;
+
+		this.object.lookAt( this.target );
 
 		this.needsUpdate = false;
 	}
@@ -253,11 +255,15 @@ export class CameraControls extends Control {
 		console.warn( '.center has been renamed to .target' );
 		return this.target;
 	}
+	set center( value ) {
+		console.warn( '.center has been renamed to .target' );
+		this.target = value;
+	}
 	get enableRotate() {
 		console.warn( '.enableRotate has been deprecated. Use .enableOrbit instead.' );
 		return this.enableOrbit;
 	}
-	set enableRotate(value) {
+	set enableRotate( value ) {
 		console.warn( '.enableRotate has been deprecated. Use .enableOrbit instead.' );
 		this.enableOrbit = value;
 	}
@@ -265,7 +271,7 @@ export class CameraControls extends Control {
 		console.warn( '.rotateSpeed has been deprecated. Use .orbitSpeed instead.' );
 		return this.orbitSpeed;
 	}
-	set rotateSpeed(value) {
+	set rotateSpeed( value ) {
 		console.warn( '.rotateSpeed has been deprecated. Use .orbitSpeed instead.' );
 		this.orbitSpeed = value;
 	}
@@ -273,7 +279,7 @@ export class CameraControls extends Control {
 		console.warn( '.noZoom has been deprecated. Use .enableDolly instead.' );
 		return !this.enableDolly;
 	}
-	set noZoom(value) {
+	set noZoom( value ) {
 		console.warn( '.noZoom has been deprecated. Use .enableDolly instead.' );
 		this.enableDolly = !value;
 	}
@@ -281,7 +287,7 @@ export class CameraControls extends Control {
 		console.warn( '.enableZoom has been deprecated. Use .enableDolly instead.' );
 		return this.enableDolly;
 	}
-	set enableZoom(value) {
+	set enableZoom( value ) {
 		console.warn( '.enableZoom has been deprecated. Use .enableDolly instead.' );
 		this.enableDolly = value;
 	}
@@ -289,7 +295,7 @@ export class CameraControls extends Control {
 		console.warn( '.zoomSpeed has been deprecated. Use .dollySpeed instead.' );
 		return this.dollySpeed;
 	}
-	set zoomSpeed(value) {
+	set zoomSpeed( value ) {
 		console.warn( '.zoomSpeed has been deprecated. Use .dollySpeed instead.' );
 		this.dollySpeed = value;
 	}
@@ -297,7 +303,7 @@ export class CameraControls extends Control {
 		console.warn( '.noRotate has been deprecated. Use .enableRotate instead.' );
 		return !this.enableRotate;
 	}
-	set noRotate(value) {
+	set noRotate( value ) {
 		console.warn( '.noRotate has been deprecated. Use .enableRotate instead.' );
 		this.enableRotate = !value;
 	}
@@ -305,7 +311,7 @@ export class CameraControls extends Control {
 		console.warn( '.noPan has been deprecated. Use .enablePan instead.' );
 		return !this.enablePan;
 	}
-	set noPan(value) {
+	set noPan( value ) {
 		console.warn( '.noPan has been deprecated. Use .enablePan instead.' );
 		this.enablePan = !value;
 	}
@@ -313,7 +319,7 @@ export class CameraControls extends Control {
 		console.warn( '.noKeys has been deprecated. Use .enableKeys instead.' );
 		return !this.enableKeys;
 	}
-	set noKeys(value) {
+	set noKeys( value ) {
 		console.warn( '.noKeys has been deprecated. Use .enableKeys instead.' );
 		this.enableKeys = !value;
 	}
@@ -321,7 +327,7 @@ export class CameraControls extends Control {
 		console.warn( '.staticMoving has been deprecated. Use .enableDamping instead.' );
 		return !this.enableDamping;
 	}
-	set staticMoving(value) {
+	set staticMoving( value ) {
 		console.warn( '.staticMoving has been deprecated. Use .enableDamping instead.' );
 		this.enableDamping = !value;
 	}
@@ -329,7 +335,7 @@ export class CameraControls extends Control {
 		console.warn( '.dynamicDampingFactor has been renamed. Use .dampingFactor instead.' );
 		return this.dampingFactor;
 	}
-	set dynamicDampingFactor(value) {
+	set dynamicDampingFactor( value ) {
 		console.warn( '.dynamicDampingFactor has been renamed. Use .dampingFactor instead.' );
 		this.dampingFactor = value;
 	}

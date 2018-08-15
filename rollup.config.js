@@ -29,7 +29,7 @@ export default [
     ]
   },
   {
-    input: 'src/CameraControls/OrbitControls.js',
+    input: 'src/ViewportControls/OrbitControls.js',
     output: [
       {
         format: 'es',
@@ -44,7 +44,7 @@ export default [
     ]
   },
   {
-    input: 'src/CameraControls/TrackballControls.js',
+    input: 'src/ViewportControls/TrackballControls.js',
     output: [
       {
         format: 'es',

@@ -7,7 +7,7 @@
  */
 
 import * as THREE from "../../../three.js/build/three.module.js";
-import {CameraControls} from "./CameraControls.js";
+import {ViewportControls} from "./ViewportControls.js";
 
 /*
  * This set of controls performs orbiting, dollying, and panning.
@@ -30,7 +30,7 @@ const moveDirection = new THREE.Vector3();
 // events
 const changeEvent = { type: 'change' };
 
-export class TrackballControls extends CameraControls {
+export class TrackballControls extends ViewportControls {
 	constructor( object, domElement ) {
 		super( object, domElement );
 
@@ -42,7 +42,6 @@ export class TrackballControls extends CameraControls {
 
 	update( timestep, orbit, pan, dolly ) {
 		super.update( timestep );
-		// eye.subVectors( this.object.position, this.target );
 
 		eye.copy( this.object.position ).sub( this.target );
 
