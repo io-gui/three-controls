@@ -34,6 +34,7 @@ function dampTo( source, target, smoothing, dt ) {
 const changeEvent = { type: 'change' };
 
 export class ViewportControls extends Control {
+	get isViewportControls() { return true; }
 	constructor( camera, domElement ) {
 		super( domElement );
 
@@ -53,7 +54,7 @@ export class ViewportControls extends Control {
 			panSpeed: 1.0,
 			keyPanSpeed: 0.1,
 			wheelDollySpeed: 1,
-			autoRotate: true,
+			autoRotate: false,
 			autoRotateSpeed: 0.5,
 			enableDamping: true,
 			dampingFactor: 0.05,
@@ -74,16 +75,16 @@ export class ViewportControls extends Control {
 			}
 		} );
 
-		this.addEventListener( 'camera-changed', ( event ) => {
+		this.addEventListener( 'camera-changed', () => {
 			this.needsUpdate = true;
 		});
 
-		this.addEventListener( 'target-changed', ( event ) => {
+		this.addEventListener( 'target-changed', () => {
 			this.needsUpdate = true;
 		});
 
-		this.addEventListener( 'state-changed', ( event ) => {
-			setTimeout( () => { this.needsUpdate = true; } )
+		this.addEventListener( 'state-changed', () => {
+			setTimeout( () => { this.needsUpdate = true; } );
 		});
 
 	}
@@ -130,11 +131,11 @@ export class ViewportControls extends Control {
 		maxVelocity = Math.max( maxVelocity, Math.abs( this._dollyInertia ) );
 		if ( maxVelocity < EPS ) this.stopAnimation();
 	}
-	orbitUpdate( orbit ) {
+	orbitUpdate() {
 	}
-	dollyUpdate( dolly ) {
+	dollyUpdate() {
 	}
-	panUpdate( pan ) {
+	panUpdate() {
 	}
 	update( timestep ) {
 		super.update( timestep );

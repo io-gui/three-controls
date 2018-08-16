@@ -3,7 +3,7 @@
  */
 
 import * as THREE from "../../../three.js/build/three.module.js";
-import {Control} from "../Control.js";
+import {ObjectControls} from "./ObjectControls.js";
 import {TransformControlsGizmo} from "./TransformControlsGizmo.js";
 import {TransformControlsPlane} from "./TransformControlsPlane.js";
 
@@ -23,7 +23,8 @@ const _alignVector = new THREE.Vector3();
 // events
 const changeEvent = { type: "change" };
 
-export class TransformControls extends Control {
+export class TransformControls extends ObjectControls {
+	get isTransformControls() { return true; }
 	constructor( camera, domElement ) {
 
 		super( domElement );
@@ -69,11 +70,11 @@ export class TransformControls extends Control {
 
 		// TODO: implement better data binding
 		// Defined properties are passed down to gizmo and plane
-		for (var prop in this._properties) {
+		for ( let prop in this._properties ) {
 			this._plane[prop] = this._properties[prop];
 			this._gizmo[prop] = this._properties[prop];
 		}
-		this.addEventListener('change', function ( event ) {
+		this.addEventListener( 'change', function ( event ) {
 			this._plane[event.prop] = event.value;
 			this._gizmo[event.prop] = event.value;
 		});
@@ -122,7 +123,9 @@ export class TransformControls extends Control {
 					if ( this.axis === 'Z' && snap ) this.object.rotation.z = Math.round( this.object.rotation.z / snap ) * snap;
 				}
 				this.object.updateMatrixWorld();
-				this.object.parent.updateMatrixWorld();
+				if ( this.object.parent ) {
+					this.object.parent.updateMatrixWorld();
+				}
 				this.positionStart.copy( this.object.position );
 				this.quaternionStart.copy( this.object.quaternion );
 				this.scaleStart.copy( this.object.scale );

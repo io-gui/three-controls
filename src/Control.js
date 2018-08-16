@@ -6,10 +6,8 @@ import {Object3D, Vector2} from "../../three.js/build/three.module.js";
 
 // TODO: implement cancel event
 
-// events
-// const changeEvent = { type: 'change' };
-
 export class Control extends Object3D {
+	get isControl() { return true; }
 	constructor( domElement ) {
 		super();
 		this.visible = false;
@@ -200,6 +198,7 @@ export class Control extends Object3D {
 				if ( this._properties[propName] !== value ) {
 					this._properties[propName] = value;
 					this.dispatchEvent( { type: propName + "-changed", value: value });
+					// TODO: consider removing (Too many initial events)
 					this.dispatchEvent( { type: "change", prop: propName, value: value });
 				}
 			}
@@ -207,7 +206,7 @@ export class Control extends Object3D {
 		this[propName] = defaultValue;
 		setTimeout( () => {
 			this.dispatchEvent( { type: propName + "-changed", value: defaultValue });
-			this.dispatchEvent( { type: "change", prop: propName, value: defaultValue });
+			// this.dispatchEvent( { type: "change", prop: propName, value: defaultValue });
 		} );
 	}
 	defineProperties( props ) {

@@ -28,6 +28,7 @@ const sideDirection = new THREE.Vector3();
 const moveDirection = new THREE.Vector3();
 
 export class TrackballControls extends ViewportControls {
+	get isTrackballControls() { return true; }
 	constructor( camera, domElement ) {
 		super( camera, domElement );
 
@@ -36,31 +37,31 @@ export class TrackballControls extends ViewportControls {
 			maxDistance: Infinity // PerspectiveCamera dolly limit
 		});
 	}
-	orbitUpdate( orbit ) {
-		eye.copy( this.camera.position ).sub( this.target );
-
-		eyeDirection.copy( eye ).normalize();
-		upDirection.copy( this.camera.up ).normalize();
-		sideDirection.crossVectors( upDirection, eyeDirection ).normalize();
-		upDirection.setLength( orbit.y );
-		sideDirection.setLength( orbit.x );
-		moveDirection.copy( upDirection.add( sideDirection ) );
-		rotationAxis.crossVectors( moveDirection, eye ).normalize();
-		rotationQuat.setFromAxisAngle( rotationAxis, orbit.length() );
-		eye.applyQuaternion( rotationQuat );
-		this.camera.up.applyQuaternion( rotationQuat );
-	}
-	dollyUpdate( dolly ) {
-		let dollyScale = ( dolly > 0 ) ? 1 - dolly : 1 / ( 1 + dolly );
-		eye.multiplyScalar( dollyScale );
-	}
-	panUpdate( pan ) {
-		panDirection.copy( eye ).cross( this.camera.up ).setLength( pan.x * eye.length() );
-		panDirection.add( upDirection.copy( this.camera.up ).setLength( -pan.y * eye.length() ) );
-		this.camera.position.add( panDirection );
-		this.target.add( panDirection );
-
-		this.camera.position.addVectors( this.target, eye );
-		this.camera.lookAt( this.target );
-	}
+	// orbitUpdate( orbit ) {
+	// 	eye.copy( this.camera.position ).sub( this.target );
+	//
+	// 	eyeDirection.copy( eye ).normalize();
+	// 	upDirection.copy( this.camera.up ).normalize();
+	// 	sideDirection.crossVectors( upDirection, eyeDirection ).normalize();
+	// 	upDirection.setLength( orbit.y );
+	// 	sideDirection.setLength( orbit.x );
+	// 	moveDirection.copy( upDirection.add( sideDirection ) );
+	// 	rotationAxis.crossVectors( moveDirection, eye ).normalize();
+	// 	rotationQuat.setFromAxisAngle( rotationAxis, orbit.length() );
+	// 	eye.applyQuaternion( rotationQuat );
+	// 	this.camera.up.applyQuaternion( rotationQuat );
+	// }
+	// dollyUpdate( dolly ) {
+	// 	let dollyScale = ( dolly > 0 ) ? 1 - dolly : 1 / ( 1 + dolly );
+	// 	eye.multiplyScalar( dollyScale );
+	// }
+	// panUpdate( pan ) {
+	// 	panDirection.copy( eye ).cross( this.camera.up ).setLength( pan.x * eye.length() );
+	// 	panDirection.add( upDirection.copy( this.camera.up ).setLength( -pan.y * eye.length() ) );
+	// 	this.camera.position.add( panDirection );
+	// 	this.target.add( panDirection );
+	//
+	// 	this.camera.position.addVectors( this.target, eye );
+	// 	this.camera.lookAt( this.target );
+	// }
 }

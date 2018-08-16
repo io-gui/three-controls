@@ -1,4 +1,4 @@
-import { Object3D, Vector2 } from '../../three.js/build/three.module.js';
+import { Object3D, Vector2 } from '../../../three.js/build/three.module.js';
 
 /**
  * @author arodic / https://github.com/arodic
@@ -455,4 +455,8 @@ class ControlPointers extends Array {
 
 }
 
-export { Control, ControlPointers };
+class ObjectControls extends Control {
+
+}
+
+export { ObjectControls };

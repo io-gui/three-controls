@@ -1,3 +1,6 @@
+import { Vector3, Quaternion, Spherical } from '../../../three.js/build/three.module.js';
+import { ViewportControls } from './ViewportControls.js';
+
 /**
  * @author qiao / https://github.com/qiao
  * @author mrdoob / http://mrdoob.com
@@ -6,9 +9,6 @@
  * @author erich666 / http://erichaines.com
  * @author arodic / http://github.com/arodic
  */
-
-import * as THREE from "../../../three.js/build/three.module.js";
-import {ViewportControls} from "./ViewportControls.js";
 
 /*
  * This set of controls performs orbiting, dollying, and panning.
@@ -20,16 +20,17 @@ import {ViewportControls} from "./ViewportControls.js";
  */
 
 // Temp variables
-const eye = new THREE.Vector3();
-const offset = new THREE.Vector3();
-const offset2 = new THREE.Vector3();
-const unitY = new THREE.Vector3( 0, 1, 0 );
-const tempQuat = new THREE.Quaternion();
+const eye = new Vector3();
+const offset = new Vector3();
+const offset2 = new Vector3();
+const unitY = new Vector3( 0, 1, 0 );
+const tempQuat = new Quaternion();
 const tempQuatInverse = tempQuat.clone().inverse();
 
-export class OrbitControls extends ViewportControls {
-	get isOrbitControls() { return true; }
+class OrbitControls extends ViewportControls {
+
 	constructor( camera, domElement ) {
+
 		super( camera, domElement );
 
 		this.defineProperties( {
@@ -45,9 +46,11 @@ export class OrbitControls extends ViewportControls {
 		} );
 
 		// Internals
-		this._spherical = new THREE.Spherical();
+		this._spherical = new Spherical();
+
 	}
 	orbitUpdate( orbit ) {
+
 		// camera.up is the orbit axis
 		tempQuat.setFromUnitVectors( this.camera.up, unitY );
 		tempQuatInverse.copy( tempQuat ).inverse();
@@ -62,46 +65,62 @@ export class OrbitControls extends ViewportControls {
 		this._spherical.theta = Math.max( this.minAzimuthAngle, Math.min( this.maxAzimuthAngle, this._spherical.theta ) );
 		// restrict phi to be between desired limits
 		this._spherical.phi = Math.max( this.minPolarAngle, Math.min( this.maxPolarAngle, this._spherical.phi ) );
+
 	}
 	dollyUpdate( dolly ) {
+
 		let dollyScale = ( dolly > 0 ) ? 1 - dolly : 1 / ( 1 + dolly );
 		if ( this.camera.isPerspectiveCamera ) {
+
 			this._spherical.radius /= dollyScale;
+
 		} else if ( this.camera.isOrthographicCamera ) {
+
 			this.camera.zoom = Math.max( this.minZoom, Math.min( this.maxZoom, this.camera.zoom * dollyScale ) );
+
 		}
 		this.camera.updateProjectionMatrix();
 
 		this._spherical.makeSafe();
 		// restrict radius to be between desired limits
 		this._spherical.radius = Math.max( this.minDistance, Math.min( this.maxDistance, this._spherical.radius ) );
+
 	}
 	panUpdate( pan ) {
+
 		// move target to panned location
 
 		let panLeftDist;
 		let panUpDist;
 		if ( this.camera.isPerspectiveCamera ) {
+
 			// half of the fov is center to top of screen
 			let fovFactor = Math.tan( ( this.camera.fov / 2 ) * Math.PI / 180.0 );
 			panLeftDist = pan.x * eye.length() * fovFactor;
-			panUpDist = -pan.y * eye.length() * fovFactor;
+			panUpDist = - pan.y * eye.length() * fovFactor;
+
 		} else if ( this.camera.isOrthographicCamera ) {
+
 			panLeftDist = pan.x * ( this.camera.right - this.camera.left ) / this.camera.zoom;
-			panUpDist = -pan.y * ( this.camera.top - this.camera.bottom ) / this.camera.zoom;
+			panUpDist = - pan.y * ( this.camera.top - this.camera.bottom ) / this.camera.zoom;
+
 		}
 
 		// panLeft
 		offset.setFromMatrixColumn( this.camera.matrix, 0 );
-		offset.multiplyScalar( -panLeftDist );
+		offset.multiplyScalar( - panLeftDist );
 		offset2.copy( offset );
 
 		// panUp
 		if ( this.screenSpacePanning ) {
+
 			offset.setFromMatrixColumn( this.camera.matrix, 1 );
+
 		} else {
+
 			offset.setFromMatrixColumn( this.camera.matrix, 0 );
 			offset.crossVectors( this.camera.up, offset );
+
 		}
 		offset.multiplyScalar( panUpDist );
 		offset2.add( offset );
@@ -113,21 +132,33 @@ export class OrbitControls extends ViewportControls {
 		offset.applyQuaternion( tempQuatInverse );
 		this.camera.position.copy( this.target ).add( offset );
 		this.camera.lookAt( this.target );
+
 	}
 	// utility getters
 	get polarAngle() {
+
 		return this._spherical.phi;
+
 	}
 	get azimuthalAngle() {
+
 		return this._spherical.theta;
+
 	}
 	// Deprication warnings
 	getPolarAngle() {
+
 		console.warn( '.getPolarAngle() has been depricated. Use .polarAngle instead.' );
 		return this.polarAngle;
+
 	}
 	getAzimuthalAngle() {
+
 		console.warn( '.getAzimuthalAngle() has been depricated. Use .azimuthalAngle instead.' );
 		return this.azimuthalAngle;
+
 	}
+
 }
+
+export { OrbitControls };
