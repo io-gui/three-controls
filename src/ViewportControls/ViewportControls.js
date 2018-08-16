@@ -20,6 +20,9 @@ const EPS = 0.000001;
 
 // Temp variables
 const direction = new THREE.Vector2();
+const aspectMultiplier = new THREE.Vector2();
+const orbit = new THREE.Vector2();
+const pan = new THREE.Vector2();
 
 // Framerate-independent damping
 function dampTo( source, target, smoothing, dt ) {
@@ -27,12 +30,15 @@ function dampTo( source, target, smoothing, dt ) {
 	return source * ( 1 - t ) + target * t;
 }
 
+// Events
+const changeEvent = { type: 'change' };
+
 export class ViewportControls extends Control {
-	constructor( object, domElement ) {
+	constructor( camera, domElement ) {
 		super( domElement );
 
 		this.defineProperties({
-			object: object,
+			camera: camera,
 			target: new THREE.Vector3(),
 			enableOrbit: true,
 			enableDolly: true,
@@ -40,15 +46,14 @@ export class ViewportControls extends Control {
 			enableKeys: true,
 			orbitSpeed: 1.0,
 			dollySpeed: 1.0,
-			panSpeed: 0.5,
+			panSpeed: 1.0,
 			keyPanSpeed: 0.1,
 			wheelDollySpeed: 1,
-			autoRotate: false,
-			autoRotateSpeed: 0.9,
-			enableDamping: false,
+			autoRotate: true,
+			autoRotateSpeed: 0.5,
+			enableDamping: true,
 			dampingFactor: 0.05,
-			state: STATE.NONE,
-			needsUpdate: false
+			state: STATE.NONE
 		});
 
 		// Internals
@@ -62,17 +67,21 @@ export class ViewportControls extends Control {
 		this.addEventListener( 'autoRotate-changed', ( event ) => {
 			if ( event.value ) {
 				this._orbitInertia.x = this.autoRotateSpeed;
-				this.needsUpdate = true;
 			}
 		} );
 
-		this.addEventListener( 'needsUpdate-changed', ( event ) => {
-			if ( event.value ) this.startAnimation();
-		} );
+		this.addEventListener( 'camera-changed', ( event ) => {
+			this.needsUpdate = true;
+		});
 
-		if ( this.autoRotate ) this.startAnimation();
+		this.addEventListener( 'target-changed', ( event ) => {
+			this.needsUpdate = true;
+		});
 
-		this.needsUpdate = true;
+		this.addEventListener( 'state-changed', ( event ) => {
+			setTimeout( () => { this.needsUpdate = true; } )
+		});
+
 	}
 	animate( timestep ) {
 		super.animate( timestep );
@@ -80,6 +89,7 @@ export class ViewportControls extends Control {
 		let dt = timestep / 1000;
 
 		// Apply orbit intertia
+
 		if ( this.state !== STATE.ROTATE ) {
 			let thetaTarget = this.autoRotate ? this.autoRotateSpeed : 0;
 			if ( this.enableDamping ) {
@@ -89,6 +99,7 @@ export class ViewportControls extends Control {
 				this._orbitInertia.x = thetaTarget;
 			}
 		}
+
 		this._orbitOffset.x += this._orbitInertia.x * dt;
 		this._orbitOffset.y += this._orbitInertia.y * dt;
 
@@ -106,12 +117,6 @@ export class ViewportControls extends Control {
 		}
 		this._dollyOffset += this._dollyInertia * dt;
 
-		// TODO
-		let orbit = new THREE.Vector2().copy( this._orbitOffset );
-		let pan = new THREE.Vector2().copy( this._panOffset );
-		let dolly = this._dollyOffset;
-		this.update( timestep, orbit, pan, dolly );
-
 		// Determine if animation needs to continue
 		let maxVelocity = 0;
 		maxVelocity = Math.max( maxVelocity, Math.abs( this._orbitInertia.x ) );
@@ -121,8 +126,16 @@ export class ViewportControls extends Control {
 		maxVelocity = Math.max( maxVelocity, Math.abs( this._dollyInertia ) );
 		if ( maxVelocity < EPS ) this.stopAnimation();
 	}
+	orbitUpdate( orbit ) {
+	}
+	dollyUpdate( dolly ) {
+	}
+	panUpdate( pan ) {
+	}
 	update( timestep ) {
-		// Copy current offsets to inertia
+		super.update( timestep );
+
+		// set inertiae from current offsets
 		if ( this.enableDamping ) {
 			if ( this.state === STATE.ROTATE ) {
 				this._orbitInertia.copy( this._orbitOffset ).multiplyScalar( timestep );
@@ -134,23 +147,32 @@ export class ViewportControls extends Control {
 				this._dollyInertia = this._dollyOffset * timestep;
 			}
 		}
+
+		this.orbitUpdate( orbit.copy( this._orbitOffset ) );
+		this.dollyUpdate( this._dollyOffset );
+		this.panUpdate( pan.copy( this._panOffset ) );
+
 		this._orbitOffset.set( 0, 0 );
 		this._panOffset.set( 0, 0 );
 		this._dollyOffset = 0;
 
-		this.object.lookAt( this.target );
+		this.camera.lookAt( this.target );
 
+		this.dispatchEvent( changeEvent );
 		this.needsUpdate = false;
 	}
 	onPointerMove( pointers ) {
+		let rect = this.domElement.getBoundingClientRect();
+		aspectMultiplier.set( rect.width / rect.height, 1 );
 		switch ( pointers.length ) {
 			case 1:
+				direction.copy(pointers[0].movement).multiply(aspectMultiplier);
 				switch ( pointers[0].button ) {
 					case BUTTON.LEFT:
 						if ( pointers.ctrlKey ) {
 							if ( !this.enablePan ) return;
 							this.state = STATE.PAN;
-							this.pan( direction.copy(pointers[0].movement).multiplyScalar( this.panSpeed ) );
+							this.pan( direction.multiplyScalar( this.panSpeed ) );
 						} else if ( pointers.altKey ) {
 							if ( !this.enableDolly ) return;
 							this.state = STATE.DOLLY;
@@ -158,7 +180,7 @@ export class ViewportControls extends Control {
 						} else {
 							if ( !this.enableOrbit ) return;
 							this.state = STATE.ROTATE;
-							this.orbit( direction.copy(pointers[0].movement).multiplyScalar( this.orbitSpeed ) );
+							this.orbit( direction.multiplyScalar( this.orbitSpeed ) );
 						}
 						break;
 					case BUTTON.MIDDLE:
@@ -169,7 +191,7 @@ export class ViewportControls extends Control {
 					case BUTTON.RIGHT:
 						if ( !this.enablePan ) return;
 						this.state = STATE.PAN;
-						this.pan( direction.copy(pointers[0].movement).multiplyScalar( this.panSpeed ) );
+						this.pan( direction.multiplyScalar( this.panSpeed ) );
 						break;
 				}
 				break;
@@ -178,12 +200,14 @@ export class ViewportControls extends Control {
 				if ( !this.enableDolly && !this.enablePan ) return;
 				this.state = STATE.DOLLY_PAN;
 				if ( this.enableDolly ) {
+					// TODO: apply aspectMultiplier
 					let distance = pointers[0].position.distanceTo( pointers[1].position );
 					let prevDistance = pointers[0].previous.distanceTo( pointers[1].previous );
 					this.dolly( (prevDistance - distance) * this.dollySpeed );
 				}
 				if ( this.enablePan ) {
-					this.pan( direction.copy(pointers[0].movement).add(pointers[1].movement).multiplyScalar( this.panSpeed ) );
+					direction.copy(pointers[0].movement).add(pointers[1].movement).multiply(aspectMultiplier);
+					this.pan( direction.multiplyScalar( this.panSpeed ) );
 				}
 				break;
 		}
@@ -222,6 +246,12 @@ export class ViewportControls extends Control {
 		this.dolly( event.deltaY * this.wheelDollySpeed );
 	}
 	// control methods
+	attach( camera ) {
+		this.camera = camera;
+	}
+	detach() {
+		this.camera = undefined;
+	}
 	pan( dir ) {
 		this._panOffset.copy( dir );
 		this.needsUpdate = true;
@@ -235,21 +265,20 @@ export class ViewportControls extends Control {
 		this.needsUpdate = true;
 	}
 	// Deprication warnings
-	addEventListener( type, listener ) {
-		super.addEventListener( type, listener );
-		if ( type === "start" ) {
-			console.warn( '"start" event depricated, use "pointerdown" or "dragging-changed" event instead.' );
-		}
-		if ( type === "end" ) {
-			console.warn( '"end" event depricated, use "pointerup" or "dragging-changed" event instead.' );
-		}
-	}
 	getAutoRotationAngle() {
 		console.warn( '.getAutoRotationAngle() has been depricated. Use .autoRotateSpeed instead.' );
 		return 2 * Math.PI / 60 / 60 * this.autoRotateSpeed;
 	}
 	getZoomScale() {
 		console.warn( '.getZoomScale() has been depricated.' );
+	}
+	get object() {
+		console.warn( '.object has been renamed to .camera' );
+		return this.camera;
+	}
+	set object( value ) {
+		console.warn( '.object has been renamed to .camera' );
+		this.camera = value;
 	}
 	get center() {
 		console.warn( '.center has been renamed to .target' );

@@ -12,7 +12,7 @@ import {ViewportControls} from "./ViewportControls.js";
 
 /*
  * This set of controls performs orbiting, dollying, and panning.
- * Unlike TrackballControls, it maintains the "up" direction object.up ( +Y by default ).
+ * Unlike TrackballControls, it maintains the "up" direction camera.up ( +Y by default ).
  *
  *  Orbit - left mouse / touch: one-finger move
  *  Dolly - middle mouse, or mousewheel / touch: two-finger spread or squish
@@ -27,12 +27,9 @@ const unitY = new THREE.Vector3( 0, 1, 0 );
 const tempQuat = new THREE.Quaternion();
 const tempQuatInverse = tempQuat.clone().inverse();
 
-// events
-const changeEvent = { type: 'change' };
-
 export class OrbitControls extends ViewportControls {
-	constructor( object, domElement ) {
-		super( object, domElement );
+	constructor( camera, domElement ) {
+		super( camera, domElement );
 
 		this.defineProperties( {
 			minDistance: 0, // PerspectiveCamera dolly limit
@@ -49,13 +46,11 @@ export class OrbitControls extends ViewportControls {
 		// Internals
 		this._spherical = new THREE.Spherical();
 	}
-	update( timestep, orbit, pan, dolly ) {
-		super.update( timestep );
-
+	orbitUpdate( orbit ) {
 		// camera.up is the orbit axis
-		tempQuat.setFromUnitVectors( this.object.up, unitY );
+		tempQuat.setFromUnitVectors( this.camera.up, unitY );
 		tempQuatInverse.copy( tempQuat ).inverse();
-		eye.copy( this.object.position ).sub( this.target );
+		eye.copy( this.camera.position ).sub( this.target );
 		// rotate eye to "y-axis-is-up" space
 		eye.applyQuaternion( tempQuat );
 		// angle from z-axis around y-axis
@@ -66,44 +61,46 @@ export class OrbitControls extends ViewportControls {
 		this._spherical.theta = Math.max( this.minAzimuthAngle, Math.min( this.maxAzimuthAngle, this._spherical.theta ) );
 		// restrict phi to be between desired limits
 		this._spherical.phi = Math.max( this.minPolarAngle, Math.min( this.maxPolarAngle, this._spherical.phi ) );
-
+	}
+	dollyUpdate( dolly ) {
 		let dollyScale = ( dolly > 0 ) ? 1 - dolly : 1 / ( 1 + dolly );
-		if ( this.object.isPerspectiveCamera ) {
+		if ( this.camera.isPerspectiveCamera ) {
 			this._spherical.radius /= dollyScale;
-		} else if ( this.object.isOrthographicCamera ) {
-			this.object.zoom = Math.max( this.minZoom, Math.min( this.maxZoom, this.object.zoom * dollyScale ) );
+		} else if ( this.camera.isOrthographicCamera ) {
+			this.camera.zoom = Math.max( this.minZoom, Math.min( this.maxZoom, this.camera.zoom * dollyScale ) );
 		}
-		this.object.updateProjectionMatrix();
+		this.camera.updateProjectionMatrix();
 
 		this._spherical.makeSafe();
 		// restrict radius to be between desired limits
 		this._spherical.radius = Math.max( this.minDistance, Math.min( this.maxDistance, this._spherical.radius ) );
-
+	}
+	panUpdate( pan ) {
 		// move target to panned location
 
 		let panLeftDist;
 		let panUpDist;
-		if ( this.object.isPerspectiveCamera ) {
+		if ( this.camera.isPerspectiveCamera ) {
 			// half of the fov is center to top of screen
-			let fovFactor = Math.tan( ( this.object.fov / 2 ) * Math.PI / 180.0 );
+			let fovFactor = Math.tan( ( this.camera.fov / 2 ) * Math.PI / 180.0 );
 			panLeftDist = pan.x * eye.length() * fovFactor;
 			panUpDist = -pan.y * eye.length() * fovFactor;
-		} else if ( this.object.isOrthographicCamera ) {
-			panLeftDist = pan.x * ( this.object.right - this.object.left ) / this.object.zoom;
-			panUpDist = -pan.y * ( this.object.top - this.object.bottom ) / this.object.zoom;
+		} else if ( this.camera.isOrthographicCamera ) {
+			panLeftDist = pan.x * ( this.camera.right - this.camera.left ) / this.camera.zoom;
+			panUpDist = -pan.y * ( this.camera.top - this.camera.bottom ) / this.camera.zoom;
 		}
 
 		// panLeft
-		offset.setFromMatrixColumn( this.object.matrix, 0 );
+		offset.setFromMatrixColumn( this.camera.matrix, 0 );
 		offset.multiplyScalar( -panLeftDist );
 		offset2.copy( offset );
 
 		// panUp
 		if ( this.screenSpacePanning ) {
-			offset.setFromMatrixColumn( this.object.matrix, 1 );
+			offset.setFromMatrixColumn( this.camera.matrix, 1 );
 		} else {
-			offset.setFromMatrixColumn( this.object.matrix, 0 );
-			offset.crossVectors( this.object.up, offset );
+			offset.setFromMatrixColumn( this.camera.matrix, 0 );
+			offset.crossVectors( this.camera.up, offset );
 		}
 		offset.multiplyScalar( panUpDist );
 		offset2.add( offset );
@@ -113,10 +110,8 @@ export class OrbitControls extends ViewportControls {
 		offset.setFromSpherical( this._spherical );
 		// rotate offset back to "camera-up-vector-is-up" space
 		offset.applyQuaternion( tempQuatInverse );
-		this.object.position.copy( this.target ).add( offset );
-		this.object.lookAt( this.target );
-
-		this.dispatchEvent( changeEvent );
+		this.camera.position.copy( this.target ).add( offset );
+		this.camera.lookAt( this.target );
 	}
 	// utility getters
 	get polarAngle() {

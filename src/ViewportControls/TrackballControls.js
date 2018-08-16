@@ -27,27 +27,20 @@ const upDirection = new THREE.Vector3();
 const sideDirection = new THREE.Vector3();
 const moveDirection = new THREE.Vector3();
 
-// events
-const changeEvent = { type: 'change' };
-
 export class TrackballControls extends ViewportControls {
-	constructor( object, domElement ) {
-		super( object, domElement );
+	constructor( camera, domElement ) {
+		super( camera, domElement );
 
 		this.defineProperties({
 			minDistance: 0, // PerspectiveCamera dolly limit
 			maxDistance: Infinity // PerspectiveCamera dolly limit
 		});
 	}
+	orbitUpdate( orbit ) {
+		eye.copy( this.camera.position ).sub( this.target );
 
-	update( timestep, orbit, pan, dolly ) {
-		super.update( timestep );
-
-		eye.copy( this.object.position ).sub( this.target );
-
-		// Orbit
 		eyeDirection.copy( eye ).normalize();
-		upDirection.copy( this.object.up ).normalize();
+		upDirection.copy( this.camera.up ).normalize();
 		sideDirection.crossVectors( upDirection, eyeDirection ).normalize();
 		upDirection.setLength( orbit.y );
 		sideDirection.setLength( orbit.x );
@@ -55,20 +48,19 @@ export class TrackballControls extends ViewportControls {
 		rotationAxis.crossVectors( moveDirection, eye ).normalize();
 		rotationQuat.setFromAxisAngle( rotationAxis, orbit.length() );
 		eye.applyQuaternion( rotationQuat );
-		this.object.up.applyQuaternion( rotationQuat );
-
-		// Dolly
+		this.camera.up.applyQuaternion( rotationQuat );
+	}
+	dollyUpdate( dolly ) {
 		let dollyScale = ( dolly > 0 ) ? 1 - dolly : 1 / ( 1 + dolly );
 		eye.multiplyScalar( dollyScale );
-
-		// Pan
-		panDirection.copy( eye ).cross( this.object.up ).setLength( pan.x * eye.length() );
-		panDirection.add( upDirection.copy( this.object.up ).setLength( -pan.y * eye.length() ) );
-		this.object.position.add( panDirection );
+	}
+	panUpdate( pan ) {
+		panDirection.copy( eye ).cross( this.camera.up ).setLength( pan.x * eye.length() );
+		panDirection.add( upDirection.copy( this.camera.up ).setLength( -pan.y * eye.length() ) );
+		this.camera.position.add( panDirection );
 		this.target.add( panDirection );
 
-		this.object.position.addVectors( this.target, eye );
-		this.object.lookAt( this.target );
-		this.dispatchEvent( changeEvent );
+		this.camera.position.addVectors( this.target, eye );
+		this.camera.lookAt( this.target );
 	}
 }

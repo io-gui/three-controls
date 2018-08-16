@@ -34,13 +34,6 @@ export class TransformControls extends Control {
 		this._plane = new TransformControlsPlane();
 		this.add( this._plane );
 
-		// Defined properties are passed down to gizmo and plane
-		// TODO: better data binding
-		this.addEventListener('change', function ( event ) {
-			this._plane[event.prop] = event.value;
-			this._gizmo[event.prop] = event.value;
-		});
-
 		this.defineProperties({
 			camera: camera,
 			object: undefined,
@@ -50,7 +43,6 @@ export class TransformControls extends Control {
 			rotationSnap: null,
 			space: "world",
 			size: 1,
-			active: false,
 			hideX: false,
 			hideY: false,
 			hideZ: false,
@@ -72,6 +64,18 @@ export class TransformControls extends Control {
 			positionStart: new THREE.Vector3(),
 			quaternionStart: new THREE.Quaternion(),
 			scaleStart: new THREE.Vector3()
+		});
+
+
+		// TODO: implement better data binding
+		// Defined properties are passed down to gizmo and plane
+		for (var prop in this._properties) {
+			this._plane[prop] = this._properties[prop];
+			this._gizmo[prop] = this._properties[prop];
+		}
+		this.addEventListener('change', function ( event ) {
+			this._plane[event.prop] = event.value;
+			this._gizmo[event.prop] = event.value;
 		});
 	}
 	updateMatrixWorld() {
@@ -274,6 +278,14 @@ export class TransformControls extends Control {
 		} else {
 			if ( pointers[0].button === undefined ) this.axis = null;
 		}
+	}
+	attach( object ) {
+		this.object = object;
+		this.visible = true;
+	}
+	detach() {
+		this.object = undefined;
+		this.visible = false;
 	}
 	// Deprication warnings
 	addEventListener( type, listener ) {

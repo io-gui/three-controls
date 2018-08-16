@@ -19,36 +19,31 @@ const spherical = new THREE.Spherical();
 const changeEvent = { type: 'change' };
 
 export class EditorControls extends ViewportControls {
-	update( timestep, orbit, pan, dolly ) {
-		super.update( timestep );
-
-		// Orbit
-		delta.copy( this.object.position ).sub( this.target );
+	orbitUpdate( orbit ) {
+		delta.copy( this.camera.position ).sub( this.target );
 		spherical.setFromVector3( delta );
 		spherical.theta -= orbit.x;
 		spherical.phi += orbit.y;
 		spherical.makeSafe();
 		delta.setFromSpherical( spherical );
-		this.object.position.copy( this.target ).add( delta );
-		this.object.lookAt( this.target );
-
-		// Pan
-		let distance = this.object.position.distanceTo( this.target );
-		delta.set( -pan.x, -pan.y, 0 );
-		delta.multiplyScalar( distance );
-		delta.applyMatrix3( normalMatrix.getNormalMatrix( this.object.matrix ) );
-		this.object.position.add( delta );
-		this.target.add( delta );
-
-		// Dolly
+		this.camera.position.copy( this.target ).add( delta );
+		this.camera.lookAt( this.target );
+	}
+	dollyUpdate( dolly ) {
 		delta.set( 0, 0, dolly );
-		distance = this.object.position.distanceTo( this.target );
+		let distance = this.camera.position.distanceTo( this.target );
 		delta.multiplyScalar( distance * this.dollySpeed );
 		if ( delta.length() > distance ) return;
-		delta.applyMatrix3( normalMatrix.getNormalMatrix( this.object.matrix ) );
-		this.object.position.add( delta );
-
-		this.dispatchEvent( changeEvent );
+		delta.applyMatrix3( normalMatrix.getNormalMatrix( this.camera.matrix ) );
+		this.camera.position.add( delta );
+	}
+	panUpdate( pan ) {
+		let distance = this.camera.position.distanceTo( this.target );
+		delta.set( -pan.x, -pan.y, 0 );
+		delta.multiplyScalar( distance );
+		delta.applyMatrix3( normalMatrix.getNormalMatrix( this.camera.matrix ) );
+		this.camera.position.add( delta );
+		this.target.add( delta );
 	}
 	focus( target ) {
 		let distance;
@@ -62,9 +57,9 @@ export class EditorControls extends ViewportControls {
 			distance = 0.1;
 		}
 		delta.set( 0, 0, 1 );
-		delta.applyQuaternion( this.object.quaternion );
+		delta.applyQuaternion( this.camera.quaternion );
 		delta.multiplyScalar( distance * 4 );
-		this.object.position.copy( this.target ).add( delta );
+		this.camera.position.copy( this.target ).add( delta );
 
 		this.dispatchEvent( changeEvent );
 	}

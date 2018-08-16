@@ -505,7 +505,7 @@ export class TransformControlsGizmo extends THREE.Object3D {
 							alignVector.copy( this.rotationAxis );
 							handle.quaternion.setFromRotationMatrix( lookAtMatrix.lookAt( zeroVector, alignVector, unitY ) );
 							handle.quaternion.multiply( tempQuaternion );
-							handle.visible = this.dragging;
+							handle.visible = this.active;
 
 						}
 
@@ -519,12 +519,12 @@ export class TransformControlsGizmo extends THREE.Object3D {
 					} else if ( handle.name === 'START' ) {
 
 						handle.position.copy( this.worldPositionStart );
-						handle.visible = this.dragging;
+						handle.visible = this.active;
 
 					} else if ( handle.name === 'END' ) {
 
 						handle.position.copy( this.worldPosition );
-						handle.visible = this.dragging;
+						handle.visible = this.active;
 
 					} else if ( handle.name === 'DELTA' ) {
 
@@ -533,13 +533,13 @@ export class TransformControlsGizmo extends THREE.Object3D {
 						tempVector.set( 1e-10, 1e-10, 1e-10 ).add( this.worldPositionStart ).sub( this.worldPosition ).multiplyScalar( -1 );
 						tempVector.applyQuaternion( this.worldQuaternionStart.clone().inverse() );
 						handle.scale.copy( tempVector );
-						handle.visible = this.dragging;
+						handle.visible = this.active;
 
 					} else {
 
 						handle.quaternion.copy( quaternion );
 
-						if ( this.dragging ) {
+						if ( this.active ) {
 
 							handle.position.copy( this.worldPositionStart );
 
