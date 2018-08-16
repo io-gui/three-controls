@@ -15,7 +15,7 @@ export class Control extends Object3D {
 		this.visible = false;
 
 		if ( domElement === undefined || !(domElement instanceof HTMLElement) ) {
-			console.warn( 'domElement is mandatory in constructor!' );
+			console.warn( 'Control: domElement is mandatory in constructor!' );
 			domElement = document;
 		}
 
@@ -155,6 +155,11 @@ export class Control extends Object3D {
 			if ( event.value ) this.startAnimation();
 		});
 
+		this.addEventListener( 'enabled-changed', ( event ) => {
+			if ( event.value ) this.startAnimation();
+			else this.stopAnimation();
+		});
+
 	}
 	// Optional animation methods
 	startAnimation() {
@@ -182,6 +187,7 @@ export class Control extends Object3D {
 		cancelAnimationFrame( this._rafID );
 	}
 	update( timestep ) {
+		if ( timestep === undefined ) console.log( 'Control: updated function required timestep parameter!' );
 	}
 	// Defines getter, setter and store for a property
 	defineProperty( propName, defaultValue ) {

@@ -22,15 +22,17 @@ export class DragControls extends Control {
 	constructor( objects, camera, domElement ) {
 		super( domElement );
 
+		if ( camera === undefined || !camera.isCamera ) {
+			console.warn( 'camera is mandatory in constructor!' );
+		}
+
+		// TODO: check objects and implement selection
+
 		this.defineProperties({
 			objects: objects,
 			camera: camera
 		});
 
-		if ( objects instanceof THREE.Camera ) {
-			console.warn( 'THREE.DragControls: Constructor now expects ( objects, this.camera, domElement )' );
-			return;
-		}
 	}
 	onPointerDown( pointers ) {
 		_raycaster.setFromCamera( pointers[0].position, this.camera );

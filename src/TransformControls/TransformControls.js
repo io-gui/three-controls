@@ -324,7 +324,4 @@ export class TransformControls extends Control {
 		this.space = space;
 		console.warn( 'TransformControls: setSpace function has been depricated.' );
 	}
-	update() {
-		console.warn( 'TransformControls: update function has been depricated.' );
-	}
 }

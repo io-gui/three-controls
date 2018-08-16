@@ -37,6 +37,10 @@ export class ViewportControls extends Control {
 	constructor( camera, domElement ) {
 		super( domElement );
 
+		if ( camera === undefined || !camera.isCamera ) {
+			console.warn( 'ViewportControls: camera is mandatory in constructor!' );
+		}
+
 		this.defineProperties({
 			camera: camera,
 			target: new THREE.Vector3(),
