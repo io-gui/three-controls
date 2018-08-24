@@ -6,11 +6,13 @@ import { Object3D, Vector2 } from '../../three.js/build/three.module.js';
 
 // TODO: implement cancel event
 
-// events
-// const changeEvent = { type: 'change' };
-
 class Control extends Object3D {
 
+	get isControl() {
+
+		return true;
+
+	}
 	constructor( domElement ) {
 
 		super();
@@ -23,156 +25,195 @@ class Control extends Object3D {
 
 		}
 
-		Object.defineProperty( this, '_properties', {
-			value: {},
-			enumerable: false
-		} );
-
-		// TODO: implement dragging
+		domElement.setAttribute( 'tabindex', 0 );
 
 		this.defineProperties( {
 			domElement: domElement,
 			pointers: new ControlPointers(),
+			// helper: new Object3D(),
+			selection: null,
 			enabled: true,
-			hovered: true,
 			active: false,
+			enableKeys: true,
 			needsUpdate: false
 		} );
 
 		const scope = this;
 
-		function _onContextMenu( event ) {
+		function _onContextmenu( event ) {
 
-			if ( ! scope.enabled ) return;
-			event.preventDefault();
-			scope.onContextMenu( event );
-			scope.dispatchEvent( { type: "contextmenu", detail: event } );
+			if ( scope.enabled ) {
 
-		}
-		function _onHover( event ) {
-
-			if ( ! scope.enabled ) return;
-			if ( ! this.hovered ) {
-
-				window.addEventListener( "keydown", _onKeyDown, false );
-				window.addEventListener( "keyup", _onKeyUp, false );
+				event.preventDefault();
+				scope.onContextMenu( event );
+				scope.dispatchEvent( { type: "contextmenu", detail: event } );
 
 			}
-			this.hovered = true;
-			scope.pointers.update( event, domElement );
-			scope.onPointerHover( scope.pointers );
-			scope.dispatchEvent( { type: "hover", detail: event } );
 
 		}
-		function _onLeave( event ) {
 
-			if ( ! scope.enabled ) return;
-			if ( this.hovered ) {
+		function _onMouseDown( event ) {
 
-				window.removeEventListener( "keydown", _onKeyDown, false );
-				window.removeEventListener( "keyup", _onKeyUp, false );
+			domElement.removeEventListener( "mousemove", _onMouseHover, false );
+			document.addEventListener( "mousemove", _onMouseMove, false );
+			document.addEventListener( "mouseup", _onMouseUp, false );
+			if ( scope.enabled ) {
+
+				scope.domElement.focus();
+				scope.pointers.update( event, domElement );
+				scope.onPointerDown( scope.pointers );
+				scope.dispatchEvent( { type: "pointerdown", detail: event } );
 
 			}
-			this.hovered = false;
-			scope.pointers.update( event, domElement );
-			scope.onPointerLeave( scope.pointers );
-			scope.dispatchEvent( { type: "pointerleave", detail: event } );
 
 		}
-		function _onDown( event ) {
+		function _onMouseMove( event ) {
 
-			if ( ! scope.enabled ) return;
-			scope.pointers.update( event, domElement );
-			scope.onPointerHover( scope.pointers );
-			scope.onPointerDown( scope.pointers );
-			domElement.removeEventListener( "mousemove", _onHover );
-			document.addEventListener( "mousemove", _onMove, false );
-			document.addEventListener( "mouseup", _onUp, false );
-			scope.dispatchEvent( { type: "pointerdown", detail: event } );
+			if ( scope.enabled ) {
 
-		}
-		function _onMove( event ) {
-
-			if ( ! scope.enabled ) {
-
-				document.removeEventListener( "mousemove", _onMove, false );
-				document.removeEventListener( "mouseup", _onUp, false );
-				return;
+				event.preventDefault();
+				scope.pointers.update( event, domElement );
+				scope.onPointerMove( scope.pointers );
+				scope.dispatchEvent( { type: "pointermove", detail: event } );
 
 			}
-			event.preventDefault();
-			scope.pointers.update( event, domElement );
-			scope.onPointerMove( scope.pointers );
-			scope.dispatchEvent( { type: "pointermove", detail: event } );
 
 		}
-		function _onUp( event ) {
+		function _onMouseHover( event ) {
 
-			if ( ! scope.enabled ) return;
-			scope.pointers.update( event, domElement, ! event.touches );
-			scope.onPointerUp( scope.pointers );
-			domElement.addEventListener( "mousemove", _onHover );
-			document.removeEventListener( "mousemove", _onMove, false );
-			document.removeEventListener( "mouseup", _onUp, false );
-			scope.dispatchEvent( { type: "pointerup", detail: event } );
+			if ( scope.enabled ) {
+
+				scope.pointers.update( event, domElement );
+				scope.onPointerHover( scope.pointers );
+				scope.dispatchEvent( { type: "hover", detail: event } );
+
+			}
 
 		}
+		function _onMouseUp( event ) {
+
+			domElement.addEventListener( "mousemove", _onMouseHover, false );
+			document.removeEventListener( "mousemove", _onMouseMove, false );
+			document.removeEventListener( "mouseup", _onMouseUp, false );
+			if ( scope.enabled ) {
+
+				scope.pointers.update( event, domElement, true );
+				scope.onPointerUp( scope.pointers );
+				scope.dispatchEvent( { type: "pointerup", detail: event } );
+
+			}
+
+		}
+
+		function _onTouchDown( event ) {
+
+			if ( scope.enabled ) {
+
+				scope.pointers.update( event, domElement );
+				scope.onPointerDown( scope.pointers );
+				scope.dispatchEvent( { type: "pointerdown", detail: event } );
+
+			}
+
+		}
+		function _onTouchMove( event ) {
+
+			if ( scope.enabled ) {
+
+				event.preventDefault();
+				scope.pointers.update( event, domElement );
+				scope.onPointerMove( scope.pointers );
+				scope.dispatchEvent( { type: "pointermove", detail: event } );
+
+			}
+
+		}
+		function _onTouchHover( event ) {
+
+			if ( scope.enabled ) {
+
+				scope.pointers.update( event, domElement );
+				scope.onPointerHover( scope.pointers );
+				scope.dispatchEvent( { type: "pointerHover", detail: event } );
+
+			}
+
+		}
+		function _onTouchUp( event ) {
+
+			if ( scope.enabled ) {
+
+				scope.pointers.update( event, domElement, ! event.touches );
+				scope.onPointerUp( scope.pointers );
+				scope.dispatchEvent( { type: "pointerup", detail: event } );
+
+			}
+
+		}
+
 		function _onKeyDown( event ) {
 
-			if ( ! scope.enabled ) return;
-			scope.onKeyDown( event );
-			scope.dispatchEvent( { type: "keydown", detail: event } );
+			if ( scope.enabled && scope.enableKeys ) {
+
+				scope.onKeyDown( event );
+				scope.dispatchEvent( { type: "keydown", detail: event } );
+
+			}
 
 		}
 		function _onKeyUp( event ) {
 
-			if ( ! scope.enabled ) return;
-			scope.onKeyUp( event );
-			scope.dispatchEvent( { type: "keyup", detail: event } );
+			if ( scope.enabled && scope.enableKeys ) {
+
+				scope.onKeyUp( event );
+				scope.dispatchEvent( { type: "keyup", detail: event } );
+
+			}
 
 		}
 		function _onWheel( event ) {
 
-			if ( ! scope.enabled ) return;
-			event.preventDefault();
-			// TODO: test on multiple platforms/browsers
-			// Normalize deltaY due to https://bugzilla.mozilla.org/show_bug.cgi?id=1392460
-			const delta = event.deltaY > 0 ? 1 : - 1;
-			scope.onWheel( delta );
-			scope.dispatchEvent( { type: "wheel", detail: event } );
+			if ( scope.enabled ) {
+
+				event.preventDefault();
+				// TODO: test on multiple platforms/browsers
+				// Normalize deltaY due to https://bugzilla.mozilla.org/show_bug.cgi?id=1392460
+				const delta = event.deltaY > 0 ? 1 : - 1;
+				scope.onWheel( delta );
+				scope.dispatchEvent( { type: "wheel", detail: event } );
+
+			}
 
 		}
 
 		{
 
-			domElement.addEventListener( "mousedown", _onDown, false );
-			domElement.addEventListener( "touchstart", _onDown, false );
-			domElement.addEventListener( "mousemove", _onHover, false );
-			domElement.addEventListener( "touchmove", _onMove, false );
-			domElement.addEventListener( "touchend", _onUp, false );
-			domElement.addEventListener( "touchcancel", _onLeave, false );
-			domElement.addEventListener( "touchleave", _onLeave, false );
-			domElement.addEventListener( "mouseleave", _onLeave, false );
-			domElement.addEventListener( "contextmenu", _onContextMenu, false );
+			domElement.addEventListener( "contextmenu", _onContextmenu, false );
+			domElement.addEventListener( "mousedown", _onMouseDown, false );
+			domElement.addEventListener( "mousemove", _onMouseHover, false );
+			domElement.addEventListener( "touchstart", _onTouchHover, false );
+			domElement.addEventListener( "touchstart", _onTouchDown, false );
+			domElement.addEventListener( "touchmove", _onTouchMove, false );
+			domElement.addEventListener( "touchend", _onTouchUp, false );
+			domElement.addEventListener( "keydown", _onKeyDown, false );
+			domElement.addEventListener( "keyup", _onKeyUp, false );
 			domElement.addEventListener( "wheel", _onWheel, false );
 
 		}
 
 		this.dispose = function () {
 
-			domElement.removeEventListener( "mousedown", _onDown );
-			domElement.removeEventListener( "touchstart", _onDown );
-			domElement.removeEventListener( "mousemove", _onHover );
-			document.removeEventListener( "mousemove", _onMove );
-			domElement.removeEventListener( "touchmove", _onMove );
-			document.removeEventListener( "mouseup", _onUp );
-			domElement.removeEventListener( "touchend", _onUp );
-			domElement.removeEventListener( "touchcancel", _onLeave );
-			domElement.removeEventListener( "touchleave", _onLeave );
-			domElement.removeEventListener( "mouseleave", _onLeave );
-			domElement.removeEventListener( "contextmenu", _onContextMenu );
-			window.removeEventListener( "keydown", _onKeyDown, false );
-			window.removeEventListener( "keyup", _onKeyUp, false );
+			domElement.removeEventListener( "contextmenu", _onContextmenu, false );
+			domElement.removeEventListener( "mousedown", _onMouseDown, false );
+			domElement.removeEventListener( "mousemove", _onMouseHover, false );
+			document.removeEventListener( "mousemove", _onMouseMove, false );
+			document.removeEventListener( "mouseup", _onMouseUp, false );
+			domElement.removeEventListener( "touchstart", _onTouchHover, false );
+			domElement.removeEventListener( "touchstart", _onTouchDown, false );
+			domElement.removeEventListener( "touchmove", _onTouchMove, false );
+			domElement.removeEventListener( "touchend", _onTouchUp, false );
+			domElement.removeEventListener( "keydown", _onKeyDown, false );
+			domElement.removeEventListener( "keyup", _onKeyUp, false );
 			domElement.removeEventListener( "wheel", _onWheel, false );
 			this.stopAnimation();
 
@@ -196,10 +237,13 @@ class Control extends Object3D {
 
 		} );
 
+		this.needsUpdate = true;
+
 	}
 	// Optional animation methods
 	startAnimation() {
 
+		// console.log('start!');
 		if ( ! this._animationActive ) {
 
 			this._animationActive = true;
@@ -230,17 +274,40 @@ class Control extends Object3D {
 	}
 	stopAnimation() {
 
+		// console.log('stop!');
 		this._animationActive = false;
 		cancelAnimationFrame( this._rafID );
 
 	}
 	update( timestep ) {
 
-		if ( timestep === undefined ) console.log( 'Control: updated function required timestep parameter!' );
+		if ( timestep === undefined ) console.log( 'Control: update function requires timestep parameter!' );
+		this.stopAnimation();
+		this.needsUpdate = false;
 
 	}
+	// Control methods. Implement in subclass!
+
+	onContextmenu() {} // event
+	onPointerHover() {} // pointer
+	onPointerDown() {} // pointer
+	onPointerMove() {} // pointer
+	onPointerUp() {} // pointer
+	onPointerLeave() {} // pointer
+	onKeyDown() {} // event
+	onKeyUp() {} // event
+	onWheel() {} // event
 	// Defines getter, setter and store for a property
 	defineProperty( propName, defaultValue ) {
+
+		if ( ! this.hasOwnProperty( '_properties' ) ) {
+
+			Object.defineProperty( this, '_properties', {
+				value: {},
+				enumerable: false
+			} );
+
+		}
 
 		this._properties[ propName ] = defaultValue;
 		Object.defineProperty( this, propName, {
@@ -255,6 +322,7 @@ class Control extends Object3D {
 
 					this._properties[ propName ] = value;
 					this.dispatchEvent( { type: propName + "-changed", value: value } );
+					// TODO: consider removing (Too many initial events)
 					this.dispatchEvent( { type: "change", prop: propName, value: value } );
 
 				}
@@ -265,7 +333,7 @@ class Control extends Object3D {
 		setTimeout( () => {
 
 			this.dispatchEvent( { type: propName + "-changed", value: defaultValue } );
-			this.dispatchEvent( { type: "change", prop: propName, value: defaultValue } );
+			// this.dispatchEvent( { type: "change", prop: propName, value: defaultValue });
 
 		} );
 
@@ -279,15 +347,6 @@ class Control extends Object3D {
 		}
 
 	}
-	onContextMenu() {} // event
-	onPointerHover() {} // pointer
-	onPointerDown() {} // pointer
-	onPointerMove() {} // pointer
-	onPointerUp() {} // pointer
-	onPointerLeave() {} // pointer
-	onKeyDown() {} // event
-	onKeyUp() {} // event
-	onWheel() {} // event
 	// Deprication warnings
 	addEventListener( type, listener ) {
 
@@ -358,8 +417,8 @@ class Pointer {
 	update( pointer, buttons, dt ) {
 
 		let button = 0;
-		if ( event.buttons === 2 ) button = 1;
-		if ( event.buttons === 4 ) button = 2;
+		if ( buttons === 2 ) button = 1;
+		if ( buttons === 4 ) button = 2;
 		this.previous.copy( this.position );
 		this.movement.copy( pointer.position ).sub( this.position );
 		this.velocity.copy( this.movement ).multiplyScalar( 1 / dt );

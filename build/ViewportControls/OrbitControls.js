@@ -29,6 +29,11 @@ const tempQuatInverse = tempQuat.clone().inverse();
 
 class OrbitControls extends ViewportControls {
 
+	get isOrbitControls() {
+
+		return true;
+
+	}
 	constructor( camera, domElement ) {
 
 		super( camera, domElement );
@@ -49,7 +54,7 @@ class OrbitControls extends ViewportControls {
 		this._spherical = new Spherical();
 
 	}
-	orbitUpdate( orbit ) {
+	orbit( orbit ) {
 
 		// camera.up is the orbit axis
 		tempQuat.setFromUnitVectors( this.camera.up, unitY );
@@ -67,7 +72,7 @@ class OrbitControls extends ViewportControls {
 		this._spherical.phi = Math.max( this.minPolarAngle, Math.min( this.maxPolarAngle, this._spherical.phi ) );
 
 	}
-	dollyUpdate( dolly ) {
+	dolly( dolly ) {
 
 		let dollyScale = ( dolly > 0 ) ? 1 - dolly : 1 / ( 1 + dolly );
 		if ( this.camera.isPerspectiveCamera ) {
@@ -86,7 +91,7 @@ class OrbitControls extends ViewportControls {
 		this._spherical.radius = Math.max( this.minDistance, Math.min( this.maxDistance, this._spherical.radius ) );
 
 	}
-	panUpdate( pan ) {
+	pan( pan ) {
 
 		// move target to panned location
 
@@ -132,6 +137,11 @@ class OrbitControls extends ViewportControls {
 		offset.applyQuaternion( tempQuatInverse );
 		this.camera.position.copy( this.target ).add( offset );
 		this.camera.lookAt( this.target );
+
+	}
+	focus() {
+
+		console.log( this.selection );
 
 	}
 	// utility getters

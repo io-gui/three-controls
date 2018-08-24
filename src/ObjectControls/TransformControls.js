@@ -2,32 +2,32 @@
  * @author arodic / https://github.com/arodic
  */
 
-import * as THREE from "../../../three.js/build/three.module.js";
+import { Raycaster, Vector3, Quaternion } from "../../../three.js/build/three.module.js";
 import {ObjectControls} from "./ObjectControls.js";
 import {TransformControlsGizmo} from "./TransformControlsGizmo.js";
 import {TransformControlsPlane} from "./TransformControlsPlane.js";
 
 // Reusable utility variables
-const _ray = new THREE.Raycaster();
-const _tempVector = new THREE.Vector3();
-const _tempVector2 = new THREE.Vector3();
-const _tempQuaternion = new THREE.Quaternion();
+const _ray = new Raycaster();
+const _tempVector = new Vector3();
+const _tempVector2 = new Vector3();
+const _tempQuaternion = new Quaternion();
 const _unit = {
-	X: new THREE.Vector3( 1, 0, 0 ),
-	Y: new THREE.Vector3( 0, 1, 0 ),
-	Z: new THREE.Vector3( 0, 0, 1 )
+	X: new Vector3( 1, 0, 0 ),
+	Y: new Vector3( 0, 1, 0 ),
+	Z: new Vector3( 0, 0, 1 )
 };
-const _identityQuaternion = new THREE.Quaternion();
-const _alignVector = new THREE.Vector3();
+const _identityQuaternion = new Quaternion();
+const _alignVector = new Vector3();
 
 // events
 const changeEvent = { type: "change" };
 
 export class TransformControls extends ObjectControls {
 	get isTransformControls() { return true; }
-	constructor( camera, domElement ) {
+	constructor( camera, domElement, object ) {
 
-		super( domElement );
+		super( camera, domElement, object );
 
 		this._gizmo = new TransformControlsGizmo();
 		this.add( this._gizmo );
@@ -36,37 +36,34 @@ export class TransformControls extends ObjectControls {
 		this.add( this._plane );
 
 		this.defineProperties({
-			camera: camera,
-			object: undefined,
 			axis: null,
 			mode: "translate",
 			translationSnap: null,
 			rotationSnap: null,
 			space: "world",
 			size: 1,
-			hideX: false,
-			hideY: false,
-			hideZ: false,
+			showX: true,
+			showY: true,
+			showZ: true,
 			// TODO: remove properties unused in plane and gizmo
-			pointStart: new THREE.Vector3(),
-			pointEnd: new THREE.Vector3(),
-			rotationAxis: new THREE.Vector3(),
+			pointStart: new Vector3(),
+			pointEnd: new Vector3(),
+			rotationAxis: new Vector3(),
 			rotationAngle: 0,
-			cameraPosition: new THREE.Vector3(),
-			cameraQuaternion: new THREE.Quaternion(),
-			cameraScale: new THREE.Vector3(),
-			worldPositionStart: new THREE.Vector3(),
-			worldQuaternionStart: new THREE.Quaternion(),
-			worldScaleStart: new THREE.Vector3(), // TODO: remove
-			worldPosition: new THREE.Vector3(),
-			worldQuaternion: new THREE.Quaternion(),
-			worldScale: new THREE.Vector3(),// TODO: remove
-			eye: new THREE.Vector3(),
-			positionStart: new THREE.Vector3(),
-			quaternionStart: new THREE.Quaternion(),
-			scaleStart: new THREE.Vector3()
+			cameraPosition: new Vector3(),
+			cameraQuaternion: new Quaternion(),
+			cameraScale: new Vector3(),
+			worldPositionStart: new Vector3(),
+			worldQuaternionStart: new Quaternion(),
+			worldScaleStart: new Vector3(), // TODO: remove
+			worldPosition: new Vector3(),
+			worldQuaternion: new Quaternion(),
+			worldScale: new Vector3(),// TODO: remove
+			eye: new Vector3(),
+			positionStart: new Vector3(),
+			quaternionStart: new Quaternion(),
+			scaleStart: new Vector3()
 		});
-
 
 		// TODO: implement better data binding
 		// Defined properties are passed down to gizmo and plane

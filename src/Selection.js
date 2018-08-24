@@ -2,7 +2,7 @@
  * @author arodic / https://github.com/arodic
  */
 
-import {Object3D, Matrix4, Vector3, Quaternion, Euler} from "../../three.js/build/three.module.js";
+import {Object3D, Vector3, Quaternion} from "../../three.js/build/three.module.js";
 
 const position = new Vector3();
 const quaternion = new Quaternion();
@@ -22,6 +22,7 @@ export class Selection extends Object3D {
 		this.visible = false;
 	}
 	add( list, includeChildren, filter ) {
+		console.log(list, includeChildren, filter);
 		if ( !( list instanceof Array ) ) list = [ list ];
 		for ( let i = 0; i < list.length; i++ ) {
 			if ( this.selected.indexOf( list[i] ) !== -1 ) {
@@ -31,12 +32,16 @@ export class Selection extends Object3D {
 		}
 	}
 	addFirst( list, includeChildren, filter ) {
+		console.log(list, includeChildren, filter);
 	}
 	remove( list, includeChildren, filter ) {
+		console.log(list, includeChildren, filter);
 	}
 	replace( list, includeChildren, filter ) {
+		console.log(list, includeChildren, filter);
 	}
 	toggle( list, includeChildren, filter ) {
+		console.log(list, includeChildren, filter);
 	}
 	clear() {
 
@@ -53,7 +58,6 @@ export class Selection extends Object3D {
 		quaternion.multiply( quaternionOld.inverse() );
 		scale.sub( scaleOld );
 
-		console.log(this.selected)
 		for (let i = 0; i < this.selected.length; i++) {
 			this.selected[i].position.add( position );
 			this.selected[i].quaternion.multiply( quaternion );

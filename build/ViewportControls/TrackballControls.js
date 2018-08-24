@@ -29,6 +29,11 @@ const moveDirection = new Vector3();
 
 class TrackballControls extends ViewportControls {
 
+	get isTrackballControls() {
+
+		return true;
+
+	}
 	constructor( camera, domElement ) {
 
 		super( camera, domElement );
@@ -39,7 +44,7 @@ class TrackballControls extends ViewportControls {
 		} );
 
 	}
-	orbitUpdate( orbit ) {
+	orbit( orbit ) {
 
 		eye.copy( this.camera.position ).sub( this.target );
 
@@ -55,13 +60,13 @@ class TrackballControls extends ViewportControls {
 		this.camera.up.applyQuaternion( rotationQuat );
 
 	}
-	dollyUpdate( dolly ) {
+	dolly( dolly ) {
 
 		let dollyScale = ( dolly > 0 ) ? 1 - dolly : 1 / ( 1 + dolly );
 		eye.multiplyScalar( dollyScale );
 
 	}
-	panUpdate( pan ) {
+	pan( pan ) {
 
 		panDirection.copy( eye ).cross( this.camera.up ).setLength( pan.x * eye.length() );
 		panDirection.add( upDirection.copy( this.camera.up ).setLength( - pan.y * eye.length() ) );

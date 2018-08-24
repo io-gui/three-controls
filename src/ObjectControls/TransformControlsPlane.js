@@ -1,24 +1,28 @@
-import * as THREE from "../../../three.js/build/three.module.js";
+import {
+	Mesh, PlaneBufferGeometry, MeshBasicMaterial, DoubleSide,
+	Vector3, Matrix4, Quaternion, Object3D
+} from "../../../three.js/build/three.module.js";
 
-export class TransformControlsPlane extends THREE.Mesh {
+export class TransformControlsPlane extends Mesh {
+	get isTransformControlsPlane() { return true; }
 	constructor() {
 
 		super(
-			new THREE.PlaneBufferGeometry( 100000, 100000, 2, 2 ),
-			new THREE.MeshBasicMaterial( { visible: false, wireframe: true, side: THREE.DoubleSide, transparent: true, opacity: 0.1 } )
+			new PlaneBufferGeometry( 100000, 100000, 2, 2 ),
+			new MeshBasicMaterial( { visible: false, wireframe: true, side: DoubleSide, transparent: true, opacity: 0.1 } )
 		);
 
 		this.type = 'TransformControlsPlane';
 
-		const unitX = new THREE.Vector3( 1, 0, 0 );
-		const unitY = new THREE.Vector3( 0, 1, 0 );
-		const unitZ = new THREE.Vector3( 0, 0, 1 );
+		const unitX = new Vector3( 1, 0, 0 );
+		const unitY = new Vector3( 0, 1, 0 );
+		const unitZ = new Vector3( 0, 0, 1 );
 
-		const tempVector = new THREE.Vector3();
-		const dirVector = new THREE.Vector3();
-		const alignVector = new THREE.Vector3();
-		const tempMatrix = new THREE.Matrix4();
-		const identityQuaternion = new THREE.Quaternion();
+		const tempVector = new Vector3();
+		const dirVector = new Vector3();
+		const alignVector = new Vector3();
+		const tempMatrix = new Matrix4();
+		const identityQuaternion = new Quaternion();
 
 		this.updateMatrixWorld = function() {
 
@@ -31,7 +35,6 @@ export class TransformControlsPlane extends THREE.Mesh {
 			unitZ.set( 0, 0, 1 ).applyQuaternion( this.space === "local" ? this.worldQuaternion : identityQuaternion );
 
 			// Align the plane for current transform mode, axis and this.space.
-
 			alignVector.copy( unitY );
 
 			switch ( this.mode ) {
@@ -71,22 +74,14 @@ export class TransformControlsPlane extends THREE.Mesh {
 					// special case for rotate
 					dirVector.set( 0, 0, 0 );
 			}
-
 			if ( dirVector.length() === 0 ) {
-
 				// If in rotate mode, make the plane parallel to camera
 				this.quaternion.copy( this.cameraQuaternion );
-
 			} else {
-
 				tempMatrix.lookAt( tempVector.set( 0, 0, 0 ), dirVector, alignVector );
-
 				this.quaternion.setFromRotationMatrix( tempMatrix );
-
 			}
-
-			THREE.Object3D.prototype.updateMatrixWorld.call( this );
-
+			Object3D.prototype.updateMatrixWorld.call( this );
 		};
 	}
 }

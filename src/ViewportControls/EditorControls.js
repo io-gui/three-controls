@@ -10,17 +10,16 @@ import * as THREE from "../../../three.js/build/three.module.js";
 import {ViewportControls} from "./ViewportControls.js";
 
 // Temp variables
+const center = new THREE.Vector3();
 const delta = new THREE.Vector3();
 const box = new THREE.Box3();
 const normalMatrix = new THREE.Matrix3();
 const spherical = new THREE.Spherical();
-
-// events
-const changeEvent = { type: 'change' };
+const sphere = new THREE.Sphere();
 
 export class EditorControls extends ViewportControls {
 	get isEditorControls() { return true; }
-	orbitUpdate( orbit ) {
+	orbit( orbit ) {
 		delta.copy( this.camera.position ).sub( this.target );
 		spherical.setFromVector3( delta );
 		spherical.theta -= orbit.x;
@@ -30,7 +29,7 @@ export class EditorControls extends ViewportControls {
 		this.camera.position.copy( this.target ).add( delta );
 		this.camera.lookAt( this.target );
 	}
-	dollyUpdate( dolly ) {
+	dolly( dolly ) {
 		delta.set( 0, 0, dolly );
 		let distance = this.camera.position.distanceTo( this.target );
 		delta.multiplyScalar( distance * this.dollySpeed );
@@ -38,7 +37,7 @@ export class EditorControls extends ViewportControls {
 		delta.applyMatrix3( normalMatrix.getNormalMatrix( this.camera.matrix ) );
 		this.camera.position.add( delta );
 	}
-	panUpdate( pan ) {
+	pan( pan ) {
 		let distance = this.camera.position.distanceTo( this.target );
 		delta.set( -pan.x, -pan.y, 0 );
 		delta.multiplyScalar( distance );
@@ -46,22 +45,22 @@ export class EditorControls extends ViewportControls {
 		this.camera.position.add( delta );
 		this.target.add( delta );
 	}
-	focus( target ) {
-		let distance;
-		box.setFromObject( target );
-		if ( box.isEmpty() === false ) {
-			this.center.copy( box.getCenter() );
-			distance = box.getBoundingSphere().radius;
-		} else {
-			// Focusing on an Group, AmbientLight, etc
-			this.center.setFromMatrixPosition( target.matrixWorld );
-			distance = 0.1;
+	focus() {
+		if ( this.object ) {
+			let distance;
+			box.setFromObject( this.object );
+			if ( box.isEmpty() === false ) {
+				this.target.copy( box.getCenter( center ) );
+				distance = box.getBoundingSphere( sphere ).radius;
+			} else {
+				// Focusing on an Group, AmbientLight, etc
+				this.target.setFromMatrixPosition( this.object.matrixWorld );
+				distance = 0.1;
+			}
+			delta.set( 0, 0, 1 );
+			delta.applyQuaternion( this.camera.quaternion );
+			delta.multiplyScalar( distance * 4 );
+			this.camera.position.copy( this.target ).add( delta );
 		}
-		delta.set( 0, 0, 1 );
-		delta.applyQuaternion( this.camera.quaternion );
-		delta.multiplyScalar( distance * 4 );
-		this.camera.position.copy( this.target ).add( delta );
-
-		this.dispatchEvent( changeEvent );
 	}
 }

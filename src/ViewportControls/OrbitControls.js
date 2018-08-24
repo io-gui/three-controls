@@ -41,13 +41,11 @@ export class OrbitControls extends ViewportControls {
 			maxPolarAngle: Math.PI, // radians ( 0 to Math.PI )
 			minAzimuthAngle: - Infinity, // radians ( -Math.PI to Math.PI )
 			maxAzimuthAngle: Infinity, // radians ( -Math.PI to Math.PI )
-			screenSpacePanning: false
+			screenSpacePanning: false,
+			_spherical: new THREE.Spherical()
 		} );
-
-		// Internals
-		this._spherical = new THREE.Spherical();
 	}
-	orbitUpdate( orbit ) {
+	orbit( orbit ) {
 		// camera.up is the orbit axis
 		tempQuat.setFromUnitVectors( this.camera.up, unitY );
 		tempQuatInverse.copy( tempQuat ).inverse();
@@ -63,7 +61,7 @@ export class OrbitControls extends ViewportControls {
 		// restrict phi to be between desired limits
 		this._spherical.phi = Math.max( this.minPolarAngle, Math.min( this.maxPolarAngle, this._spherical.phi ) );
 	}
-	dollyUpdate( dolly ) {
+	dolly( dolly ) {
 		let dollyScale = ( dolly > 0 ) ? 1 - dolly : 1 / ( 1 + dolly );
 		if ( this.camera.isPerspectiveCamera ) {
 			this._spherical.radius /= dollyScale;
@@ -76,7 +74,7 @@ export class OrbitControls extends ViewportControls {
 		// restrict radius to be between desired limits
 		this._spherical.radius = Math.max( this.minDistance, Math.min( this.maxDistance, this._spherical.radius ) );
 	}
-	panUpdate( pan ) {
+	pan( pan ) {
 		// move target to panned location
 
 		let panLeftDist;
@@ -113,6 +111,9 @@ export class OrbitControls extends ViewportControls {
 		offset.applyQuaternion( tempQuatInverse );
 		this.camera.position.copy( this.target ).add( offset );
 		this.camera.lookAt( this.target );
+	}
+	focus() {
+		console.log( this.selection );
 	}
 	// utility getters
 	get polarAngle() {

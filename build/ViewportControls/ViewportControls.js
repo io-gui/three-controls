@@ -14,7 +14,7 @@ import { Control } from '../Control.js';
  */
 
 const STATE = { NONE: - 1, ROTATE: 0, DOLLY: 1, PAN: 2, DOLLY_PAN: 3 };
-const KEYS = { LEFT: 37, UP: 38, RIGHT: 39, BOTTOM: 40, A: 65, S: 83, D: 68, W: 87 }; // Direction keys
+const KEYS = { LEFT: 37, UP: 38, RIGHT: 39, BOTTOM: 40, A: 65, S: 83, D: 68, W: 87, F: 70 }; // Direction keys
 const BUTTON = { LEFT: MOUSE.LEFT, MIDDLE: MOUSE.MIDDLE, RIGHT: MOUSE.RIGHT }; // Mouse buttons
 const EPS = 0.000001;
 
@@ -37,6 +37,11 @@ const changeEvent = { type: 'change' };
 
 class ViewportControls extends Control {
 
+	get isViewportControls() {
+
+		return true;
+
+	}
 	constructor( camera, domElement ) {
 
 		super( domElement );
@@ -53,13 +58,12 @@ class ViewportControls extends Control {
 			enableOrbit: true,
 			enableDolly: true,
 			enablePan: true,
-			enableKeys: true,
 			orbitSpeed: 1.0,
 			dollySpeed: 1.0,
 			panSpeed: 1.0,
 			keyPanSpeed: 0.1,
-			wheelDollySpeed: 1,
-			autoRotate: true,
+			wheelDollySpeed: 0.05,
+			autoRotate: false,
 			autoRotateSpeed: 0.5,
 			enableDamping: true,
 			dampingFactor: 0.05,
@@ -98,18 +102,12 @@ class ViewportControls extends Control {
 
 		this.addEventListener( 'state-changed', () => {
 
-			setTimeout( () => {
-
-				this.needsUpdate = true;
-
-			} );
+			this.needsUpdate = true;
 
 		} );
 
 	}
-	animate( timestep ) {
-
-		super.animate( timestep );
+	update( timestep ) {
 
 		let dt = timestep / 1000;
 
@@ -161,17 +159,6 @@ class ViewportControls extends Control {
 		maxVelocity = Math.max( maxVelocity, Math.abs( this._dollyInertia ) );
 		if ( maxVelocity < EPS ) this.stopAnimation();
 
-	}
-	orbitUpdate() {
-	}
-	dollyUpdate() {
-	}
-	panUpdate() {
-	}
-	update( timestep ) {
-
-		super.update( timestep );
-
 		// set inertiae from current offsets
 		if ( this.enableDamping ) {
 
@@ -193,9 +180,9 @@ class ViewportControls extends Control {
 
 		}
 
-		this.orbitUpdate( orbit.copy( this._orbitOffset ) );
-		this.dollyUpdate( this._dollyOffset );
-		this.panUpdate( pan.copy( this._panOffset ) );
+		this.orbit( orbit.copy( this._orbitOffset ) );
+		this.dolly( this._dollyOffset );
+		this.pan( pan.copy( this._panOffset ) );
 
 		this._orbitOffset.set( 0, 0 );
 		this._panOffset.set( 0, 0 );
@@ -222,31 +209,36 @@ class ViewportControls extends Control {
 
 							if ( ! this.enablePan ) return;
 							this.state = STATE.PAN;
-							this.pan( direction.multiplyScalar( this.panSpeed ) );
+							this.active = true;
+							this._setPan( direction.multiplyScalar( this.panSpeed ) );
 
 						} else if ( pointers.altKey ) {
 
 							if ( ! this.enableDolly ) return;
 							this.state = STATE.DOLLY;
-							this.dolly( pointers[ 0 ].movement.y * this.dollySpeed );
+							this.active = true;
+							this._setDolly( pointers[ 0 ].movement.y * this.dollySpeed );
 
 						} else {
 
 							if ( ! this.enableOrbit ) return;
 							this.state = STATE.ROTATE;
-							this.orbit( direction.multiplyScalar( this.orbitSpeed ) );
+							this.active = true;
+							this._setOrbit( direction.multiplyScalar( this.orbitSpeed ) );
 
 						}
 						break;
 					case BUTTON.MIDDLE:
 						if ( ! this.enableDolly ) return;
 						this.state = STATE.DOLLY;
-						this.dolly( pointers[ 0 ].movement.y * this.dollySpeed );
+						this.active = true;
+						this._setDolly( pointers[ 0 ].movement.y * this.dollySpeed );
 						break;
 					case BUTTON.RIGHT:
 						if ( ! this.enablePan ) return;
 						this.state = STATE.PAN;
-						this.pan( direction.multiplyScalar( this.panSpeed ) );
+						this.active = true;
+						this._setPan( direction.multiplyScalar( this.panSpeed ) );
 						break;
 
 				}
@@ -255,18 +247,19 @@ class ViewportControls extends Control {
 				// two-fingered touch: dolly-pan
 				if ( ! this.enableDolly && ! this.enablePan ) return;
 				this.state = STATE.DOLLY_PAN;
+				this.active = true;
 				if ( this.enableDolly ) {
 
 					// TODO: apply aspectMultiplier
 					let distance = pointers[ 0 ].position.distanceTo( pointers[ 1 ].position );
 					let prevDistance = pointers[ 0 ].previous.distanceTo( pointers[ 1 ].previous );
-					this.dolly( ( prevDistance - distance ) * this.dollySpeed );
+					this._setDolly( ( prevDistance - distance ) * this.dollySpeed );
 
 				}
 				if ( this.enablePan ) {
 
 					direction.copy( pointers[ 0 ].movement ).add( pointers[ 1 ].movement ).multiply( aspectMultiplier );
-					this.pan( direction.multiplyScalar( this.panSpeed ) );
+					this._setPan( direction.multiplyScalar( this.panSpeed ) );
 
 				}
 				break;
@@ -276,43 +269,50 @@ class ViewportControls extends Control {
 	}
 	onPointerUp( pointers ) {
 
-		if ( pointers.length === 0 ) this.state = STATE.NONE;
+		if ( pointers.length === 0 ) {
+
+			this.state = STATE.NONE;
+			this.active = false;
+
+		}
 
 	}
 	onKeyDown( event ) {
 
-		if ( ! this.enableKeys || ! this.enablePan ) return;
+		if ( ! this.enablePan ) return;
 		switch ( event.keyCode ) {
 
 			case KEYS.UP:
-				this.pan( direction.set( 0, this.keyPanSpeed ) );
+				this._setPan( direction.set( 0, this.keyPanSpeed ) );
 				break;
 			case KEYS.BOTTOM:
-				this.pan( direction.set( 0, - this.keyPanSpeed ) );
+				this._setPan( direction.set( 0, - this.keyPanSpeed ) );
 				break;
 			case KEYS.LEFT:
 			case KEYS.A:
-				this.pan( direction.set( this.keyPanSpeed, 0 ) );
+				this._setPan( direction.set( this.keyPanSpeed, 0 ) );
 				break;
 			case KEYS.RIGHT:
 			case KEYS.D:
-				this.pan( direction.set( - this.keyPanSpeed, 0 ) );
+				this._setPan( direction.set( - this.keyPanSpeed, 0 ) );
 				break;
 			case KEYS.W:
-				this.dolly( - this.keyPanSpeed );
+				this._setDolly( - this.keyPanSpeed );
 				break;
 			case KEYS.S:
-				this.dolly( this.keyPanSpeed );
+				this._setDolly( this.keyPanSpeed );
+				break;
+			case KEYS.F:
+				this._setFocus();
 				break;
 
 		}
 
 	}
-	onWheel( event ) {
+	onWheel( delta ) {
 
 		if ( ! this.enableDolly || ( this.state !== STATE.NONE && this.state !== STATE.ROTATE ) ) return;
-		event.stopPropagation();
-		this.dolly( event.deltaY * this.wheelDollySpeed );
+		this._setDolly( delta * this.wheelDollySpeed );
 
 	}
 	// control methods
@@ -326,22 +326,54 @@ class ViewportControls extends Control {
 		this.camera = undefined;
 
 	}
-	pan( dir ) {
+	_setPan( dir ) {
 
 		this._panOffset.copy( dir );
 		this.needsUpdate = true;
 
 	}
-	dolly( dir ) {
+	_setDolly( dir ) {
 
 		this._dollyOffset = dir;
 		this.needsUpdate = true;
 
 	}
-	orbit( dir ) {
+	_setOrbit( dir ) {
 
 		this._orbitOffset.copy( dir );
 		this.needsUpdate = true;
+
+	}
+	_setFocus() {
+
+		if ( this.selection ) {
+
+			this.focus( this.selection );
+			// this.dispatchEvent( changeEvent );
+			this.needsUpdate = true;
+
+		}
+
+	}
+	// ViewportControl control methods. Implement in subclass!
+	pan() {
+
+		console.warn( 'ViewportControls: pan() not implemented!' );
+
+	}
+	dolly() {
+
+		console.warn( 'ViewportControls: dolly() not implemented!' );
+
+	}
+	orbit() {
+
+		console.warn( 'ViewportControls: orbit() not implemented!' );
+
+	}
+	focus() {
+
+		console.warn( 'ViewportControls: focus() not implemented!' );
 
 	}
 	// Deprication warnings

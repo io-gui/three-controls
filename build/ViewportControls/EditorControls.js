@@ -1,4 +1,4 @@
-import { Vector3, Box3, Matrix3, Spherical } from '../../../three.js/build/three.module.js';
+import { Vector3, Box3, Matrix3, Spherical, Sphere } from '../../../three.js/build/three.module.js';
 import { ViewportControls } from './ViewportControls.js';
 
 /**
@@ -10,17 +10,21 @@ import { ViewportControls } from './ViewportControls.js';
  */
 
 // Temp variables
+const center = new Vector3();
 const delta = new Vector3();
 const box = new Box3();
 const normalMatrix = new Matrix3();
 const spherical = new Spherical();
-
-// events
-const changeEvent = { type: 'change' };
+const sphere = new Sphere();
 
 class EditorControls extends ViewportControls {
 
-	orbitUpdate( orbit ) {
+	get isEditorControls() {
+
+		return true;
+
+	}
+	orbit( orbit ) {
 
 		delta.copy( this.camera.position ).sub( this.target );
 		spherical.setFromVector3( delta );
@@ -32,7 +36,7 @@ class EditorControls extends ViewportControls {
 		this.camera.lookAt( this.target );
 
 	}
-	dollyUpdate( dolly ) {
+	dolly( dolly ) {
 
 		delta.set( 0, 0, dolly );
 		let distance = this.camera.position.distanceTo( this.target );
@@ -42,7 +46,7 @@ class EditorControls extends ViewportControls {
 		this.camera.position.add( delta );
 
 	}
-	panUpdate( pan ) {
+	pan( pan ) {
 
 		let distance = this.camera.position.distanceTo( this.target );
 		delta.set( - pan.x, - pan.y, 0 );
@@ -58,13 +62,13 @@ class EditorControls extends ViewportControls {
 		box.setFromObject( target );
 		if ( box.isEmpty() === false ) {
 
-			this.center.copy( box.getCenter() );
-			distance = box.getBoundingSphere().radius;
+			this.target.copy( box.getCenter( center ) );
+			distance = box.getBoundingSphere( sphere ).radius;
 
 		} else {
 
 			// Focusing on an Group, AmbientLight, etc
-			this.center.setFromMatrixPosition( target.matrixWorld );
+			this.target.setFromMatrixPosition( target.matrixWorld );
 			distance = 0.1;
 
 		}
@@ -72,8 +76,6 @@ class EditorControls extends ViewportControls {
 		delta.applyQuaternion( this.camera.quaternion );
 		delta.multiplyScalar( distance * 4 );
 		this.camera.position.copy( this.target ).add( delta );
-
-		this.dispatchEvent( changeEvent );
 
 	}
 

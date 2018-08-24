@@ -17,6 +17,11 @@ let _selected = null;
 
 class DragControls extends ObjectControls {
 
+	get isDragControls() {
+
+		return true;
+
+	}
 	constructor( objects, camera, domElement ) {
 
 		super( domElement );

@@ -1,7 +1,7 @@
 import {Control} from "../Control.js";
 
 export class ObjectControls extends Control {
-  get isDragControls() { return true; }
+  get isObjectControls() { return true; }
   // constructor() {
   //   super();
   // }
