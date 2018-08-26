@@ -6,7 +6,7 @@
  * @author arodic / https://github.com/arodic
  */
 
-import * as THREE from "../../../three.js/build/three.module.js";
+import {Vector3, Quaternion} from "../../../three.js/build/three.module.js";
 import {ViewportControls} from "./ViewportControls.js";
 
 /*
@@ -18,17 +18,16 @@ import {ViewportControls} from "./ViewportControls.js";
  */
 
 // Temp variables
-const eye = new THREE.Vector3();
-const panDirection = new THREE.Vector3();
-const eyeDirection = new THREE.Vector3();
-const rotationAxis = new THREE.Vector3();
-const rotationQuat = new THREE.Quaternion();
-const upDirection = new THREE.Vector3();
-const sideDirection = new THREE.Vector3();
-const moveDirection = new THREE.Vector3();
+const eye = new Vector3();
+const panDirection = new Vector3();
+const eyeDirection = new Vector3();
+const rotationAxis = new Vector3();
+const rotationQuat = new Quaternion();
+const upDirection = new Vector3();
+const sideDirection = new Vector3();
+const moveDirection = new Vector3();
 
 export class TrackballControls extends ViewportControls {
-	get isTrackballControls() { return true; }
 	constructor( camera, domElement ) {
 		super( camera, domElement );
 		this.defineProperties({

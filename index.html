@@ -69,7 +69,7 @@
 
 				renderer = new THREE.WebGLRenderer( { antialias: false } );
 
-				renderer.setSize( window.innerWidth / 2, window.innerHeight / 2 );
+				renderer.setSize( window.innerWidth, window.innerHeight );
 				renderer.setPixelRatio( window.devicePixelRatio );
 
 				let ctx = renderer.getContext();
@@ -111,11 +111,11 @@
 				// viewportControls = new ViewportControls( camera, renderer.domElement );
 				// viewportControls = new OrbitControls( camera, renderer.domElement );
 				// viewportControls = new TrackballControls( camera, renderer.domElement );
-				viewportControls = new EditorControls( camera, renderer.domElement );
+				viewportControls = new EditorControls( camera, renderer.domElement, mesh );
 				viewportControls.addEventListener( 'change', render );
 				viewportControls.selection = mesh;
 
-				control = new TransformControls( camera, renderer.domElement );
+				control = new TransformControls( camera, renderer.domElement, mesh );
 				control.addEventListener( 'change', render );
 				window.control = control;
 
@@ -128,7 +128,7 @@
 				} );
 
 
-				control.attach( mesh );
+				// control.attach( mesh );
 				scene.add( control );
 
 				window.addEventListener( 'resize', onWindowResize, false );

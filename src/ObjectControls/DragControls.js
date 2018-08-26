@@ -4,19 +4,18 @@
  * Running this will allow you to drag three.js objects around the screen.
  */
 
-import * as THREE from "../../../three.js/build/three.module.js";
+import {Plane, Raycaster, Vector3, Vector3} from "../../../three.js/build/three.module.js";
 import {ObjectControls} from "./ObjectControls.js";
 
-const _plane = new THREE.Plane();
-const _raycaster = new THREE.Raycaster();
-const _offset = new THREE.Vector3();
-const _intersection = new THREE.Vector3();
+const _plane = new Plane();
+const _raycaster = new Raycaster();
+const _offset = new Vector3();
+const _intersection = new Vector3();
 let _selected = null;
 
 // TODO: original controls stick when dragout
 
 export class DragControls extends ObjectControls {
-	get isDragControls() { return true; }
 	constructor( objects, camera, domElement ) {
 		super( domElement );
 
@@ -69,21 +68,5 @@ export class DragControls extends ObjectControls {
 	detach() {
 		this.object = undefined;
 		this.visible = false;
-	}
-	// Deprication warnings
-	setObjects() {
-		console.error( 'THREE.DragControls: setObjects() has been removed.' );
-	}
-	on( type, listener ) {
-		console.warn( 'THREE.DragControls: on() has been deprecated. Use addEventListener() instead.' );
-		this.addEventListener( type, listener );
-	}
-	off( type, listener ) {
-		console.warn( 'THREE.DragControls: off() has been deprecated. Use removeEventListener() instead.' );
-		this.removeEventListener( type, listener );
-	}
-	notify( type ) {
-		console.error( 'THREE.DragControls: notify() has been deprecated. Use dispatchEvent() instead.' );
-		this.dispatchEvent( { type: type } );
 	}
 }

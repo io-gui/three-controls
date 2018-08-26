@@ -13,7 +13,6 @@ const quaternionOld = new Quaternion();
 const scaleOld = new Vector3();
 
 export class Selection extends Object3D {
-	get isSelection() { return true; }
 	constructor() {
 		super();
 

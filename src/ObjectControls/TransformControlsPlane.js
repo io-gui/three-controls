@@ -4,7 +4,6 @@ import {
 } from "../../../three.js/build/three.module.js";
 
 export class TransformControlsPlane extends Mesh {
-	get isTransformControlsPlane() { return true; }
 	constructor() {
 
 		super(

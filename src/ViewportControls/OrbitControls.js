@@ -28,7 +28,6 @@ const tempQuat = new THREE.Quaternion();
 const tempQuatInverse = tempQuat.clone().inverse();
 
 export class OrbitControls extends ViewportControls {
-	get isOrbitControls() { return true; }
 	constructor( camera, domElement ) {
 		super( camera, domElement );
 
@@ -121,14 +120,5 @@ export class OrbitControls extends ViewportControls {
 	}
 	get azimuthalAngle() {
 		return this._spherical.theta;
-	}
-	// Deprication warnings
-	getPolarAngle() {
-		console.warn( '.getPolarAngle() has been depricated. Use .polarAngle instead.' );
-		return this.polarAngle;
-	}
-	getAzimuthalAngle() {
-		console.warn( '.getAzimuthalAngle() has been depricated. Use .azimuthalAngle instead.' );
-		return this.azimuthalAngle;
 	}
 }

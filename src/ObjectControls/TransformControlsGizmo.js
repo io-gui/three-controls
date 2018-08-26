@@ -23,7 +23,6 @@ const gizmoLineMaterial = new LineBasicMaterial({
 });
 
 export class TransformControlsGizmo extends Object3D {
-	get isTransformControlsGizmo() { return true; }
 	constructor() {
 		super();
 

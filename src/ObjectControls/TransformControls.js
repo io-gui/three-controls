@@ -2,7 +2,7 @@
  * @author arodic / https://github.com/arodic
  */
 
-import { Raycaster, Vector3, Quaternion } from "../../../three.js/build/three.module.js";
+import {Raycaster, Vector3, Quaternion} from "../../../three.js/build/three.module.js";
 import {ObjectControls} from "./ObjectControls.js";
 import {TransformControlsGizmo} from "./TransformControlsGizmo.js";
 import {TransformControlsPlane} from "./TransformControlsPlane.js";
@@ -24,10 +24,9 @@ const _alignVector = new Vector3();
 const changeEvent = { type: "change" };
 
 export class TransformControls extends ObjectControls {
-	get isTransformControls() { return true; }
 	constructor( camera, domElement, object ) {
 
-		super( camera, domElement, object );
+		super( domElement );
 
 		this._gizmo = new TransformControlsGizmo();
 		this.add( this._gizmo );
@@ -36,6 +35,8 @@ export class TransformControls extends ObjectControls {
 		this.add( this._plane );
 
 		this.defineProperties({
+			camera: camera,
+			object: object,
 			axis: null,
 			mode: "translate",
 			translationSnap: null,
@@ -76,6 +77,14 @@ export class TransformControls extends ObjectControls {
 			this._gizmo[event.prop] = event.value;
 		});
 	}
+	objectChanged( value ) {
+		const hasObject = value ? true : false;
+		this.visible = hasObject;
+		if ( !hasObject ) {
+			this.active = false;
+			this.axis = null;
+		}
+	}
 	updateMatrixWorld() {
 		if ( this.object !== undefined ) {
 			this.object.updateMatrixWorld();
@@ -91,6 +100,7 @@ export class TransformControls extends ObjectControls {
 		super.updateMatrixWorld();
 	}
 	onPointerHover( pointers ) {
+		if ( !this.enabled ) return;
 		let pointer = pointers[0];
 		if ( this.object === undefined || this.active === true || ( pointer.button !== undefined && pointer.button !== 0 ) ) return;
 		_ray.setFromCamera( pointer.position, this.camera );
@@ -102,6 +112,7 @@ export class TransformControls extends ObjectControls {
 		}
 	}
 	onPointerDown( pointers ) {
+		if ( !this.enabled ) return;
 		let pointer = pointers[0];
 		if ( this.object === undefined || this.active === true || ( pointer.button !== undefined && pointer.button !== 0 ) ) return;
 		if ( ( pointer.button === 0 || pointer.button === undefined ) && this.axis !== null ) {
@@ -134,6 +145,7 @@ export class TransformControls extends ObjectControls {
 		}
 	}
 	onPointerMove( pointers ) {
+		if ( !this.enabled ) return;
 
 		let pointer = pointers[0];
 
@@ -272,56 +284,12 @@ export class TransformControls extends ObjectControls {
 		this.dispatchEvent( changeEvent );
 	}
 	onPointerUp( pointers ) {
+		if ( !this.enabled ) return;
 		if ( pointers.length === 0) {
 			this.active = false;
 			this.axis = null;
 		} else {
 			if ( pointers[0].button === undefined ) this.axis = null;
 		}
-	}
-	attach( object ) {
-		this.object = object;
-		this.visible = true;
-	}
-	detach() {
-		this.object = undefined;
-		this.visible = false;
-	}
-	// Deprication warnings
-	addEventListener( type, listener ) {
-		super.addEventListener( type, listener );
-		if ( type === "mouseDown" ) {
-			console.warn( '"mouseDown" event depricated, use "active-changed" or "pointerdown" event instead.' );
-		}
-		if ( type === "mouseUp" ) {
-			console.warn( '"mouseUp" event depricated, use "active-changed" or "pointerup" event instead.' );
-		}
-		if ( type === "objectChange" ) {
-			console.warn( '"objectChange" event depricated, use "change" event instead.' );
-		}
-	}
-	getMode() {
-		console.warn( 'TransformControls: getMode function has been depricated.' );
-		return this.mode;
-	}
-	setMode( mode ) {
-		this.mode = mode;
-		console.warn( 'TransformControls: setMode function has been depricated.' );
-	}
-	setTranslationSnap( translationSnap ) {
-		this.translationSnap = translationSnap;
-		console.warn( 'TransformControls: setTranslationSnap function has been depricated.' );
-	}
-	setRotationSnap( rotationSnap ) {
-		this.rotationSnap = rotationSnap;
-		console.warn( 'TransformControls: setRotationSnap function has been depricated.' );
-	}
-	setSize( size ) {
-		this.size = size;
-		console.warn( 'TransformControls: setSize function has been depricated.' );
-	}
-	setSpace( space ) {
-		this.space = space;
-		console.warn( 'TransformControls: setSpace function has been depricated.' );
 	}
 }

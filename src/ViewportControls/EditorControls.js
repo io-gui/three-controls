@@ -18,7 +18,6 @@ const spherical = new THREE.Spherical();
 const sphere = new THREE.Sphere();
 
 export class EditorControls extends ViewportControls {
-	get isEditorControls() { return true; }
 	orbit( orbit ) {
 		delta.copy( this.camera.position ).sub( this.target );
 		spherical.setFromVector3( delta );
