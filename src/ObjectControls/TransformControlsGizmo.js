@@ -18,7 +18,7 @@ const gizmoLineMaterial = new LineBasicMaterial({
 	depthTest: false,
 	depthWrite: false,
 	transparent: true,
-	linewidth: 2,
+	linewidth: 1,
 	fog: false
 });
 

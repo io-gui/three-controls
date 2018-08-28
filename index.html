@@ -25,11 +25,6 @@
 				color: white;
 			}
 			canvas {
-				image-rendering: optimizeSpeed;
-				image-rendering: -moz-crisp-edges;
-				image-rendering: -webkit-optimize-contrast;
-				image-rendering: -o-crisp-edges;
-				image-rendering: pixelated;
 				-ms-interpolation-mode: nearest-neighbor;
 			}
 		</style>
@@ -72,13 +67,6 @@
 				renderer.setSize( window.innerWidth, window.innerHeight );
 				renderer.setPixelRatio( window.devicePixelRatio );
 
-				let ctx = renderer.getContext();
-				ctx.imageSmoothingEnabled       = false;
-				// for safe compatibility, you can add these as well:
-				ctx.mozImageSmoothingEnabled    = false;
-				ctx.oImageSmoothingEnabled      = false;
-				ctx.webkitImageSmoothingEnabled = false;
-				ctx.msImageSmoothingEnabled     = false;
 				document.body.appendChild( renderer.domElement );
 
 				var canvas = renderer.domElement;
@@ -95,8 +83,16 @@
 				scene = new THREE.Scene();
 				scene.add( new THREE.GridHelper( 1000, 10 ) );
 
-				var light = new THREE.DirectionalLight( 0xffffff, 2 );
-				light.position.set( 1, 1, 1 );
+				var light = new THREE.DirectionalLight( 0x99ffff, 2 );
+				light.position.set( 1, 0.5, 0.5 );
+				scene.add( light );
+
+				var light = new THREE.DirectionalLight( 0xff9999, 2 );
+				light.position.set( -0.5, 1, 0.2 );
+				scene.add( light );
+
+				var light = new THREE.DirectionalLight( 0x9999ff, 2 );
+				light.position.set( 0.1, -0.3, -1 );
 				scene.add( light );
 
 				var texture = new THREE.TextureLoader().load( '../../three.js/examples/textures/crate.gif', render );
@@ -109,13 +105,13 @@
 				scene.add( mesh );
 
 				// viewportControls = new ViewportControls( camera, renderer.domElement );
-				// viewportControls = new OrbitControls( camera, renderer.domElement );
+				viewportControls = new OrbitControls( camera, renderer.domElement );
 				// viewportControls = new TrackballControls( camera, renderer.domElement );
-				viewportControls = new EditorControls( camera, renderer.domElement, mesh );
+				// viewportControls = new EditorControls( camera, renderer.domElement, mesh );
 				viewportControls.addEventListener( 'change', render );
 				viewportControls.selection = mesh;
 
-				control = new TransformControls( camera, renderer.domElement, mesh );
+				control = new TransformControls( camera, renderer.domElement );
 				control.addEventListener( 'change', render );
 				window.control = control;
 

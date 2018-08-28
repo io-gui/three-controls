@@ -54,7 +54,7 @@ export class ViewportControls extends Control {
 			keyDollySpeed: 0.1,
 			keyPanSpeed: 0.1,
 			wheelDollySpeed: 0.05,
-			autoOrbit: new Vector2( 0.1, 0.0 ),
+			autoOrbit: new Vector2( 0.0, 0.0 ),
 			autoDollyPan: new Vector3( 0.1, 0.0, 0.0 ),
 			enableDamping: true,
 			dampingFactor: 0.05,
@@ -159,6 +159,7 @@ export class ViewportControls extends Control {
 	}
 	onPointerMove( pointers ) {
 		if ( !this.enabled ) return;
+
 		let rect = this.domElement.getBoundingClientRect();
 		let prevDistance, distance;
 		aspectMultiplier.set( rect.width / rect.height, 1 );

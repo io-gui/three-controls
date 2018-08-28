@@ -3,7 +3,7 @@
  */
 
 import {Object3D, Vector2} from "../../three.js/build/three.module.js";
-import {Listener} from "./Listener.js";
+import {PointerEvents} from "./PointerEvents.js";
 
 // TODO: documentation
 /*
@@ -21,7 +21,7 @@ export class Control extends Object3D {
 			domElement = document;
 		}
 
-		const listener = new Listener( domElement );
+		const pointerEvents = new PointerEvents( domElement, { normalized: true } );
 
 		this.defineProperties({
 			domElement: domElement,
@@ -45,29 +45,29 @@ export class Control extends Object3D {
 		this.onFocus = this.onFocus.bind(this);
 		this.onBlur = this.onBlur.bind(this);
 
-		listener.addEventListener( 'pointerdown', this.onPointerDown );
-		listener.addEventListener( 'pointerhover', this.onPointerHover );
-		listener.addEventListener( 'pointermove', this.onPointerMove );
-		listener.addEventListener( 'pointerup', this.onPointerUp );
-		listener.addEventListener( 'keydown', this.onKeyDown );
-		listener.addEventListener( 'keyup', this.onKeyUp );
-		listener.addEventListener( 'wheel', this.onWheel );
-		listener.addEventListener( 'contextmenu', this.onContextmenu );
-		listener.addEventListener( 'focus', this.onFocus );
-		listener.addEventListener( 'blur', this.onBlur );
+		pointerEvents.addEventListener( 'pointerdown', this.onPointerDown );
+		pointerEvents.addEventListener( 'pointerhover', this.onPointerHover );
+		pointerEvents.addEventListener( 'pointermove', this.onPointerMove );
+		pointerEvents.addEventListener( 'pointerup', this.onPointerUp );
+		pointerEvents.addEventListener( 'keydown', this.onKeyDown );
+		pointerEvents.addEventListener( 'keyup', this.onKeyUp );
+		pointerEvents.addEventListener( 'wheel', this.onWheel );
+		pointerEvents.addEventListener( 'contextmenu', this.onContextmenu );
+		pointerEvents.addEventListener( 'focus', this.onFocus );
+		pointerEvents.addEventListener( 'blur', this.onBlur );
 
 		this.dispose = function () {
-			listener.removeEventListener( 'pointerdown', this.onPointerDown );
-			listener.removeEventListener( 'pointerhover', this.onPointerHover );
-			listener.removeEventListener( 'pointermove', this.onPointerMove );
-			listener.removeEventListener( 'pointerup', this.onPointerUp );
-			listener.removeEventListener( 'keydown', this.onKeyDown );
-			listener.removeEventListener( 'keyup', this.onKeyUp );
-			listener.removeEventListener( 'wheel', this.onWheel );
-			listener.removeEventListener( 'contextmenu', this.onContextmenu );
-			listener.removeEventListener( 'focus', this.onFocus );
-			listener.removeEventListener( 'blur', this.onBlur );
-			listener.dispose();
+			pointerEvents.removeEventListener( 'pointerdown', this.onPointerDown );
+			pointerEvents.removeEventListener( 'pointerhover', this.onPointerHover );
+			pointerEvents.removeEventListener( 'pointermove', this.onPointerMove );
+			pointerEvents.removeEventListener( 'pointerup', this.onPointerUp );
+			pointerEvents.removeEventListener( 'keydown', this.onKeyDown );
+			pointerEvents.removeEventListener( 'keyup', this.onKeyUp );
+			pointerEvents.removeEventListener( 'wheel', this.onWheel );
+			pointerEvents.removeEventListener( 'contextmenu', this.onContextmenu );
+			pointerEvents.removeEventListener( 'focus', this.onFocus );
+			pointerEvents.removeEventListener( 'blur', this.onBlur );
+			pointerEvents.dispose();
 			this.stopAnimation();
 		};
 

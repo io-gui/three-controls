@@ -49,7 +49,7 @@ export class TrackballControls extends ViewportControls {
 		this.camera.up.applyQuaternion( rotationQuat );
 	}
 	dolly( dolly ) {
-		let dollyScale = ( dolly > 0 ) ? 1 - dolly : 1 / ( 1 + dolly );
+		let dollyScale = ( dolly < 0 ) ? 1 + dolly : 1 / ( 1 - dolly );
 		eye.multiplyScalar( dollyScale );
 	}
 	pan( pan ) {

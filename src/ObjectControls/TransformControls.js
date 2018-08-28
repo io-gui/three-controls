@@ -2,7 +2,7 @@
  * @author arodic / https://github.com/arodic
  */
 
-import {Raycaster, Vector3, Quaternion} from "../../../three.js/build/three.module.js";
+import {Raycaster, Vector2, Vector3, Quaternion} from "../../../three.js/build/three.module.js";
 import {ObjectControls} from "./ObjectControls.js";
 import {TransformControlsGizmo} from "./TransformControlsGizmo.js";
 import {TransformControlsPlane} from "./TransformControlsPlane.js";
@@ -66,6 +66,8 @@ export class TransformControls extends ObjectControls {
 			scaleStart: new Vector3()
 		});
 
+		this.visible = this.object ? true : false;
+
 		// TODO: implement better data binding
 		// Defined properties are passed down to gizmo and plane
 		for ( let prop in this._properties ) {
@@ -101,9 +103,9 @@ export class TransformControls extends ObjectControls {
 	}
 	onPointerHover( pointers ) {
 		if ( !this.enabled ) return;
-		let pointer = pointers[0];
-		if ( this.object === undefined || this.active === true || ( pointer.button !== undefined && pointer.button !== 0 ) ) return;
-		_ray.setFromCamera( pointer.position, this.camera );
+
+		if ( this.object === undefined || this.active === true ) return;
+		_ray.setFromCamera( pointers[0].position, this.camera );
 		const intersect = _ray.intersectObjects( this._gizmo.picker[ this.mode ].children, true )[ 0 ] || false;
 		if ( intersect ) {
 			this.axis = intersect.object.name;
@@ -113,41 +115,40 @@ export class TransformControls extends ObjectControls {
 	}
 	onPointerDown( pointers ) {
 		if ( !this.enabled ) return;
-		let pointer = pointers[0];
-		if ( this.object === undefined || this.active === true || ( pointer.button !== undefined && pointer.button !== 0 ) ) return;
-		if ( ( pointer.button === 0 || pointer.button === undefined ) && this.axis !== null ) {
-			_ray.setFromCamera( pointer.position, this.camera );
-			const planeIntersect = _ray.intersectObjects( [ this._plane ], true )[ 0 ] || false;
-			if ( planeIntersect ) {
-				if ( this.mode === 'scale') {
-					this.space = 'local';
-				} else if ( this.axis === 'E' ||  this.axis === 'XYZE' ||  this.axis === 'XYZ' ) {
-					this.space = 'world';
-				}
-				if ( this.space === 'local' && this.mode === 'rotate' ) {
-					const snap = this.rotationSnap;
-					if ( this.axis === 'X' && snap ) this.object.rotation.x = Math.round( this.object.rotation.x / snap ) * snap;
-					if ( this.axis === 'Y' && snap ) this.object.rotation.y = Math.round( this.object.rotation.y / snap ) * snap;
-					if ( this.axis === 'Z' && snap ) this.object.rotation.z = Math.round( this.object.rotation.z / snap ) * snap;
-				}
-				this.object.updateMatrixWorld();
-				if ( this.object.parent ) {
-					this.object.parent.updateMatrixWorld();
-				}
-				this.positionStart.copy( this.object.position );
-				this.quaternionStart.copy( this.object.quaternion );
-				this.scaleStart.copy( this.object.scale );
-				this.object.matrixWorld.decompose( this.worldPositionStart, this.worldQuaternionStart, this.worldScaleStart );
-				this.pointStart.copy( planeIntersect.point ).sub( this.worldPositionStart );
-				if ( this.space === 'local' ) this.pointStart.applyQuaternion( this.worldQuaternionStart.clone().inverse() );
+
+		if ( this.axis === null || this.object === undefined || this.active === true || pointers[0].button !== 0 ) return;
+
+		_ray.setFromCamera( pointers[0].position, this.camera );
+
+		const planeIntersect = _ray.intersectObjects( [ this._plane ], true )[ 0 ] || false;
+		if ( planeIntersect ) {
+			if ( this.mode === 'scale') {
+				this.space = 'local';
+			} else if ( this.axis === 'E' ||  this.axis === 'XYZE' ||  this.axis === 'XYZ' ) {
+				this.space = 'world';
 			}
-			this.active = true;
+			if ( this.space === 'local' && this.mode === 'rotate' ) {
+				const snap = this.rotationSnap;
+				if ( this.axis === 'X' && snap ) this.object.rotation.x = Math.round( this.object.rotation.x / snap ) * snap;
+				if ( this.axis === 'Y' && snap ) this.object.rotation.y = Math.round( this.object.rotation.y / snap ) * snap;
+				if ( this.axis === 'Z' && snap ) this.object.rotation.z = Math.round( this.object.rotation.z / snap ) * snap;
+			}
+			this.object.updateMatrixWorld();
+			if ( this.object.parent ) {
+				this.object.parent.updateMatrixWorld();
+			}
+			this.positionStart.copy( this.object.position );
+			this.quaternionStart.copy( this.object.quaternion );
+			this.scaleStart.copy( this.object.scale );
+			this.object.matrixWorld.decompose( this.worldPositionStart, this.worldQuaternionStart, this.worldScaleStart );
+			this.pointStart.copy( planeIntersect.point ).sub( this.worldPositionStart );
+			if ( this.space === 'local' ) this.pointStart.applyQuaternion( this.worldQuaternionStart.clone().inverse() );
 		}
+
+		this.active = true;
 	}
 	onPointerMove( pointers ) {
 		if ( !this.enabled ) return;
-
-		let pointer = pointers[0];
 
 		let axis = this.axis;
 		let mode = this.mode;
@@ -160,9 +161,9 @@ export class TransformControls extends ObjectControls {
 			space = 'world';
 		}
 
-		if ( object === undefined || axis === null || this.active === false || ( pointer.button !== undefined && pointer.button !== 0 ) ) return;
+		if ( object === undefined || axis === null || this.active === false || pointers[0].button !== 0 ) return;
 
-		_ray.setFromCamera( pointer.position, this.camera );
+		_ray.setFromCamera( pointers[0].position, this.camera );
 
 		const planeIntersect = _ray.intersectObjects( [ this._plane ], true )[ 0 ] || false;
 
