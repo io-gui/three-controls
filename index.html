@@ -7,12 +7,39 @@
 		<style>
 			body {
 				margin: 0px;
-				background-color: #333;
+				background-color: #000000;
+				color: #fff;
+				font-family:Monospace;
+				text-align: center;
+				font-size: 15px;
+				line-height: 30px;
 				overflow: hidden;
+			}
+			#info {
+				position: absolute;
+				top: 0px; width: 100%;
+				padding: 15px;
+				z-index:100;
+			}
+			a {
+				color: white;
 			}
 		</style>
 	</head>
 	<body>
+
+		<div id="info">
+			<a href="javascript:control.setMode( 'translate' );">"W" translate</a> |
+			<a href="javascript:control.setMode( 'rotate' );">"E" rotate</a> |
+			<a href="javascript:control.setMode( 'scale' );">"R" scale</a> |
+			<a href="javascript:control.setSize( control.size + 0.1 );">"+" increase size</a> |
+			<a href="javascript:control.setSize( Math.max( control.size - 0.1, 0.1 ) );">"-" decrease size</a><br />
+			<a href="javascript:control.setSpace( control.space === 'local' ? 'world' : 'local' );">"Q" toggle world/local space</a> | Hold "Ctrl" down to snap to grid<br />
+			<a href="javascript:control.showX = !control.showX">"X" toggle X</a> |
+			<a href="javascript:control.showY = !control.showY">"Y" toggle Y</a> |
+			<a href="javascript:control.showZ = !control.showZ">"Z" toggle Z</a> |
+			<a href="javascript:control.enabled = !control.enabled">"Spacebar" toggle enabled</a><br />
+		</div>
 
 		<script type="module">
 
@@ -114,7 +141,7 @@
 				viewportControls.addEventListener('change', render);
 
 				var transformControls = new TransformControls(camera, renderer.domElement);
-				transformControls.space = 'local';
+				transformControls.space = 'world';
 				helperScene.add(transformControls);
 
 				var selectionControls = new SelectionControls(camera, renderer.domElement, scene, selection);
@@ -133,10 +160,11 @@
 					setTimeout(() => { selectionControls.enabled = !event.value; })
 				});
 				transformControls.addEventListener('space-changed', event => {
-					// selection.transformSpace = event.value;
-					// selection.update();
+					// TODO fix
+					selection.transformSpace = event.value;
+					selection.update();
 				});
-				// selection.transformSpace = transformControls.space;
+				selection.transformSpace = transformControls.space;
 
 				viewportControls.addEventListener('active-changed', event => {
 					transformControls.enabled = !event.value;

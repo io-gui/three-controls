@@ -43,8 +43,9 @@ export class SelectionControls extends Control {
 		}
 		for (let i = 0; i < this.selection.selected.length; i++) {
 			let _helper = new Line( this.selection.selected[i].geometry, mat );
-			// TODO: fix scewed helpers with rotated and scaled hierarchy
 			_helper._src = this.selection.selected[i];
+			_helper.matrixAutoUpdate = false;
+			this.selection.selected[i].updateMatrixWorld()
 			this.selection.selected[i].matrixWorld.decompose( _helper.position, _helper.quaternion, _helper.scale );
 			this.add(_helper)
 		}
@@ -61,10 +62,10 @@ export class SelectionControls extends Control {
 		}
 	}
 	updateMatrixWorld() {
-    for (var i = 0; i < this.children.length; i++) {
-      let _helper = this.children[i];
-      _helper._src.matrixWorld.decompose( _helper.position, _helper.quaternion, _helper.scale );
-    }
-    super.updateMatrixWorld();
-  }
+		super.updateMatrixWorld();
+		for (var i = 0; i < this.children.length; i++) {
+			let _helper = this.children[i];
+			_helper.matrixWorld.copy(_helper._src.matrixWorld);
+		}
+	}
 }

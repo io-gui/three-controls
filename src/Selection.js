@@ -2,8 +2,12 @@
  * @author arodic / https://github.com/arodic
  */
 
+// TODO: implement multi-selection per-object snapping
+// TODO: handle non-uniform scale in hierarchy
+
 import {Object3D, Vector3, Quaternion} from "../../three.js/build/three.module.js";
 
+// Temp variables
 const position = new Vector3();
 const quaternion = new Quaternion();
 const scale = new Vector3();
@@ -116,7 +120,7 @@ export class Selection extends Object3D {
 		this.matrix.decompose(position, quaternion, scale);
 
 		positionOffset.copy(position).sub(positionOld);
-		quaternionOffset.copy(quaternion).inverse().multiply(quaternionOld);
+		quaternionOffset.copy(quaternion).multiply(quaternionOld.clone().inverse());
 		scaleOffset.copy(scale).sub(scaleOld);
 
 		if (this.selected.length) {
@@ -134,7 +138,7 @@ export class Selection extends Object3D {
 					let tempQ = this.selected[i].quaternion.clone();
 					let temp = positionOffset.clone().applyQuaternion(tempQ);
 					this.selected[i].position.add(temp);
-					this.selected[i].quaternion.multiply(quaternionOffset.clone().inverse());
+					this.selected[i].quaternion.multiply(quaternionOffset.clone());
 					this.selected[i].scale.add(scaleOffset);
 				}
 
@@ -147,22 +151,23 @@ export class Selection extends Object3D {
 					this.selected[i].matrixWorld.decompose(positionSelected, quaternionSelected, scaleSelected);
 					this.selected[i].parent.matrixWorld.decompose(positionParent, quaternionParent, scaleParent);
 
-					// let temp = positionOffset.clone().applyQuaternion(quaternionParent.clone().inverse());
-					// this.selected[i].position.add(temp);
+					let temp = positionOffset.clone().applyQuaternion(quaternionParent.clone().inverse());
+					this.selected[i].position.add(temp);
 
 					{
-					// 	let tempQuat = quaternionOffset.clone();//.inverse();
 						let dist = positionSelected.clone().sub(position);
-						let distR = dist.clone().applyQuaternion(quaternionOffset.clone().inverse());
+						let distR = dist.clone().applyQuaternion(quaternionOffset.clone());
 						let temp = distR.sub(dist);
 						temp = temp.applyQuaternion(quaternionParent.clone().inverse());
-						// temp = temp.applyQuaternion(quaternionSelected);
 						this.selected[i].position.add(temp);
-					}
-					// this.selected[i].quaternion.multiply(quaternionOffset.clone());
 
-					// TODO: figure out world scale workaround
-					// this.selected[i].scale.add(scaleOffset);
+						let invQuat = quaternionSelected.clone().inverse();
+
+						temp = invQuat.multiply(quaternionOffset).multiply(quaternionSelected).normalize();
+
+						this.selected[i].quaternion.multiply(temp);
+					}
+					this.selected[i].scale.add(scaleOffset);
 				}
 
 			}
