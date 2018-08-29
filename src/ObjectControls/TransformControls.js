@@ -24,9 +24,11 @@ const _alignVector = new Vector3();
 const changeEvent = { type: "change" };
 
 export class TransformControls extends ObjectControls {
-	constructor( camera, domElement, object ) {
+	constructor( camera, domElement ) {
 
 		super( domElement );
+
+		this.visible = false;
 
 		this._gizmo = new TransformControlsGizmo();
 		this.add( this._gizmo );
@@ -36,7 +38,7 @@ export class TransformControls extends ObjectControls {
 
 		this.defineProperties({
 			camera: camera,
-			object: object,
+			object: null,
 			axis: null,
 			mode: "translate",
 			translationSnap: null,
@@ -66,8 +68,6 @@ export class TransformControls extends ObjectControls {
 			scaleStart: new Vector3()
 		});
 
-		this.visible = this.object ? true : false;
-
 		// TODO: implement better data binding
 		// Defined properties are passed down to gizmo and plane
 		for ( let prop in this._properties ) {
@@ -88,7 +88,7 @@ export class TransformControls extends ObjectControls {
 		}
 	}
 	updateMatrixWorld() {
-		if ( this.object !== undefined ) {
+		if ( this.object ) {
 			this.object.updateMatrixWorld();
 			this.object.matrixWorld.decompose( this.worldPosition, this.worldQuaternion, this.worldScale );
 		}
@@ -104,7 +104,7 @@ export class TransformControls extends ObjectControls {
 	onPointerHover( pointers ) {
 		if ( !this.enabled ) return;
 
-		if ( this.object === undefined || this.active === true ) return;
+		if ( !this.object || this.active === true ) return;
 		_ray.setFromCamera( pointers[0].position, this.camera );
 		const intersect = _ray.intersectObjects( this._gizmo.picker[ this.mode ].children, true )[ 0 ] || false;
 		if ( intersect ) {
@@ -116,18 +116,19 @@ export class TransformControls extends ObjectControls {
 	onPointerDown( pointers ) {
 		if ( !this.enabled ) return;
 
-		if ( this.axis === null || this.object === undefined || this.active === true || pointers[0].button !== 0 ) return;
+		if ( this.axis === null || !this.object || this.active === true || pointers[0].button !== 0 ) return;
 
 		_ray.setFromCamera( pointers[0].position, this.camera );
 
 		const planeIntersect = _ray.intersectObjects( [ this._plane ], true )[ 0 ] || false;
+		let space = this.space;
 		if ( planeIntersect ) {
 			if ( this.mode === 'scale') {
-				this.space = 'local';
+				space = 'local';
 			} else if ( this.axis === 'E' ||  this.axis === 'XYZE' ||  this.axis === 'XYZ' ) {
-				this.space = 'world';
+				space = 'world';
 			}
-			if ( this.space === 'local' && this.mode === 'rotate' ) {
+			if ( space === 'local' && this.mode === 'rotate' ) {
 				const snap = this.rotationSnap;
 				if ( this.axis === 'X' && snap ) this.object.rotation.x = Math.round( this.object.rotation.x / snap ) * snap;
 				if ( this.axis === 'Y' && snap ) this.object.rotation.y = Math.round( this.object.rotation.y / snap ) * snap;
@@ -142,7 +143,7 @@ export class TransformControls extends ObjectControls {
 			this.scaleStart.copy( this.object.scale );
 			this.object.matrixWorld.decompose( this.worldPositionStart, this.worldQuaternionStart, this.worldScaleStart );
 			this.pointStart.copy( planeIntersect.point ).sub( this.worldPositionStart );
-			if ( this.space === 'local' ) this.pointStart.applyQuaternion( this.worldQuaternionStart.clone().inverse() );
+			if ( space === 'local' ) this.pointStart.applyQuaternion( this.worldQuaternionStart.clone().inverse() );
 		}
 
 		this.active = true;
@@ -290,7 +291,7 @@ export class TransformControls extends ObjectControls {
 			this.active = false;
 			this.axis = null;
 		} else {
-			if ( pointers[0].button === undefined ) this.axis = null;
+			if ( pointers[0].button === -1 ) this.axis = null;
 		}
 	}
 }

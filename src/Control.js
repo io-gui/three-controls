@@ -128,6 +128,9 @@ export class Control extends Object3D {
 	// Defines getter, setter and store for a property
 	defineProperty( propName, defaultValue ) {
 		this._properties[propName] = defaultValue;
+		if (defaultValue === undefined) {
+			console.warn('Control: ' + propName + ' is mandatory!');
+		}
 		Object.defineProperty( this, propName, {
 			get: function() {
 				return this._properties[propName] !== undefined ? this._properties[propName] : defaultValue;

@@ -1,50 +1,18 @@
 <!DOCTYPE html>
 <html lang="en">
 	<head>
-		<title>three.js webgl - transform controls</title>
+		<title>three.js webgl - transformControls</title>
 		<meta charset="utf-8">
 		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
 		<style>
 			body {
 				margin: 0px;
 				background-color: #333;
-				color: #fff;
-				font-family:Monospace;
-				text-align: center;
-				font-size: 15px;
-				line-height: 30px;
 				overflow: hidden;
-			}
-			#info {
-				position: absolute;
-				top: 0px; width: 100%;
-				padding: 15px;
-				z-index:100;
-			}
-			a {
-				color: white;
-			}
-			canvas {
-				-ms-interpolation-mode: nearest-neighbor;
 			}
 		</style>
 	</head>
 	<body>
-
-		<div id="info" tabindex="0">
-			<a href="javascript:control.mode = 'translate';">"W" translate</a> |
-			<a href="javascript:control.mode = 'rotate';">"E" rotate</a> |
-			<a href="javascript:control.mode = 'scale';">"R" scale</a> |
-			<a href="javascript:control.size = control.size + 0.1;">"+" increase size</a> |
-			<a href="javascript:control.size = Math.max( control.size - 0.1, 0.1 );">"-" decrease size</a><br />
-			<a href="javascript:control.space = control.space === 'local' ? 'world' : 'local';">"Q" toggle world/local space</a> | Hold "Ctrl" down to snap to grid<br />
-			<a href="javascript:control.showX = !control.showX">"X" toggle X</a> |
-			<a href="javascript:control.showY = !control.showY">"Y" toggle Y</a> |
-			<a href="javascript:control.showZ = !control.showZ">"Z" toggle Z</a> |
-			<a href="javascript:control.enabled = !control.enabled">"Spacebar" toggle enabled</a><br />
-		</div>
-
-		<script src="../three.js/build/three.js"></script>
 
 		<script type="module">
 
@@ -54,130 +22,177 @@
 			import {EditorControls} from "./src/ViewportControls/EditorControls.js";
 			import {OrbitControls} from "./src/ViewportControls/OrbitControls.js";
 			import {TrackballControls} from "./src/ViewportControls/TrackballControls.js";
+			import {SelectionControls} from "./src/ViewportControls/SelectionControls.js";
 
-			var camera, scene, renderer, control, viewportControls;
+			import {Selection} from "./src/Selection.js";
+
+			import {WebGLRenderer, Math, PerspectiveCamera, Scene, GridHelper, DirectionalLight, TextureLoader, BoxBufferGeometry, MeshLambertMaterial, Mesh, BoxHelper} from "../../three.js/build/three.module.js";
+
+			let renderer, camera, scene, helperScene;
 
 			init();
 			render();
 
 			function init() {
 
-				renderer = new THREE.WebGLRenderer( { antialias: false } );
+				renderer = new WebGLRenderer({ antialias: false });
 
-				renderer.setSize( window.innerWidth, window.innerHeight );
-				renderer.setPixelRatio( window.devicePixelRatio );
+				renderer.setSize(window.innerWidth, window.innerHeight);
+				renderer.setPixelRatio(window.devicePixelRatio);
 
-				document.body.appendChild( renderer.domElement );
+				document.body.appendChild(renderer.domElement);
 
 				var canvas = renderer.domElement;
-				canvas.setAttribute( 'tabindex', 0 );
+				canvas.setAttribute('tabindex', 0);
 
 				const bounds = canvas.getBoundingClientRect();
-				canvas.width = Math.round(bounds.width * window.devicePixelRatio);
-				canvas.height = Math.round(bounds.height * window.devicePixelRatio);
+				canvas.width = window.Math.round(bounds.width * window.devicePixelRatio);
+				canvas.height = window.Math.round(bounds.height * window.devicePixelRatio);
 
-				camera = new THREE.PerspectiveCamera( 50, window.innerWidth / window.innerHeight, 1, 3000 );
-				camera.position.set( 1000, 500, 1000 );
-				camera.lookAt( 0, 200, 0 );
+				camera = new PerspectiveCamera(50, window.innerWidth / window.innerHeight, 1, 3000);
+				camera.position.set(1000, 500, 1000);
+				camera.lookAt(0, 200, 0);
 
-				scene = new THREE.Scene();
-				scene.add( new THREE.GridHelper( 1000, 10 ) );
+				scene = new Scene();
+				helperScene = new Scene();
 
-				var light = new THREE.DirectionalLight( 0x99ffff, 2 );
-				light.position.set( 1, 0.5, 0.5 );
-				scene.add( light );
+				var grid = new GridHelper(1000, 10);
+				helperScene.add(grid);
 
-				var light = new THREE.DirectionalLight( 0xff9999, 2 );
-				light.position.set( -0.5, 1, 0.2 );
-				scene.add( light );
+				var light = new DirectionalLight(0x99ffff, 2);
+				light.position.set(1, 0.5, 0.5);
+				scene.add(light);
 
-				var light = new THREE.DirectionalLight( 0x9999ff, 2 );
-				light.position.set( 0.1, -0.3, -1 );
-				scene.add( light );
+				var light = new DirectionalLight(0xff9999, 2);
+				light.position.set(-0.5, 1, 0.2);
+				scene.add(light);
 
-				var texture = new THREE.TextureLoader().load( '../../three.js/examples/textures/crate.gif', render );
+				var light = new DirectionalLight(0x9999ff, 2);
+				light.position.set(0.1, -0.3, -1);
+				scene.add(light);
+
+				var texture = new TextureLoader().load('../../three.js/examples/textures/crate.gif', render);
 				texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
 
-				var geometry = new THREE.BoxBufferGeometry( 200, 200, 200 );
-				var material = new THREE.MeshLambertMaterial( { map: texture } );
+				var geometry = new BoxBufferGeometry(200, 200, 200);
+				var material = new MeshLambertMaterial({ map: texture });
 
-				var mesh = new THREE.Mesh( geometry, material );
-				scene.add( mesh );
+				let mesh0 = new Mesh(geometry, material);
+				mesh0.position.set(0,0,0);
+				scene.add(mesh0);
 
-				// viewportControls = new ViewportControls( camera, renderer.domElement );
-				viewportControls = new OrbitControls( camera, renderer.domElement );
-				// viewportControls = new TrackballControls( camera, renderer.domElement );
-				// viewportControls = new EditorControls( camera, renderer.domElement, mesh );
-				viewportControls.addEventListener( 'change', render );
-				viewportControls.selection = mesh;
+				let mesh;
+				let patent = mesh0;
+				for (let i = 0; i < 2; i++) {
+					mesh = new Mesh(geometry, material);
+					mesh.position.set(0, 200, 0);
+					mesh.rotation.set(0, -(i+1)/3, 0);
+					patent.add(mesh);
+					patent = mesh;
+				}
+				patent = mesh0;
+				for (let i = 0; i < 2; i++) {
+					mesh = new Mesh(geometry, material);
+					mesh.position.set(0, 0, -200);
+					mesh.rotation.set(0, -window.Math.PI * (i + 1) / 2, 0);
+					patent.add(mesh);
+					patent = mesh;
+				}patent = mesh0;
+				for (let i = 0; i < 2; i++) {
+					mesh = new Mesh(geometry, material);
+					mesh.position.set(-200, 0, 0);
+					mesh.rotation.set(0, window.Math.PI * (i + 1) / 2, 0);
+					patent.add(mesh);
+					patent = mesh;
+				}
 
-				control = new TransformControls( camera, renderer.domElement );
-				control.addEventListener( 'change', render );
-				window.control = control;
+				var selection = new Selection();
+				selection.transformSpace = 'world';
+				helperScene.add(selection);
 
-				control.addEventListener( 'active-changed', function( event ) {
+				var viewportControls = new OrbitControls(camera, renderer.domElement);
+				viewportControls.addEventListener('change', render);
+
+				var transformControls = new TransformControls(camera, renderer.domElement);
+				transformControls.space = 'local';
+				helperScene.add(transformControls);
+
+				var selectionControls = new SelectionControls(camera, renderer.domElement, scene, selection);
+				helperScene.add(selectionControls);
+
+				selectionControls.addEventListener('change', event => {
+					transformControls.visible = !!selection.selected.length;
+					render();
+				});
+
+				transformControls.addEventListener('change', render);
+				transformControls.object = selection;
+
+				transformControls.addEventListener('active-changed', event => {
 					viewportControls.enabled = !event.value;
-				} );
+					setTimeout(() => { selectionControls.enabled = !event.value; })
+				});
+				transformControls.addEventListener('space-changed', event => {
+					// selection.transformSpace = event.value;
+					// selection.update();
+				});
+				// selection.transformSpace = transformControls.space;
 
-				viewportControls.addEventListener( 'active-changed', function( event ) {
-					control.enabled = !event.value;
-				} );
+				viewportControls.addEventListener('active-changed', event => {
+					transformControls.enabled = !event.value;
+				});
 
-
-				// control.attach( mesh );
-				scene.add( control );
-
-				window.addEventListener( 'resize', onWindowResize, false );
+				window.addEventListener('resize', onWindowResize, false);
 
 				window.addEventListener( 'keydown', function ( event ) {
 
 					switch ( event.keyCode ) {
 
 						case 81: // Q
-							control.space = control.space === "local" ? "world" : "local";
+							transformControls.space = transformControls.space === "local" ? "world" : "local";
 							break;
 
 						case 17: // Ctrl
-							control.translationSnap = 100;
-							control.rotationSnap = THREE.Math.degToRad( 15 );
+							transformControls.translationSnap = 100;
+							transformControls.rotationSnap = Math.degToRad( 15 );
 							break;
 
 						case 87: // W
-							control.mode = "translate";
+							transformControls.mode = "translate";
 							break;
 
 						case 69: // E
-							control.mode = "rotate";
+							transformControls.mode = "rotate";
 							break;
 
 						case 82: // R
-							control.mode = "scale";
+							transformControls.mode = "scale";
 							break;
 
 						case 187:
 						case 107: // +, =, num+
-							control.size = control.size + 0.1;
+							transformControls.size = transformControls.size + 0.1;
 							break;
 
 						case 189:
 						case 109: // -, _, num-
-							control.size = Math.max( control.size - 0.1, 0.1 );
+							transformControls.size = Math.max( transformControls.size - 0.1, 0.1 );
 							break;
 
 						case 88: // X
-							control.showX = !control.showX;
+							transformControls.showX = !transformControls.showX;
 							break;
 
 						case 89: // Y
-							control.showY = !control.showY;
+							transformControls.showY = !transformControls.showY;
 							break;
 
 						case 90: // Z
-							control.showZ = !control.showZ;
+							transformControls.showZ = !transformControls.showZ;
 							break;
 
 						case 32: // Spacebar
-							control.enabled = !control.enabled;
+							transformControls.enabled = !transformControls.enabled;
 							break;
 
 					}
@@ -189,8 +204,8 @@
 					switch ( event.keyCode ) {
 
 						case 17: // Ctrl
-							control.translationSnap = null;
-							control.rotationSnap = null;
+							transformControls.translationSnap = null;
+							transformControls.rotationSnap = null;
 							break;
 
 					}
@@ -204,7 +219,7 @@
 				camera.aspect = window.innerWidth / window.innerHeight;
 				camera.updateProjectionMatrix();
 
-				renderer.setSize( window.innerWidth, window.innerHeight );
+				renderer.setSize(window.innerWidth, window.innerHeight);
 
 				render();
 
@@ -212,7 +227,10 @@
 
 			function render() {
 
-				renderer.render( scene, camera );
+				renderer.clear();
+				renderer.autoClear = false;
+				renderer.render(scene, camera);
+				renderer.render(helperScene, camera);
 
 			}
 

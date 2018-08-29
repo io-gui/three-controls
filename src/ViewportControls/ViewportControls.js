@@ -32,16 +32,12 @@ function dampTo( source, target, smoothing, dt ) {
 const changeEvent = { type: 'change' };
 
 export class ViewportControls extends Control {
-	constructor( camera, domElement, object ) {
+	constructor( camera, domElement ) {
 		super( domElement );
-
-		if ( camera === undefined || !camera.isCamera ) {
-			console.warn( 'ViewportControls: camera is mandatory in constructor!' );
-		}
 
 		this.defineProperties({
 			camera: camera,
-			object: object,
+			object: null,
 			target: new Vector3(),
 			enableOrbit: true,
 			enableDolly: true,
