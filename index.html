@@ -141,13 +141,15 @@
 				viewportControls.addEventListener('change', render);
 
 				var transformControls = new TransformControls(camera, renderer.domElement);
-				transformControls.space = 'world';
+				transformControls.space = 'local';
+				transformControls.mode = 'rotate';
 				helperScene.add(transformControls);
 
 				var selectionControls = new SelectionControls(camera, renderer.domElement, scene, selection);
 				helperScene.add(selectionControls);
 
 				selectionControls.addEventListener('change', event => {
+					transformControls.enabled = !!selection.selected.length;
 					transformControls.visible = !!selection.selected.length;
 					render();
 				});
@@ -167,7 +169,7 @@
 				selection.transformSpace = transformControls.space;
 
 				viewportControls.addEventListener('active-changed', event => {
-					transformControls.enabled = !event.value;
+					transformControls.enabled = !event.value && !!selection.selected.length;
 				});
 
 				window.addEventListener('resize', onWindowResize, false);
