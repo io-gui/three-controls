@@ -1,5 +1,5 @@
 import { Plane, Raycaster, Vector3 } from '../../../three.js/build/three.module.js';
-import { ObjectControls } from './ObjectControls.js';
+import { Control } from '../Control.js';
 
 /*
  * @author zz85 / https://github.com/zz85
@@ -15,7 +15,7 @@ let _selected = null;
 
 // TODO: original controls stick when dragout
 
-class DragControls extends ObjectControls {
+class DragControls extends Control {
 
 	constructor( objects, camera, domElement ) {
 
@@ -58,7 +58,7 @@ class DragControls extends ObjectControls {
 		// let rect = this.domElement.getBoundingClientRect();
 		_raycaster.setFromCamera( pointers[ 0 ].position, this.camera );
 		_plane.setFromNormalAndCoplanarPoint( this.camera.getWorldDirection( _plane.normal ), this.object.position );
-		if ( _selected && this.enabled ) {
+		if ( _selected ) {
 
 			if ( _raycaster.ray.intersectPlane( _plane, _intersection ) ) {
 

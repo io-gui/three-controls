@@ -12,7 +12,7 @@ import { ViewportControls } from './ViewportControls.js';
 
 /*
  * This set of controls performs orbiting, dollying, and panning.
- * Unlike TrackballControls, it maintains the "up" direction camera.up ( +Y by default ).
+ * Unlike TrackballControls, it maintains the "up" direction camera.up (+Y by default).
  *
  *  Orbit - left mouse / touch: one-finger move
  *  Dolly - middle mouse, or mousewheel / touch: two-finger spread or squish
@@ -38,10 +38,10 @@ class OrbitControls extends ViewportControls {
 			maxDistance: Infinity, // PerspectiveCamera dolly limit
 			minZoom: 0, // OrthographicCamera zoom limit
 			maxZoom: Infinity, // OrthographicCamera zoom limit
-			minPolarAngle: 0, // radians ( 0 to Math.PI )
-			maxPolarAngle: Math.PI, // radians ( 0 to Math.PI )
-			minAzimuthAngle: - Infinity, // radians ( -Math.PI to Math.PI )
-			maxAzimuthAngle: Infinity, // radians ( -Math.PI to Math.PI )
+			minPolarAngle: 0, // radians (0 to Math.PI)
+			maxPolarAngle: Math.PI, // radians (0 to Math.PI)
+			minAzimuthAngle: - Infinity, // radians (-Math.PI to Math.PI)
+			maxAzimuthAngle: Infinity, // radians (-Math.PI to Math.PI)
 			screenSpacePanning: false,
 			_spherical: new Spherical()
 		} );

@@ -69,18 +69,10 @@ export default [
     ] )
   },
   {
-    input: 'src/controls/ObjectControls.js',
-    output: output( 'build/controls/ObjectControls.js' ),
-    external: external( [
-      'src/controls/ObjectControls.js',
-      '../three.js/build/three.module.js'
-    ] )
-  },
-  {
     input: 'src/controls/DragControls.js',
     output: output( 'build/controls/DragControls.js' ),
     external: external( [
-      'src/controls/ObjectControls.js',
+      './src/Control.js',
       '../three.js/build/three.module.js'
     ] )
   },
@@ -88,7 +80,7 @@ export default [
     input: 'src/controls/TransformControls.js',
     output: output( 'build/controls/TransformControls.js' ),
     external: external( [
-      'src/controls/ObjectControls.js',
+      './src/Control.js',
       '../three.js/build/three.module.js'
     ] )
   }

@@ -92,8 +92,14 @@ class ViewportControls extends Control {
 		this.needsUpdate = true;
 
 	}
+	targetChanged() {
+
+		this.needsUpdate = true;
+
+	}
 	stateChanged() {
 
+		this.active = this.state !== STATE.NONE;
 		this.needsUpdate = true;
 
 	}
@@ -184,8 +190,6 @@ class ViewportControls extends Control {
 	}
 	onPointerMove( pointers ) {
 
-		if ( ! this.enabled ) return;
-
 		let rect = this.domElement.getBoundingClientRect();
 		let prevDistance, distance;
 		aspectMultiplier.set( rect.width / rect.height, 1 );
@@ -236,15 +240,12 @@ class ViewportControls extends Control {
 		if ( pointers.length === 0 ) {
 
 			this.state = STATE.NONE;
-			this.active = false;
 
 		}
 
 	}
 	onKeyDown( event ) {
 
-		if ( ! this.enabled ) return;
-		if ( ! this.enablePan ) return;
 		// TODO: key inertia
 		// TODO: better state setting
 		switch ( event.keyCode ) {
@@ -295,25 +296,15 @@ class ViewportControls extends Control {
 	}
 	onWheel( event ) {
 
+		this.state = STATE.DOLLY;
 		this._setDolly( event.delta * this.wheelDollySpeed );
-		this.active = false; // TODO
-
-	}
-	// control methods
-	attach( camera ) {
-
-		this.camera = camera;
-
-	}
-	detach() {
-
-		this.camera = undefined;
+		this.state = STATE.NONE;
+		this.needsUpdate = true;
 
 	}
 	_setPan( dir ) {
 
 		this.state = STATE.PAN;
-		this.active = true;
 		if ( this.enablePan ) this._panOffset.copy( dir );
 		this.needsUpdate = true;
 
@@ -321,7 +312,6 @@ class ViewportControls extends Control {
 	_setDolly( dir ) {
 
 		this.state = STATE.DOLLY;
-		this.active = true;
 		if ( this.enableDolly ) this._dollyOffset = dir;
 		this.needsUpdate = true;
 
@@ -329,7 +319,6 @@ class ViewportControls extends Control {
 	_setDollyPan( dollyDir, panDir ) {
 
 		this.state = STATE.DOLLY_PAN;
-		this.active = true;
 		if ( this.enableDolly ) this._dollyOffset = dollyDir;
 		if ( this.enablePan ) this._panOffset.copy( panDir );
 		this.needsUpdate = true;
@@ -338,7 +327,6 @@ class ViewportControls extends Control {
 	_setOrbit( dir ) {
 
 		this.state = STATE.ORBIT;
-		this.active = true;
 		if ( this.enableOrbit ) this._orbitOffset.copy( dir );
 		this.needsUpdate = true;
 

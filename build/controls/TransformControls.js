@@ -1,5 +1,5 @@
 import { Object3D, MeshBasicMaterial, DoubleSide, LineBasicMaterial, CylinderBufferGeometry, BoxBufferGeometry, BufferGeometry, Float32BufferAttribute, Mesh, Line, OctahedronBufferGeometry, PlaneBufferGeometry, TorusBufferGeometry, SphereBufferGeometry, Vector3, Euler, Matrix4, Quaternion, Color, Raycaster } from '../../../three.js/build/three.module.js';
-import { ObjectControls } from './ObjectControls.js';
+import { Control } from '../Control.js';
 
 // shared materials
 const gizmoMaterial = new MeshBasicMaterial( {
@@ -85,12 +85,12 @@ class TransformControlsGizmo extends Object3D {
 
 		const scaleHandleGeometry = new BoxBufferGeometry( 0.125, 0.125, 0.125 );
 
-		const lineGeometry = new BufferGeometry( );
+		const lineGeometry = new BufferGeometry();
 		lineGeometry.addAttribute( 'position', new Float32BufferAttribute( [ 0, 0, 0,	1, 0, 0 ], 3 ) );
 
 		function CircleGeometry( radius, arc ) {
 
-			const geometry = new BufferGeometry( );
+			const geometry = new BufferGeometry();
 			const vertices = [];
 			for ( let i = 0; i <= 64 * arc; ++ i ) {
 
@@ -885,7 +885,7 @@ const _alignVector = new Vector3();
 // events
 const changeEvent = { type: "change" };
 
-class TransformControls extends ObjectControls {
+class TransformControls extends Control {
 
 	constructor( camera, domElement ) {
 
@@ -983,8 +983,6 @@ class TransformControls extends ObjectControls {
 	}
 	onPointerHover( pointers ) {
 
-		if ( ! this.enabled ) return;
-
 		if ( ! this.object || this.active === true ) return;
 		_ray.setFromCamera( pointers[ 0 ].position, this.camera );
 		const intersect = _ray.intersectObjects( this._gizmo.picker[ this.mode ].children, true )[ 0 ] || false;
@@ -1000,8 +998,6 @@ class TransformControls extends ObjectControls {
 
 	}
 	onPointerDown( pointers ) {
-
-		if ( ! this.enabled ) return;
 
 		if ( this.axis === null || ! this.object || this.active === true || pointers[ 0 ].button !== 0 ) return;
 
@@ -1047,8 +1043,6 @@ class TransformControls extends ObjectControls {
 
 	}
 	onPointerMove( pointers ) {
-
-		if ( ! this.enabled ) return;
 
 		let axis = this.axis;
 		let mode = this.mode;
@@ -1250,7 +1244,6 @@ class TransformControls extends ObjectControls {
 	}
 	onPointerUp( pointers ) {
 
-		if ( ! this.enabled ) return;
 		if ( pointers.length === 0 ) {
 
 			this.active = false;

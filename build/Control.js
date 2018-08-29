@@ -450,15 +450,6 @@ class Control extends Object3D {
 
 		super();
 
-		if ( domElement === undefined || ! ( domElement instanceof HTMLElement ) ) {
-
-			console.warn( 'Control: domElement is mandatory in constructor!' );
-			domElement = document;
-
-		}
-
-		const pointerEvents = new PointerEvents( domElement, { normalized: true } );
-
 		this.defineProperties( {
 			domElement: domElement,
 			enabled: true,
@@ -467,7 +458,8 @@ class Control extends Object3D {
 			needsUpdate: false,
 			_animationActive: false,
 			_animationTime: 0,
-			_rafID: 0
+			_rafID: 0,
+			_pointerEvents: new PointerEvents( domElement, { normalized: true } )
 		} );
 
 		this.onPointerDown = this.onPointerDown.bind( this );
@@ -481,35 +473,45 @@ class Control extends Object3D {
 		this.onFocus = this.onFocus.bind( this );
 		this.onBlur = this.onBlur.bind( this );
 
-		pointerEvents.addEventListener( 'pointerdown', this.onPointerDown );
-		pointerEvents.addEventListener( 'pointerhover', this.onPointerHover );
-		pointerEvents.addEventListener( 'pointermove', this.onPointerMove );
-		pointerEvents.addEventListener( 'pointerup', this.onPointerUp );
-		pointerEvents.addEventListener( 'keydown', this.onKeyDown );
-		pointerEvents.addEventListener( 'keyup', this.onKeyUp );
-		pointerEvents.addEventListener( 'wheel', this.onWheel );
-		pointerEvents.addEventListener( 'contextmenu', this.onContextmenu );
-		pointerEvents.addEventListener( 'focus', this.onFocus );
-		pointerEvents.addEventListener( 'blur', this.onBlur );
+		this._addEvents();
 
 		this.dispose = function () {
 
-			pointerEvents.removeEventListener( 'pointerdown', this.onPointerDown );
-			pointerEvents.removeEventListener( 'pointerhover', this.onPointerHover );
-			pointerEvents.removeEventListener( 'pointermove', this.onPointerMove );
-			pointerEvents.removeEventListener( 'pointerup', this.onPointerUp );
-			pointerEvents.removeEventListener( 'keydown', this.onKeyDown );
-			pointerEvents.removeEventListener( 'keyup', this.onKeyUp );
-			pointerEvents.removeEventListener( 'wheel', this.onWheel );
-			pointerEvents.removeEventListener( 'contextmenu', this.onContextmenu );
-			pointerEvents.removeEventListener( 'focus', this.onFocus );
-			pointerEvents.removeEventListener( 'blur', this.onBlur );
-			pointerEvents.dispose();
+			this._removeEvents();
+			this._pointerEvents.dispose();
 			this.stopAnimation();
 
 		};
 
 		this.needsUpdate = true;
+
+	}
+	_addEvents() {
+
+		this._pointerEvents.addEventListener( 'pointerdown', this.onPointerDown );
+		this._pointerEvents.addEventListener( 'pointerhover', this.onPointerHover );
+		this._pointerEvents.addEventListener( 'pointermove', this.onPointerMove );
+		this._pointerEvents.addEventListener( 'pointerup', this.onPointerUp );
+		this._pointerEvents.addEventListener( 'keydown', this.onKeyDown );
+		this._pointerEvents.addEventListener( 'keyup', this.onKeyUp );
+		this._pointerEvents.addEventListener( 'wheel', this.onWheel );
+		this._pointerEvents.addEventListener( 'contextmenu', this.onContextmenu );
+		this._pointerEvents.addEventListener( 'focus', this.onFocus );
+		this._pointerEvents.addEventListener( 'blur', this.onBlur );
+
+	}
+	_removeEvents() {
+
+		this._pointerEvents.removeEventListener( 'pointerdown', this.onPointerDown );
+		this._pointerEvents.removeEventListener( 'pointerhover', this.onPointerHover );
+		this._pointerEvents.removeEventListener( 'pointermove', this.onPointerMove );
+		this._pointerEvents.removeEventListener( 'pointerup', this.onPointerUp );
+		this._pointerEvents.removeEventListener( 'keydown', this.onKeyDown );
+		this._pointerEvents.removeEventListener( 'keyup', this.onKeyUp );
+		this._pointerEvents.removeEventListener( 'wheel', this.onWheel );
+		this._pointerEvents.removeEventListener( 'contextmenu', this.onContextmenu );
+		this._pointerEvents.removeEventListener( 'focus', this.onFocus );
+		this._pointerEvents.removeEventListener( 'blur', this.onBlur );
 
 	}
 	needsUpdateChanged( value ) {
@@ -521,10 +523,12 @@ class Control extends Object3D {
 
 		if ( value ) {
 
+			this._addEvents();
 			this.startAnimation();
 
 		} else {
 
+			this._removeEvents();
 			this.stopAnimation();
 
 		}
@@ -607,9 +611,9 @@ class Control extends Object3D {
 
 					const oldValue = this._properties[ propName ];
 					this._properties[ propName ] = value;
-					if ( typeof this[ propName + "Changed" ] === 'function' ) this[ propName + "Changed" ]( value, oldValue );
-					this.dispatchEvent( { type: propName + "-changed", value: value, oldValue: oldValue } );
-					this.dispatchEvent( { type: "change", prop: propName, value: value, oldValue: oldValue } );
+					if ( typeof this[ propName + 'Changed' ] === 'function' ) this[ propName + 'Changed' ]( value, oldValue );
+					this.dispatchEvent( { type: propName + '-changed', value: value, oldValue: oldValue } );
+					this.dispatchEvent( { type: 'change', prop: propName, value: value, oldValue: oldValue } );
 
 				}
 

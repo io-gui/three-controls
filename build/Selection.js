@@ -62,15 +62,6 @@ function filterItems( list, hierarchy, filter ) {
 
 class Selection extends Object3D {
 
-	/**
-	 * Constructs a PointLight.
-	 *
-	 * @constructor
-	 * @param {Color|String|Number} color - (optional) hexadecimal color of the light. Default is 0xffffff (white)
-	 * @param {Float} intensity           - (optional) numeric value of the light's strength/intensity. Default is 1.
-	 * @param {Number} distance           - The distance from the light where the intensity is 0. When set to 0, then the light never stops. Default is 0.
-	 * @param {Number} decay              - The amount the light dims along the distance of the light. Default is 1. For physically correct lighting, set this to 2.
-	 */
 	constructor() {
 
 		super();
@@ -169,6 +160,7 @@ class Selection extends Object3D {
 
 		}
 		super.updateMatrixWorld();
+
 		// gather selection data and emit selection-changed event
 		let added = [];
 		for ( let i = 0; i < this.selected.length; i ++ ) {
@@ -191,6 +183,8 @@ class Selection extends Object3D {
 
 		}
 		selectedOld.length = 0;
+		// @event selected-changed
+		this.dispatchEvent( { type: 'changed' } );
 		this.dispatchEvent( { type: 'selected-changed', selected: [ ...this.selected ], added: added, removed: removed } );
 
 	}
