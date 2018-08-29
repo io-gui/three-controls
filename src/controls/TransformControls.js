@@ -3,7 +3,7 @@
  */
 
 import {Raycaster, Vector3, Quaternion} from "../../../three.js/build/three.module.js";
-import {Control} from "../Control.js";
+import {Interactive} from "../Interactive.js";
 import {TransformControlsGizmo} from "./TransformControlsGizmo.js";
 import {TransformControlsPlane} from "./TransformControlsPlane.js";
 
@@ -23,7 +23,7 @@ const _alignVector = new Vector3();
 // events
 const changeEvent = { type: "change" };
 
-export class TransformControls extends Control {
+export class TransformControls extends Interactive {
 	constructor(camera, domElement) {
 
 		super(domElement);

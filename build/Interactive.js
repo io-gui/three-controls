@@ -444,7 +444,7 @@ class Vector2 {
 
 // TODO: implement dom element swap and multiple dom elements
 
-class Control extends Object3D {
+class Interactive extends Object3D {
 
 	constructor( domElement ) {
 
@@ -643,4 +643,4 @@ class Control extends Object3D {
 
 }
 
-export { Control };
+export { Interactive };

@@ -1,5 +1,5 @@
 import { Plane, Raycaster, Vector3 } from '../../../three.js/build/three.module.js';
-import { Control } from '../Control.js';
+import { Interactive } from '../Interactive.js';
 
 /*
  * @author zz85 / https://github.com/zz85
@@ -15,7 +15,7 @@ let _selected = null;
 
 // TODO: original controls stick when dragout
 
-class DragControls extends Control {
+class DragControls extends Interactive {
 
 	constructor( objects, camera, domElement ) {
 

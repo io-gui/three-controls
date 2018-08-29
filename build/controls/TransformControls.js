@@ -1,5 +1,5 @@
 import { Object3D, MeshBasicMaterial, DoubleSide, LineBasicMaterial, CylinderBufferGeometry, BoxBufferGeometry, BufferGeometry, Float32BufferAttribute, Mesh, Line, OctahedronBufferGeometry, PlaneBufferGeometry, TorusBufferGeometry, SphereBufferGeometry, Vector3, Euler, Matrix4, Quaternion, Color, Raycaster } from '../../../three.js/build/three.module.js';
-import { Control } from '../Control.js';
+import { Interactive } from '../Interactive.js';
 
 // shared materials
 const gizmoMaterial = new MeshBasicMaterial( {
@@ -885,7 +885,7 @@ const _alignVector = new Vector3();
 // events
 const changeEvent = { type: "change" };
 
-class TransformControls extends Control {
+class TransformControls extends Interactive {
 
 	constructor( camera, domElement ) {
 

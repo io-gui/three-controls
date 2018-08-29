@@ -3,7 +3,7 @@
  */
 
 import {Raycaster, Line, LineBasicMaterial} from "../../../three.js/build/three.module.js";
-import {Control} from "../Control.js";
+import {Interactive} from "../Interactive.js";
 
 const helperMat = new LineBasicMaterial({ depthTest: false, transparent: true });
 
@@ -13,7 +13,7 @@ const raycaster = new Raycaster();
 // Events
 const changeEvent = { type: 'change' };
 
-export class SelectionControls extends Control {
+export class SelectionControls extends Interactive {
 	constructor(camera, domElement, scene, selection) {
 		super(domElement);
 

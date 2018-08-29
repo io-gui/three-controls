@@ -12,7 +12,7 @@ import {PointerEvents} from "../lib/PointerEvents.js";
 
 // TODO: implement dom element swap and multiple dom elements
 
-export class Control extends Object3D {
+export class Interactive extends Object3D {
 	constructor(domElement) {
 		super();
 

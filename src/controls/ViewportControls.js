@@ -3,7 +3,7 @@
  */
 
 import {Vector2, Vector3, MOUSE} from "../../../three.js/build/three.module.js";
-import {Control} from "../Control.js";
+import {Interactive} from "../Interactive.js";
 
 /*
  * ViewportControls is a base class for controls performing orbiting, dollying, and panning.
@@ -31,7 +31,7 @@ function dampTo( source, target, smoothing, dt ) {
 // Events
 const changeEvent = { type: 'change' };
 
-export class ViewportControls extends Control {
+export class ViewportControls extends Interactive {
 	constructor( camera, domElement ) {
 		super( domElement );
 

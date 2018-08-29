@@ -19,8 +19,8 @@ function external( list ) {
 
 export default [
   {
-    input: 'src/Control.js',
-    output: output( 'build/Control.js'),
+    input: 'src/Interactive.js',
+    output: output( 'build/Interactive.js'),
     external: external( ['../three.js/build/three.module.js'] )
   },
   {
@@ -32,7 +32,7 @@ export default [
     input: 'src/controls/ViewportControls.js',
     output: output( 'build/controls/ViewportControls.js' ),
     external: external( [
-      './src/Control.js',
+      './src/Interactive.js',
       '../three.js/build/three.module.js'
     ] )
   },
@@ -72,7 +72,7 @@ export default [
     input: 'src/controls/DragControls.js',
     output: output( 'build/controls/DragControls.js' ),
     external: external( [
-      './src/Control.js',
+      './src/Interactive.js',
       '../three.js/build/three.module.js'
     ] )
   },
@@ -80,7 +80,7 @@ export default [
     input: 'src/controls/TransformControls.js',
     output: output( 'build/controls/TransformControls.js' ),
     external: external( [
-      './src/Control.js',
+      './src/Interactive.js',
       '../three.js/build/three.module.js'
     ] )
   }

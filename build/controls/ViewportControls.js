@@ -1,5 +1,5 @@
 import { Vector2, Vector3, MOUSE } from '../../../three.js/build/three.module.js';
-import { Control } from '../Control.js';
+import { Interactive } from '../Interactive.js';
 
 /**
  * @author arodic / http://github.com/arodic
@@ -33,7 +33,7 @@ function dampTo( source, target, smoothing, dt ) {
 // Events
 const changeEvent = { type: 'change' };
 
-class ViewportControls extends Control {
+class ViewportControls extends Interactive {
 
 	constructor( camera, domElement ) {
 
