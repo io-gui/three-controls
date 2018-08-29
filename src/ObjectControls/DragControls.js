@@ -4,7 +4,7 @@
  * Running this will allow you to drag three.js objects around the screen.
  */
 
-import {Plane, Raycaster, Vector3, Vector3} from "../../../three.js/build/three.module.js";
+import {Plane, Raycaster, Vector3} from "../../../three.js/build/three.module.js";
 import {ObjectControls} from "./ObjectControls.js";
 
 const _plane = new Plane();

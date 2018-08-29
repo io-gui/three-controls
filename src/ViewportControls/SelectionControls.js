@@ -2,8 +2,10 @@
  * @author arodic / http://github.com/arodic
  */
 
-import {Vector2, Vector3, Raycaster, Object3D, LineBasicMaterial, Line} from "../../../three.js/build/three.module.js";
+import {Raycaster, Line, LineBasicMaterial} from "../../../three.js/build/three.module.js";
 import {Control} from "../Control.js";
+
+const mat = new LineBasicMaterial({ depthTest: false, transparent: true });
 
 // Temp variables
 const raycaster = new Raycaster();
@@ -11,7 +13,6 @@ let intersects;
 
 // Events
 const changeEvent = { type: 'change' };
-const mat = new LineBasicMaterial({ depthTest: false, transparent: true });
 
 export class SelectionControls extends Control {
 	constructor( camera, domElement, scene, selection ) {
@@ -27,12 +28,12 @@ export class SelectionControls extends Control {
 		raycaster.setFromCamera( position, this.camera );
 		intersects = raycaster.intersectObjects(this.scene.children, true);
 		if ( intersects.length > 0 ) {
-			var object = intersects[ 0 ].object;
+			const object = intersects[ 0 ].object;
 			// TODO: handle helper selection
 			if (add) {
-				this.selection.toggle(intersects[ 0 ].object);
+				this.selection.toggle(object);
 			} else {
-				this.selection.replace(intersects[ 0 ].object);
+				this.selection.replace(object);
 			}
 		} else {
 			this.selection.clear();
@@ -42,12 +43,12 @@ export class SelectionControls extends Control {
 			this.remove(this.children[i]);
 		}
 		for (let i = 0; i < this.selection.selected.length; i++) {
-			let _helper = new Line( this.selection.selected[i].geometry, mat );
+			const _helper = new Line( this.selection.selected[i].geometry, mat );
 			_helper._src = this.selection.selected[i];
 			_helper.matrixAutoUpdate = false;
-			this.selection.selected[i].updateMatrixWorld()
+			this.selection.selected[i].updateMatrixWorld();
 			this.selection.selected[i].matrixWorld.decompose( _helper.position, _helper.quaternion, _helper.scale );
-			this.add(_helper)
+			this.add(_helper);
 		}
 
 		this.dispatchEvent(changeEvent);
@@ -55,7 +56,7 @@ export class SelectionControls extends Control {
 	onPointerUp( pointers ) {
 		if ( !this.enabled ) return;
 		if ( pointers.length === 0 ) {
-			let dist = pointers.removed[0].distance.length();
+			const dist = pointers.removed[0].distance.length();
 			if (dist < 0.01) {
 				this.select(pointers.removed[0].position, pointers.removed[0].ctrlKey);
 			}
@@ -63,8 +64,8 @@ export class SelectionControls extends Control {
 	}
 	updateMatrixWorld() {
 		super.updateMatrixWorld();
-		for (var i = 0; i < this.children.length; i++) {
-			let _helper = this.children[i];
+		for (let i = 0; i < this.children.length; i++) {
+			const _helper = this.children[i];
 			_helper.matrixWorld.copy(_helper._src.matrixWorld);
 		}
 	}

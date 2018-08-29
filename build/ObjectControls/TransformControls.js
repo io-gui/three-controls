@@ -1,33 +1,30 @@
 import { Object3D, MeshBasicMaterial, DoubleSide, LineBasicMaterial, CylinderBufferGeometry, BoxBufferGeometry, BufferGeometry, Float32BufferAttribute, Mesh, Line, OctahedronBufferGeometry, PlaneBufferGeometry, TorusBufferGeometry, SphereBufferGeometry, Vector3, Euler, Matrix4, Quaternion, Color, Raycaster } from '../../../three.js/build/three.module.js';
 import { ObjectControls } from './ObjectControls.js';
 
+// shared materials
+const gizmoMaterial = new MeshBasicMaterial( {
+	depthTest: false,
+	depthWrite: false,
+	transparent: true,
+	side: DoubleSide,
+	fog: false
+} );
+
+const gizmoLineMaterial = new LineBasicMaterial( {
+	depthTest: false,
+	depthWrite: false,
+	transparent: true,
+	linewidth: 1,
+	fog: false
+} );
+
 class TransformControlsGizmo extends Object3D {
 
 	constructor() {
 
 		super();
 
-		this.type = 'TransformControlsGizmo';
-
-		// shared materials
-		const gizmoMaterial = new MeshBasicMaterial( {
-			depthTest: false,
-			depthWrite: false,
-			transparent: true,
-			side: DoubleSide,
-			fog: false
-		} );
-
-		const gizmoLineMaterial = new LineBasicMaterial( {
-			depthTest: false,
-			depthWrite: false,
-			transparent: true,
-			linewidth: 2,
-			fog: false
-		} );
-
 		// Make unique material for each axis/color
-
 		const matInvisible = gizmoMaterial.clone();
 		matInvisible.opacity = 0.15;
 
@@ -890,14 +887,11 @@ const changeEvent = { type: "change" };
 
 class TransformControls extends ObjectControls {
 
-	get isTransformControls() {
-
-		return true;
-
-	}
 	constructor( camera, domElement ) {
 
 		super( domElement );
+
+		this.visible = false;
 
 		this._gizmo = new TransformControlsGizmo();
 		this.add( this._gizmo );
@@ -907,7 +901,7 @@ class TransformControls extends ObjectControls {
 
 		this.defineProperties( {
 			camera: camera,
-			object: undefined,
+			object: null,
 			axis: null,
 			mode: "translate",
 			translationSnap: null,
@@ -953,9 +947,21 @@ class TransformControls extends ObjectControls {
 		} );
 
 	}
+	objectChanged( value ) {
+
+		const hasObject = value ? true : false;
+		this.visible = hasObject;
+		if ( ! hasObject ) {
+
+			this.active = false;
+			this.axis = null;
+
+		}
+
+	}
 	updateMatrixWorld() {
 
-		if ( this.object !== undefined ) {
+		if ( this.object ) {
 
 			this.object.updateMatrixWorld();
 			this.object.matrixWorld.decompose( this.worldPosition, this.worldQuaternion, this.worldScale );
@@ -977,9 +983,10 @@ class TransformControls extends ObjectControls {
 	}
 	onPointerHover( pointers ) {
 
-		let pointer = pointers[ 0 ];
-		if ( this.object === undefined || this.active === true || ( pointer.button !== undefined && pointer.button !== 0 ) ) return;
-		_ray.setFromCamera( pointer.position, this.camera );
+		if ( ! this.enabled ) return;
+
+		if ( ! this.object || this.active === true ) return;
+		_ray.setFromCamera( pointers[ 0 ].position, this.camera );
 		const intersect = _ray.intersectObjects( this._gizmo.picker[ this.mode ].children, true )[ 0 ] || false;
 		if ( intersect ) {
 
@@ -994,53 +1001,54 @@ class TransformControls extends ObjectControls {
 	}
 	onPointerDown( pointers ) {
 
-		let pointer = pointers[ 0 ];
-		if ( this.object === undefined || this.active === true || ( pointer.button !== undefined && pointer.button !== 0 ) ) return;
-		if ( ( pointer.button === 0 || pointer.button === undefined ) && this.axis !== null ) {
+		if ( ! this.enabled ) return;
 
-			_ray.setFromCamera( pointer.position, this.camera );
-			const planeIntersect = _ray.intersectObjects( [ this._plane ], true )[ 0 ] || false;
-			if ( planeIntersect ) {
+		if ( this.axis === null || ! this.object || this.active === true || pointers[ 0 ].button !== 0 ) return;
 
-				if ( this.mode === 'scale' ) {
+		_ray.setFromCamera( pointers[ 0 ].position, this.camera );
 
-					this.space = 'local';
+		const planeIntersect = _ray.intersectObjects( [ this._plane ], true )[ 0 ] || false;
+		let space = this.space;
+		if ( planeIntersect ) {
 
-				} else if ( this.axis === 'E' || this.axis === 'XYZE' || this.axis === 'XYZ' ) {
+			if ( this.mode === 'scale' ) {
 
-					this.space = 'world';
+				space = 'local';
 
-				}
-				if ( this.space === 'local' && this.mode === 'rotate' ) {
+			} else if ( this.axis === 'E' || this.axis === 'XYZE' || this.axis === 'XYZ' ) {
 
-					const snap = this.rotationSnap;
-					if ( this.axis === 'X' && snap ) this.object.rotation.x = Math.round( this.object.rotation.x / snap ) * snap;
-					if ( this.axis === 'Y' && snap ) this.object.rotation.y = Math.round( this.object.rotation.y / snap ) * snap;
-					if ( this.axis === 'Z' && snap ) this.object.rotation.z = Math.round( this.object.rotation.z / snap ) * snap;
-
-				}
-				this.object.updateMatrixWorld();
-				if ( this.object.parent ) {
-
-					this.object.parent.updateMatrixWorld();
-
-				}
-				this.positionStart.copy( this.object.position );
-				this.quaternionStart.copy( this.object.quaternion );
-				this.scaleStart.copy( this.object.scale );
-				this.object.matrixWorld.decompose( this.worldPositionStart, this.worldQuaternionStart, this.worldScaleStart );
-				this.pointStart.copy( planeIntersect.point ).sub( this.worldPositionStart );
-				if ( this.space === 'local' ) this.pointStart.applyQuaternion( this.worldQuaternionStart.clone().inverse() );
+				space = 'world';
 
 			}
-			this.active = true;
+			if ( space === 'local' && this.mode === 'rotate' ) {
+
+				const snap = this.rotationSnap;
+				if ( this.axis === 'X' && snap ) this.object.rotation.x = Math.round( this.object.rotation.x / snap ) * snap;
+				if ( this.axis === 'Y' && snap ) this.object.rotation.y = Math.round( this.object.rotation.y / snap ) * snap;
+				if ( this.axis === 'Z' && snap ) this.object.rotation.z = Math.round( this.object.rotation.z / snap ) * snap;
+
+			}
+			this.object.updateMatrixWorld();
+			if ( this.object.parent ) {
+
+				this.object.parent.updateMatrixWorld();
+
+			}
+			this.positionStart.copy( this.object.position );
+			this.quaternionStart.copy( this.object.quaternion );
+			this.scaleStart.copy( this.object.scale );
+			this.object.matrixWorld.decompose( this.worldPositionStart, this.worldQuaternionStart, this.worldScaleStart );
+			this.pointStart.copy( planeIntersect.point ).sub( this.worldPositionStart );
+			if ( space === 'local' ) this.pointStart.applyQuaternion( this.worldQuaternionStart.clone().inverse() );
 
 		}
+
+		this.active = true;
 
 	}
 	onPointerMove( pointers ) {
 
-		let pointer = pointers[ 0 ];
+		if ( ! this.enabled ) return;
 
 		let axis = this.axis;
 		let mode = this.mode;
@@ -1057,9 +1065,9 @@ class TransformControls extends ObjectControls {
 
 		}
 
-		if ( object === undefined || axis === null || this.active === false || ( pointer.button !== undefined && pointer.button !== 0 ) ) return;
+		if ( object === undefined || axis === null || this.active === false || pointers[ 0 ].button !== 0 ) return;
 
-		_ray.setFromCamera( pointer.position, this.camera );
+		_ray.setFromCamera( pointers[ 0 ].position, this.camera );
 
 		const planeIntersect = _ray.intersectObjects( [ this._plane ], true )[ 0 ] || false;
 
@@ -1242,6 +1250,7 @@ class TransformControls extends ObjectControls {
 	}
 	onPointerUp( pointers ) {
 
+		if ( ! this.enabled ) return;
 		if ( pointers.length === 0 ) {
 
 			this.active = false;
@@ -1249,78 +1258,9 @@ class TransformControls extends ObjectControls {
 
 		} else {
 
-			if ( pointers[ 0 ].button === undefined ) this.axis = null;
+			if ( pointers[ 0 ].button === - 1 ) this.axis = null;
 
 		}
-
-	}
-	attach( object ) {
-
-		this.object = object;
-		this.visible = true;
-
-	}
-	detach() {
-
-		this.object = undefined;
-		this.visible = false;
-
-	}
-	// Deprication warnings
-	addEventListener( type, listener ) {
-
-		super.addEventListener( type, listener );
-		if ( type === "mouseDown" ) {
-
-			console.warn( '"mouseDown" event depricated, use "active-changed" or "pointerdown" event instead.' );
-
-		}
-		if ( type === "mouseUp" ) {
-
-			console.warn( '"mouseUp" event depricated, use "active-changed" or "pointerup" event instead.' );
-
-		}
-		if ( type === "objectChange" ) {
-
-			console.warn( '"objectChange" event depricated, use "change" event instead.' );
-
-		}
-
-	}
-	getMode() {
-
-		console.warn( 'TransformControls: getMode function has been depricated.' );
-		return this.mode;
-
-	}
-	setMode( mode ) {
-
-		this.mode = mode;
-		console.warn( 'TransformControls: setMode function has been depricated.' );
-
-	}
-	setTranslationSnap( translationSnap ) {
-
-		this.translationSnap = translationSnap;
-		console.warn( 'TransformControls: setTranslationSnap function has been depricated.' );
-
-	}
-	setRotationSnap( rotationSnap ) {
-
-		this.rotationSnap = rotationSnap;
-		console.warn( 'TransformControls: setRotationSnap function has been depricated.' );
-
-	}
-	setSize( size ) {
-
-		this.size = size;
-		console.warn( 'TransformControls: setSize function has been depricated.' );
-
-	}
-	setSpace( space ) {
-
-		this.space = space;
-		console.warn( 'TransformControls: setSpace function has been depricated.' );
 
 	}
 

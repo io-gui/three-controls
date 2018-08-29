@@ -2,7 +2,7 @@
  * @author arodic / https://github.com/arodic
  */
 
-import {Object3D, Vector2} from "../../three.js/build/three.module.js";
+import {Object3D} from "../../three.js/build/three.module.js";
 import {PointerEvents} from "./PointerEvents.js";
 
 // TODO: documentation

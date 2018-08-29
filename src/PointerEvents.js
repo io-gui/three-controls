@@ -106,11 +106,11 @@ export class PointerEvents {
 			scope.dispatchEvent({ type: "wheel", delta: delta });
 		}
 
-		function _onFocus(event) {
+		function _onFocus() {
 			domElement.addEventListener("blur", _onBlur, false);
 			scope.dispatchEvent({ type: "focus" });
 		}
-		function _onBlur(event) {
+		function _onBlur() {
 			domElement.removeEventListener("blur", _onBlur, false);
 			scope.dispatchEvent({ type: "blur" });
 		}
@@ -161,15 +161,15 @@ export class PointerEvents {
 	removeEventListener(type, listener) {
 		if (this._listeners === undefined) return;
 		if (this._listeners[type] !== undefined) {
-			var index = this._listeners[type].indexOf(listener);
+			let index = this._listeners[type].indexOf(listener);
 			if (index !== -1) this._listeners[type].splice(index, 1);
 		}
 	}
 	dispatchEvent(event) {
 		if (this._listeners === undefined) return;
 		if (this._listeners[event.type] !== undefined) {
-			var array = this._listeners[event.type].slice(0);
-			for (var i = 0, l = array.length; i < l; i ++) {
+			let array = this._listeners[event.type].slice(0);
+			for (let i = 0, l = array.length; i < l; i ++) {
 				array[i].call(this, event);
 			}
 		}
@@ -223,8 +223,8 @@ class PointerArray extends Array {
 		this.previous.length = 0;
 		this.removed.length = 0;
 
-		for (var i = 0; i < this.length; i++) {
-			 this.previous.push(this[i]);
+		for (let i = 0; i < this.length; i++) {
+			this.previous.push(this[i]);
 		}
 		this.length = 0;
 
@@ -354,7 +354,7 @@ class Vector2 {
 		return Math.sqrt(this.distanceToSquared(v));
 	}
 	distanceToSquared(v) {
-		var dx = this.x - v.x, dy = this.y - v.y;
+		let dx = this.x - v.x, dy = this.y - v.y;
 		return dx * dx + dy * dy;
 	}
 }

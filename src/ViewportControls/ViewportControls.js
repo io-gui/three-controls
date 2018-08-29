@@ -240,7 +240,7 @@ export class ViewportControls extends Control {
 		}
 		this.active = false;
 	}
-	onKeyUp( event ) {
+	onKeyUp() {
 		// TODO: Consider improving for prevent pointer and multi-key interruptions.
 		// this.active = false;
 	}
@@ -272,12 +272,6 @@ export class ViewportControls extends Control {
 		this.active = true;
 		if ( this.enableDolly ) this._dollyOffset = dollyDir;
 		if ( this.enablePan ) this._panOffset.copy( panDir );
-		this.needsUpdate = true;
-	}
-	_setDolly( dir ) {
-		this.state = STATE.DOLLY;
-		this.active = true;
-		if ( this.enableDolly ) this._dollyOffset = dir;
 		this.needsUpdate = true;
 	}
 	_setOrbit( dir ) {

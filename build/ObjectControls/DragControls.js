@@ -17,11 +17,6 @@ let _selected = null;
 
 class DragControls extends ObjectControls {
 
-	get isDragControls() {
-
-		return true;
-
-	}
 	constructor( objects, camera, domElement ) {
 
 		super( domElement );
@@ -96,30 +91,6 @@ class DragControls extends ObjectControls {
 
 		this.object = undefined;
 		this.visible = false;
-
-	}
-	// Deprication warnings
-	setObjects() {
-
-		console.error( 'THREE.DragControls: setObjects() has been removed.' );
-
-	}
-	on( type, listener ) {
-
-		console.warn( 'THREE.DragControls: on() has been deprecated. Use addEventListener() instead.' );
-		this.addEventListener( type, listener );
-
-	}
-	off( type, listener ) {
-
-		console.warn( 'THREE.DragControls: off() has been deprecated. Use removeEventListener() instead.' );
-		this.removeEventListener( type, listener );
-
-	}
-	notify( type ) {
-
-		console.error( 'THREE.DragControls: notify() has been deprecated. Use dispatchEvent() instead.' );
-		this.dispatchEvent( { type: type } );
 
 	}
 

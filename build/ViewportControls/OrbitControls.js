@@ -29,11 +29,6 @@ const tempQuatInverse = tempQuat.clone().inverse();
 
 class OrbitControls extends ViewportControls {
 
-	get isOrbitControls() {
-
-		return true;
-
-	}
 	constructor( camera, domElement ) {
 
 		super( camera, domElement );
@@ -47,11 +42,9 @@ class OrbitControls extends ViewportControls {
 			maxPolarAngle: Math.PI, // radians ( 0 to Math.PI )
 			minAzimuthAngle: - Infinity, // radians ( -Math.PI to Math.PI )
 			maxAzimuthAngle: Infinity, // radians ( -Math.PI to Math.PI )
-			screenSpacePanning: false
+			screenSpacePanning: false,
+			_spherical: new Spherical()
 		} );
-
-		// Internals
-		this._spherical = new Spherical();
 
 	}
 	orbit( orbit ) {
@@ -153,19 +146,6 @@ class OrbitControls extends ViewportControls {
 	get azimuthalAngle() {
 
 		return this._spherical.theta;
-
-	}
-	// Deprication warnings
-	getPolarAngle() {
-
-		console.warn( '.getPolarAngle() has been depricated. Use .polarAngle instead.' );
-		return this.polarAngle;
-
-	}
-	getAzimuthalAngle() {
-
-		console.warn( '.getAzimuthalAngle() has been depricated. Use .azimuthalAngle instead.' );
-		return this.azimuthalAngle;
 
 	}
 

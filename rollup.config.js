@@ -24,6 +24,11 @@ export default [
     external: externalPaths( ['../three.js/build/three.module.js'] )
   },
   {
+    input: 'src/Selection.js',
+    output: configureOutput( 'build/Selection.js'),
+    external: externalPaths( ['../three.js/build/three.module.js'] )
+  },
+  {
     input: 'src/ViewportControls/ViewportControls.js',
     output: configureOutput( 'build/ViewportControls/ViewportControls.js' ),
     external: externalPaths( [
@@ -34,6 +39,14 @@ export default [
   {
     input: 'src/ViewportControls/OrbitControls.js',
     output: configureOutput( 'build/ViewportControls/OrbitControls.js' ),
+    external: externalPaths( [
+      'src/ViewportControls/ViewportControls.js',
+      '../three.js/build/three.module.js'
+    ] )
+  },
+  {
+    input: 'src/ViewportControls/SelectionControls.js',
+    output: configureOutput( 'build/ViewportControls/SelectionControls.js' ),
     external: externalPaths( [
       'src/ViewportControls/ViewportControls.js',
       '../three.js/build/three.module.js'

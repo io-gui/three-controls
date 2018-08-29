@@ -2,7 +2,7 @@
  * @author arodic / https://github.com/arodic
  */
 
-import {Raycaster, Vector2, Vector3, Quaternion} from "../../../three.js/build/three.module.js";
+import {Raycaster, Vector3, Quaternion} from "../../../three.js/build/three.module.js";
 import {ObjectControls} from "./ObjectControls.js";
 import {TransformControlsGizmo} from "./TransformControlsGizmo.js";
 import {TransformControlsPlane} from "./TransformControlsPlane.js";

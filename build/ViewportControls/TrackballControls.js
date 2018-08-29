@@ -29,15 +29,9 @@ const moveDirection = new Vector3();
 
 class TrackballControls extends ViewportControls {
 
-	get isTrackballControls() {
-
-		return true;
-
-	}
 	constructor( camera, domElement ) {
 
 		super( camera, domElement );
-
 		this.defineProperties( {
 			minDistance: 0, // PerspectiveCamera dolly limit
 			maxDistance: Infinity // PerspectiveCamera dolly limit
@@ -47,7 +41,6 @@ class TrackballControls extends ViewportControls {
 	orbit( orbit ) {
 
 		eye.copy( this.camera.position ).sub( this.target );
-
 		eyeDirection.copy( eye ).normalize();
 		upDirection.copy( this.camera.up ).normalize();
 		sideDirection.crossVectors( upDirection, eyeDirection ).normalize();
@@ -62,7 +55,7 @@ class TrackballControls extends ViewportControls {
 	}
 	dolly( dolly ) {
 
-		let dollyScale = ( dolly > 0 ) ? 1 - dolly : 1 / ( 1 + dolly );
+		let dollyScale = ( dolly < 0 ) ? 1 + dolly : 1 / ( 1 - dolly );
 		eye.multiplyScalar( dollyScale );
 
 	}
@@ -72,7 +65,6 @@ class TrackballControls extends ViewportControls {
 		panDirection.add( upDirection.copy( this.camera.up ).setLength( - pan.y * eye.length() ) );
 		this.camera.position.add( panDirection );
 		this.target.add( panDirection );
-
 		this.camera.position.addVectors( this.target, eye );
 		this.camera.lookAt( this.target );
 

@@ -19,11 +19,6 @@ const sphere = new Sphere();
 
 class EditorControls extends ViewportControls {
 
-	get isEditorControls() {
-
-		return true;
-
-	}
 	orbit( orbit ) {
 
 		delta.copy( this.camera.position ).sub( this.target );
@@ -56,26 +51,30 @@ class EditorControls extends ViewportControls {
 		this.target.add( delta );
 
 	}
-	focus( target ) {
+	focus() {
 
-		let distance;
-		box.setFromObject( target );
-		if ( box.isEmpty() === false ) {
+		if ( this.object ) {
 
-			this.target.copy( box.getCenter( center ) );
-			distance = box.getBoundingSphere( sphere ).radius;
+			let distance;
+			box.setFromObject( this.object );
+			if ( box.isEmpty() === false ) {
 
-		} else {
+				this.target.copy( box.getCenter( center ) );
+				distance = box.getBoundingSphere( sphere ).radius;
 
-			// Focusing on an Group, AmbientLight, etc
-			this.target.setFromMatrixPosition( target.matrixWorld );
-			distance = 0.1;
+			} else {
+
+				// Focusing on an Group, AmbientLight, etc
+				this.target.setFromMatrixPosition( this.object.matrixWorld );
+				distance = 0.1;
+
+			}
+			delta.set( 0, 0, 1 );
+			delta.applyQuaternion( this.camera.quaternion );
+			delta.multiplyScalar( distance * 4 );
+			this.camera.position.copy( this.target ).add( delta );
 
 		}
-		delta.set( 0, 0, 1 );
-		delta.applyQuaternion( this.camera.quaternion );
-		delta.multiplyScalar( distance * 4 );
-		this.camera.position.copy( this.target ).add( delta );
 
 	}
 
