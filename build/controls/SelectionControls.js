@@ -25,13 +25,6 @@ class PointerEvents {
 
 	constructor( domElement, params = {} ) {
 
-		if ( domElement === undefined || ! ( domElement instanceof HTMLElement ) ) {
-
-			console.warn( 'PointerEvents: domElement is mandatory in constructor!' );
-			domElement = document;
-
-		}
-
 		this.domElement = domElement;
 		this.pointers = new PointerArray( domElement, params.normalized );
 
@@ -253,19 +246,6 @@ class Pointer {
 		this.buttons = 0;
 
 	}
-	clone() {
-
-		const pointer = new Pointer( this.pointerID, this.target, this.type, this.pointerType );
-		pointer.position.copy( this.position );
-		pointer.previous.copy( this.previous );
-		pointer.start.copy( this.start );
-		pointer.movement.copy( this.movement );
-		pointer.distance.copy( this.distance );
-		pointer.button = this.button;
-		pointer.buttons = this.buttons;
-		return pointer;
-
-	}
 	update( previous ) {
 
 		this.pointerID = previous.pointerID;
@@ -313,10 +293,8 @@ class PointerArray extends Array {
 			if ( isTouchInTarget( touches[ i ], this.target ) || event.touches === undefined ) {
 
 				let pointer = new Pointer( id, this.target, type, pointerType );
-				pointer.position.set(
-					touches[ i ].clientX - rect.x,
-					touches[ i ].clientY - rect.y
-				);
+				pointer.position.x = touches[ i ].clientX - rect.x;
+				pointer.position.y = touches[ i ].clientY - rect.y;
 				if ( this.normalized ) {
 
 					const rect = this.target.getBoundingClientRect();
@@ -415,19 +393,8 @@ class Vector2 {
 
 	constructor( x, y ) {
 
-		this.set( x, y );
-
-	}
-	set( x, y ) {
-
 		this.x = x;
 		this.y = y;
-		return this;
-
-	}
-	clone() {
-
-		return new Vector2( this.x, this.y );
 
 	}
 	copy( v ) {
@@ -451,20 +418,6 @@ class Vector2 {
 		return this;
 
 	}
-	multiply( v ) {
-
-		this.x *= v.x;
-		this.y *= v.y;
-		return this;
-
-	}
-	multiplyScalar( scalar ) {
-
-		this.x *= scalar;
-		this.y *= scalar;
-		return this;
-
-	}
 	length() {
 
 		return Math.sqrt( this.x * this.x + this.y * this.y );
@@ -472,13 +425,9 @@ class Vector2 {
 	}
 	distanceTo( v ) {
 
-		return Math.sqrt( this.distanceToSquared( v ) );
-
-	}
-	distanceToSquared( v ) {
-
-		let dx = this.x - v.x, dy = this.y - v.y;
-		return dx * dx + dy * dy;
+		const dx = this.x - v.x;
+		const dy = this.y - v.y;
+		return Math.sqrt( dx * dx + dy * dy );
 
 	}
 
@@ -491,7 +440,7 @@ class Vector2 {
 // TODO: documentation
 /*
  * onKeyDown, onKeyUp require domElement to be focused (set tabindex attribute)
-*/
+ */
 
 // TODO: implement dom element swap and multiple dom elements
 
@@ -694,11 +643,10 @@ class Control extends Object3D {
  * @author arodic / http://github.com/arodic
  */
 
-const mat = new LineBasicMaterial( { depthTest: false, transparent: true } );
+const helperMat = new LineBasicMaterial( { depthTest: false, transparent: true } );
 
 // Temp variables
 const raycaster = new Raycaster();
-let intersects;
 
 // Events
 const changeEvent = { type: 'change' };
@@ -719,7 +667,7 @@ class SelectionControls extends Control {
 	select( position, add ) {
 
 		raycaster.setFromCamera( position, this.camera );
-		intersects = raycaster.intersectObjects( this.scene.children, true );
+		const intersects = raycaster.intersectObjects( this.scene.children, true );
 		if ( intersects.length > 0 ) {
 
 			const object = intersects[ 0 ].object;
@@ -747,7 +695,7 @@ class SelectionControls extends Control {
 		}
 		for ( let i = 0; i < this.selection.selected.length; i ++ ) {
 
-			const _helper = new Line( this.selection.selected[ i ].geometry, mat );
+			const _helper = new Line( this.selection.selected[ i ].geometry, helperMat );
 			_helper._src = this.selection.selected[ i ];
 			_helper.matrixAutoUpdate = false;
 			this.selection.selected[ i ].updateMatrixWorld();

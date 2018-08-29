@@ -5,7 +5,7 @@
  */
 
 import {Plane, Raycaster, Vector3} from "../../../three.js/build/three.module.js";
-import {ObjectControls} from "./ObjectControls.js";
+import {Control} from "../Control.js";
 
 const _plane = new Plane();
 const _raycaster = new Raycaster();
@@ -15,12 +15,12 @@ let _selected = null;
 
 // TODO: original controls stick when dragout
 
-export class DragControls extends ObjectControls {
-	constructor( objects, camera, domElement ) {
-		super( domElement );
+export class DragControls extends Control {
+	constructor(objects, camera, domElement) {
+		super(domElement);
 
-		if ( camera === undefined || !camera.isCamera ) {
-			console.warn( 'camera is mandatory in constructor!' );
+		if (camera === undefined || !camera.isCamera) {
+			console.warn('camera is mandatory in constructor!');
 		}
 
 		// TODO: check objects and implement selection
@@ -31,37 +31,37 @@ export class DragControls extends ObjectControls {
 		});
 
 	}
-	onPointerDown( pointers ) {
-		_raycaster.setFromCamera( pointers[0].position, this.camera );
-		_plane.setFromNormalAndCoplanarPoint( this.camera.getWorldDirection( _plane.normal ), this.object.position );
-		let intersects = _raycaster.intersectObjects( this.objects );
-		if ( intersects.length > 0 ) {
+	onPointerDown(pointers) {
+		_raycaster.setFromCamera(pointers[0].position, this.camera);
+		_plane.setFromNormalAndCoplanarPoint(this.camera.getWorldDirection(_plane.normal), this.object.position);
+		let intersects = _raycaster.intersectObjects(this.objects);
+		if (intersects.length > 0) {
 			_selected = intersects[ 0 ].object;
-			if ( _raycaster.ray.intersectPlane( _plane, _intersection ) ) {
+			if (_raycaster.ray.intersectPlane(_plane, _intersection)) {
 				this.active = true;
-				_offset.copy( _intersection ).sub( _selected.position );
+				_offset.copy(_intersection).sub(_selected.position);
 			}
 		}
 	}
-	onPointerMove( pointers ) {
+	onPointerMove(pointers) {
 		// let rect = this.domElement.getBoundingClientRect();
-		_raycaster.setFromCamera( pointers[0].position, this.camera );
-		_plane.setFromNormalAndCoplanarPoint( this.camera.getWorldDirection( _plane.normal ), this.object.position );
-		if ( _selected && this.enabled ) {
-			if ( _raycaster.ray.intersectPlane( _plane, _intersection ) ) {
-				_selected.position.copy( _intersection.sub( _offset ) );
+		_raycaster.setFromCamera(pointers[0].position, this.camera);
+		_plane.setFromNormalAndCoplanarPoint(this.camera.getWorldDirection(_plane.normal), this.object.position);
+		if (_selected) {
+			if (_raycaster.ray.intersectPlane(_plane, _intersection)) {
+				_selected.position.copy(_intersection.sub(_offset));
 				this.needsUpdate = false;
 			}
 		}
 	}
-	onPointerUp( pointers ) {
-		if ( pointers.length === 0 ) {
+	onPointerUp(pointers) {
+		if (pointers.length === 0) {
 			_selected = null;
 			this.active = false;
 			// domElement.style.cursor = 'auto';
 		}
 	}
-	attach( object ) {
+	attach(object) {
 		this.object = object;
 		this.visible = true;
 	}

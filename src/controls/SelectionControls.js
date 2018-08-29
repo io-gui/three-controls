@@ -5,18 +5,17 @@
 import {Raycaster, Line, LineBasicMaterial} from "../../../three.js/build/three.module.js";
 import {Control} from "../Control.js";
 
-const mat = new LineBasicMaterial({ depthTest: false, transparent: true });
+const helperMat = new LineBasicMaterial({ depthTest: false, transparent: true });
 
 // Temp variables
 const raycaster = new Raycaster();
-let intersects;
 
 // Events
 const changeEvent = { type: 'change' };
 
 export class SelectionControls extends Control {
-	constructor( camera, domElement, scene, selection ) {
-		super( domElement );
+	constructor(camera, domElement, scene, selection) {
+		super(domElement);
 
 		this.defineProperties({
 			camera: camera,
@@ -25,10 +24,10 @@ export class SelectionControls extends Control {
 		});
 	}
 	select(position, add) {
-		raycaster.setFromCamera( position, this.camera );
-		intersects = raycaster.intersectObjects(this.scene.children, true);
-		if ( intersects.length > 0 ) {
-			const object = intersects[ 0 ].object;
+		raycaster.setFromCamera(position, this.camera);
+		const intersects = raycaster.intersectObjects(this.scene.children, true);
+		if (intersects.length > 0) {
+			const object = intersects[0].object;
 			// TODO: handle helper selection
 			if (add) {
 				this.selection.toggle(object);
@@ -43,19 +42,18 @@ export class SelectionControls extends Control {
 			this.remove(this.children[i]);
 		}
 		for (let i = 0; i < this.selection.selected.length; i++) {
-			const _helper = new Line( this.selection.selected[i].geometry, mat );
+			const _helper = new Line(this.selection.selected[i].geometry, helperMat);
 			_helper._src = this.selection.selected[i];
 			_helper.matrixAutoUpdate = false;
 			this.selection.selected[i].updateMatrixWorld();
-			this.selection.selected[i].matrixWorld.decompose( _helper.position, _helper.quaternion, _helper.scale );
+			this.selection.selected[i].matrixWorld.decompose(_helper.position, _helper.quaternion, _helper.scale);
 			this.add(_helper);
 		}
 
 		this.dispatchEvent(changeEvent);
 	}
-	onPointerUp( pointers ) {
-		if ( !this.enabled ) return;
-		if ( pointers.length === 0 ) {
+	onPointerUp(pointers) {
+		if (pointers.length === 0) {
 			const dist = pointers.removed[0].distance.length();
 			if (dist < 0.01) {
 				this.select(pointers.removed[0].position, pointers.removed[0].ctrlKey);

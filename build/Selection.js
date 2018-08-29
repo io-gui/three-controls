@@ -34,6 +34,8 @@ const quatSelectedLocal = new Quaternion();
 const dist0 = new Vector3();
 const dist1 = new Vector3();
 
+const selectedOld = [];
+
 function filterItems( list, hierarchy, filter ) {
 
 	list = list instanceof Array ? list : [ list ];
@@ -53,8 +55,22 @@ function filterItems( list, hierarchy, filter ) {
 
 }
 
+/*
+ * Selection object stores selection list and implements various methods for selection list manipulation.
+ * Selection object transforms all selected objects when moved in either world or local space.
+ */
+
 class Selection extends Object3D {
 
+	/**
+	 * Constructs a PointLight.
+	 *
+	 * @constructor
+	 * @param {Color|String|Number} color - (optional) hexadecimal color of the light. Default is 0xffffff (white)
+	 * @param {Float} intensity           - (optional) numeric value of the light's strength/intensity. Default is 1.
+	 * @param {Number} distance           - The distance from the light where the intensity is 0. When set to 0, then the light never stops. Default is 0.
+	 * @param {Number} decay              - The amount the light dims along the distance of the light. Default is 1. For physically correct lighting, set this to 2.
+	 */
 	constructor() {
 
 		super();
@@ -65,6 +81,7 @@ class Selection extends Object3D {
 	toggle( list, hierarchy, filter ) {
 
 		list = filterItems( list, hierarchy, filter );
+		selectedOld.push( ...this.selected );
 		for ( let i = list.length; i --; ) {
 
 			let index = this.selected.indexOf( list[ i ] );
@@ -78,6 +95,7 @@ class Selection extends Object3D {
 	add( list, hierarchy, filter ) {
 
 		list = filterItems( list, hierarchy, filter );
+		selectedOld.push( ...this.selected );
 		this.selected = this.selected.concat( ...list );
 		this.update();
 
@@ -85,6 +103,7 @@ class Selection extends Object3D {
 	addFirst( list, hierarchy, filter ) {
 
 		list = filterItems( list, hierarchy, filter );
+		selectedOld.push( ...this.selected );
 		this.selected = list.concat( ...this.selected );
 		this.update();
 
@@ -92,6 +111,7 @@ class Selection extends Object3D {
 	remove( list, hierarchy, filter ) {
 
 		list = filterItems( list, hierarchy, filter );
+		selectedOld.push( ...this.selected );
 		for ( let i = list.length; i --; ) {
 
 			let index = this.selected.indexOf( list[ i ] );
@@ -103,38 +123,41 @@ class Selection extends Object3D {
 	}
 	replace( list, hierarchy, filter ) {
 
-		this.selected.length = 0;
 		list = filterItems( list, hierarchy, filter );
+		selectedOld.push( ...this.selected );
+		this.selected.length = 0;
 		this.selected = list;
 		this.update();
 
 	}
 	clear() {
 
+		selectedOld.push( ...this.selected );
 		this.selected.length = 0;
 		this.update();
 
 	}
 	update() {
 
-		pos.set( 0, 0, 0 );
+		// Reset selection transform.
+		this.position.set( 0, 0, 0, 1 );
 		this.quaternion.set( 0, 0, 0, 1 );
 		this.scale.set( 1, 1, 1 );
 
 		if ( ! this.selected.length ) return;
-
+		// Set selection transform to last selected item.
 		if ( this.transformSpace === 'local' ) {
 
-			// Set selection transform to last selected item.
 			let i = this.selected.length - 1;
 			this.selected[ i ].updateMatrixWorld();
 			this.selected[ i ].matrixWorld.decompose( posSelected, quatSelected, scaleSelected );
 			this.position.copy( posSelected );
 			this.quaternion.copy( quatSelected );
+		// Set selection transform to the average of selected items.
 
 		} else if ( this.transformSpace === 'world' ) {
 
-			// Set selection pos to the average pos of selected items.
+			pos.set( 0, 0, 0 );
 			for ( let i = 0; i < this.selected.length; i ++ ) {
 
 				this.selected[ i ].updateMatrixWorld();
@@ -145,70 +168,84 @@ class Selection extends Object3D {
 			this.position.copy( pos ).divideScalar( this.selected.length );
 
 		}
-
 		super.updateMatrixWorld();
+		// gather selection data and emit selection-changed event
+		let added = [];
+		for ( let i = 0; i < this.selected.length; i ++ ) {
+
+			if ( selectedOld.indexOf( this.selected[ i ] ) === - 1 ) {
+
+				added.push( this.selected[ i ] );
+
+			}
+
+		}
+		let removed = [];
+		for ( let i = 0; i < selectedOld.length; i ++ ) {
+
+			if ( this.selected.indexOf( selectedOld[ i ] ) === - 1 ) {
+
+				removed.push( selectedOld[ i ] );
+
+			}
+
+		}
+		selectedOld.length = 0;
+		this.dispatchEvent( { type: 'selected-changed', selected: [ ...this.selected ], added: added, removed: removed } );
 
 	}
 	updateMatrixWorld() {
 
+		// Extract tranformations before and after matrix update.
 		this.matrix.decompose( posOld, quatOld, scaleOld );
 		super.updateMatrixWorld();
 		this.matrix.decompose( pos, quat, scale );
-
+		// Get transformation offsets from transform deltas.
 		posOffset.copy( pos ).sub( posOld );
 		quatOffset.copy( quat ).multiply( quatOld.inverse() );
 		scaleOffset.copy( scale ).sub( scaleOld );
-
 		quatInv.copy( quat ).inverse();
 
-		if ( this.selected.length ) {
+		if ( ! this.selected.length ) return;
+		// Apply tranformatio offsets to ancestors.
+		for ( let i = 0; i < this.selected.length; i ++ ) {
 
-			for ( let i = 0; i < this.selected.length; i ++ ) {
+			// get local transformation variables.
+			this.selected[ i ].updateMatrixWorld();
+			this.selected[ i ].matrixWorld.decompose( posSelected, quatSelected, scaleSelected );
+			this.selected[ i ].parent.matrixWorld.decompose( posParent, quatParent, scaleParent );
+			quatParentInv.copy( quatParent ).inverse();
+			quatSelectedInv.copy( quatSelected ).inverse();
+			// Transform selected in local space.
+			if ( this.transformSpace === 'local' ) {
 
-				this.selected[ i ].updateMatrixWorld();
-				this.selected[ i ].matrixWorld.decompose( posSelected, quatSelected, scaleSelected );
-				this.selected[ i ].parent.matrixWorld.decompose( posParent, quatParent, scaleParent );
+				// Position
+				positionOffsetLocal.copy( posOffset ).applyQuaternion( quatInv );
+				positionOffsetLocal.applyQuaternion( this.selected[ i ].quaternion );
+				this.selected[ i ].position.add( positionOffsetLocal );
+				// Rotation
+				quatSelectedLocal.copy( quatInv ).multiply( quatOffset ).multiply( quat ).normalize();
+				this.selected[ i ].quaternion.multiply( quatSelectedLocal );
+				// Scale
+				if ( this._isAncestorOfSelected( this.selected[ i ] ) ) continue; // lets not go there...
+				this.selected[ i ].scale.add( scaleOffset );
+			// Transform selected in world space.
 
-				quatParentInv.copy( quatParent ).inverse();
-				quatSelectedInv.copy( quatSelected ).inverse();
+			} else if ( this.transformSpace === 'world' ) {
 
-				if ( this.transformSpace === 'local' ) {
-
-					// Position
-					positionOffsetLocal.copy( posOffset ).applyQuaternion( quatInv );
-					positionOffsetLocal.applyQuaternion( this.selected[ i ].quaternion );
-					this.selected[ i ].position.add( positionOffsetLocal );
-
-					// Rotation
-					quatSelectedLocal.copy( quatInv ).multiply( quatOffset ).multiply( quat ).normalize();
-					this.selected[ i ].quaternion.multiply( quatSelectedLocal );
-
-					// Scale
-					if ( this._isAncestorOfSelected( this.selected[ i ] ) ) continue; // lets not go there...
-					this.selected[ i ].scale.add( scaleOffset );
-
-				} else if ( this.transformSpace === 'world' ) {
-
-					if ( this._isAncestorOfSelected( this.selected[ i ] ) ) continue;
-
-					// Position
-					positionOffsetLocal.copy( posOffset ).applyQuaternion( quatParentInv );
-					this.selected[ i ].position.add( positionOffsetLocal );
-
-					// Rotation
-					dist0.subVectors( posSelected, pos );
-					dist1.subVectors( posSelected, pos ).applyQuaternion( quatOffset );
-					dist1.sub( dist0 ).applyQuaternion( quatParentInv );
-					this.selected[ i ].position.add( dist1 );
-
-					quatSelectedLocal.copy( quatSelectedInv ).multiply( quatOffset ).multiply( quatSelected ).normalize();
-					this.selected[ i ].quaternion.multiply( quatSelectedLocal );
-
-					// Scale
-					this.selected[ i ].scale.add( scaleOffset );
-
-				}
-
+				if ( this._isAncestorOfSelected( this.selected[ i ] ) ) continue;
+				// Position
+				positionOffsetLocal.copy( posOffset ).applyQuaternion( quatParentInv );
+				this.selected[ i ].position.add( positionOffsetLocal );
+				// Rotation
+				dist0.subVectors( posSelected, pos );
+				dist1.subVectors( posSelected, pos ).applyQuaternion( quatOffset );
+				dist1.sub( dist0 ).applyQuaternion( quatParentInv );
+				this.selected[ i ].position.add( dist1 );
+				quatSelectedLocal.copy( quatSelectedInv ).multiply( quatOffset ).multiply( quatSelected ).normalize();
+				this.selected[ i ].quaternion.multiply( quatSelectedLocal );
+				// Scale
+				this.selected[ i ].scale.add( scaleOffset );
 
 			}
 

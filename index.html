@@ -137,6 +137,10 @@
 				selection.transformSpace = 'world';
 				helperScene.add(selection);
 
+				selection.addEventListener('selected-changed', event => {
+					console.log(event);
+				})
+
 				var viewportControls = new OrbitControls(camera, renderer.domElement);
 				viewportControls.addEventListener('change', render);
 
