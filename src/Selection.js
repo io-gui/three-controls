@@ -60,7 +60,8 @@ export class Selection extends Object3D {
 	constructor() {
 		super();
 		this.selected = [];
-		this.transformSpace = "local";
+		this.transformSelection = true;
+		this.transformSpace = 'local';
 	}
 	toggle(list, hierarchy, filter) {
 		list = filterItems(list, hierarchy, filter);
@@ -111,25 +112,26 @@ export class Selection extends Object3D {
 		this.quaternion.set(0,0,0,1);
 		this.scale.set(1,1,1);
 
-		if (!this.selected.length) return;
-		// Set selection transform to last selected item.
-		if (this.transformSpace === 'local') {
-			let i = this.selected.length - 1;
-			this.selected[i].updateMatrixWorld();
-			this.selected[i].matrixWorld.decompose(posSelected, quatSelected, scaleSelected);
-			this.position.copy(posSelected);
-			this.quaternion.copy(quatSelected);
-		// Set selection transform to the average of selected items.
-		} else if (this.transformSpace === 'world') {
-			pos.set(0,0,0);
-			for (let i = 0; i < this.selected.length; i++) {
+		if (this.selected.length && this.transformSelection) {
+			// Set selection transform to last selected item.
+			if (this.transformSpace === 'local') {
+				let i = this.selected.length - 1;
 				this.selected[i].updateMatrixWorld();
 				this.selected[i].matrixWorld.decompose(posSelected, quatSelected, scaleSelected);
-				pos.add(posSelected);
+				this.position.copy(posSelected);
+				this.quaternion.copy(quatSelected);
+				// Set selection transform to the average of selected items.
+			} else if (this.transformSpace === 'world') {
+				pos.set(0,0,0);
+				for (let i = 0; i < this.selected.length; i++) {
+					this.selected[i].updateMatrixWorld();
+					this.selected[i].matrixWorld.decompose(posSelected, quatSelected, scaleSelected);
+					pos.add(posSelected);
+				}
+				this.position.copy(pos).divideScalar(this.selected.length);
 			}
-			this.position.copy(pos).divideScalar(this.selected.length);
+			super.updateMatrixWorld();
 		}
-		super.updateMatrixWorld();
 
 		// gather selection data and emit selection-changed event
 		let added = [];
@@ -160,7 +162,7 @@ export class Selection extends Object3D {
 		scaleOffset.copy(scale).sub(scaleOld);
 		quatInv.copy(quat).inverse();
 
-		if (!this.selected.length) return;
+		if (!this.selected.length || !this.transformSelection) return;
 		// Apply tranformatio offsets to ancestors.
 		for (let i = 0; i < this.selected.length; i++) {
 			// get local transformation variables.

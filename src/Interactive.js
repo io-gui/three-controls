@@ -4,6 +4,7 @@
 
 import {Object3D} from "../../three.js/build/three.module.js";
 import {PointerEvents} from "../lib/PointerEvents.js";
+import {IoLiteMixin} from "../lib/IoLiteMixin.js";
 
 // TODO: documentation
 /*
@@ -12,7 +13,7 @@ import {PointerEvents} from "../lib/PointerEvents.js";
 
 // TODO: implement dom element swap and multiple dom elements
 
-export class Interactive extends Object3D {
+export class Interactive extends IoLiteMixin(Object3D) {
 	constructor(domElement) {
 		super();
 
@@ -40,15 +41,12 @@ export class Interactive extends Object3D {
 		this.onBlur = this.onBlur.bind(this);
 
 		this._addEvents();
-
-		this.dispose = function () {
-
-			this._removeEvents();
-			this._pointerEvents.dispose();
-			this.stopAnimation();
-		};
-
 		this.needsUpdate = true;
+	}
+	dispose() {
+		this._removeEvents();
+		this._pointerEvents.dispose();
+		this.stopAnimation();
 	}
 	_addEvents() {
 		this._pointerEvents.addEventListener('pointerdown', this.onPointerDown);
@@ -128,38 +126,4 @@ export class Interactive extends Object3D {
 	onWheel() {} // event
 	onFocus() {} // event
 	onBlur() {} // event
-	// Defines getter, setter and store for a property
-	defineProperty(propName, defaultValue) {
-		this._properties[propName] = defaultValue;
-		if (defaultValue === undefined) {
-			console.warn('Control: ' + propName + ' is mandatory!');
-		}
-		Object.defineProperty(this, propName, {
-			get: function() {
-				return this._properties[propName] !== undefined ? this._properties[propName] : defaultValue;
-			},
-			set: function(value) {
-				if (this._properties[propName] !== value) {
-					const oldValue = this._properties[propName];
-					this._properties[propName] = value;
-					if (typeof this[propName + 'Changed'] === 'function') this[propName + 'Changed'](value, oldValue);
-					this.dispatchEvent({type: propName + '-changed', value: value, oldValue: oldValue});
-					this.dispatchEvent({type: 'change', prop: propName, value: value, oldValue: oldValue});
-				}
-			},
-			enumerable: propName.charAt(0) !== '_'
-		});
-		this[propName] = defaultValue;
-	}
-	defineProperties(props) {
-		if (!this.hasOwnProperty('_properties')) {
-			Object.defineProperty(this, '_properties', {
-				value: {},
-				enumerable: false
-			});
-		}
-		for (let prop in props) {
-			this.defineProperty(prop, props[prop]);
-		}
-	}
 }
