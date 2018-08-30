@@ -44,6 +44,7 @@ export class TransformControls extends Interactive {
 			translationSnap: null,
 			rotationSnap: null,
 			space: "world",
+			active: false,
 			size: 1,
 			showX: true,
 			showY: true,
@@ -104,6 +105,9 @@ export class TransformControls extends Interactive {
 	onPointerHover(pointers) {
 		if (!this.object || this.active === true) return;
 		_ray.setFromCamera(pointers[0].position, this.camera);
+		// TODO: remove and unhack
+		this.object.matrixWorld.decompose(this.worldPositionStart, this.worldQuaternionStart, this.worldScaleStart);
+		//
 		const intersect = _ray.intersectObjects(this._gizmo.picker[ this.mode ].children, true)[ 0 ] || false;
 		if (intersect) {
 			this.axis = intersect.object.name;
@@ -277,6 +281,7 @@ export class TransformControls extends Interactive {
 				object.quaternion.multiply(this.quaternionStart);
 			}
 		}
+		this.object.updateMatrixWorld();
 		this.dispatchEvent(changeEvent);
 	}
 	onPointerUp(pointers) {
