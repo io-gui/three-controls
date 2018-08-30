@@ -55,7 +55,7 @@
 
 			import {WebGLRenderer, Math, PerspectiveCamera, Scene, GridHelper, DirectionalLight, TextureLoader, BoxBufferGeometry, MeshLambertMaterial, Mesh, BoxHelper} from "../../three.js/build/three.module.js";
 
-			let renderer, camera, scene, helperScene;
+			let renderer, camera, scene, selection, helperScene;
 
 			init();
 			render();
@@ -133,10 +133,11 @@
 					patent = mesh;
 				}
 
-				var selection = new Selection();
+				selection = new Selection();
 				selection.transformSpace = 'world';
 				helperScene.add(selection);
 
+				selection.addEventListener('change', render);
 				selection.addEventListener('selected-changed', event => {
 					console.log(event);
 				})

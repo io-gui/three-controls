@@ -4,8 +4,7 @@
 
 import {Raycaster, Line, LineBasicMaterial} from "../../../three.js/build/three.module.js";
 import {Interactive} from "../Interactive.js";
-
-const helperMat = new LineBasicMaterial({ depthTest: false, transparent: true });
+import {SelectionHelper} from "../helpers/SelectionHelper.js";
 
 // Temp variables
 const raycaster = new Raycaster();
@@ -42,11 +41,7 @@ export class SelectionControls extends Interactive {
 			this.remove(this.children[i]);
 		}
 		for (let i = 0; i < this.selection.selected.length; i++) {
-			const _helper = new Line(this.selection.selected[i].geometry, helperMat);
-			_helper._src = this.selection.selected[i];
-			_helper.matrixAutoUpdate = false;
-			this.selection.selected[i].updateMatrixWorld();
-			this.selection.selected[i].matrixWorld.decompose(_helper.position, _helper.quaternion, _helper.scale);
+			const _helper = new SelectionHelper(this.selection.selected[i]);
 			this.add(_helper);
 		}
 
@@ -58,13 +53,6 @@ export class SelectionControls extends Interactive {
 			if (dist < 0.01) {
 				this.select(pointers.removed[0].position, pointers.removed[0].ctrlKey);
 			}
-		}
-	}
-	updateMatrixWorld() {
-		super.updateMatrixWorld();
-		for (let i = 0; i < this.children.length; i++) {
-			const _helper = this.children[i];
-			_helper.matrixWorld.copy(_helper._src.matrixWorld);
 		}
 	}
 }
