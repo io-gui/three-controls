@@ -10,7 +10,7 @@ import {Object3D} from "../../three.js/build/three.module.js";
  */
 
 export class Helper extends Object3D {
-	static get isHelper() { return true; }
+	get isHelper() { return true; }
 	constructor(target) {
 		super();
 		this.target = target;

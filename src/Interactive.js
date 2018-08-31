@@ -14,18 +14,13 @@ import {IoLiteMixin} from "../lib/IoLiteMixin.js";
 // TODO: implement dom element swap and multiple dom elements
 
 export class Interactive extends IoLiteMixin(Object3D) {
+	get isInteractive() { return true; }
 	constructor(domElement) {
 		super();
 
 		this.defineProperties({
 			domElement: domElement,
 			enabled: true,
-			active: false,
-			enableKeys: true,
-			needsUpdate: false,
-			_animationActive: false,
-			_animationTime: 0,
-			_rafID: 0,
 			_pointerEvents: new PointerEvents(domElement, {normalized: true})
 		});
 
@@ -41,12 +36,10 @@ export class Interactive extends IoLiteMixin(Object3D) {
 		this.onBlur = this.onBlur.bind(this);
 
 		this._addEvents();
-		this.needsUpdate = true;
 	}
 	dispose() {
 		this._removeEvents();
 		this._pointerEvents.dispose();
-		this.stopAnimation();
 	}
 	_addEvents() {
 		this._pointerEvents.addEventListener('pointerdown', this.onPointerDown);
@@ -72,47 +65,9 @@ export class Interactive extends IoLiteMixin(Object3D) {
 		this._pointerEvents.removeEventListener('focus', this.onFocus);
 		this._pointerEvents.removeEventListener('blur', this.onBlur);
 	}
-	needsUpdateChanged(value) {
-		if (value) this.startAnimation();
-	}
 	enabledChanged(value) {
-		if (value) {
-			this._addEvents();
-			this.startAnimation();
-		} else {
-			this._removeEvents();
-			this.stopAnimation();
-		}
-	}
-	// Optional animation methods
-	startAnimation() {
-		if (!this._animationActive) {
-			this._animationActive = true;
-			this._animationTime = performance.now();
-			this._rafID = requestAnimationFrame(() => {
-				const time = performance.now();
-				this.animate(time - this._animationTime);
-				this._animationTime = time;
-			});
-		}
-	}
-	animate(timestep) {
-		if (this._animationActive) this._rafID = requestAnimationFrame(() => {
-			const time = performance.now();
-			timestep = time - this._animationTime;
-			this.animate(timestep);
-			this._animationTime = time;
-		});
-		this.update(timestep);
-	}
-	stopAnimation() {
-		this._animationActive = false;
-		cancelAnimationFrame(this._rafID);
-	}
-	update(timestep) {
-		if (timestep === undefined) console.log('Control: update function requires timestep parameter!');
-		this.stopAnimation();
-		this.needsUpdate = false;
+		if (value) this._addEvents();
+		else this._removeEvents();
 	}
 	// Control methods. Implement in subclass!
 	onContextmenu() {} // event

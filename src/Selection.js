@@ -5,6 +5,8 @@
 // TODO: implement multi-selection per-object snapping
 
 import {Object3D, Vector3, Quaternion} from "../../three.js/build/three.module.js";
+import {IoLiteMixin} from "../lib/IoLiteMixin.js";
+import {SelectionHelper} from "./helpers/SelectionHelper.js";
 
 // Temp variables
 const pos = new Vector3();
@@ -58,13 +60,18 @@ function filterItems(list, hierarchy, filter) {
  * @event selected-changed - also fired on selection change (includes selection payload).
  */
 
-export class Selection extends Object3D {
-	static get isSelection() { return true; }
+export class Selection extends IoLiteMixin(Object3D) {
+	get isSelection() { return true; }
 	constructor() {
 		super();
-		this.selected = [];
-		this.transformSelection = true;
-		this.transformSpace = 'local';
+		this.defineProperties({
+			selected: [],
+			transformSelection: true,
+			transformSpace: 'local'
+		});
+	}
+	transformSpaceChanged() {
+		this.update();
 	}
 	toggle(list, hierarchy, filter) {
 		list = filterItems(list, hierarchy, filter);
@@ -79,13 +86,15 @@ export class Selection extends Object3D {
 	add(list, hierarchy, filter) {
 		list = filterItems(list, hierarchy, filter);
 		selectedOld.push(...this.selected);
-		this.selected = this.selected.concat(...list);
+		this.selected.concat(...list);
 		this.update();
 	}
 	addFirst(list, hierarchy, filter) {
 		list = filterItems(list, hierarchy, filter);
 		selectedOld.push(...this.selected);
-		this.selected = list.concat(...this.selected);
+		this.selected.length = 0;
+		this.selected.push(...list);
+		this.selected.push(...selectedOld);
 		this.update();
 	}
 	remove(list, hierarchy, filter) {
@@ -101,7 +110,7 @@ export class Selection extends Object3D {
 		list = filterItems(list, hierarchy, filter);
 		selectedOld.push(...this.selected);
 		this.selected.length = 0;
-		this.selected = list;
+		this.selected.push(...list);
 		this.update();
 	}
 	clear() {
@@ -135,6 +144,14 @@ export class Selection extends Object3D {
 			}
 		}
 
+		// Add helpers
+		// TODO: cache helpers per object
+		this.children.length = 0;
+		for (let i = 0; i < this.selected.length; i++) {
+			const _helper = new SelectionHelper(this.selected[i]);
+			this.children.push(_helper);
+		}
+
 		super.updateMatrixWorld();
 
 		// gather selection data and emit selection-changed event
@@ -151,7 +168,7 @@ export class Selection extends Object3D {
 			}
 		}
 		selectedOld.length = 0;
-		this.dispatchEvent({type: 'changed'});
+		this.dispatchEvent({type: 'change'});
 		this.dispatchEvent({type: 'selected-changed', selected: [...this.selected], added: added, removed: removed});
 	}
 	updateMatrixWorld() {

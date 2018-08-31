@@ -39,7 +39,7 @@ export class ViewportControls extends Animated {
 			camera: camera,
 			object: null,
 			target: new Vector3(),
-			active: false,
+			enableKeys: true,
 			enableOrbit: true,
 			enableDolly: true,
 			enablePan: true,
@@ -70,6 +70,7 @@ export class ViewportControls extends Animated {
 			},
 			BUTTON: { LEFT: MOUSE.LEFT, MIDDLE: MOUSE.MIDDLE, RIGHT: MOUSE.RIGHT }, // Mouse buttons
 			state: STATE.NONE,
+			active: false,
 			_orbitOffset: new Vector2(),
 			_orbitInertia: new Vector2(),
 			_panOffset: new Vector2(),

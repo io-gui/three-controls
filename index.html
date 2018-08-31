@@ -134,48 +134,42 @@
 				}
 
 				selection = new Selection();
-				selection.transformSpace = 'world';
 				helperScene.add(selection);
 
 				selection.addEventListener('change', render);
 				selection.addEventListener('selected-changed', event => {
-					console.log(event);
+					transformControls.object = event.selected.length ? selection : null;
 				})
 
-				var viewportControls = new OrbitControls(camera, renderer.domElement);
+				var selectionControls = new SelectionControls(camera, renderer.domElement, scene, selection);
+
+				var viewportControls = new TrackballControls(camera, renderer.domElement);
 				viewportControls.addEventListener('change', render);
 
 				var transformControls = new TransformControls(camera, renderer.domElement);
-				transformControls.space = 'local';
-				transformControls.mode = 'rotate';
-				helperScene.add(transformControls);
-
-				var selectionControls = new SelectionControls(camera, renderer.domElement, scene, selection);
-				helperScene.add(selectionControls);
-
-				selectionControls.addEventListener('change', event => {
-					transformControls.enabled = !!selection.selected.length;
-					transformControls.visible = !!selection.selected.length;
-					render();
-				});
-
 				transformControls.addEventListener('change', render);
-				transformControls.object = selection;
-
-				transformControls.addEventListener('active-changed', event => {
-					viewportControls.enabled = !event.value;
-					setTimeout(() => { selectionControls.enabled = !event.value; })
-				});
-				transformControls.addEventListener('space-changed', event => {
-					// TODO fix
-					selection.transformSpace = event.value;
-					selection.update();
-				});
-				selection.transformSpace = transformControls.space;
+				transformControls.addEventListener('space-changed', event => { selection.transformSpace = event.value; });
+				helperScene.add(transformControls);
 
 				viewportControls.addEventListener('active-changed', event => {
 					transformControls.enabled = !event.value && !!selection.selected.length;
 				});
+
+				transformControls.addEventListener('active-changed', event => {
+					viewportControls.enabled = !event.value;
+				});
+				transformControls.addEventListener('axis-changed', event => {
+					selectionControls.enabled = !event.value;
+				});
+
+				// selection.addEventListener('change', ()=>{ console.log('Selection change'); } );
+				// selectionControls.addEventListener('change', ()=>{ console.log('SelectionControls change'); } );
+				// transformControls.addEventListener('change', ()=>{ console.log('TransformControls change'); } );
+				// viewportControls.addEventListener('change', ()=>{ console.log('ViewportControls change'); } );
+				// viewportControls.addEventListener('active-changed', event => {console.log('ViewportControls.active:', event.value);});
+				// transformControls.addEventListener('axis-changed', event => {console.log('TransformControls.axis:', event.value);});
+				// transformControls.addEventListener('active-changed', event => {console.log('TransformControls.active:', event.value);});
+				// selection.addEventListener('selected-changed', event => {console.log('Selection.selected:', event.value);});
 
 				window.addEventListener('resize', onWindowResize, false);
 

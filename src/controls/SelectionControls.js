@@ -2,15 +2,16 @@
  * @author arodic / http://github.com/arodic
  */
 
+// TODO: marquee selection
+
 import {Raycaster, Line, LineBasicMaterial} from "../../../three.js/build/three.module.js";
 import {Interactive} from "../Interactive.js";
-import {SelectionHelper} from "../helpers/SelectionHelper.js";
 
 // Temp variables
 const raycaster = new Raycaster();
 
-// Events
-const changeEvent = { type: 'change' };
+// @event change
+const changeEvent = {type: 'change'};
 
 export class SelectionControls extends Interactive {
 	constructor(camera, domElement, scene, selection) {
@@ -36,15 +37,6 @@ export class SelectionControls extends Interactive {
 		} else {
 			this.selection.clear();
 		}
-
-		for (let i = this.children.length; i--;) {
-			this.remove(this.children[i]);
-		}
-		for (let i = 0; i < this.selection.selected.length; i++) {
-			const _helper = new SelectionHelper(this.selection.selected[i]);
-			this.add(_helper);
-		}
-
 		this.dispatchEvent(changeEvent);
 	}
 	onPointerUp(pointers) {
