@@ -211,7 +211,8 @@ export class TransformControlsGizmo extends Object3D {
 				[new Mesh(new CylinderBufferGeometry(0.03, 0, 0.15, 4, 1, false), matLineYellowTransparent), [0, 1.17, 0], [0, 0, 0], [1, 1, 0.001]],
 			],
 			XYZE: [
-				[new Line(CircleGeometry(1, 1), matLineGray), null, [0, Math.PI / 2, 0]]
+				[new Line(CircleGeometry(1, 1), matLineGray), null, [0, Math.PI / 2, 0]],
+				[new Line(CircleGeometry(0.2, 1), matLineGray), null, [0, Math.PI / 2, 0]],
 			]
 		};
 
@@ -223,19 +224,26 @@ export class TransformControlsGizmo extends Object3D {
 
 		const pickerRotate = {
 			X: [
-				[new Mesh(new TorusBufferGeometry(1, 0.1, 4, 24), matInvisible), [0, 0, 0], [0, -Math.PI / 2, -Math.PI / 2]],
+				[new Mesh(new TorusBufferGeometry(1, 0.03, 4, 24, Math.PI), matInvisible), [0, 0, 0], [0, -Math.PI / 2, -Math.PI / 2]],
+				[new Mesh(new OctahedronBufferGeometry(0.2, 0), matInvisible), [0, 0, 1]]
 			],
 			Y: [
-				[new Mesh(new TorusBufferGeometry(1, 0.1, 4, 24), matInvisible), [0, 0, 0], [Math.PI / 2, 0, 0]],
+				[new Mesh(new TorusBufferGeometry(1, 0.03, 4, 24, Math.PI), matInvisible), [0, 0, 0], [Math.PI / 2, 0, 0]],
+				[new Mesh(new OctahedronBufferGeometry(0.2, 0), matInvisible), [0, 0, 1]]
 			],
 			Z: [
-				[new Mesh(new TorusBufferGeometry(1, 0.1, 4, 24), matInvisible), [0, 0, 0], [0, 0, -Math.PI / 2]],
+				[new Mesh(new TorusBufferGeometry(1, 0.03, 4, 24, Math.PI), matInvisible), [0, 0, 0], [0, 0, -Math.PI / 2]],
+				[new Mesh(new OctahedronBufferGeometry(0.2, 0), matInvisible), [1, 0, 0]]
 			],
 			E: [
-				[new Mesh(new TorusBufferGeometry(1.25, 0.1, 2, 24), matInvisible)]
+				[new Mesh(new TorusBufferGeometry(1.25, 0.03, 2, 24), matInvisible)],
+				[new Mesh(new OctahedronBufferGeometry(0.2, 0), matInvisible), [1.25, 0, 0]],
+				[new Mesh(new OctahedronBufferGeometry(0.2, 0), matInvisible), [-1.25, 0, 0]],
+				[new Mesh(new OctahedronBufferGeometry(0.2, 0), matInvisible), [0, 1.25, 0]],
+				[new Mesh(new OctahedronBufferGeometry(0.2, 0), matInvisible), [0, -1.25, 0]]
 			],
 			XYZE: [
-				[new Mesh(new SphereBufferGeometry(0.7, 10, 8), matInvisible)]
+				[new Mesh(new SphereBufferGeometry(0.22, 10, 3), matInvisible)]
 			]
 		};
 

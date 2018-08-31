@@ -80,9 +80,13 @@ export class TransformControls extends Interactive {
 			this._gizmo[event.prop] = event.value;
 		});
 	}
+	enabledChanged(value) {
+		super.enabledChanged(value);
+		this.visible = value;
+	}
 	objectChanged(value) {
-		const hasObject = value ? true : false;
-		this.visible = hasObject;
+		let hasObject = value ? true : false;
+		this.visible = hasObject && this.enabled;
 		if (!hasObject) {
 			this.active = false;
 			this.axis = null;
