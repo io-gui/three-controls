@@ -80,10 +80,6 @@ export class TransformControls extends Interactive {
 			this._gizmo[event.prop] = event.value;
 		});
 	}
-	// enabledChanged(value) {
-	// 	super.enabledChanged(value);
-	// 	this.visible = value;
-	// }
 	objectChanged(value) {
 		let hasObject = value ? true : false;
 		this.visible = hasObject;
