@@ -2,10 +2,9 @@
  * @author arodic / https://github.com/arodic
  */
 
-import {Raycaster, Vector3, Quaternion} from "../../../three.js/build/three.module.js";
+import {Raycaster, Vector3, Quaternion, Plane} from "../../../three.js/build/three.module.js";
 import {Interactive} from "../Interactive.js";
-import {TransformControlsGizmo} from "./TransformControlsGizmo.js";
-import {TransformControlsPlane} from "./TransformControlsPlane.js";
+import {TransformControlsHelper} from "../helpers/TransformControlsHelper.js";
 
 // Reusable utility variables
 const _ray = new Raycaster();
@@ -19,6 +18,7 @@ const _unit = {
 };
 const _identityQuaternion = new Quaternion();
 const _alignVector = new Vector3();
+const _plane = new Plane();
 
 // events
 const changeEvent = { type: "change" };
@@ -30,11 +30,8 @@ export class TransformControls extends Interactive {
 
 		this.visible = false;
 
-		this._gizmo = new TransformControlsGizmo();
+		this._gizmo = new TransformControlsHelper();
 		this.add(this._gizmo);
-
-		this._plane = new TransformControlsPlane();
-		this.add(this._plane);
 
 		this.defineProperties({
 			camera: camera,
@@ -43,7 +40,7 @@ export class TransformControls extends Interactive {
 			mode: "translate",
 			translationSnap: null,
 			rotationSnap: null,
-			space: "world",
+			space: "local",
 			active: false,
 			size: 1,
 			showX: true,
@@ -72,11 +69,9 @@ export class TransformControls extends Interactive {
 		// TODO: implement better data binding
 		// Defined properties are passed down to gizmo and plane
 		for (let prop in this._properties) {
-			this._plane[prop] = this._properties[prop];
 			this._gizmo[prop] = this._properties[prop];
 		}
 		this.addEventListener('change', function (event) {
-			this._plane[event.prop] = event.value;
 			this._gizmo[event.prop] = event.value;
 		});
 	}
@@ -120,7 +115,7 @@ export class TransformControls extends Interactive {
 
 		_ray.setFromCamera(pointers[0].position, this.camera);
 
-		const planeIntersect = _ray.intersectObjects([ this._plane ], true)[ 0 ] || false;
+		const planeIntersect = this.intersectPlane();
 		let space = this.space;
 		if (planeIntersect) {
 			if (this.mode === 'scale') {
@@ -142,7 +137,7 @@ export class TransformControls extends Interactive {
 			this.quaternionStart.copy(this.object.quaternion);
 			this.scaleStart.copy(this.object.scale);
 			this.object.matrixWorld.decompose(this.worldPositionStart, this.worldQuaternionStart, this.worldScaleStart);
-			this.pointStart.copy(planeIntersect.point).sub(this.worldPositionStart);
+			this.pointStart.copy(planeIntersect).sub(this.worldPositionStart);
 			if (space === 'local') this.pointStart.applyQuaternion(this.worldQuaternionStart.clone().inverse());
 		}
 
@@ -164,11 +159,11 @@ export class TransformControls extends Interactive {
 
 		_ray.setFromCamera(pointers[0].position, this.camera);
 
-		const planeIntersect = _ray.intersectObjects([ this._plane ], true)[ 0 ] || false;
+		const planeIntersect = this.intersectPlane();
 
-		if (planeIntersect === false) return;
+		if (!planeIntersect) return;
 
-		this.pointEnd.copy(planeIntersect.point).sub(this.worldPositionStart);
+		this.pointEnd.copy(planeIntersect).sub(this.worldPositionStart);
 
 		if (space === 'local') this.pointEnd.applyQuaternion(this.worldQuaternionStart.clone().inverse());
 
@@ -291,5 +286,59 @@ export class TransformControls extends Interactive {
 		} else {
 			if (pointers[0].button === -1) this.axis = null;
 		}
+	}
+	intersectPlane() {
+		const _alignX = new Vector3(1, 0, 0);
+		const _alignY = new Vector3(0, 1, 0);
+		const _alignZ = new Vector3(0, 0, 1);
+		const _alignVector = new Vector3();
+
+		_alignX.set(1, 0, 0);
+		_alignY.set(0, 1, 0);
+		_alignZ.set(0, 0, 1);
+
+		if (this.space === "local" || this.mode === 'scale') { // scale always oriented to local rotation
+			_alignX.applyQuaternion(this.worldQuaternion);
+			_alignY.applyQuaternion(this.worldQuaternion);
+			_alignZ.applyQuaternion(this.worldQuaternion);
+		}
+
+		switch (this.mode) {
+			case 'translate':
+			case 'scale':
+				switch (this.axis) {
+					case 'X':
+						_alignVector.copy(this.eye).cross(_alignX);
+						_plane.normal.copy(_alignX).cross(_alignVector);
+						break;
+					case 'Y':
+						_alignVector.copy(this.eye).cross(_alignY);
+						_plane.normal.copy(_alignY).cross(_alignVector);
+						break;
+					case 'Z':
+						_alignVector.copy(this.eye).cross(_alignZ);
+						_plane.normal.copy(_alignZ).cross(_alignVector);
+						break;
+					case 'XY':
+						_plane.normal.copy(_alignZ);
+						break;
+					case 'YZ':
+						_plane.normal.copy(_alignX);
+						break;
+					case 'XZ':
+						_plane.normal.copy(_alignY);
+						break;
+					case 'XYZ':
+					case 'E':
+						this.camera.getWorldDirection(_plane.normal);
+						break;
+				}
+				break;
+			case 'rotate':
+			default:
+				this.camera.getWorldDirection(_plane.normal);
+		}
+		_plane.setFromNormalAndCoplanarPoint(_plane.normal, this.worldPosition);
+		return _ray.ray.intersectPlane(_plane, _tempVector);
 	}
 }
