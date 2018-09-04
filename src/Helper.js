@@ -2,7 +2,7 @@
  * @author arodic / https://github.com/arodic
  */
 
-import {Object3D, Vector3, Quaternion} from "../../three.js/build/three.module.js";
+import {Object3D, Vector3, Color, Quaternion, DoubleSide, MeshBasicMaterial, LineBasicMaterial} from "../../three.js/build/three.module.js";
 
 /*
  * Helper is a variant of Object3D which automatically follows its target object.
@@ -16,6 +16,23 @@ const tempPosition = new Vector3();
 const tempQuaternion = new Quaternion();
 const tempScale = new Vector3();
 
+const helperMaterial = new MeshBasicMaterial({
+	depthTest: false,
+	depthWrite: false,
+	transparent: true,
+	side: DoubleSide,
+	fog: false
+});
+
+const helperLineMaterial = new LineBasicMaterial({
+	depthTest: false,
+	depthWrite: false,
+	transparent: true,
+	linewidth: 1,
+	fog: false
+});
+
+
 export class Helper extends Object3D {
 	get isHelper() { return true; }
 	constructor(target, camera) {
@@ -23,6 +40,17 @@ export class Helper extends Object3D {
 		this.target = target;
 		this.camera = camera;
 		this.space = 'local';
+		// const variables
+		this.colors = {
+			red: new Color(0xff0000),
+			green: new Color(0x00ff00),
+			blue: new Color(0x0000ff),
+			white: new Color(0xffffff),
+			gray: new Color(0x787878),
+			yellow: new Color(0xffff00),
+			cyan: new Color(0x00ffff),
+			magenta: new Color(0xff00ff),
+		};
 		this.size = 0;
 	}
 	updateHelperMatrix() {
@@ -54,6 +82,12 @@ export class Helper extends Object3D {
 		for (let i = 0, l = children.length; i < l; i ++) {
 			children[i].updateMatrixWorld(true);
 		}
+	}
+	setupHelperMaterial(color, isLine, opacity) {
+		const material = isLine ? helperLineMaterial.clone() : helperMaterial.clone();
+		material.color.set(this.colors[color]);
+		if (opacity !== undefined) material.opacity = opacity;
+		return material;
 	}
 	// Creates an Object3D with gizmos described in custom hierarchy definition.
 	setupHelper(gizmoMap) {
