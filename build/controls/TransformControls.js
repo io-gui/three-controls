@@ -1,5 +1,203 @@
-import { Object3D, MeshBasicMaterial, DoubleSide, LineBasicMaterial, CylinderBufferGeometry, BoxBufferGeometry, BufferGeometry, Float32BufferAttribute, Mesh, Line, OctahedronBufferGeometry, PlaneBufferGeometry, TorusBufferGeometry, SphereBufferGeometry, Vector3, Euler, Matrix4, Quaternion, Color, Raycaster } from '../../../three.js/build/three.module.js';
+import { Object3D, Vector3, Quaternion, LineBasicMaterial, BufferGeometry, Float32BufferAttribute, Line, Color, MeshBasicMaterial, DoubleSide, CylinderBufferGeometry, Mesh, OctahedronBufferGeometry, PlaneBufferGeometry, TorusBufferGeometry, SphereBufferGeometry, Matrix4, BoxBufferGeometry, Raycaster, Plane } from '../../../three.js/build/three.module.js';
 import { Interactive } from '../Interactive.js';
+
+/**
+ * @author arodic / https://github.com/arodic
+ */
+
+/*
+ * Helper is a variant of Object3D which automatically follows its target object.
+ * On matrix update, it automatically copies transform matrices from its target Object3D.
+ */
+
+const worldPosition = new Vector3();
+const cameraWorldPosition = new Vector3();
+
+const tempPosition = new Vector3();
+const tempQuaternion = new Quaternion();
+const tempScale = new Vector3();
+
+class Helper extends Object3D {
+
+	get isHelper() {
+
+		return true;
+
+	}
+	constructor( target, camera ) {
+
+		super();
+		this.target = target;
+		this.camera = camera;
+		this.space = 'local';
+		this.size = 0;
+
+	}
+	updateHelperMatrix() {
+
+		let eyeDistance = 0;
+		let scale = new Vector3();
+		if ( this.camera && this.size ) {
+
+			this.camera.updateMatrixWorld();
+			worldPosition.setFromMatrixPosition( this.matrixWorld );
+			cameraWorldPosition.setFromMatrixPosition( this.camera.matrixWorld );
+			eyeDistance = worldPosition.distanceTo( cameraWorldPosition );
+			if ( eyeDistance ) scale.set( 1, 1, 1 ).multiplyScalar( eyeDistance * this.size );
+
+		}
+		if ( this.target ) {
+
+			this.target.updateMatrixWorld();
+			this.matrix.copy( this.target.matrix );
+			this.matrixWorld.copy( this.target.matrixWorld );
+
+		} else {
+
+			super.updateMatrixWorld();
+
+		}
+
+		this.matrixWorld.decompose( tempPosition, tempQuaternion, tempScale );
+		if ( this.space === 'world' ) tempQuaternion.set( 0, 0, 0, 1 );
+		this.matrixWorld.compose( tempPosition, tempQuaternion, eyeDistance ? scale : tempScale );
+
+	}
+	updateMatrixWorld() {
+
+		this.updateHelperMatrix();
+		this.matrixWorldNeedsUpdate = false;
+		const children = this.children;
+		for ( let i = 0, l = children.length; i < l; i ++ ) {
+
+			children[ i ].updateMatrixWorld( true );
+
+		}
+
+	}
+	// Creates an Object3D with gizmos described in custom hierarchy definition.
+	setupHelper( gizmoMap ) {
+
+		const gizmo = new Object3D();
+
+		for ( let name in gizmoMap ) {
+
+			for ( let i = gizmoMap[ name ].length; i --; ) {
+
+				const object = gizmoMap[ name ][ i ][ 0 ].clone();
+				const position = gizmoMap[ name ][ i ][ 1 ];
+				const rotation = gizmoMap[ name ][ i ][ 2 ];
+				const scale = gizmoMap[ name ][ i ][ 3 ];
+				const tag = gizmoMap[ name ][ i ][ 4 ];
+
+				// name and tag properties are essential for picking and updating logic.
+				object.name = name;
+				object.tag = tag;
+
+				if ( position ) {
+
+					object.position.set( position[ 0 ], position[ 1 ], position[ 2 ] );
+
+				}
+				if ( rotation ) {
+
+					object.rotation.set( rotation[ 0 ], rotation[ 1 ], rotation[ 2 ] );
+
+				}
+				if ( scale ) {
+
+					object.scale.set( scale[ 0 ], scale[ 1 ], scale[ 2 ] );
+
+				}
+
+				object.updateMatrix();
+
+				const tempGeometry = object.geometry.clone();
+				tempGeometry.applyMatrix( object.matrix );
+				object.geometry = tempGeometry;
+
+				object.position.set( 0, 0, 0 );
+				object.rotation.set( 0, 0, 0 );
+				object.scale.set( 1, 1, 1 );
+				gizmo.add( object );
+
+			}
+
+		}
+		return gizmo;
+
+	}
+
+}
+
+// const variables
+const red = new Color( 0xff0000 );
+const green = new Color( 0x00ff00 );
+const blue = new Color( 0x0000ff );
+
+// shared materials
+const gizmoLineMaterial = new LineBasicMaterial( {
+	depthTest: false,
+	depthWrite: false,
+	transparent: true,
+	linewidth: 1,
+	fog: false
+} );
+
+// Make unique material for each axis/color
+const matLineRed = gizmoLineMaterial.clone();
+matLineRed.color.copy( red );
+
+const matLineGreen = gizmoLineMaterial.clone();
+matLineGreen.color.copy( green );
+
+const matLineBlue = gizmoLineMaterial.clone();
+matLineBlue.color.copy( blue );
+
+// reusable geometry
+const lineGeometry = new BufferGeometry();
+lineGeometry.addAttribute( 'position', new Float32BufferAttribute( [ 0, 0, 0,	1, 0, 0 ], 3 ) );
+
+class AxesHelper extends Helper {
+
+	constructor( target, camera ) {
+
+		super( target, camera );
+
+		this.size = 0.15;
+		this.showX = true;
+		this.showY = true;
+		this.showZ = true;
+
+		this.init();
+
+	}
+	init() {
+
+		const gizmoTranslate = {
+			X: [[ new Line( lineGeometry, matLineRed ) ]],
+			Y: [[ new Line( lineGeometry, matLineGreen ), null, [ 0, 0, Math.PI / 2 ]]],
+			Z: [[ new Line( lineGeometry, matLineBlue ), null, [ 0, - Math.PI / 2, 0 ]]]
+		};
+		this.add( this.setupHelper( gizmoTranslate ) );
+
+	}
+	updateHelperMatrix() {
+
+		// Hide non-enabled axes
+		this.traverse( axis => {
+
+			axis.visible = axis.visible && ( axis.name.indexOf( "X" ) === - 1 || this.showX );
+			axis.visible = axis.visible && ( axis.name.indexOf( "Y" ) === - 1 || this.showY );
+			axis.visible = axis.visible && ( axis.name.indexOf( "Z" ) === - 1 || this.showZ );
+			axis.visible = axis.visible && ( axis.name.indexOf( "E" ) === - 1 || ( this.showX && this.showY && this.showZ ) );
+
+		} );
+		super.updateHelperMatrix();
+
+	}
+
+}
 
 // shared materials
 const gizmoMaterial = new MeshBasicMaterial( {
@@ -10,7 +208,7 @@ const gizmoMaterial = new MeshBasicMaterial( {
 	fog: false
 } );
 
-const gizmoLineMaterial = new LineBasicMaterial( {
+const gizmoLineMaterial$1 = new LineBasicMaterial( {
 	depthTest: false,
 	depthWrite: false,
 	transparent: true,
@@ -18,134 +216,132 @@ const gizmoLineMaterial = new LineBasicMaterial( {
 	fog: false
 } );
 
-class TransformControlsGizmo extends Object3D {
+// const variables
+const red$1 = new Color( 0xff0000 );
+const green$1 = new Color( 0x00ff00 );
+const blue$1 = new Color( 0x0000ff );
+const yellow = new Color( 0xffff00 );
+const cyan = new Color( 0x00ffff );
+const magenta = new Color( 0xff00ff );
+const white = new Color( 0xffffff );
+const gray = new Color( 0x787878 );
 
-	constructor() {
+// Reusable utility variables
+const alignVector = new Vector3( 0, 1, 0 );
+const identityQuaternion = new Quaternion();
 
-		super();
+const unitX = new Vector3( 1, 0, 0 );
+const unitY = new Vector3( 0, 1, 0 );
+const unitZ = new Vector3( 0, 0, 1 );
 
-		// Make unique material for each axis/color
-		const matInvisible = gizmoMaterial.clone();
-		matInvisible.opacity = 0.15;
+// Make unique material for each axis/color
+const matInvisible = gizmoMaterial.clone();
+matInvisible.opacity = 0.15;
 
-		const matHelper = gizmoMaterial.clone();
-		matHelper.opacity = 0.33;
+const matHelper = gizmoMaterial.clone();
+matHelper.opacity = 0.33;
 
-		const matRed = gizmoMaterial.clone();
-		matRed.color.set( 0xff0000 );
+const matRed = gizmoMaterial.clone();
+matRed.color.copy( red$1 );
 
-		const matGreen = gizmoMaterial.clone();
-		matGreen.color.set( 0x00ff00 );
+const matGreen = gizmoMaterial.clone();
+matGreen.color.copy( green$1 );
 
-		const matBlue = gizmoMaterial.clone();
-		matBlue.color.set( 0x0000ff );
+const matBlue = gizmoMaterial.clone();
+matBlue.color.copy( blue$1 );
 
-		const matWhiteTransperent = gizmoMaterial.clone();
-		matWhiteTransperent.opacity = 0.25;
+const matWhiteTransperent = gizmoMaterial.clone();
+matWhiteTransperent.opacity = 0.25;
 
-		const matYellowTransparent = matWhiteTransperent.clone();
-		matYellowTransparent.color.set( 0xffff00 );
+const matYellowTransparent = matWhiteTransperent.clone();
+matYellowTransparent.color.copy( yellow );
 
-		const matCyanTransparent = matWhiteTransperent.clone();
-		matCyanTransparent.color.set( 0x00ffff );
+const matCyanTransparent = matWhiteTransperent.clone();
+matCyanTransparent.color.copy( cyan );
 
-		const matMagentaTransparent = matWhiteTransperent.clone();
-		matMagentaTransparent.color.set( 0xff00ff );
+const matMagentaTransparent = matWhiteTransperent.clone();
+matMagentaTransparent.color.copy( magenta );
 
-		const matYellow = gizmoMaterial.clone();
-		matYellow.color.set( 0xffff00 );
+const matYellow = gizmoMaterial.clone();
+matYellow.color.copy( yellow );
 
-		const matLineRed = gizmoLineMaterial.clone();
-		matLineRed.color.set( 0xff0000 );
+const matLineRed$1 = gizmoLineMaterial$1.clone();
+matLineRed$1.color.copy( red$1 );
 
-		const matLineGreen = gizmoLineMaterial.clone();
-		matLineGreen.color.set( 0x00ff00 );
+const matLineGreen$1 = gizmoLineMaterial$1.clone();
+matLineGreen$1.color.copy( green$1 );
 
-		const matLineBlue = gizmoLineMaterial.clone();
-		matLineBlue.color.set( 0x0000ff );
+const matLineBlue$1 = gizmoLineMaterial$1.clone();
+matLineBlue$1.color.copy( blue$1 );
 
-		const matLineCyan = gizmoLineMaterial.clone();
-		matLineCyan.color.set( 0x00ffff );
+const matLineCyan = gizmoLineMaterial$1.clone();
+matLineCyan.color.copy( cyan );
 
-		const matLineMagenta = gizmoLineMaterial.clone();
-		matLineMagenta.color.set( 0xff00ff );
+const matLineMagenta = gizmoLineMaterial$1.clone();
+matLineMagenta.color.copy( magenta );
 
-		const matLineYellow = gizmoLineMaterial.clone();
-		matLineYellow.color.set( 0xffff00 );
+const matLineYellow = gizmoLineMaterial$1.clone();
+matLineYellow.color.copy( yellow );
 
-		const matLineGray = gizmoLineMaterial.clone();
-		matLineGray.color.set( 0x787878 );
+const matLineGray = gizmoLineMaterial$1.clone();
+matLineGray.color.copy( gray );
 
-		const matLineYellowTransparent = matLineYellow.clone();
-		matLineYellowTransparent.opacity = 0.25;
+const matLineYellowTransparent = matLineYellow.clone();
+matLineYellowTransparent.opacity = 0.25;
 
-		// reusable geometry
+// reusable geometry
 
-		const arrowGeometry = new CylinderBufferGeometry( 0, 0.05, 0.2, 12, 1, false );
+const arrowGeometry = new CylinderBufferGeometry( 0, 0.05, 0.2, 12, 1, false );
 
-		const scaleHandleGeometry = new BoxBufferGeometry( 0.125, 0.125, 0.125 );
+const lineGeometry$1 = new BufferGeometry();
+lineGeometry$1.addAttribute( 'position', new Float32BufferAttribute( [ 0, 0, 0,	1, 0, 0 ], 3 ) );
 
-		const lineGeometry = new BufferGeometry();
-		lineGeometry.addAttribute( 'position', new Float32BufferAttribute( [ 0, 0, 0,	1, 0, 0 ], 3 ) );
+// Special geometry for transform helper. If scaled with position vector it spans from [0,0,0] to position
+function TranslateHelperGeometry() {
 
-		function CircleGeometry( radius, arc ) {
+	const geometry = new BufferGeometry();
+	geometry.addAttribute( 'position', new Float32BufferAttribute( [ 0, 0, 0, 1, 1, 1 ], 3 ) );
+	return geometry;
 
-			const geometry = new BufferGeometry();
-			const vertices = [];
-			for ( let i = 0; i <= 64 * arc; ++ i ) {
+}
 
-				vertices.push( 0, Math.cos( i / 32 * Math.PI ) * radius, Math.sin( i / 32 * Math.PI ) * radius );
+class AxesTranslateHelper extends AxesHelper {
 
-			}
-			geometry.addAttribute( 'position', new Float32BufferAttribute( vertices, 3 ) );
-			return geometry;
-
-		}
-
-		// Special geometry for transform helper. If scaled with position vector it spans from [0,0,0] to position
-		function TranslateHelperGeometry() {
-
-			const geometry = new BufferGeometry();
-			geometry.addAttribute( 'position', new Float32BufferAttribute( [ 0, 0, 0, 1, 1, 1 ], 3 ) );
-			return geometry;
-
-		}
-
-		// Gizmo definitions - custom hierarchy definitions for setupGizmo() function
+	init() {
 
 		const gizmoTranslate = {
 			X: [
 				[ new Mesh( arrowGeometry, matRed ), [ 1, 0, 0 ], [ 0, 0, - Math.PI / 2 ], null, 'fwd' ],
 				[ new Mesh( arrowGeometry, matRed ), [ 1, 0, 0 ], [ 0, 0, Math.PI / 2 ], null, 'bwd' ],
-				[ new Line( lineGeometry, matLineRed ) ]
+				[ new Line( lineGeometry$1, matLineRed$1 ) ]
 			],
 			Y: [
 				[ new Mesh( arrowGeometry, matGreen ), [ 0, 1, 0 ], null, null, 'fwd' ],
 				[ new Mesh( arrowGeometry, matGreen ), [ 0, 1, 0 ], [ Math.PI, 0, 0 ], null, 'bwd' ],
-				[ new Line( lineGeometry, matLineGreen ), null, [ 0, 0, Math.PI / 2 ]]
+				[ new Line( lineGeometry$1, matLineGreen$1 ), null, [ 0, 0, Math.PI / 2 ]]
 			],
 			Z: [
 				[ new Mesh( arrowGeometry, matBlue ), [ 0, 0, 1 ], [ Math.PI / 2, 0, 0 ], null, 'fwd' ],
 				[ new Mesh( arrowGeometry, matBlue ), [ 0, 0, 1 ], [ - Math.PI / 2, 0, 0 ], null, 'bwd' ],
-				[ new Line( lineGeometry, matLineBlue ), null, [ 0, - Math.PI / 2, 0 ]]
+				[ new Line( lineGeometry$1, matLineBlue$1 ), null, [ 0, - Math.PI / 2, 0 ]]
 			],
 			XYZ: [
 				[ new Mesh( new OctahedronBufferGeometry( 0.1, 0 ), matWhiteTransperent ), [ 0, 0, 0 ], [ 0, 0, 0 ]]
 			],
 			XY: [
 				[ new Mesh( new PlaneBufferGeometry( 0.295, 0.295 ), matYellowTransparent ), [ 0.15, 0.15, 0 ]],
-				[ new Line( lineGeometry, matLineYellow ), [ 0.18, 0.3, 0 ], null, [ 0.125, 1, 1 ]],
-				[ new Line( lineGeometry, matLineYellow ), [ 0.3, 0.18, 0 ], [ 0, 0, Math.PI / 2 ], [ 0.125, 1, 1 ]]
+				[ new Line( lineGeometry$1, matLineYellow ), [ 0.18, 0.3, 0 ], null, [ 0.125, 1, 1 ]],
+				[ new Line( lineGeometry$1, matLineYellow ), [ 0.3, 0.18, 0 ], [ 0, 0, Math.PI / 2 ], [ 0.125, 1, 1 ]]
 			],
 			YZ: [
 				[ new Mesh( new PlaneBufferGeometry( 0.295, 0.295 ), matCyanTransparent ), [ 0, 0.15, 0.15 ], [ 0, Math.PI / 2, 0 ]],
-				[ new Line( lineGeometry, matLineCyan ), [ 0, 0.18, 0.3 ], [ 0, 0, Math.PI / 2 ], [ 0.125, 1, 1 ]],
-				[ new Line( lineGeometry, matLineCyan ), [ 0, 0.3, 0.18 ], [ 0, - Math.PI / 2, 0 ], [ 0.125, 1, 1 ]]
+				[ new Line( lineGeometry$1, matLineCyan ), [ 0, 0.18, 0.3 ], [ 0, 0, Math.PI / 2 ], [ 0.125, 1, 1 ]],
+				[ new Line( lineGeometry$1, matLineCyan ), [ 0, 0.3, 0.18 ], [ 0, - Math.PI / 2, 0 ], [ 0.125, 1, 1 ]]
 			],
 			XZ: [
 				[ new Mesh( new PlaneBufferGeometry( 0.295, 0.295 ), matMagentaTransparent ), [ 0.15, 0, 0.15 ], [ - Math.PI / 2, 0, 0 ]],
-				[ new Line( lineGeometry, matLineMagenta ), [ 0.18, 0, 0.3 ], null, [ 0.125, 1, 1 ]],
-				[ new Line( lineGeometry, matLineMagenta ), [ 0.3, 0, 0.18 ], [ 0, - Math.PI / 2, 0 ], [ 0.125, 1, 1 ]]
+				[ new Line( lineGeometry$1, matLineMagenta ), [ 0.18, 0, 0.3 ], null, [ 0.125, 1, 1 ]],
+				[ new Line( lineGeometry$1, matLineMagenta ), [ 0.3, 0, 0.18 ], [ 0, - Math.PI / 2, 0 ], [ 0.125, 1, 1 ]]
 			]
 		};
 
@@ -184,565 +380,184 @@ class TransformControlsGizmo extends Object3D {
 				[ new Line( TranslateHelperGeometry(), matHelper ), null, null, null, 'helper' ]
 			],
 			X: [
-				[ new Line( lineGeometry, matHelper.clone() ), [ - 1e3, 0, 0 ], null, [ 1e6, 1, 1 ], 'helper' ]
+				[ new Line( lineGeometry$1, matHelper.clone() ), [ - 1e3, 0, 0 ], null, [ 1e6, 1, 1 ], 'helper' ]
 			],
 			Y: [
-				[ new Line( lineGeometry, matHelper.clone() ), [ 0, - 1e3, 0 ], [ 0, 0, Math.PI / 2 ], [ 1e6, 1, 1 ], 'helper' ]
+				[ new Line( lineGeometry$1, matHelper.clone() ), [ 0, - 1e3, 0 ], [ 0, 0, Math.PI / 2 ], [ 1e6, 1, 1 ], 'helper' ]
 			],
 			Z: [
-				[ new Line( lineGeometry, matHelper.clone() ), [ 0, 0, - 1e3 ], [ 0, - Math.PI / 2, 0 ], [ 1e6, 1, 1 ], 'helper' ]
+				[ new Line( lineGeometry$1, matHelper.clone() ), [ 0, 0, - 1e3 ], [ 0, - Math.PI / 2, 0 ], [ 1e6, 1, 1 ], 'helper' ]
 			]
 		};
 
-		const gizmoRotate = {
-			X: [
-				[ new Line( CircleGeometry( 1, 0.5 ), matLineRed ) ],
-				[ new Mesh( new OctahedronBufferGeometry( 0.04, 0 ), matRed ), [ 0, 0, 0.99 ], null, [ 1, 3, 1 ]],
-			],
-			Y: [
-				[ new Line( CircleGeometry( 1, 0.5 ), matLineGreen ), null, [ 0, 0, - Math.PI / 2 ]],
-				[ new Mesh( new OctahedronBufferGeometry( 0.04, 0 ), matGreen ), [ 0, 0, 0.99 ], null, [ 3, 1, 1 ]],
-			],
-			Z: [
-				[ new Line( CircleGeometry( 1, 0.5 ), matLineBlue ), null, [ 0, Math.PI / 2, 0 ]],
-				[ new Mesh( new OctahedronBufferGeometry( 0.04, 0 ), matBlue ), [ 0.99, 0, 0 ], null, [ 1, 3, 1 ]],
-			],
-			E: [
-				[ new Line( CircleGeometry( 1.25, 1 ), matLineYellowTransparent ), null, [ 0, Math.PI / 2, 0 ]],
-				[ new Mesh( new CylinderBufferGeometry( 0.03, 0, 0.15, 4, 1, false ), matLineYellowTransparent ), [ 1.17, 0, 0 ], [ 0, 0, - Math.PI / 2 ], [ 1, 1, 0.001 ]],
-				[ new Mesh( new CylinderBufferGeometry( 0.03, 0, 0.15, 4, 1, false ), matLineYellowTransparent ), [ - 1.17, 0, 0 ], [ 0, 0, Math.PI / 2 ], [ 1, 1, 0.001 ]],
-				[ new Mesh( new CylinderBufferGeometry( 0.03, 0, 0.15, 4, 1, false ), matLineYellowTransparent ), [ 0, - 1.17, 0 ], [ Math.PI, 0, 0 ], [ 1, 1, 0.001 ]],
-				[ new Mesh( new CylinderBufferGeometry( 0.03, 0, 0.15, 4, 1, false ), matLineYellowTransparent ), [ 0, 1.17, 0 ], [ 0, 0, 0 ], [ 1, 1, 0.001 ]],
-			],
-			XYZE: [
-				[ new Line( CircleGeometry( 1, 1 ), matLineGray ), null, [ 0, Math.PI / 2, 0 ]]
-			]
-		};
+		this.add( this.gizmo = this.setupHelper( gizmoTranslate ) );
+		this.add( this.picker = this.setupHelper( pickerTranslate ) );
+		this.add( this.helper = this.setupHelper( helperTranslate ) );
 
-		const helperRotate = {
-			AXIS: [
-				[ new Line( lineGeometry, matHelper.clone() ), [ - 1e3, 0, 0 ], null, [ 1e6, 1, 1 ], 'helper' ]
-			]
-		};
+	}
+	updateHelperMatrix() {
 
-		const pickerRotate = {
-			X: [
-				[ new Mesh( new TorusBufferGeometry( 1, 0.1, 4, 24 ), matInvisible ), [ 0, 0, 0 ], [ 0, - Math.PI / 2, - Math.PI / 2 ]],
-			],
-			Y: [
-				[ new Mesh( new TorusBufferGeometry( 1, 0.1, 4, 24 ), matInvisible ), [ 0, 0, 0 ], [ Math.PI / 2, 0, 0 ]],
-			],
-			Z: [
-				[ new Mesh( new TorusBufferGeometry( 1, 0.1, 4, 24 ), matInvisible ), [ 0, 0, 0 ], [ 0, 0, - Math.PI / 2 ]],
-			],
-			E: [
-				[ new Mesh( new TorusBufferGeometry( 1.25, 0.1, 2, 24 ), matInvisible ) ]
-			],
-			XYZE: [
-				[ new Mesh( new SphereBufferGeometry( 0.7, 10, 8 ), matInvisible ) ]
-			]
-		};
+		super.updateHelperMatrix();
 
-		const gizmoScale = {
-			X: [
-				[ new Mesh( scaleHandleGeometry, matRed ), [ 0.8, 0, 0 ], [ 0, 0, - Math.PI / 2 ]],
-				[ new Line( lineGeometry, matLineRed ), null, null, [ 0.8, 1, 1 ]]
-			],
-			Y: [
-				[ new Mesh( scaleHandleGeometry, matGreen ), [ 0, 0.8, 0 ]],
-				[ new Line( lineGeometry, matLineGreen ), null, [ 0, 0, Math.PI / 2 ], [ 0.8, 1, 1 ]]
-			],
-			Z: [
-				[ new Mesh( scaleHandleGeometry, matBlue ), [ 0, 0, 0.8 ], [ Math.PI / 2, 0, 0 ]],
-				[ new Line( lineGeometry, matLineBlue ), null, [ 0, - Math.PI / 2, 0 ], [ 0.8, 1, 1 ]]
-			],
-			XY: [
-				[ new Mesh( scaleHandleGeometry, matYellowTransparent ), [ 0.85, 0.85, 0 ], null, [ 2, 2, 0.2 ]],
-				[ new Line( lineGeometry, matLineYellow ), [ 0.855, 0.98, 0 ], null, [ 0.125, 1, 1 ]],
-				[ new Line( lineGeometry, matLineYellow ), [ 0.98, 0.855, 0 ], [ 0, 0, Math.PI / 2 ], [ 0.125, 1, 1 ]]
-			],
-			YZ: [
-				[ new Mesh( scaleHandleGeometry, matCyanTransparent ), [ 0, 0.85, 0.85 ], null, [ 0.2, 2, 2 ]],
-				[ new Line( lineGeometry, matLineCyan ), [ 0, 0.855, 0.98 ], [ 0, 0, Math.PI / 2 ], [ 0.125, 1, 1 ]],
-				[ new Line( lineGeometry, matLineCyan ), [ 0, 0.98, 0.855 ], [ 0, - Math.PI / 2, 0 ], [ 0.125, 1, 1 ]]
-			],
-			XZ: [
-				[ new Mesh( scaleHandleGeometry, matMagentaTransparent ), [ 0.85, 0, 0.85 ], null, [ 2, 0.2, 2 ]],
-				[ new Line( lineGeometry, matLineMagenta ), [ 0.855, 0, 0.98 ], null, [ 0.125, 1, 1 ]],
-				[ new Line( lineGeometry, matLineMagenta ), [ 0.98, 0, 0.855 ], [ 0, - Math.PI / 2, 0 ], [ 0.125, 1, 1 ]]
-			],
-			XYZX: [
-				[ new Mesh( new BoxBufferGeometry( 0.125, 0.125, 0.125 ), matWhiteTransperent ), [ 1.1, 0, 0 ]],
-			],
-			XYZY: [
-				[ new Mesh( new BoxBufferGeometry( 0.125, 0.125, 0.125 ), matWhiteTransperent ), [ 0, 1.1, 0 ]],
-			],
-			XYZZ: [
-				[ new Mesh( new BoxBufferGeometry( 0.125, 0.125, 0.125 ), matWhiteTransperent ), [ 0, 0, 1.1 ]],
-			]
-		};
+		const quaternion = this.space === "local" ? this.worldQuaternion : identityQuaternion;
 
-		const pickerScale = {
-			X: [
-				[ new Mesh( new CylinderBufferGeometry( 0.2, 0, 0.8, 4, 1, false ), matInvisible ), [ 0.5, 0, 0 ], [ 0, 0, - Math.PI / 2 ]]
-			],
-			Y: [
-				[ new Mesh( new CylinderBufferGeometry( 0.2, 0, 0.8, 4, 1, false ), matInvisible ), [ 0, 0.5, 0 ]]
-			],
-			Z: [
-				[ new Mesh( new CylinderBufferGeometry( 0.2, 0, 0.8, 4, 1, false ), matInvisible ), [ 0, 0, 0.5 ], [ Math.PI / 2, 0, 0 ]]
-			],
-			XY: [
-				[ new Mesh( scaleHandleGeometry, matInvisible ), [ 0.85, 0.85, 0 ], null, [ 3, 3, 0.2 ]],
-			],
-			YZ: [
-				[ new Mesh( scaleHandleGeometry, matInvisible ), [ 0, 0.85, 0.85 ], null, [ 0.2, 3, 3 ]],
-			],
-			XZ: [
-				[ new Mesh( scaleHandleGeometry, matInvisible ), [ 0.85, 0, 0.85 ], null, [ 3, 0.2, 3 ]],
-			],
-			XYZX: [
-				[ new Mesh( new BoxBufferGeometry( 0.2, 0.2, 0.2 ), matInvisible ), [ 1.1, 0, 0 ]],
-			],
-			XYZY: [
-				[ new Mesh( new BoxBufferGeometry( 0.2, 0.2, 0.2 ), matInvisible ), [ 0, 1.1, 0 ]],
-			],
-			XYZZ: [
-				[ new Mesh( new BoxBufferGeometry( 0.2, 0.2, 0.2 ), matInvisible ), [ 0, 0, 1.1 ]],
-			]
-		};
+		// highlight selected axis
+		this.traverse( handle => {
 
-		const helperScale = {
-			X: [
-				[ new Line( lineGeometry, matHelper.clone() ), [ - 1e3, 0, 0 ], null, [ 1e6, 1, 1 ], 'helper' ]
-			],
-			Y: [
-				[ new Line( lineGeometry, matHelper.clone() ), [ 0, - 1e3, 0 ], [ 0, 0, Math.PI / 2 ], [ 1e6, 1, 1 ], 'helper' ]
-			],
-			Z: [
-				[ new Line( lineGeometry, matHelper.clone() ), [ 0, 0, - 1e3 ], [ 0, - Math.PI / 2, 0 ], [ 1e6, 1, 1 ], 'helper' ]
-			]
-		};
+			// Hide translate and scale axis facing the camera
+			const AXIS_HIDE_TRESHOLD = 0.99;
+			const PLANE_HIDE_TRESHOLD = 0.2;
+			const AXIS_FLIP_TRESHOLD = - 0.4;
 
-		// Creates an Object3D with gizmos described in custom hierarchy definition.
-		function setupGizmo( gizmoMap ) {
+			if ( handle !== this ) {
 
-			const gizmo = new Object3D();
+				handle.visible = true;
+				handle.scale.set( 1, 1, 1 );
 
-			for ( let name in gizmoMap ) {
+			}
 
-				for ( let i = gizmoMap[ name ].length; i --; ) {
+			if ( handle.name === 'X' || handle.name === 'XYZX' ) {
 
-					const object = gizmoMap[ name ][ i ][ 0 ].clone();
-					const position = gizmoMap[ name ][ i ][ 1 ];
-					const rotation = gizmoMap[ name ][ i ][ 2 ];
-					const scale = gizmoMap[ name ][ i ][ 3 ];
-					const tag = gizmoMap[ name ][ i ][ 4 ];
+				if ( Math.abs( alignVector.copy( unitX ).applyQuaternion( quaternion ).dot( this.eye ) ) > AXIS_HIDE_TRESHOLD ) {
 
-					// name and tag properties are essential for picking and updating logic.
-					object.name = name;
-					object.tag = tag;
-
-					if ( position ) {
-
-						object.position.set( position[ 0 ], position[ 1 ], position[ 2 ] );
-
-					}
-					if ( rotation ) {
-
-						object.rotation.set( rotation[ 0 ], rotation[ 1 ], rotation[ 2 ] );
-
-					}
-					if ( scale ) {
-
-						object.scale.set( scale[ 0 ], scale[ 1 ], scale[ 2 ] );
-
-					}
-					object.updateMatrix();
-
-					const tempGeometry = object.geometry.clone();
-					tempGeometry.applyMatrix( object.matrix );
-					object.geometry = tempGeometry;
-
-					object.position.set( 0, 0, 0 );
-					object.rotation.set( 0, 0, 0 );
-					object.scale.set( 1, 1, 1 );
-					gizmo.add( object );
+					handle.visible = false;
 
 				}
 
 			}
-			return gizmo;
+			if ( handle.name === 'Y' || handle.name === 'XYZY' ) {
 
-		}
-
-		// Reusable utility variables
-		const tempVector = new Vector3( 0, 0, 0 );
-		const tempEuler = new Euler();
-		const alignVector = new Vector3( 0, 1, 0 );
-		const zeroVector = new Vector3( 0, 0, 0 );
-		const lookAtMatrix = new Matrix4();
-		const tempQuaternion = new Quaternion();
-		const tempQuaternion2 = new Quaternion();
-		const identityQuaternion = new Quaternion();
-
-		const unitX = new Vector3( 1, 0, 0 );
-		const unitY = new Vector3( 0, 1, 0 );
-		const unitZ = new Vector3( 0, 0, 1 );
-
-		// Gizmo creation
-		this.gizmo = {};
-		this.picker = {};
-		this.helper = {};
-
-		this.add( this.gizmo[ "translate" ] = setupGizmo( gizmoTranslate ) );
-		this.add( this.gizmo[ "rotate" ] = setupGizmo( gizmoRotate ) );
-		this.add( this.gizmo[ "scale" ] = setupGizmo( gizmoScale ) );
-		this.add( this.picker[ "translate" ] = setupGizmo( pickerTranslate ) );
-		this.add( this.picker[ "rotate" ] = setupGizmo( pickerRotate ) );
-		this.add( this.picker[ "scale" ] = setupGizmo( pickerScale ) );
-		this.add( this.helper[ "translate" ] = setupGizmo( helperTranslate ) );
-		this.add( this.helper[ "rotate" ] = setupGizmo( helperRotate ) );
-		this.add( this.helper[ "scale" ] = setupGizmo( helperScale ) );
-
-		// Pickers should be hidden always
-		this.picker[ "translate" ].visible = false;
-		this.picker[ "rotate" ].visible = false;
-		this.picker[ "scale" ].visible = false;
-
-		// updateMatrixWorld will update transformations and appearance of individual handles
-		this.updateMatrixWorld = function () {
-
-			if ( this.mode === 'scale' ) this.space = 'local'; // scale always oriented to local rotation
-
-			const quaternion = this.space === "local" ? this.worldQuaternion : identityQuaternion;
-
-			// Show only gizmos for current transform mode
-
-			this.gizmo[ "translate" ].visible = this.mode === "translate";
-			this.gizmo[ "rotate" ].visible = this.mode === "rotate";
-			this.gizmo[ "scale" ].visible = this.mode === "scale";
-
-			this.helper[ "translate" ].visible = this.mode === "translate";
-			this.helper[ "rotate" ].visible = this.mode === "rotate";
-			this.helper[ "scale" ].visible = this.mode === "scale";
-
-			let handles = [];
-			handles = handles.concat( this.picker[ this.mode ].children );
-			handles = handles.concat( this.gizmo[ this.mode ].children );
-			handles = handles.concat( this.helper[ this.mode ].children );
-
-			for ( let i = 0; i < handles.length; i ++ ) {
-
-				const handle = handles[ i ];
-
-				// hide aligned to camera
-				handle.visible = true;
-				handle.rotation.set( 0, 0, 0 );
-				handle.position.copy( this.worldPosition );
-
-				const eyeDistance = this.worldPosition.distanceTo( this.cameraPosition );
-				handle.scale.set( 1, 1, 1 ).multiplyScalar( eyeDistance * this.size / 7 );
-
-				// TODO: simplify helpers and consider decoupling from gizmo
-				if ( handle.tag === 'helper' ) {
+				if ( Math.abs( alignVector.copy( unitY ).applyQuaternion( quaternion ).dot( this.eye ) ) > AXIS_HIDE_TRESHOLD ) {
 
 					handle.visible = false;
 
-					if ( handle.name === 'AXIS' ) {
+				}
 
-						handle.position.copy( this.worldPositionStart );
-						handle.visible = !! this.axis;
-						if ( this.axis === 'X' ) {
+			}
+			if ( handle.name === 'Z' || handle.name === 'XYZZ' ) {
 
-							tempQuaternion.setFromEuler( tempEuler.set( 0, 0, 0 ) );
-							handle.quaternion.copy( quaternion ).multiply( tempQuaternion );
-							if ( Math.abs( alignVector.copy( unitX ).applyQuaternion( quaternion ).dot( this.eye ) ) > 0.9 ) {
+				if ( Math.abs( alignVector.copy( unitZ ).applyQuaternion( quaternion ).dot( this.eye ) ) > AXIS_HIDE_TRESHOLD ) {
 
-								handle.visible = false;
+					handle.visible = false;
 
-							}
+				}
 
-						}
-						if ( this.axis === 'Y' ) {
+			}
+			if ( handle.name === 'XY' ) {
 
-							tempQuaternion.setFromEuler( tempEuler.set( 0, 0, Math.PI / 2 ) );
-							handle.quaternion.copy( quaternion ).multiply( tempQuaternion );
-							if ( Math.abs( alignVector.copy( unitY ).applyQuaternion( quaternion ).dot( this.eye ) ) > 0.9 ) {
+				if ( Math.abs( alignVector.copy( unitZ ).applyQuaternion( quaternion ).dot( this.eye ) ) < PLANE_HIDE_TRESHOLD ) {
 
-								handle.visible = false;
+					handle.visible = false;
 
-							}
+				}
 
-						}
-						if ( this.axis === 'Z' ) {
+			}
+			if ( handle.name === 'YZ' ) {
 
-							tempQuaternion.setFromEuler( tempEuler.set( 0, Math.PI / 2, 0 ) );
-							handle.quaternion.copy( quaternion ).multiply( tempQuaternion );
-							if ( Math.abs( alignVector.copy( unitZ ).applyQuaternion( quaternion ).dot( this.eye ) ) > 0.9 ) {
+				if ( Math.abs( alignVector.copy( unitX ).applyQuaternion( quaternion ).dot( this.eye ) ) < PLANE_HIDE_TRESHOLD ) {
 
-								handle.visible = false;
+					handle.visible = false;
 
-							}
+				}
 
-						}
-						if ( this.axis === 'XYZE' ) {
+			}
+			if ( handle.name === 'XZ' ) {
 
-							tempQuaternion.setFromEuler( tempEuler.set( 0, Math.PI / 2, 0 ) );
-							alignVector.copy( this.rotationAxis );
-							handle.quaternion.setFromRotationMatrix( lookAtMatrix.lookAt( zeroVector, alignVector, unitY ) );
-							handle.quaternion.multiply( tempQuaternion );
-							handle.visible = this.active;
+				if ( Math.abs( alignVector.copy( unitY ).applyQuaternion( quaternion ).dot( this.eye ) ) < PLANE_HIDE_TRESHOLD ) {
 
-						}
-						if ( this.axis === 'E' ) {
+					handle.visible = false;
 
-							handle.visible = false;
+				}
 
-						}
+			}
 
-					} else if ( handle.name === 'START' ) {
+			// Flip translate and scale axis ocluded behind another axis
+			if ( handle.name.search( 'X' ) !== - 1 ) {
 
-						handle.position.copy( this.worldPositionStart );
-						handle.visible = this.active;
+				if ( alignVector.copy( unitX ).applyQuaternion( quaternion ).dot( this.eye ) < AXIS_FLIP_TRESHOLD ) {
 
-					} else if ( handle.name === 'END' ) {
+					if ( handle.tag === 'fwd' ) {
 
-						handle.position.copy( this.worldPosition );
-						handle.visible = this.active;
-
-					} else if ( handle.name === 'DELTA' ) {
-
-						handle.position.copy( this.worldPositionStart );
-						handle.quaternion.copy( this.worldQuaternionStart );
-						tempVector.set( 1e-10, 1e-10, 1e-10 ).add( this.worldPositionStart ).sub( this.worldPosition ).multiplyScalar( - 1 );
-						tempVector.applyQuaternion( this.worldQuaternionStart.clone().inverse() );
-						handle.scale.copy( tempVector );
-						handle.visible = this.active;
+						handle.visible = false;
 
 					} else {
 
-						handle.quaternion.copy( quaternion );
-						if ( this.active ) {
-
-							handle.position.copy( this.worldPositionStart );
-
-						} else {
-
-							handle.position.copy( this.worldPosition );
-
-						}
-						if ( this.axis ) {
-
-							handle.visible = this.axis.search( handle.name ) !== - 1;
-
-						}
+						handle.scale.x *= - 1;
 
 					}
-					// If updating helper, skip rest of the loop
-					continue;
+
+				} else if ( handle.tag === 'bwd' ) {
+
+					handle.visible = false;
 
 				}
 
-				// Align handles to current local or world rotation
-				handle.quaternion.copy( quaternion );
+			}
+			if ( handle.name.search( 'Y' ) !== - 1 ) {
 
-				if ( this.mode === 'translate' || this.mode === 'scale' ) {
+				if ( alignVector.copy( unitY ).applyQuaternion( quaternion ).dot( this.eye ) < AXIS_FLIP_TRESHOLD ) {
 
-					// Hide translate and scale axis facing the camera
-					const AXIS_HIDE_TRESHOLD = 0.99;
-					const PLANE_HIDE_TRESHOLD = 0.2;
-					const AXIS_FLIP_TRESHOLD = - 0.4;
+					if ( handle.tag === 'fwd' ) {
 
-					if ( handle.name === 'X' || handle.name === 'XYZX' ) {
+						handle.visible = false;
 
-						if ( Math.abs( alignVector.copy( unitX ).applyQuaternion( quaternion ).dot( this.eye ) ) > AXIS_HIDE_TRESHOLD ) {
+					} else {
 
-							handle.scale.set( 1e-10, 1e-10, 1e-10 );
-							handle.visible = false;
-
-						}
-
-					}
-					if ( handle.name === 'Y' || handle.name === 'XYZY' ) {
-
-						if ( Math.abs( alignVector.copy( unitY ).applyQuaternion( quaternion ).dot( this.eye ) ) > AXIS_HIDE_TRESHOLD ) {
-
-							handle.scale.set( 1e-10, 1e-10, 1e-10 );
-							handle.visible = false;
-
-						}
-
-					}
-					if ( handle.name === 'Z' || handle.name === 'XYZZ' ) {
-
-						if ( Math.abs( alignVector.copy( unitZ ).applyQuaternion( quaternion ).dot( this.eye ) ) > AXIS_HIDE_TRESHOLD ) {
-
-							handle.scale.set( 1e-10, 1e-10, 1e-10 );
-							handle.visible = false;
-
-						}
-
-					}
-					if ( handle.name === 'XY' ) {
-
-						if ( Math.abs( alignVector.copy( unitZ ).applyQuaternion( quaternion ).dot( this.eye ) ) < PLANE_HIDE_TRESHOLD ) {
-
-							handle.scale.set( 1e-10, 1e-10, 1e-10 );
-							handle.visible = false;
-
-						}
-
-					}
-					if ( handle.name === 'YZ' ) {
-
-						if ( Math.abs( alignVector.copy( unitX ).applyQuaternion( quaternion ).dot( this.eye ) ) < PLANE_HIDE_TRESHOLD ) {
-
-							handle.scale.set( 1e-10, 1e-10, 1e-10 );
-							handle.visible = false;
-
-						}
-
-					}
-					if ( handle.name === 'XZ' ) {
-
-						if ( Math.abs( alignVector.copy( unitY ).applyQuaternion( quaternion ).dot( this.eye ) ) < PLANE_HIDE_TRESHOLD ) {
-
-							handle.scale.set( 1e-10, 1e-10, 1e-10 );
-							handle.visible = false;
-
-						}
+						handle.scale.y *= - 1;
 
 					}
 
-					// Flip translate and scale axis ocluded behind another axis
-					if ( handle.name.search( 'X' ) !== - 1 ) {
+				} else if ( handle.tag === 'bwd' ) {
 
-						if ( alignVector.copy( unitX ).applyQuaternion( quaternion ).dot( this.eye ) < AXIS_FLIP_TRESHOLD ) {
-
-							if ( handle.tag === 'fwd' ) {
-
-								handle.visible = false;
-
-							} else {
-
-								handle.scale.x *= - 1;
-
-							}
-
-						} else if ( handle.tag === 'bwd' ) {
-
-							handle.visible = false;
-
-						}
-
-					}
-					if ( handle.name.search( 'Y' ) !== - 1 ) {
-
-						if ( alignVector.copy( unitY ).applyQuaternion( quaternion ).dot( this.eye ) < AXIS_FLIP_TRESHOLD ) {
-
-							if ( handle.tag === 'fwd' ) {
-
-								handle.visible = false;
-
-							} else {
-
-								handle.scale.y *= - 1;
-
-							}
-
-						} else if ( handle.tag === 'bwd' ) {
-
-							handle.visible = false;
-
-						}
-
-					}
-					if ( handle.name.search( 'Z' ) !== - 1 ) {
-
-						if ( alignVector.copy( unitZ ).applyQuaternion( quaternion ).dot( this.eye ) < AXIS_FLIP_TRESHOLD ) {
-
-							if ( handle.tag === 'fwd' ) {
-
-								handle.visible = false;
-
-							} else {
-
-								handle.scale.z *= - 1;
-
-							}
-
-						} else if ( handle.tag === 'bwd' ) {
-
-							handle.visible = false;
-
-						}
-
-					}
-
-				} else if ( this.mode === 'rotate' ) {
-
-					// Align handles to current local or world rotation
-					tempQuaternion2.copy( quaternion );
-					alignVector.copy( this.eye ).applyQuaternion( tempQuaternion.copy( quaternion ).inverse() );
-
-					if ( handle.name.search( "E" ) !== - 1 ) {
-
-						handle.quaternion.setFromRotationMatrix( lookAtMatrix.lookAt( this.eye, zeroVector, unitY ) );
-
-					}
-					if ( handle.name === 'X' ) {
-
-						tempQuaternion.setFromAxisAngle( unitX, Math.atan2( - alignVector.y, alignVector.z ) );
-						tempQuaternion.multiplyQuaternions( tempQuaternion2, tempQuaternion );
-						handle.quaternion.copy( tempQuaternion );
-
-					}
-					if ( handle.name === 'Y' ) {
-
-						tempQuaternion.setFromAxisAngle( unitY, Math.atan2( alignVector.x, alignVector.z ) );
-						tempQuaternion.multiplyQuaternions( tempQuaternion2, tempQuaternion );
-						handle.quaternion.copy( tempQuaternion );
-
-					}
-					if ( handle.name === 'Z' ) {
-
-						tempQuaternion.setFromAxisAngle( unitZ, Math.atan2( alignVector.y, alignVector.x ) );
-						tempQuaternion.multiplyQuaternions( tempQuaternion2, tempQuaternion );
-						handle.quaternion.copy( tempQuaternion );
-
-					}
+					handle.visible = false;
 
 				}
 
-				// Hide non-enabled axes
-				{
+			}
+			if ( handle.name.search( 'Z' ) !== - 1 ) {
 
-					handle.visible = handle.visible && ( handle.name.indexOf( "X" ) === - 1 || this.showX );
-					handle.visible = handle.visible && ( handle.name.indexOf( "Y" ) === - 1 || this.showY );
-					handle.visible = handle.visible && ( handle.name.indexOf( "Z" ) === - 1 || this.showZ );
-					handle.visible = handle.visible && ( handle.name.indexOf( "E" ) === - 1 || ( this.showX && this.showY && this.showZ ) );
+				if ( alignVector.copy( unitZ ).applyQuaternion( quaternion ).dot( this.eye ) < AXIS_FLIP_TRESHOLD ) {
+
+					if ( handle.tag === 'fwd' ) {
+
+						handle.visible = false;
+
+					} else {
+
+						handle.scale.z *= - 1;
+
+					}
+
+				} else if ( handle.tag === 'bwd' ) {
+
+					handle.visible = false;
 
 				}
 
-				// highlight selected axis
+			}
+
+
+			if ( handle.material ) {
+
 				handle.material._opacity = handle.material._opacity || handle.material.opacity;
 				handle.material._color = handle.material._color || handle.material.color.clone();
 
 				handle.material.color.copy( handle.material._color );
 				handle.material.opacity = handle.material._opacity;
 
+				handle.material.color.lerp( white, 0.25 );
+
 				if ( ! this.enabled ) {
 
-					handle.material.opacity *= 0.5;
-					handle.material.color.lerp( new Color( 1, 1, 1 ), 0.5 );
+					handle.material.opacity *= 0.25;
+					handle.material.color.lerp( gray, 0.75 );
 
 				} else if ( this.axis ) {
 
 					if ( handle.name === this.axis ) {
 
-						handle.material.opacity = 1.0;
-						handle.material.color.lerp( new Color( 1, 1, 1 ), 0.5 );
+						handle.material.opacity = handle.material._opacity * 2;
+						handle.material.color.copy( handle.material._color );
 
 					} else if ( this.axis.split( '' ).some( function ( a ) {
 
@@ -750,116 +565,682 @@ class TransformControlsGizmo extends Object3D {
 
 					} ) ) {
 
-						handle.material.opacity = 1.0;
-						handle.material.color.lerp( new Color( 1, 1, 1 ), 0.5 );
+						handle.material.opacity = handle.material._opacity * 2;
+						handle.material.color.copy( handle.material._color );
 
 					} else {
 
 						handle.material.opacity *= 0.25;
-						handle.material.color.lerp( new Color( 1, 1, 1 ), 0.5 );
+						handle.material.color.lerp( white, 0.5 );
 
 					}
 
 				}
 
 			}
-			Object3D.prototype.updateMatrixWorld.call( this );
 
-		};
+		} );
+		this.picker.visible = false;
 
 	}
 
 }
 
-class TransformControlsPlane extends Mesh {
+// shared materials
+const gizmoMaterial$1 = new MeshBasicMaterial( {
+	depthTest: false,
+	depthWrite: false,
+	transparent: true,
+	side: DoubleSide,
+	fog: false
+} );
 
-	constructor() {
+const gizmoLineMaterial$2 = new LineBasicMaterial( {
+	depthTest: false,
+	depthWrite: false,
+	transparent: true,
+	linewidth: 1,
+	fog: false
+} );
 
-		super(
-			new PlaneBufferGeometry( 100000, 100000, 2, 2 ),
-			new MeshBasicMaterial( { visible: false, wireframe: true, side: DoubleSide, transparent: true, opacity: 0.1 } )
-		);
+// const variables
+const red$2 = new Color( 0xff0000 );
+const green$2 = new Color( 0x00ff00 );
+const blue$2 = new Color( 0x0000ff );
+const yellow$1 = new Color( 0xffff00 );
+const cyan$1 = new Color( 0x00ffff );
+const magenta$1 = new Color( 0xff00ff );
+const white$1 = new Color( 0xffffff );
+const gray$1 = new Color( 0x787878 );
 
-		this.type = 'TransformControlsPlane';
+// Reusable utility variables
+const tempVector = new Vector3( 0, 0, 0 );
+const alignVector$1 = new Vector3( 0, 1, 0 );
+const zeroVector = new Vector3( 0, 0, 0 );
+const lookAtMatrix = new Matrix4();
+const tempQuaternion$1 = new Quaternion();
+const identityQuaternion$1 = new Quaternion();
 
-		const unitX = new Vector3( 1, 0, 0 );
-		const unitY = new Vector3( 0, 1, 0 );
-		const unitZ = new Vector3( 0, 0, 1 );
+const unitX$1 = new Vector3( 1, 0, 0 );
+const unitY$1 = new Vector3( 0, 1, 0 );
+const unitZ$1 = new Vector3( 0, 0, 1 );
 
-		const tempVector = new Vector3();
-		const dirVector = new Vector3();
-		const alignVector = new Vector3();
-		const tempMatrix = new Matrix4();
-		const identityQuaternion = new Quaternion();
+// Make unique material for each axis/color
+const matInvisible$1 = gizmoMaterial$1.clone();
+matInvisible$1.opacity = 0.15;
 
-		this.updateMatrixWorld = function () {
+const matHelper$1 = gizmoMaterial$1.clone();
+matHelper$1.opacity = 0.33;
 
-			this.position.copy( this.worldPosition );
+const matRed$1 = gizmoMaterial$1.clone();
+matRed$1.color.copy( red$2 );
 
-			if ( this.mode === 'scale' ) this.space = 'local'; // scale always oriented to local rotation
+const matGreen$1 = gizmoMaterial$1.clone();
+matGreen$1.color.copy( green$2 );
 
-			unitX.set( 1, 0, 0 ).applyQuaternion( this.space === "local" ? this.worldQuaternion : identityQuaternion );
-			unitY.set( 0, 1, 0 ).applyQuaternion( this.space === "local" ? this.worldQuaternion : identityQuaternion );
-			unitZ.set( 0, 0, 1 ).applyQuaternion( this.space === "local" ? this.worldQuaternion : identityQuaternion );
+const matBlue$1 = gizmoMaterial$1.clone();
+matBlue$1.color.copy( blue$2 );
 
-			// Align the plane for current transform mode, axis and this.space.
-			alignVector.copy( unitY );
+const matWhiteTransperent$1 = gizmoMaterial$1.clone();
+matWhiteTransperent$1.opacity = 0.25;
 
-			switch ( this.mode ) {
+const matYellowTransparent$1 = matWhiteTransperent$1.clone();
+matYellowTransparent$1.color.copy( yellow$1 );
 
-				case 'translate':
-				case 'scale':
-					switch ( this.axis ) {
+const matCyanTransparent$1 = matWhiteTransperent$1.clone();
+matCyanTransparent$1.color.copy( cyan$1 );
 
-						case 'X':
-							alignVector.copy( this.eye ).cross( unitX );
-							dirVector.copy( unitX ).cross( alignVector );
-							break;
-						case 'Y':
-							alignVector.copy( this.eye ).cross( unitY );
-							dirVector.copy( unitY ).cross( alignVector );
-							break;
-						case 'Z':
-							alignVector.copy( this.eye ).cross( unitZ );
-							dirVector.copy( unitZ ).cross( alignVector );
-							break;
-						case 'XY':
-							dirVector.copy( unitZ );
-							break;
-						case 'YZ':
-							dirVector.copy( unitX );
-							break;
-						case 'XZ':
-							alignVector.copy( unitZ );
-							dirVector.copy( unitY );
-							break;
-						case 'XYZ':
-						case 'E':
-							dirVector.set( 0, 0, 0 );
-							break;
+const matMagentaTransparent$1 = matWhiteTransperent$1.clone();
+matMagentaTransparent$1.color.copy( magenta$1 );
 
-					}
-					break;
-				case 'rotate':
-				default:
-					// special case for rotate
-					dirVector.set( 0, 0, 0 );
+const matYellow$1 = gizmoMaterial$1.clone();
+matYellow$1.color.copy( yellow$1 );
+
+const matLineRed$2 = gizmoLineMaterial$2.clone();
+matLineRed$2.color.copy( red$2 );
+
+const matLineGreen$2 = gizmoLineMaterial$2.clone();
+matLineGreen$2.color.copy( green$2 );
+
+const matLineBlue$2 = gizmoLineMaterial$2.clone();
+matLineBlue$2.color.copy( blue$2 );
+
+const matLineCyan$1 = gizmoLineMaterial$2.clone();
+matLineCyan$1.color.copy( cyan$1 );
+
+const matLineMagenta$1 = gizmoLineMaterial$2.clone();
+matLineMagenta$1.color.copy( magenta$1 );
+
+const matLineYellow$1 = gizmoLineMaterial$2.clone();
+matLineYellow$1.color.copy( yellow$1 );
+
+const matLineGray$1 = gizmoLineMaterial$2.clone();
+matLineGray$1.color.copy( gray$1 );
+
+const matLineYellowTransparent$1 = matLineYellow$1.clone();
+matLineYellowTransparent$1.opacity = 0.25;
+
+// reusable geometry
+
+const lineGeometry$2 = new BufferGeometry();
+lineGeometry$2.addAttribute( 'position', new Float32BufferAttribute( [ 0, 0, 0,	1, 0, 0 ], 3 ) );
+
+function CircleGeometry( radius, arc ) {
+
+	const geometry = new BufferGeometry();
+	const vertices = [];
+	for ( let i = 0; i <= 64 * arc; ++ i ) {
+
+		vertices.push( 0, Math.cos( i / 32 * Math.PI ) * radius, Math.sin( i / 32 * Math.PI ) * radius );
+
+	}
+	geometry.addAttribute( 'position', new Float32BufferAttribute( vertices, 3 ) );
+	return geometry;
+
+}
+
+class AxesRotateHelper extends AxesHelper {
+
+	init() {
+
+		const gizmoRotate = {
+			X: [
+				[ new Line( CircleGeometry( 1, 0.5 ), matLineRed$2 ) ],
+				[ new Mesh( new OctahedronBufferGeometry( 0.04, 0 ), matRed$1 ), [ 0, 0, 0.99 ], null, [ 1, 3, 1 ]],
+			],
+			Y: [
+				[ new Line( CircleGeometry( 1, 0.5 ), matLineGreen$2 ), null, [ 0, 0, - Math.PI / 2 ]],
+				[ new Mesh( new OctahedronBufferGeometry( 0.04, 0 ), matGreen$1 ), [ 0, 0, 0.99 ], null, [ 3, 1, 1 ]],
+			],
+			Z: [
+				[ new Line( CircleGeometry( 1, 0.5 ), matLineBlue$2 ), null, [ 0, Math.PI / 2, 0 ]],
+				[ new Mesh( new OctahedronBufferGeometry( 0.04, 0 ), matBlue$1 ), [ 0.99, 0, 0 ], null, [ 1, 3, 1 ]],
+			],
+			E: [
+				[ new Line( CircleGeometry( 1.25, 1 ), matLineYellowTransparent$1 ), null, [ 0, Math.PI / 2, 0 ]],
+				[ new Mesh( new CylinderBufferGeometry( 0.03, 0, 0.15, 4, 1, false ), matLineYellowTransparent$1 ), [ 1.17, 0, 0 ], [ 0, 0, - Math.PI / 2 ], [ 1, 1, 0.001 ]],
+				[ new Mesh( new CylinderBufferGeometry( 0.03, 0, 0.15, 4, 1, false ), matLineYellowTransparent$1 ), [ - 1.17, 0, 0 ], [ 0, 0, Math.PI / 2 ], [ 1, 1, 0.001 ]],
+				[ new Mesh( new CylinderBufferGeometry( 0.03, 0, 0.15, 4, 1, false ), matLineYellowTransparent$1 ), [ 0, - 1.17, 0 ], [ Math.PI, 0, 0 ], [ 1, 1, 0.001 ]],
+				[ new Mesh( new CylinderBufferGeometry( 0.03, 0, 0.15, 4, 1, false ), matLineYellowTransparent$1 ), [ 0, 1.17, 0 ], [ 0, 0, 0 ], [ 1, 1, 0.001 ]],
+			],
+			XYZE: [
+				[ new Line( CircleGeometry( 1, 1 ), matLineGray$1 ), null, [ 0, Math.PI / 2, 0 ]],
+				[ new Line( CircleGeometry( 0.2, 1 ), matLineGray$1 ), null, [ 0, Math.PI / 2, 0 ]],
+			]
+		};
+
+		const helperRotate = {
+			AXIS: [
+				[ new Line( lineGeometry$2, matHelper$1.clone() ), [ - 1e3, 0, 0 ], null, [ 1e6, 1, 1 ], 'helper' ]
+			]
+		};
+
+		const pickerRotate = {
+			X: [
+				[ new Mesh( new TorusBufferGeometry( 1, 0.03, 4, 24, Math.PI ), matInvisible$1 ), [ 0, 0, 0 ], [ 0, - Math.PI / 2, - Math.PI / 2 ]],
+				[ new Mesh( new OctahedronBufferGeometry( 0.2, 0 ), matInvisible$1 ), [ 0, 0, 1 ]]
+			],
+			Y: [
+				[ new Mesh( new TorusBufferGeometry( 1, 0.03, 4, 24, Math.PI ), matInvisible$1 ), [ 0, 0, 0 ], [ Math.PI / 2, 0, 0 ]],
+				[ new Mesh( new OctahedronBufferGeometry( 0.2, 0 ), matInvisible$1 ), [ 0, 0, 1 ]]
+			],
+			Z: [
+				[ new Mesh( new TorusBufferGeometry( 1, 0.03, 4, 24, Math.PI ), matInvisible$1 ), [ 0, 0, 0 ], [ 0, 0, - Math.PI / 2 ]],
+				[ new Mesh( new OctahedronBufferGeometry( 0.2, 0 ), matInvisible$1 ), [ 1, 0, 0 ]]
+			],
+			E: [
+				[ new Mesh( new TorusBufferGeometry( 1.25, 0.03, 2, 24 ), matInvisible$1 ) ],
+				[ new Mesh( new OctahedronBufferGeometry( 0.2, 0 ), matInvisible$1 ), [ 1.25, 0, 0 ]],
+				[ new Mesh( new OctahedronBufferGeometry( 0.2, 0 ), matInvisible$1 ), [ - 1.25, 0, 0 ]],
+				[ new Mesh( new OctahedronBufferGeometry( 0.2, 0 ), matInvisible$1 ), [ 0, 1.25, 0 ]],
+				[ new Mesh( new OctahedronBufferGeometry( 0.2, 0 ), matInvisible$1 ), [ 0, - 1.25, 0 ]]
+			],
+			XYZE: [
+				[ new Mesh( new SphereBufferGeometry( 0.22, 10, 3 ), matInvisible$1 ) ]
+			]
+		};
+
+		this.add( this.gizmo = this.setupHelper( gizmoRotate ) );
+		this.add( this.picker = this.setupHelper( pickerRotate ) );
+		this.add( this.helper = this.setupHelper( helperRotate ) );
+
+	}
+	updateHelperMatrix() {
+
+		super.updateHelperMatrix();
+
+		const quaternion = this.space === "local" ? this.worldQuaternion : identityQuaternion$1;
+
+		// highlight selected axis
+		this.traverse( handle => {
+
+			// Align handles to current local or world rotation
+			handle.quaternion.copy( identityQuaternion$1 );
+
+			// Align handles to current local or world rotation
+			tempQuaternion$1.copy( quaternion ).inverse();
+			alignVector$1.copy( this.eye ).applyQuaternion( tempQuaternion$1 );
+			tempVector.copy( unitY$1 ).applyQuaternion( tempQuaternion$1 );
+
+			if ( handle.name.search( "E" ) !== - 1 ) {
+
+				handle.quaternion.setFromRotationMatrix( lookAtMatrix.lookAt( alignVector$1, zeroVector, tempVector ) );
 
 			}
-			if ( dirVector.length() === 0 ) {
+			if ( handle.name === 'X' ) {
 
-				// If in rotate mode, make the plane parallel to camera
-				this.quaternion.copy( this.cameraQuaternion );
+				tempQuaternion$1.setFromAxisAngle( unitX$1, Math.atan2( - alignVector$1.y, alignVector$1.z ) );
+				tempQuaternion$1.multiplyQuaternions( identityQuaternion$1, tempQuaternion$1 );
+				handle.quaternion.copy( tempQuaternion$1 );
+
+			}
+			if ( handle.name === 'Y' ) {
+
+				tempQuaternion$1.setFromAxisAngle( unitY$1, Math.atan2( alignVector$1.x, alignVector$1.z ) );
+				tempQuaternion$1.multiplyQuaternions( identityQuaternion$1, tempQuaternion$1 );
+				handle.quaternion.copy( tempQuaternion$1 );
+
+			}
+			if ( handle.name === 'Z' ) {
+
+				tempQuaternion$1.setFromAxisAngle( unitZ$1, Math.atan2( alignVector$1.y, alignVector$1.x ) );
+				tempQuaternion$1.multiplyQuaternions( identityQuaternion$1, tempQuaternion$1 );
+				handle.quaternion.copy( tempQuaternion$1 );
+
+			}
+
+			if ( handle !== this ) {
+
+				handle.visible = true;
+				handle.scale.set( 1, 1, 1 );
 
 			} else {
 
-				tempMatrix.lookAt( tempVector.set( 0, 0, 0 ), dirVector, alignVector );
-				this.quaternion.setFromRotationMatrix( tempMatrix );
+				handle.quaternion.copy( this.worldQuaternion );
 
 			}
-			Object3D.prototype.updateMatrixWorld.call( this );
 
+			if ( handle.material ) {
+
+				handle.material._opacity = handle.material._opacity || handle.material.opacity;
+				handle.material._color = handle.material._color || handle.material.color.clone();
+
+				handle.material.color.copy( handle.material._color );
+				handle.material.opacity = handle.material._opacity;
+
+				handle.material.color.lerp( white$1, 0.25 );
+
+				if ( ! this.enabled ) {
+
+					handle.material.opacity *= 0.25;
+					handle.material.color.lerp( gray$1, 0.75 );
+
+				} else if ( this.axis ) {
+
+					if ( handle.name === this.axis ) {
+
+						handle.material.opacity = handle.material._opacity * 2;
+						handle.material.color.copy( handle.material._color );
+
+					} else if ( this.axis.split( '' ).some( function ( a ) {
+
+						return handle.name === a;
+
+					} ) ) {
+
+						handle.material.opacity = handle.material._opacity * 2;
+						handle.material.color.copy( handle.material._color );
+
+					} else {
+
+						handle.material.opacity *= 0.25;
+						handle.material.color.lerp( white$1, 0.5 );
+
+					}
+
+				}
+
+			}
+
+		} );
+		this.picker.visible = false;
+
+	}
+
+}
+
+// shared materials
+const gizmoMaterial$2 = new MeshBasicMaterial( {
+	depthTest: false,
+	depthWrite: false,
+	transparent: true,
+	side: DoubleSide,
+	fog: false
+} );
+
+const gizmoLineMaterial$3 = new LineBasicMaterial( {
+	depthTest: false,
+	depthWrite: false,
+	transparent: true,
+	linewidth: 1,
+	fog: false
+} );
+
+// const variables
+const red$3 = new Color( 0xff0000 );
+const green$3 = new Color( 0x00ff00 );
+const blue$3 = new Color( 0x0000ff );
+const yellow$2 = new Color( 0xffff00 );
+const cyan$2 = new Color( 0x00ffff );
+const magenta$2 = new Color( 0xff00ff );
+const white$2 = new Color( 0xffffff );
+const gray$2 = new Color( 0x787878 );
+
+// Reusable utility variables
+const alignVector$2 = new Vector3( 0, 1, 0 );
+
+const unitX$2 = new Vector3( 1, 0, 0 );
+const unitY$2 = new Vector3( 0, 1, 0 );
+const unitZ$2 = new Vector3( 0, 0, 1 );
+
+// Make unique material for each axis/color
+const matInvisible$2 = gizmoMaterial$2.clone();
+matInvisible$2.opacity = 0.15;
+
+const matHelper$2 = gizmoMaterial$2.clone();
+matHelper$2.opacity = 0.33;
+
+const matRed$2 = gizmoMaterial$2.clone();
+matRed$2.color.copy( red$3 );
+
+const matGreen$2 = gizmoMaterial$2.clone();
+matGreen$2.color.copy( green$3 );
+
+const matBlue$2 = gizmoMaterial$2.clone();
+matBlue$2.color.copy( blue$3 );
+
+const matWhiteTransperent$2 = gizmoMaterial$2.clone();
+matWhiteTransperent$2.opacity = 0.25;
+
+const matYellowTransparent$2 = matWhiteTransperent$2.clone();
+matYellowTransparent$2.color.copy( yellow$2 );
+
+const matCyanTransparent$2 = matWhiteTransperent$2.clone();
+matCyanTransparent$2.color.copy( cyan$2 );
+
+const matMagentaTransparent$2 = matWhiteTransperent$2.clone();
+matMagentaTransparent$2.color.copy( magenta$2 );
+
+const matYellow$2 = gizmoMaterial$2.clone();
+matYellow$2.color.copy( yellow$2 );
+
+const matLineRed$3 = gizmoLineMaterial$3.clone();
+matLineRed$3.color.copy( red$3 );
+
+const matLineGreen$3 = gizmoLineMaterial$3.clone();
+matLineGreen$3.color.copy( green$3 );
+
+const matLineBlue$3 = gizmoLineMaterial$3.clone();
+matLineBlue$3.color.copy( blue$3 );
+
+const matLineCyan$2 = gizmoLineMaterial$3.clone();
+matLineCyan$2.color.copy( cyan$2 );
+
+const matLineMagenta$2 = gizmoLineMaterial$3.clone();
+matLineMagenta$2.color.copy( magenta$2 );
+
+const matLineYellow$2 = gizmoLineMaterial$3.clone();
+matLineYellow$2.color.copy( yellow$2 );
+
+const matLineGray$2 = gizmoLineMaterial$3.clone();
+matLineGray$2.color.copy( gray$2 );
+
+const matLineYellowTransparent$2 = matLineYellow$2.clone();
+matLineYellowTransparent$2.opacity = 0.25;
+
+// reusable geometry
+
+const scaleHandleGeometry = new BoxBufferGeometry( 0.125, 0.125, 0.125 );
+
+const lineGeometry$3 = new BufferGeometry();
+lineGeometry$3.addAttribute( 'position', new Float32BufferAttribute( [ 0, 0, 0,	1, 0, 0 ], 3 ) );
+
+class AxesScaleHelper extends AxesHelper {
+
+	init() {
+
+		const gizmoScale = {
+			X: [
+				[ new Mesh( scaleHandleGeometry, matRed$2 ), [ 0.8, 0, 0 ], [ 0, 0, - Math.PI / 2 ]],
+				[ new Line( lineGeometry$3, matLineRed$3 ), null, null, [ 0.8, 1, 1 ]]
+			],
+			Y: [
+				[ new Mesh( scaleHandleGeometry, matGreen$2 ), [ 0, 0.8, 0 ]],
+				[ new Line( lineGeometry$3, matLineGreen$3 ), null, [ 0, 0, Math.PI / 2 ], [ 0.8, 1, 1 ]]
+			],
+			Z: [
+				[ new Mesh( scaleHandleGeometry, matBlue$2 ), [ 0, 0, 0.8 ], [ Math.PI / 2, 0, 0 ]],
+				[ new Line( lineGeometry$3, matLineBlue$3 ), null, [ 0, - Math.PI / 2, 0 ], [ 0.8, 1, 1 ]]
+			],
+			XY: [
+				[ new Mesh( scaleHandleGeometry, matYellowTransparent$2 ), [ 0.85, 0.85, 0 ], null, [ 2, 2, 0.2 ]],
+				[ new Line( lineGeometry$3, matLineYellow$2 ), [ 0.855, 0.98, 0 ], null, [ 0.125, 1, 1 ]],
+				[ new Line( lineGeometry$3, matLineYellow$2 ), [ 0.98, 0.855, 0 ], [ 0, 0, Math.PI / 2 ], [ 0.125, 1, 1 ]]
+			],
+			YZ: [
+				[ new Mesh( scaleHandleGeometry, matCyanTransparent$2 ), [ 0, 0.85, 0.85 ], null, [ 0.2, 2, 2 ]],
+				[ new Line( lineGeometry$3, matLineCyan$2 ), [ 0, 0.855, 0.98 ], [ 0, 0, Math.PI / 2 ], [ 0.125, 1, 1 ]],
+				[ new Line( lineGeometry$3, matLineCyan$2 ), [ 0, 0.98, 0.855 ], [ 0, - Math.PI / 2, 0 ], [ 0.125, 1, 1 ]]
+			],
+			XZ: [
+				[ new Mesh( scaleHandleGeometry, matMagentaTransparent$2 ), [ 0.85, 0, 0.85 ], null, [ 2, 0.2, 2 ]],
+				[ new Line( lineGeometry$3, matLineMagenta$2 ), [ 0.855, 0, 0.98 ], null, [ 0.125, 1, 1 ]],
+				[ new Line( lineGeometry$3, matLineMagenta$2 ), [ 0.98, 0, 0.855 ], [ 0, - Math.PI / 2, 0 ], [ 0.125, 1, 1 ]]
+			],
+			XYZX: [
+				[ new Mesh( new BoxBufferGeometry( 0.125, 0.125, 0.125 ), matWhiteTransperent$2 ), [ 1.1, 0, 0 ]],
+			],
+			XYZY: [
+				[ new Mesh( new BoxBufferGeometry( 0.125, 0.125, 0.125 ), matWhiteTransperent$2 ), [ 0, 1.1, 0 ]],
+			],
+			XYZZ: [
+				[ new Mesh( new BoxBufferGeometry( 0.125, 0.125, 0.125 ), matWhiteTransperent$2 ), [ 0, 0, 1.1 ]],
+			]
 		};
+
+		const pickerScale = {
+			X: [
+				[ new Mesh( new CylinderBufferGeometry( 0.2, 0, 0.8, 4, 1, false ), matInvisible$2 ), [ 0.5, 0, 0 ], [ 0, 0, - Math.PI / 2 ]]
+			],
+			Y: [
+				[ new Mesh( new CylinderBufferGeometry( 0.2, 0, 0.8, 4, 1, false ), matInvisible$2 ), [ 0, 0.5, 0 ]]
+			],
+			Z: [
+				[ new Mesh( new CylinderBufferGeometry( 0.2, 0, 0.8, 4, 1, false ), matInvisible$2 ), [ 0, 0, 0.5 ], [ Math.PI / 2, 0, 0 ]]
+			],
+			XY: [
+				[ new Mesh( scaleHandleGeometry, matInvisible$2 ), [ 0.85, 0.85, 0 ], null, [ 3, 3, 0.2 ]],
+			],
+			YZ: [
+				[ new Mesh( scaleHandleGeometry, matInvisible$2 ), [ 0, 0.85, 0.85 ], null, [ 0.2, 3, 3 ]],
+			],
+			XZ: [
+				[ new Mesh( scaleHandleGeometry, matInvisible$2 ), [ 0.85, 0, 0.85 ], null, [ 3, 0.2, 3 ]],
+			],
+			XYZX: [
+				[ new Mesh( new BoxBufferGeometry( 0.2, 0.2, 0.2 ), matInvisible$2 ), [ 1.1, 0, 0 ]],
+			],
+			XYZY: [
+				[ new Mesh( new BoxBufferGeometry( 0.2, 0.2, 0.2 ), matInvisible$2 ), [ 0, 1.1, 0 ]],
+			],
+			XYZZ: [
+				[ new Mesh( new BoxBufferGeometry( 0.2, 0.2, 0.2 ), matInvisible$2 ), [ 0, 0, 1.1 ]],
+			]
+		};
+
+		const helperScale = {
+			X: [
+				[ new Line( lineGeometry$3, matHelper$2.clone() ), [ - 1e3, 0, 0 ], null, [ 1e6, 1, 1 ], 'helper' ]
+			],
+			Y: [
+				[ new Line( lineGeometry$3, matHelper$2.clone() ), [ 0, - 1e3, 0 ], [ 0, 0, Math.PI / 2 ], [ 1e6, 1, 1 ], 'helper' ]
+			],
+			Z: [
+				[ new Line( lineGeometry$3, matHelper$2.clone() ), [ 0, 0, - 1e3 ], [ 0, - Math.PI / 2, 0 ], [ 1e6, 1, 1 ], 'helper' ]
+			]
+		};
+
+		this.add( this.gizmo = this.setupHelper( gizmoScale ) );
+		this.add( this.picker = this.setupHelper( pickerScale ) );
+		this.add( this.helper = this.setupHelper( helperScale ) );
+
+	}
+	updateHelperMatrix() {
+
+		super.updateHelperMatrix();
+
+		const quaternion = this.worldQuaternion;
+
+		// highlight selected axis
+		this.traverse( handle => {
+
+			// Hide translate and scale axis facing the camera
+			const AXIS_HIDE_TRESHOLD = 0.99;
+			const PLANE_HIDE_TRESHOLD = 0.2;
+			const AXIS_FLIP_TRESHOLD = - 0.4;
+
+			if ( handle !== this ) {
+
+				handle.visible = true;
+				handle.scale.set( 1, 1, 1 );
+
+			}
+
+			if ( handle.name === 'X' || handle.name === 'XYZX' ) {
+
+				if ( Math.abs( alignVector$2.copy( unitX$2 ).applyQuaternion( quaternion ).dot( this.eye ) ) > AXIS_HIDE_TRESHOLD ) {
+
+					handle.visible = false;
+
+				}
+
+			}
+			if ( handle.name === 'Y' || handle.name === 'XYZY' ) {
+
+				if ( Math.abs( alignVector$2.copy( unitY$2 ).applyQuaternion( quaternion ).dot( this.eye ) ) > AXIS_HIDE_TRESHOLD ) {
+
+					handle.visible = false;
+
+				}
+
+			}
+			if ( handle.name === 'Z' || handle.name === 'XYZZ' ) {
+
+				if ( Math.abs( alignVector$2.copy( unitZ$2 ).applyQuaternion( quaternion ).dot( this.eye ) ) > AXIS_HIDE_TRESHOLD ) {
+
+					handle.visible = false;
+
+				}
+
+			}
+			if ( handle.name === 'XY' ) {
+
+				if ( Math.abs( alignVector$2.copy( unitZ$2 ).applyQuaternion( quaternion ).dot( this.eye ) ) < PLANE_HIDE_TRESHOLD ) {
+
+					handle.visible = false;
+
+				}
+
+			}
+			if ( handle.name === 'YZ' ) {
+
+				if ( Math.abs( alignVector$2.copy( unitX$2 ).applyQuaternion( quaternion ).dot( this.eye ) ) < PLANE_HIDE_TRESHOLD ) {
+
+					handle.visible = false;
+
+				}
+
+			}
+			if ( handle.name === 'XZ' ) {
+
+				if ( Math.abs( alignVector$2.copy( unitY$2 ).applyQuaternion( quaternion ).dot( this.eye ) ) < PLANE_HIDE_TRESHOLD ) {
+
+					handle.visible = false;
+
+				}
+
+			}
+
+			// Flip translate and scale axis ocluded behind another axis
+			if ( handle.name.search( 'X' ) !== - 1 ) {
+
+				if ( alignVector$2.copy( unitX$2 ).applyQuaternion( quaternion ).dot( this.eye ) < AXIS_FLIP_TRESHOLD ) {
+
+					if ( handle.tag === 'fwd' ) {
+
+						handle.visible = false;
+
+					} else {
+
+						handle.scale.x *= - 1;
+
+					}
+
+				} else if ( handle.tag === 'bwd' ) {
+
+					handle.visible = false;
+
+				}
+
+			}
+			if ( handle.name.search( 'Y' ) !== - 1 ) {
+
+				if ( alignVector$2.copy( unitY$2 ).applyQuaternion( quaternion ).dot( this.eye ) < AXIS_FLIP_TRESHOLD ) {
+
+					if ( handle.tag === 'fwd' ) {
+
+						handle.visible = false;
+
+					} else {
+
+						handle.scale.y *= - 1;
+
+					}
+
+				} else if ( handle.tag === 'bwd' ) {
+
+					handle.visible = false;
+
+				}
+
+			}
+			if ( handle.name.search( 'Z' ) !== - 1 ) {
+
+				if ( alignVector$2.copy( unitZ$2 ).applyQuaternion( quaternion ).dot( this.eye ) < AXIS_FLIP_TRESHOLD ) {
+
+					if ( handle.tag === 'fwd' ) {
+
+						handle.visible = false;
+
+					} else {
+
+						handle.scale.z *= - 1;
+
+					}
+
+				} else if ( handle.tag === 'bwd' ) {
+
+					handle.visible = false;
+
+				}
+
+			}
+
+
+			if ( handle.material ) {
+
+				handle.material._opacity = handle.material._opacity || handle.material.opacity;
+				handle.material._color = handle.material._color || handle.material.color.clone();
+
+				handle.material.color.copy( handle.material._color );
+				handle.material.opacity = handle.material._opacity;
+
+				handle.material.color.lerp( white$2, 0.25 );
+
+				if ( ! this.enabled ) {
+
+					handle.material.opacity *= 0.25;
+					handle.material.color.lerp( gray$2, 0.75 );
+
+				} else if ( this.axis ) {
+
+					if ( handle.name === this.axis ) {
+
+						handle.material.opacity = handle.material._opacity * 2;
+						handle.material.color.copy( handle.material._color );
+
+					} else if ( this.axis.split( '' ).some( function ( a ) {
+
+						return handle.name === a;
+
+					} ) ) {
+
+						handle.material.opacity = handle.material._opacity * 2;
+						handle.material.color.copy( handle.material._color );
+
+					} else {
+
+						handle.material.opacity *= 0.25;
+						handle.material.color.lerp( white$2, 0.5 );
+
+					}
+
+				}
+
+			}
+
+		} );
+		this.picker.visible = false;
 
 	}
 
@@ -881,6 +1262,7 @@ const _unit = {
 };
 const _identityQuaternion = new Quaternion();
 const _alignVector = new Vector3();
+const _plane = new Plane();
 
 // events
 const changeEvent = { type: "change" };
@@ -893,11 +1275,15 @@ class TransformControls extends Interactive {
 
 		this.visible = false;
 
-		this._gizmo = new TransformControlsGizmo();
-		this.add( this._gizmo );
+		this._gizmo = {
+			'translate': new AxesTranslateHelper(),
+			'rotate': new AxesRotateHelper(),
+			'scale': new AxesScaleHelper()
+		};
 
-		this._plane = new TransformControlsPlane();
-		this.add( this._plane );
+		this.add( this._gizmo.translate );
+		this.add( this._gizmo.rotate );
+		this.add( this._gizmo.scale );
 
 		this.defineProperties( {
 			camera: camera,
@@ -906,8 +1292,9 @@ class TransformControls extends Interactive {
 			mode: "translate",
 			translationSnap: null,
 			rotationSnap: null,
-			space: "world",
-			size: 1,
+			space: "local",
+			active: false,
+			size: 0.1,
 			showX: true,
 			showY: true,
 			showZ: true,
@@ -935,21 +1322,32 @@ class TransformControls extends Interactive {
 		// Defined properties are passed down to gizmo and plane
 		for ( let prop in this._properties ) {
 
-			this._plane[ prop ] = this._properties[ prop ];
-			this._gizmo[ prop ] = this._properties[ prop ];
+			this._gizmo.translate[ prop ] = this._properties[ prop ];
+			this._gizmo.rotate[ prop ] = this._properties[ prop ];
+			this._gizmo.scale[ prop ] = this._properties[ prop ];
 
 		}
 		this.addEventListener( 'change', function ( event ) {
 
-			this._plane[ event.prop ] = event.value;
-			this._gizmo[ event.prop ] = event.value;
+			this._gizmo.translate[ event.prop ] = event.value;
+			this._gizmo.rotate[ event.prop ] = event.value;
+			this._gizmo.scale[ event.prop ] = event.value;
 
 		} );
+		this.modeChanged( this.mode );
+		this.objectChanged( this.object );
+
+	}
+	modeChanged( value ) {
+
+		this._gizmo.translate.visible = value === 'translate';
+		this._gizmo.rotate.visible = value === 'rotate';
+		this._gizmo.scale.visible = value === 'scale';
 
 	}
 	objectChanged( value ) {
 
-		const hasObject = value ? true : false;
+		let hasObject = value ? true : false;
 		this.visible = hasObject;
 		if ( ! hasObject ) {
 
@@ -957,6 +1355,9 @@ class TransformControls extends Interactive {
 			this.axis = null;
 
 		}
+		this._gizmo.translate.target = value;
+		this._gizmo.rotate.target = value;
+		this._gizmo.scale.target = value;
 
 	}
 	updateMatrixWorld() {
@@ -985,7 +1386,10 @@ class TransformControls extends Interactive {
 
 		if ( ! this.object || this.active === true ) return;
 		_ray.setFromCamera( pointers[ 0 ].position, this.camera );
-		const intersect = _ray.intersectObjects( this._gizmo.picker[ this.mode ].children, true )[ 0 ] || false;
+		// TODO: remove and unhack
+		this.object.matrixWorld.decompose( this.worldPositionStart, this.worldQuaternionStart, this.worldScaleStart );
+		//
+		const intersect = _ray.intersectObjects( this._gizmo[ this.mode ].picker.children, true )[ 0 ] || false;
 		if ( intersect ) {
 
 			this.axis = intersect.object.name;
@@ -1003,7 +1407,7 @@ class TransformControls extends Interactive {
 
 		_ray.setFromCamera( pointers[ 0 ].position, this.camera );
 
-		const planeIntersect = _ray.intersectObjects( [ this._plane ], true )[ 0 ] || false;
+		const planeIntersect = this.intersectPlane();
 		let space = this.space;
 		if ( planeIntersect ) {
 
@@ -1034,7 +1438,7 @@ class TransformControls extends Interactive {
 			this.quaternionStart.copy( this.object.quaternion );
 			this.scaleStart.copy( this.object.scale );
 			this.object.matrixWorld.decompose( this.worldPositionStart, this.worldQuaternionStart, this.worldScaleStart );
-			this.pointStart.copy( planeIntersect.point ).sub( this.worldPositionStart );
+			this.pointStart.copy( planeIntersect ).sub( this.worldPositionStart );
 			if ( space === 'local' ) this.pointStart.applyQuaternion( this.worldQuaternionStart.clone().inverse() );
 
 		}
@@ -1063,11 +1467,11 @@ class TransformControls extends Interactive {
 
 		_ray.setFromCamera( pointers[ 0 ].position, this.camera );
 
-		const planeIntersect = _ray.intersectObjects( [ this._plane ], true )[ 0 ] || false;
+		const planeIntersect = this.intersectPlane();
 
-		if ( planeIntersect === false ) return;
+		if ( ! planeIntersect ) return;
 
-		this.pointEnd.copy( planeIntersect.point ).sub( this.worldPositionStart );
+		this.pointEnd.copy( planeIntersect ).sub( this.worldPositionStart );
 
 		if ( space === 'local' ) this.pointEnd.applyQuaternion( this.worldQuaternionStart.clone().inverse() );
 
@@ -1239,6 +1643,7 @@ class TransformControls extends Interactive {
 			}
 
 		}
+		this.object.updateMatrixWorld();
 		this.dispatchEvent( changeEvent );
 
 	}
@@ -1254,6 +1659,68 @@ class TransformControls extends Interactive {
 			if ( pointers[ 0 ].button === - 1 ) this.axis = null;
 
 		}
+
+	}
+	intersectPlane() {
+
+		const _alignX = new Vector3( 1, 0, 0 );
+		const _alignY = new Vector3( 0, 1, 0 );
+		const _alignZ = new Vector3( 0, 0, 1 );
+		const _alignVector = new Vector3();
+
+		_alignX.set( 1, 0, 0 );
+		_alignY.set( 0, 1, 0 );
+		_alignZ.set( 0, 0, 1 );
+
+		if ( this.space === "local" || this.mode === 'scale' ) { // scale always oriented to local rotation
+
+			_alignX.applyQuaternion( this.worldQuaternion );
+			_alignY.applyQuaternion( this.worldQuaternion );
+			_alignZ.applyQuaternion( this.worldQuaternion );
+
+		}
+
+		switch ( this.mode ) {
+
+			case 'translate':
+			case 'scale':
+				switch ( this.axis ) {
+
+					case 'X':
+						_alignVector.copy( this.eye ).cross( _alignX );
+						_plane.normal.copy( _alignX ).cross( _alignVector );
+						break;
+					case 'Y':
+						_alignVector.copy( this.eye ).cross( _alignY );
+						_plane.normal.copy( _alignY ).cross( _alignVector );
+						break;
+					case 'Z':
+						_alignVector.copy( this.eye ).cross( _alignZ );
+						_plane.normal.copy( _alignZ ).cross( _alignVector );
+						break;
+					case 'XY':
+						_plane.normal.copy( _alignZ );
+						break;
+					case 'YZ':
+						_plane.normal.copy( _alignX );
+						break;
+					case 'XZ':
+						_plane.normal.copy( _alignY );
+						break;
+					case 'XYZ':
+					case 'E':
+						this.camera.getWorldDirection( _plane.normal );
+						break;
+
+				}
+				break;
+			case 'rotate':
+			default:
+				this.camera.getWorldDirection( _plane.normal );
+
+		}
+		_plane.setFromNormalAndCoplanarPoint( _plane.normal, this.worldPosition );
+		return _ray.ray.intersectPlane( _plane, _tempVector );
 
 	}
 

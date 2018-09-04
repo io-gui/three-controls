@@ -216,6 +216,7 @@ class PointerEvents {
 		if ( this._listeners === undefined ) return;
 		if ( this._listeners[ event.type ] !== undefined ) {
 
+			// event.target = this; // TODO: consider adding target!
 			let array = this._listeners[ event.type ].slice( 0 );
 			for ( let i = 0, l = array.length; i < l; i ++ ) {
 
@@ -435,6 +436,117 @@ class Vector2 {
 
 /**
  * @author arodic / https://github.com/arodic
+ *
+ * Minimal implementation of io mixin: https://github.com/arodic/io
+ * Includes event listener/dispatcher and defineProperties() method.
+ * Changed properties trigger "changed" and "[prop]-changed" events as well as
+ * execution of [prop]Changed() funciton if defined.
+ */
+
+const IoLiteMixin = ( superclass ) => class extends superclass {
+
+	addEventListener( type, listener ) {
+
+		this._listeners = this._listeners || {};
+		this._listeners[ type ] = this._listeners[ type ] || [];
+		if ( this._listeners[ type ].indexOf( listener ) === - 1 ) {
+
+			this._listeners[ type ].push( listener );
+
+		}
+
+	}
+	hasEventListener( type, listener ) {
+
+		if ( this._listeners === undefined ) return false;
+		return this._listeners[ type ] !== undefined && this._listeners[ type ].indexOf( listener ) !== - 1;
+
+	}
+	removeEventListener( type, listener ) {
+
+		if ( this._listeners === undefined ) return;
+		if ( this._listeners[ type ] !== undefined ) {
+
+			let index = this._listeners[ type ].indexOf( listener );
+			if ( index !== - 1 ) this._listeners[ type ].splice( index, 1 );
+
+		}
+
+	}
+	dispatchEvent( event ) {
+
+		if ( this._listeners === undefined ) return;
+		if ( this._listeners[ event.type ] !== undefined ) {
+
+			event.target = this;
+			let array = this._listeners[ event.type ].slice( 0 );
+			for ( let i = 0, l = array.length; i < l; i ++ ) {
+
+				array[ i ].call( this, event );
+
+			}
+
+		}
+
+	}
+	// Define properties in builk.
+	defineProperties( props ) {
+
+		//Define store for properties.
+		if ( ! this.hasOwnProperty( '_properties' ) ) {
+
+			Object.defineProperty( this, '_properties', {
+				value: {},
+				enumerable: false
+			} );
+
+		}
+		for ( let prop in props ) {
+
+			defineProperty( this, prop, props[ prop ] );
+
+		}
+
+	}
+
+};
+
+// Defines getter, setter
+const defineProperty = function ( scope, propName, defaultValue ) {
+
+	scope._properties[ propName ] = defaultValue;
+	if ( defaultValue === undefined ) {
+
+		console.warn( 'IoLiteMixin: ' + propName + ' is mandatory!' );
+
+	}
+	Object.defineProperty( scope, propName, {
+		get: function () {
+
+			return scope._properties[ propName ] !== undefined ? scope._properties[ propName ] : defaultValue;
+
+		},
+		set: function ( value ) {
+
+			if ( scope._properties[ propName ] !== value ) {
+
+				const oldValue = scope._properties[ propName ];
+				scope._properties[ propName ] = value;
+				if ( typeof scope[ propName + 'Changed' ] === 'function' ) scope[ propName + 'Changed' ]( value, oldValue );
+				scope.dispatchEvent( { type: propName + '-changed', value: value, oldValue: oldValue } );
+				scope.dispatchEvent( { type: 'change', prop: propName, value: value, oldValue: oldValue } );
+
+			}
+
+		},
+		enumerable: propName.charAt( 0 ) !== '_'
+	} );
+	scope[ propName ] = defaultValue;
+
+};
+
+/**
+ * @author arodic / https://github.com/arodic
  */
 
 // TODO: documentation
@@ -444,8 +556,13 @@ class Vector2 {
 
 // TODO: implement dom element swap and multiple dom elements
 
-class Interactive extends Object3D {
+class Interactive extends IoLiteMixin( Object3D ) {
 
+	get isInteractive() {
+
+		return true;
+
+	}
 	constructor( domElement ) {
 
 		super();
@@ -453,12 +570,6 @@ class Interactive extends Object3D {
 		this.defineProperties( {
 			domElement: domElement,
 			enabled: true,
-			active: false,
-			enableKeys: true,
-			needsUpdate: false,
-			_animationActive: false,
-			_animationTime: 0,
-			_rafID: 0,
 			_pointerEvents: new PointerEvents( domElement, { normalized: true } )
 		} );
 
@@ -475,15 +586,11 @@ class Interactive extends Object3D {
 
 		this._addEvents();
 
-		this.dispose = function () {
+	}
+	dispose() {
 
-			this._removeEvents();
-			this._pointerEvents.dispose();
-			this.stopAnimation();
-
-		};
-
-		this.needsUpdate = true;
+		this._removeEvents();
+		this._pointerEvents.dispose();
 
 	}
 	_addEvents() {
@@ -514,68 +621,10 @@ class Interactive extends Object3D {
 		this._pointerEvents.removeEventListener( 'blur', this.onBlur );
 
 	}
-	needsUpdateChanged( value ) {
-
-		if ( value ) this.startAnimation();
-
-	}
 	enabledChanged( value ) {
 
-		if ( value ) {
-
-			this._addEvents();
-			this.startAnimation();
-
-		} else {
-
-			this._removeEvents();
-			this.stopAnimation();
-
-		}
-
-	}
-	// Optional animation methods
-	startAnimation() {
-
-		if ( ! this._animationActive ) {
-
-			this._animationActive = true;
-			this._animationTime = performance.now();
-			this._rafID = requestAnimationFrame( () => {
-
-				const time = performance.now();
-				this.animate( time - this._animationTime );
-				this._animationTime = time;
-
-			} );
-
-		}
-
-	}
-	animate( timestep ) {
-
-		if ( this._animationActive ) this._rafID = requestAnimationFrame( () => {
-
-			const time = performance.now();
-			timestep = time - this._animationTime;
-			this.animate( timestep );
-			this._animationTime = time;
-
-		} );
-		this.update( timestep );
-
-	}
-	stopAnimation() {
-
-		this._animationActive = false;
-		cancelAnimationFrame( this._rafID );
-
-	}
-	update( timestep ) {
-
-		if ( timestep === undefined ) console.log( 'Control: update function requires timestep parameter!' );
-		this.stopAnimation();
-		this.needsUpdate = false;
+		if ( value ) this._addEvents();
+		else this._removeEvents();
 
 	}
 	// Control methods. Implement in subclass!
@@ -590,56 +639,6 @@ class Interactive extends Object3D {
 	onWheel() {} // event
 	onFocus() {} // event
 	onBlur() {} // event
-	// Defines getter, setter and store for a property
-	defineProperty( propName, defaultValue ) {
-
-		this._properties[ propName ] = defaultValue;
-		if ( defaultValue === undefined ) {
-
-			console.warn( 'Control: ' + propName + ' is mandatory!' );
-
-		}
-		Object.defineProperty( this, propName, {
-			get: function () {
-
-				return this._properties[ propName ] !== undefined ? this._properties[ propName ] : defaultValue;
-
-			},
-			set: function ( value ) {
-
-				if ( this._properties[ propName ] !== value ) {
-
-					const oldValue = this._properties[ propName ];
-					this._properties[ propName ] = value;
-					if ( typeof this[ propName + 'Changed' ] === 'function' ) this[ propName + 'Changed' ]( value, oldValue );
-					this.dispatchEvent( { type: propName + '-changed', value: value, oldValue: oldValue } );
-					this.dispatchEvent( { type: 'change', prop: propName, value: value, oldValue: oldValue } );
-
-				}
-
-			},
-			enumerable: propName.charAt( 0 ) !== '_'
-		} );
-		this[ propName ] = defaultValue;
-
-	}
-	defineProperties( props ) {
-
-		if ( ! this.hasOwnProperty( '_properties' ) ) {
-
-			Object.defineProperty( this, '_properties', {
-				value: {},
-				enumerable: false
-			} );
-
-		}
-		for ( let prop in props ) {
-
-			this.defineProperty( prop, props[ prop ] );
-
-		}
-
-	}
 
 }
 

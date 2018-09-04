@@ -3,8 +3,9 @@
  */
 
 // TODO: marquee selection
+// TODO: dont select on zero dist drag
 
-import {Raycaster, Line, LineBasicMaterial} from "../../../three.js/build/three.module.js";
+import {Raycaster} from "../../../three.js/build/three.module.js";
 import {Interactive} from "../Interactive.js";
 
 // Temp variables

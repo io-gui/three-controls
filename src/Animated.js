@@ -2,8 +2,6 @@
  * @author arodic / https://github.com/arodic
  */
 
-import {Object3D} from "../../three.js/build/three.module.js";
-import {PointerEvents} from "../lib/PointerEvents.js";
 import {Interactive} from "./Interactive.js";
 
 // TODO: documentation
@@ -15,7 +13,7 @@ import {Interactive} from "./Interactive.js";
 // TODO: implement dom element swap and multiple dom elements
 
 export class Animated extends Interactive {
-	get isInteractive() { return true; }
+	get isAnimated() { return true; }
 	constructor(domElement) {
 		super(domElement);
 

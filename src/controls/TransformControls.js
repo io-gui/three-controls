@@ -4,7 +4,9 @@
 
 import {Raycaster, Vector3, Quaternion, Plane} from "../../../three.js/build/three.module.js";
 import {Interactive} from "../Interactive.js";
-import {TransformControlsHelper} from "../helpers/TransformControlsHelper.js";
+import {AxesTranslateHelper} from "../helpers/AxesTranslateHelper.js";
+import {AxesRotateHelper} from "../helpers/AxesRotateHelper.js";
+import {AxesScaleHelper} from "../helpers/AxesScaleHelper.js";
 
 // Reusable utility variables
 const _ray = new Raycaster();
@@ -30,8 +32,15 @@ export class TransformControls extends Interactive {
 
 		this.visible = false;
 
-		this._gizmo = new TransformControlsHelper();
-		this.add(this._gizmo);
+		this._gizmo = {
+			'translate': new AxesTranslateHelper(),
+			'rotate': new AxesRotateHelper(),
+			'scale': new AxesScaleHelper()
+		};
+
+		this.add(this._gizmo.translate);
+		this.add(this._gizmo.rotate);
+		this.add(this._gizmo.scale);
 
 		this.defineProperties({
 			camera: camera,
@@ -42,7 +51,7 @@ export class TransformControls extends Interactive {
 			rotationSnap: null,
 			space: "local",
 			active: false,
-			size: 1,
+			size: 0.1,
 			showX: true,
 			showY: true,
 			showZ: true,
@@ -69,11 +78,22 @@ export class TransformControls extends Interactive {
 		// TODO: implement better data binding
 		// Defined properties are passed down to gizmo and plane
 		for (let prop in this._properties) {
-			this._gizmo[prop] = this._properties[prop];
+			this._gizmo.translate[prop] = this._properties[prop];
+			this._gizmo.rotate[prop] = this._properties[prop];
+			this._gizmo.scale[prop] = this._properties[prop];
 		}
 		this.addEventListener('change', function (event) {
-			this._gizmo[event.prop] = event.value;
+			this._gizmo.translate[event.prop] = event.value;
+			this._gizmo.rotate[event.prop] = event.value;
+			this._gizmo.scale[event.prop] = event.value;
 		});
+		this.modeChanged(this.mode);
+		this.objectChanged(this.object);
+	}
+	modeChanged(value) {
+		this._gizmo.translate.visible = value === 'translate';
+		this._gizmo.rotate.visible = value === 'rotate';
+		this._gizmo.scale.visible = value === 'scale';
 	}
 	objectChanged(value) {
 		let hasObject = value ? true : false;
@@ -82,6 +102,9 @@ export class TransformControls extends Interactive {
 			this.active = false;
 			this.axis = null;
 		}
+		this._gizmo.translate.target = value;
+		this._gizmo.rotate.target = value;
+		this._gizmo.scale.target = value;
 	}
 	updateMatrixWorld() {
 		if (this.object) {
@@ -103,7 +126,7 @@ export class TransformControls extends Interactive {
 		// TODO: remove and unhack
 		this.object.matrixWorld.decompose(this.worldPositionStart, this.worldQuaternionStart, this.worldScaleStart);
 		//
-		const intersect = _ray.intersectObjects(this._gizmo.picker[ this.mode ].children, true)[ 0 ] || false;
+		const intersect = _ray.intersectObjects(this._gizmo[ this.mode ].picker.children, true)[ 0 ] || false;
 		if (intersect) {
 			this.axis = intersect.object.name;
 		} else {
