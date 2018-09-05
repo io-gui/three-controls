@@ -31,6 +31,19 @@ const lineGeometry = new BufferGeometry();
 lineGeometry.addAttribute('position', new Float32BufferAttribute([0, 0, 0,	1, 0, 0], 3));
 
 export class AxesHelper extends Helper {
+	constructor(props) {
+		super(props);
+
+		this.defineProperties({
+			showX: true,
+			showY: true,
+			showZ: true
+		});
+		this.size = 0.1;
+
+		this.add(this.handle = this.combineHelperGroups(this.handlesGroup));
+		this.add(this.picker = this.combineHelperGroups(this.pickersGroup));
+	}
 	get handlesGroup() {
 		return {
 			X: [[new Line(lineGeometry, new AxisMaterial('red', true))]],
@@ -40,18 +53,6 @@ export class AxesHelper extends Helper {
 	}
 	get pickersGroup() {
 		return {}
-	}
-	constructor(target, camera) {
-		super(target, camera);
-
-		this.enabled = true;
-		this.size = 0.15;
-		this.showX = true;
-		this.showY = true;
-		this.showZ = true;
-
-		this.add(this.handle = this.combineHelperGroups(this.handlesGroup));
-		this.add(this.picker = this.combineHelperGroups(this.pickersGroup));
 	}
 	updateHelperMatrix() {
 		// Hide non-enabled axes
@@ -63,6 +64,7 @@ export class AxesHelper extends Helper {
 		});
 		super.updateHelperMatrix();
 	}
+	// TODO: move to AxesControl
 	highlightAxis(child, axis, force) {
 		if (child.material) {
 			child.material._opacity = child.material._opacity || child.material.opacity;

@@ -28,8 +28,8 @@ const tempQuat = new THREE.Quaternion();
 const tempQuatInverse = tempQuat.clone().inverse();
 
 export class OrbitControls extends ViewportControls {
-	constructor(camera, domElement) {
-		super(camera, domElement);
+	constructor(props) {
+		super(props);
 
 		this.defineProperties({
 			minDistance: 0, // PerspectiveCamera dolly limit

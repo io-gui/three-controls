@@ -28,8 +28,8 @@ const sideDirection = new Vector3();
 const moveDirection = new Vector3();
 
 export class TrackballControls extends ViewportControls {
-	constructor(camera, domElement) {
-		super(camera, domElement);
+	constructor(props) {
+		super(props);
 		this.defineProperties({
 			minDistance: 0, // PerspectiveCamera dolly limit
 			maxDistance: Infinity // PerspectiveCamera dolly limit

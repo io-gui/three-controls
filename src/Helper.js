@@ -3,38 +3,38 @@
  */
 
 import {Object3D, Vector3, Quaternion} from "../../three.js/build/three.module.js";
+import {IoLiteMixin} from "../lib/IoLiteMixin.js";
 
 /*
  * Helper is a variant of Object3D which automatically follows its target object.
  * On matrix update, it automatically copies transform matrices from its target Object3D.
  */
 
-export class Helper extends Object3D {
+export class Helper extends IoLiteMixin(Object3D) {
 	get isHelper() { return true; }
-	constructor(target, camera) {
+	constructor(params = {}) {
 		super();
 
-		this.target = target;
-		this.camera = camera;
-		this.space = 'local';
+		this.defineProperties({
+			object: params.object || null,
+			camera: params.camera || null,
+			space: 'local',
+			size: 0,
+			worldPosition: new Vector3(),
+			worldQuaternion: new Quaternion(),
+			worldScale: new Vector3(),
+			cameraPosition: new Vector3(),
+			cameraQuaternion: new Quaternion(),
+			cameraScale: new Vector3(),
+			eye: new Vector3()
+		});
 
-		this.size = 0;
-
-		this.worldPosition = new Vector3();
-		this.worldQuaternion = new Quaternion();
-		this.worldScale = new Vector3();
-
-		this.cameraPosition = new Vector3();
-		this.cameraQuaternion = new Quaternion();
-		this.cameraScale = new Vector3();
-
-		this.eye = new Vector3();
 	}
 	updateHelperMatrix() {
-		if (this.target) {
-			this.target.updateMatrixWorld();
-			this.matrix.copy(this.target.matrix);
-			this.matrixWorld.copy(this.target.matrixWorld);
+		if (this.object) {
+			this.object.updateMatrixWorld();
+			this.matrix.copy(this.object.matrix);
+			this.matrixWorld.copy(this.object.matrixWorld);
 		} else {
 			super.updateMatrixWorld();
 		}

@@ -13,7 +13,7 @@ import {Animated} from "../Animated.js";
  *    Pan - right mouse, or left mouse + ctrlKey/altKey, wasd, or arrow keys / touch: two-finger move
  */
 
-const STATE = { NONE: - 1, ORBIT: 0, DOLLY: 1, PAN: 2, DOLLY_PAN: 3 };
+const STATE = {NONE: - 1, ORBIT: 0, DOLLY: 1, PAN: 2, DOLLY_PAN: 3};
 const EPS = 0.000001;
 
 // Temp variables
@@ -23,21 +23,19 @@ const orbit = new Vector2();
 const pan = new Vector2();
 
 // Framerate-independent damping
-function dampTo( source, target, smoothing, dt ) {
-	const t = 1 - Math.pow( smoothing, dt );
-	return source * ( 1 - t ) + target * t;
+function dampTo(source, target, smoothing, dt) {
+	const t = 1 - Math.pow(smoothing, dt);
+	return source * (1 - t) + target * t;
 }
 
 // Events
-const changeEvent = { type: 'change' };
+const changeEvent = {type: 'change'};
 
 export class ViewportControls extends Animated {
-	constructor( camera, domElement ) {
-		super( domElement );
+	constructor(props) {
+		super(props);
 
 		this.defineProperties({
-			camera: camera,
-			object: null,
 			target: new Vector3(),
 			active: false,
 			enableOrbit: true,
@@ -51,8 +49,8 @@ export class ViewportControls extends Animated {
 			keyDollySpeed: 0.1,
 			keyPanSpeed: 0.1,
 			wheelDollySpeed: 0.05,
-			autoOrbit: new Vector2( 0.0, 0.0 ),
-			autoDollyPan: new Vector3( 0.1, 0.0, 0.0 ),
+			autoOrbit: new Vector2(0.0, 0.0),
+			autoDollyPan: new Vector3(0.1, 0.0, 0.0),
 			enableDamping: true,
 			dampingFactor: 0.05,
 			KEYS: {
@@ -68,7 +66,7 @@ export class ViewportControls extends Animated {
 				DOLLY_IN: 187, // -
 				FOCUS: 70 // F
 			},
-			BUTTON: { LEFT: MOUSE.LEFT, MIDDLE: MOUSE.MIDDLE, RIGHT: MOUSE.RIGHT }, // Mouse buttons
+			BUTTON: {LEFT: MOUSE.LEFT, MIDDLE: MOUSE.MIDDLE, RIGHT: MOUSE.RIGHT}, // Mouse buttons
 			state: STATE.NONE,
 			_orbitOffset: new Vector2(),
 			_orbitInertia: new Vector2(),
@@ -78,11 +76,11 @@ export class ViewportControls extends Animated {
 			_dollyInertia: 0
 		});
 	}
-	// autoRotateChanged( value ) {
-	// 	if ( value ) {
+	// autoRotateChanged(value) {
+	// 	if (value) {
 	// 		this._orbitInertia.x = this.autoRotateSpeed;
 	// 	}
-	// }
+	//}
 	cameraChanged() {
 		this.needsUpdate = true;
 	}
@@ -93,14 +91,14 @@ export class ViewportControls extends Animated {
 		this.active = this.state !== STATE.NONE;
 		this.needsUpdate = true;
 	}
-	update( timestep ) {
+	update(timestep) {
 		let dt = timestep / 1000;
 		// Apply orbit intertia
-		if ( this.state !== STATE.ORBIT ) {
+		if (this.state !== STATE.ORBIT) {
 			let thetaTarget = this.autoOrbit.x;
-			if ( this.enableDamping ) {
-				this._orbitInertia.x = dampTo( this._orbitInertia.x, thetaTarget, this.dampingFactor, dt );
-				this._orbitInertia.y = dampTo( this._orbitInertia.y, 0.0, this.dampingFactor, dt );
+			if (this.enableDamping) {
+				this._orbitInertia.x = dampTo(this._orbitInertia.x, thetaTarget, this.dampingFactor, dt);
+				this._orbitInertia.y = dampTo(this._orbitInertia.y, 0.0, this.dampingFactor, dt);
 			} else {
 				this._orbitInertia.x = thetaTarget;
 			}
@@ -110,127 +108,127 @@ export class ViewportControls extends Animated {
 		this._orbitOffset.y += this._orbitInertia.y * dt;
 
 		// Apply pan intertia
-		if ( this.state !== STATE.PAN ) {
-			this._panInertia.x = dampTo( this._panInertia.x, 0.0, this.dampingFactor, dt );
-			this._panInertia.y = dampTo( this._panInertia.y, 0.0, this.dampingFactor, dt );
+		if (this.state !== STATE.PAN) {
+			this._panInertia.x = dampTo(this._panInertia.x, 0.0, this.dampingFactor, dt);
+			this._panInertia.y = dampTo(this._panInertia.y, 0.0, this.dampingFactor, dt);
 		}
 		this._panOffset.x += this._panInertia.x * dt;
 		this._panOffset.y += this._panInertia.y * dt;
 
 		// Apply dolly intertia
-		if ( this.state !== STATE.DOLLY ) {
-			this._dollyInertia = dampTo( this._dollyInertia, 0.0, this.dampingFactor, dt );
+		if (this.state !== STATE.DOLLY) {
+			this._dollyInertia = dampTo(this._dollyInertia, 0.0, this.dampingFactor, dt);
 		}
 		this._dollyOffset += this._dollyInertia * dt;
 
 		// Determine if animation needs to continue
 		let maxVelocity = 0;
-		maxVelocity = Math.max( maxVelocity, Math.abs( this._orbitInertia.x ) );
-		maxVelocity = Math.max( maxVelocity, Math.abs( this._orbitInertia.y ) );
-		maxVelocity = Math.max( maxVelocity, Math.abs( this._panInertia.x ) );
-		maxVelocity = Math.max( maxVelocity, Math.abs( this._panInertia.y ) );
-		maxVelocity = Math.max( maxVelocity, Math.abs( this._dollyInertia ) );
-		if ( maxVelocity < EPS ) this.stopAnimation();
+		maxVelocity = Math.max(maxVelocity, Math.abs(this._orbitInertia.x));
+		maxVelocity = Math.max(maxVelocity, Math.abs(this._orbitInertia.y));
+		maxVelocity = Math.max(maxVelocity, Math.abs(this._panInertia.x));
+		maxVelocity = Math.max(maxVelocity, Math.abs(this._panInertia.y));
+		maxVelocity = Math.max(maxVelocity, Math.abs(this._dollyInertia));
+		if (maxVelocity < EPS) this.stopAnimation();
 
 		// set inertiae from current offsets
-		if ( this.enableDamping ) {
-			if ( this.state === STATE.ORBIT ) {
-				this._orbitInertia.copy( this._orbitOffset ).multiplyScalar( timestep );
+		if (this.enableDamping) {
+			if (this.state === STATE.ORBIT) {
+				this._orbitInertia.copy(this._orbitOffset).multiplyScalar(timestep);
 			}
-			if ( this.state === STATE.PAN ) {
-				this._panInertia.copy( this._panOffset ).multiplyScalar( timestep );
+			if (this.state === STATE.PAN) {
+				this._panInertia.copy(this._panOffset).multiplyScalar(timestep);
 			}
-			if ( this.state === STATE.DOLLY ) {
+			if (this.state === STATE.DOLLY) {
 				this._dollyInertia = this._dollyOffset * timestep;
 			}
 		}
 
-		this.orbit( orbit.copy( this._orbitOffset ) );
-		this.dolly( this._dollyOffset );
-		this.pan( pan.copy( this._panOffset ) );
+		this.orbit(orbit.copy(this._orbitOffset));
+		this.dolly(this._dollyOffset);
+		this.pan(pan.copy(this._panOffset));
 
-		this._orbitOffset.set( 0, 0 );
-		this._panOffset.set( 0, 0 );
+		this._orbitOffset.set(0, 0);
+		this._panOffset.set(0, 0);
 		this._dollyOffset = 0;
 
-		this.camera.lookAt( this.target );
+		this.camera.lookAt(this.target);
 
-		this.dispatchEvent( changeEvent );
+		this.dispatchEvent(changeEvent);
 		this.needsUpdate = false;
 	}
-	onPointerMove( pointers ) {
+	onPointerMove(pointers) {
 		let rect = this.domElement.getBoundingClientRect();
 		let prevDistance, distance;
-		aspectMultiplier.set( rect.width / rect.height, 1 );
-		switch ( pointers.length ) {
+		aspectMultiplier.set(rect.width / rect.height, 1);
+		switch (pointers.length) {
 			case 1:
 				direction.copy(pointers[0].movement).multiply(aspectMultiplier);
-				switch ( pointers[0].button ) {
+				switch (pointers[0].button) {
 					case this.BUTTON.LEFT:
-						if ( pointers.ctrlKey ) {
-							this._setPan( direction.multiplyScalar( this.panSpeed ) );
-						} else if ( pointers.altKey ) {
-							this._setDolly( pointers[0].movement.y * this.dollySpeed );
+						if (pointers.ctrlKey) {
+							this._setPan(direction.multiplyScalar(this.panSpeed));
+						} else if (pointers.altKey) {
+							this._setDolly(pointers[0].movement.y * this.dollySpeed);
 						} else {
-							this._setOrbit( direction.multiplyScalar( this.orbitSpeed ) );
+							this._setOrbit(direction.multiplyScalar(this.orbitSpeed));
 						}
 						break;
 					case this.BUTTON.MIDDLE:
-						this._setDolly( pointers[0].movement.y * this.dollySpeed );
+						this._setDolly(pointers[0].movement.y * this.dollySpeed);
 						break;
 					case this.BUTTON.RIGHT:
-						this._setPan( direction.multiplyScalar( this.panSpeed ) );
+						this._setPan(direction.multiplyScalar(this.panSpeed));
 						break;
 				}
 				break;
 			default: // 2 or more
 				// two-fingered touch: dolly-pan
 				// TODO: apply aspectMultiplier?
-				distance = pointers[0].position.distanceTo( pointers[1].position );
-				prevDistance = pointers[0].previous.distanceTo( pointers[1].previous );
-				direction.copy( pointers[0].movement ).add( pointers[1].movement ).multiply( aspectMultiplier );
-				this._setDollyPan( ( prevDistance - distance) * this.dollySpeed, direction.multiplyScalar( this.panSpeed ) );
+				distance = pointers[0].position.distanceTo(pointers[1].position);
+				prevDistance = pointers[0].previous.distanceTo(pointers[1].previous);
+				direction.copy(pointers[0].movement).add(pointers[1].movement).multiply(aspectMultiplier);
+				this._setDollyPan((prevDistance - distance) * this.dollySpeed, direction.multiplyScalar(this.panSpeed));
 				break;
 		}
 	}
-	onPointerUp( pointers ) {
-		if ( pointers.length === 0 ) {
+	onPointerUp(pointers) {
+		if (pointers.length === 0) {
 			this.state = STATE.NONE;
 		}
 	}
-	onKeyDown( event ) {
+	onKeyDown(event) {
 		// TODO: key inertia
 		// TODO: better state setting
-		switch ( event.keyCode ) {
+		switch (event.keyCode) {
 			case this.KEYS.PAN_UP:
-				this._setPan( direction.set( 0, -this.keyPanSpeed ) );
+				this._setPan(direction.set(0, -this.keyPanSpeed));
 				break;
 			case this.KEYS.PAN_DOWN:
-				this._setPan( direction.set( 0, this.keyPanSpeed ) );
+				this._setPan(direction.set(0, this.keyPanSpeed));
 				break;
 			case this.KEYS.PAN_LEFT:
-				this._setPan( direction.set( this.keyPanSpeed, 0 ) );
+				this._setPan(direction.set(this.keyPanSpeed, 0));
 				break;
 			case this.KEYS.PAN_RIGHT:
-				this._setPan( direction.set( -this.keyPanSpeed, 0 ) );
+				this._setPan(direction.set(-this.keyPanSpeed, 0));
 				break;
 			case this.KEYS.ORBIT_LEFT:
-				this._setOrbit( direction.set( this.keyOrbitSpeed, 0 ) );
+				this._setOrbit(direction.set(this.keyOrbitSpeed, 0));
 				break;
 			case this.KEYS.ORBIT_RIGHT:
-				this._setOrbit( direction.set( -this.keyOrbitSpeed, 0 ) );
+				this._setOrbit(direction.set(-this.keyOrbitSpeed, 0));
 				break;
 			case this.KEYS.ORBIT_UP:
-				this._setOrbit( direction.set( 0, this.keyOrbitSpeed ) );
+				this._setOrbit(direction.set(0, this.keyOrbitSpeed));
 				break;
 			case this.KEYS.ORBIT_DOWN:
-				this._setOrbit( direction.set( 0, -this.keyOrbitSpeed ) );
+				this._setOrbit(direction.set(0, -this.keyOrbitSpeed));
 				break;
 			case this.KEYS.DOLLY_IN:
-				this._setDolly( -this.keyDollySpeed );
+				this._setDolly(-this.keyDollySpeed);
 				break;
 			case this.KEYS.DOLLY_OUT:
-				this._setDolly( this.keyDollySpeed );
+				this._setDolly(this.keyDollySpeed);
 				break;
 			case this.KEYS.FOCUS:
 				this._setFocus();
@@ -244,49 +242,49 @@ export class ViewportControls extends Animated {
 		// TODO: Consider improving for prevent pointer and multi-key interruptions.
 		// this.active = false;
 	}
-	onWheel( event ) {
+	onWheel(event) {
 		this.state = STATE.DOLLY;
-		this._setDolly( event.delta * this.wheelDollySpeed );
+		this._setDolly(event.delta * this.wheelDollySpeed);
 		this.state = STATE.NONE;
 		this.needsUpdate = true;
 	}
-	_setPan( dir ) {
+	_setPan(dir) {
 		this.state = STATE.PAN;
-		if ( this.enablePan ) this._panOffset.copy( dir );
+		if (this.enablePan) this._panOffset.copy(dir);
 		this.needsUpdate = true;
 	}
-	_setDolly( dir ) {
+	_setDolly(dir) {
 		this.state = STATE.DOLLY;
-		if ( this.enableDolly ) this._dollyOffset = dir;
+		if (this.enableDolly) this._dollyOffset = dir;
 		this.needsUpdate = true;
 	}
-	_setDollyPan( dollyDir, panDir ) {
+	_setDollyPan(dollyDir, panDir) {
 		this.state = STATE.DOLLY_PAN;
-		if ( this.enableDolly ) this._dollyOffset = dollyDir;
-		if ( this.enablePan ) this._panOffset.copy( panDir );
+		if (this.enableDolly) this._dollyOffset = dollyDir;
+		if (this.enablePan) this._panOffset.copy(panDir);
 		this.needsUpdate = true;
 	}
-	_setOrbit( dir ) {
+	_setOrbit(dir) {
 		this.state = STATE.ORBIT;
-		if ( this.enableOrbit ) this._orbitOffset.copy( dir );
+		if (this.enableOrbit) this._orbitOffset.copy(dir);
 		this.needsUpdate = true;
 	}
 	_setFocus() {
 		this.state = STATE.NONE;
-		if ( this.object && this.enableFocus ) this.focus( this.object );
+		if (this.object && this.enableFocus) this.focus(this.object);
 		this.needsUpdate = true;
 	}
 	// ViewportControl control methods. Implement in subclass!
 	pan() {
-		console.warn( 'ViewportControls: pan() not implemented!' );
+		console.warn('ViewportControls: pan() not implemented!');
 	}
 	dolly() {
-		console.warn( 'ViewportControls: dolly() not implemented!' );
+		console.warn('ViewportControls: dolly() not implemented!');
 	}
 	orbit() {
-		console.warn( 'ViewportControls: orbit() not implemented!' );
+		console.warn('ViewportControls: orbit() not implemented!');
 	}
 	focus() {
-		console.warn( 'ViewportControls: focus() not implemented!' );
+		console.warn('ViewportControls: focus() not implemented!');
 	}
 }

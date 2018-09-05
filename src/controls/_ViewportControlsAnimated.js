@@ -32,7 +32,7 @@ function dampTo( source, target, smoothing, dt ) {
 const changeEvent = { type: 'change' };
 
 export class ViewportControls extends Animated {
-	constructor( camera, domElement ) {
+	constructor( domElement, props ) {
 		super( domElement );
 
 		this.defineProperties({

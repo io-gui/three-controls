@@ -2,9 +2,8 @@
  * @author arodic / https://github.com/arodic
  */
 
-import {Object3D} from "../../three.js/build/three.module.js";
 import {PointerEvents} from "../lib/PointerEvents.js";
-import {IoLiteMixin} from "../lib/IoLiteMixin.js";
+import {Helper} from "./Helper.js";
 
 // TODO: documentation
 /*
@@ -12,16 +11,15 @@ import {IoLiteMixin} from "../lib/IoLiteMixin.js";
  */
 
 // TODO: implement dom element swap and multiple dom elements
-
-export class Interactive extends IoLiteMixin(Object3D) {
+export const InteractiveMixin = (superclass) => class extends superclass {
 	get isInteractive() { return true; }
-	constructor(domElement) {
-		super();
+	constructor(props) {
+		super(props);
 
 		this.defineProperties({
-			domElement: domElement,
+			domElement: props.domElement,
 			enabled: true,
-			_pointerEvents: new PointerEvents(domElement, {normalized: true})
+			_pointerEvents: new PointerEvents(props.domElement, {normalized: true})
 		});
 
 		this.onPointerDown = this.onPointerDown.bind(this);
@@ -85,3 +83,5 @@ export class Interactive extends IoLiteMixin(Object3D) {
 	onFocus() {} // event
 	onBlur() {} // event
 }
+
+export class Interactive extends InteractiveMixin(Helper) {}

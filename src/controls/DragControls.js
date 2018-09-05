@@ -16,7 +16,7 @@ let _selected = null;
 // TODO: original controls stick when dragout
 
 export class DragControls extends Interactive {
-	constructor(objects, camera, domElement) {
+	constructor(objects, domElement, props) {
 		super(domElement);
 
 		if (camera === undefined || !camera.isCamera) {

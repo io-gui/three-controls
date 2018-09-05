@@ -14,8 +14,8 @@ import {Interactive} from "./Interactive.js";
 
 export class Animated extends Interactive {
 	get isAnimated() { return true; }
-	constructor(domElement) {
-		super(domElement);
+	constructor(props) {
+		super(props);
 
 		this.defineProperties({
 			needsUpdate: false,

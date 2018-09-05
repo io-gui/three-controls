@@ -43,17 +43,15 @@
 
 		<script type="module">
 
-			import {TransformControls} from "./src/controls/TransformControls.js";
+			import {AxesTranslateControls} from "./src/controls/AxesTranslateControls.js";
+			import {AxesRotateControls} from "./src/controls/AxesRotateControls.js";
+			import {AxesScaleControls} from "./src/controls/AxesScaleControls.js";
 
 			import {ViewportControls} from "./src/controls/ViewportControls.js";
 			import {EditorControls} from "./src/controls/EditorControls.js";
 			import {OrbitControls} from "./src/controls/OrbitControls.js";
 			import {TrackballControls} from "./src/controls/TrackballControls.js";
 			import {SelectionControls} from "./src/controls/SelectionControls.js";
-
-			import {Selection} from "./src/Selection.js";
-
-			import {AxesHelper} from "./src/helpers/AxesHelper.js";
 
 
 			import {WebGLRenderer, Math, PerspectiveCamera, Scene, GridHelper, DirectionalLight, TextureLoader, BoxBufferGeometry, MeshLambertMaterial, Mesh, BoxHelper} from "../../three.js/build/three.module.js";
@@ -136,33 +134,30 @@
 					patent = mesh;
 				}
 
-				selection = new Selection();
-				helperScene.add(selection);
+				var selectionControls = new SelectionControls({domElement: canvas, camera: camera, scene: scene, selection: selection});
+				helperScene.add(selectionControls);
+				selectionControls.addEventListener('change', render);
 
-				selection.addEventListener('change', render);
-
-
-				var selectionControls = new SelectionControls(camera, renderer.domElement, scene, selection);
-
-				var viewportControls = new OrbitControls(camera, renderer.domElement);
+				var viewportControls = new OrbitControls({domElement: canvas, camera: camera});
 				viewportControls.addEventListener('change', render);
 
-				var transformControls = new TransformControls(camera, renderer.domElement);
+				var transformControls = new AxesRotateControls({domElement: canvas, camera: camera});
 				transformControls.addEventListener('change', render);
 				transformControls.addEventListener('space-changed', event => {
-					selection.transformSpace = transformControls.mode !== 'scale' ? event.value : 'local';
+					// TODO
+					selectionControls.transformSpace = transformControls.mode !== 'scale' ? event.value : 'local';
 				});
 				helperScene.add(transformControls);
 
-				selection.addEventListener('selected-changed', event => {
-					transformControls.object = event.selected.length ? selection : null;
+				selectionControls.addEventListener('selected-changed', event => {
+					transformControls.object = event.selected.length ? selectionControls : null;
 				});
 
 				scene.updateMatrixWorld();
-				selection.replace(mesh);
+				selectionControls.replace(mesh);
 
 				viewportControls.addEventListener('active-changed', event => {
-					transformControls.enabled = event.value ? false : true && !!selection.selected.length;
+					transformControls.enabled = event.value ? false : true && !!selectionControls.selected.length;
 				});
 
 				transformControls.addEventListener('active-changed', event => {
@@ -173,7 +168,6 @@
 					viewportControls.enabled = event.value ? false : true;
 				});
 
-				// selection.addEventListener('change', ()=>{ console.log('Selection change'); } );
 				// selectionControls.addEventListener('change', ()=>{ console.log('SelectionControls change'); } );
 				// transformControls.addEventListener('change', ()=>{ console.log('TransformControls change'); } );
 				// viewportControls.addEventListener('change', ()=>{ console.log('ViewportControls change'); } );
