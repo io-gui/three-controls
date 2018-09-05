@@ -125,13 +125,16 @@ export class Selection extends IoLiteMixin(Object3D) {
 		this.scale.set(1,1,1);
 
 		if (this.selected.length && this.transformSelection) {
-			// Set selection transform to last selected item.
+			// Set selection transform to last selected item (not ancestor of selected).
 			if (this.transformSpace === 'local') {
-				let i = this.selected.length - 1;
-				this.selected[i].updateMatrixWorld();
-				this.selected[i].matrixWorld.decompose(itemPos, itemQuat, itemScale);
-				this.position.copy(itemPos);
-				this.quaternion.copy(itemQuat);
+				for (let i = this.selected.length; i--;) {
+					if (this._isAncestorOfSelected(this.selected[i])) continue;
+					this.selected[i].updateMatrixWorld();
+					this.selected[i].matrixWorld.decompose(itemPos, itemQuat, itemScale);
+					this.position.copy(itemPos);
+					this.quaternion.copy(itemQuat);
+					break;
+				}
 				// Set selection transform to the average of selected items.
 			} else if (this.transformSpace === 'world') {
 				pos.set(0,0,0);
@@ -193,6 +196,7 @@ export class Selection extends IoLiteMixin(Object3D) {
 			itemQuatInv.copy(itemQuat).inverse();
 			// Transform selected in local space.
 			if (this.transformSpace === 'local') {
+				if (this._isAncestorOfSelected(this.selected[i])) continue; // lets not go there...
 					// Position
 					itemPosOffset.copy(posOffset).applyQuaternion(quatInv);
 					itemPosOffset.applyQuaternion(this.selected[i].quaternion);
@@ -201,7 +205,6 @@ export class Selection extends IoLiteMixin(Object3D) {
 					itemQuatOffset.copy(quatInv).multiply(quatOffset).multiply(quat).normalize();
 					this.selected[i].quaternion.multiply(itemQuatOffset);
 					// Scale
-					if (this._isAncestorOfSelected(this.selected[i])) continue; // lets not go there...
 					this.selected[i].scale.add(scaleOffset);
 			// Transform selected in world space.
 			} else if (this.transformSpace === 'world') {
