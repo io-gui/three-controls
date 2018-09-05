@@ -2,9 +2,10 @@
  * @author arodic / https://github.com/arodic
  */
 
-import {Raycaster, Vector3, Quaternion, Plane} from "../../../three.js/build/three.module.js";
+import {Raycaster, Vector3, Quaternion, Plane, Mesh, PlaneBufferGeometry, MeshBasicMaterial} from "../../../three.js/build/three.module.js";
 import {Interactive} from "../Interactive.js";
 import {AxesTranslateHelper} from "../helpers/AxesTranslateHelper.js";
+import {AxesTranslateOffsetHelper} from "../helpers/AxesTranslateOffsetHelper.js";
 import {AxesRotateHelper} from "../helpers/AxesRotateHelper.js";
 import {AxesScaleHelper} from "../helpers/AxesScaleHelper.js";
 
@@ -32,15 +33,19 @@ export class TransformControls extends Interactive {
 
 		this.visible = false;
 
-		this._gizmo = {
+		this._helper = {
+			'translateOffset': new AxesTranslateOffsetHelper(),
 			'translate': new AxesTranslateHelper(),
 			'rotate': new AxesRotateHelper(),
-			'scale': new AxesScaleHelper()
+			'scale': new AxesScaleHelper(),
 		};
+		this.add(this._helper.translateOffset);
 
-		this.add(this._gizmo.translate);
-		this.add(this._gizmo.rotate);
-		this.add(this._gizmo.scale);
+		this.add(this._helper.translate);
+		this.add(this._helper.rotate);
+		this.add(this._helper.scale);
+
+		this.add(this._plane = new Mesh(new PlaneBufferGeometry(1000,1000,20,20), new MeshBasicMaterial({wireframe: true})));
 
 		this.defineProperties({
 			camera: camera,
@@ -51,7 +56,7 @@ export class TransformControls extends Interactive {
 			rotationSnap: null,
 			space: "local",
 			active: false,
-			size: 0.1,
+			size: 0.2,
 			showX: true,
 			showY: true,
 			showZ: true,
@@ -78,22 +83,25 @@ export class TransformControls extends Interactive {
 		// TODO: implement better data binding
 		// Defined properties are passed down to gizmo and plane
 		for (let prop in this._properties) {
-			this._gizmo.translate[prop] = this._properties[prop];
-			this._gizmo.rotate[prop] = this._properties[prop];
-			this._gizmo.scale[prop] = this._properties[prop];
+			this._helper.translateOffset[prop] = this._properties[prop];
+			this._helper.translate[prop] = this._properties[prop];
+			this._helper.rotate[prop] = this._properties[prop];
+			this._helper.scale[prop] = this._properties[prop];
 		}
 		this.addEventListener('change', function (event) {
-			this._gizmo.translate[event.prop] = event.value;
-			this._gizmo.rotate[event.prop] = event.value;
-			this._gizmo.scale[event.prop] = event.value;
+			this._helper.translateOffset[event.prop] = event.value;
+			this._helper.translate[event.prop] = event.value;
+			this._helper.rotate[event.prop] = event.value;
+			this._helper.scale[event.prop] = event.value;
 		});
 		this.modeChanged(this.mode);
 		this.objectChanged(this.object);
 	}
 	modeChanged(value) {
-		this._gizmo.translate.visible = value === 'translate';
-		this._gizmo.rotate.visible = value === 'rotate';
-		this._gizmo.scale.visible = value === 'scale';
+		this._helper.translateOffset.visible = value === 'translate';
+		this._helper.translate.visible = value === 'translate';
+		this._helper.rotate.visible = value === 'rotate';
+		this._helper.scale.visible = value === 'scale';
 	}
 	objectChanged(value) {
 		let hasObject = value ? true : false;
@@ -102,9 +110,10 @@ export class TransformControls extends Interactive {
 			this.active = false;
 			this.axis = null;
 		}
-		this._gizmo.translate.target = value;
-		this._gizmo.rotate.target = value;
-		this._gizmo.scale.target = value;
+		this._helper.translateOffset.target = value;
+		this._helper.translate.target = value;
+		this._helper.rotate.target = value;
+		this._helper.scale.target = value;
 	}
 	updateMatrixWorld() {
 		if (this.object) {
@@ -124,9 +133,9 @@ export class TransformControls extends Interactive {
 		if (!this.object || this.active === true) return;
 		_ray.setFromCamera(pointers[0].position, this.camera);
 		// TODO: remove and unhack
-		this.object.matrixWorld.decompose(this.worldPositionStart, this.worldQuaternionStart, this.worldScaleStart);
+		// this.object.matrixWorld.decompose(this.worldPositionStart, this.worldQuaternionStart, this.worldScaleStart);
 		//
-		const intersect = _ray.intersectObjects(this._gizmo[ this.mode ].picker.children, true)[ 0 ] || false;
+		const intersect = _ray.intersectObjects(this._helper[this.mode].picker.children, true)[0] || false;
 		if (intersect) {
 			this.axis = intersect.object.name;
 		} else {
@@ -135,7 +144,6 @@ export class TransformControls extends Interactive {
 	}
 	onPointerDown(pointers) {
 		if (this.axis === null || !this.object || this.active === true || pointers[0].button !== 0) return;
-
 		_ray.setFromCamera(pointers[0].position, this.camera);
 
 		const planeIntersect = this.intersectPlane();
@@ -167,6 +175,7 @@ export class TransformControls extends Interactive {
 		this.active = true;
 	}
 	onPointerMove(pointers) {
+		// console.log(pointers[0].movement)
 		let axis = this.axis;
 		let mode = this.mode;
 		let object = this.object;
@@ -265,7 +274,7 @@ export class TransformControls extends Interactive {
 		} else if (mode === 'rotate') {
 			const ROTATION_SPEED = 20 / this.worldPosition.distanceTo(_tempVector.setFromMatrixPosition(this.camera.matrixWorld));
 			const quaternion = this.space === "local" ? this.worldQuaternion : _identityQuaternion;
-			const unit = _unit[ axis ];
+			const unit = _unit[axis];
 
 			if (axis === 'E') {
 				_tempVector.copy(this.pointEnd).cross(this.pointStart);
@@ -305,7 +314,8 @@ export class TransformControls extends Interactive {
 	onPointerUp(pointers) {
 		if (pointers.length === 0) {
 			this.active = false;
-			this.axis = null;
+			if (pointers.removed[0].pointerType === 'touch') this.axis = null;
+			// this.axis = null;
 		} else {
 			if (pointers[0].button === -1) this.axis = null;
 		}
@@ -362,6 +372,10 @@ export class TransformControls extends Interactive {
 				this.camera.getWorldDirection(_plane.normal);
 		}
 		_plane.setFromNormalAndCoplanarPoint(_plane.normal, this.worldPosition);
+
+		this._plane.position.set(0,0,0);
+		this._plane.lookAt(_plane.normal);
+		this._plane.position.copy(this.worldPosition);
 		return _ray.ray.intersectPlane(_plane, _tempVector);
 	}
 }

@@ -35,33 +35,31 @@ export class AxesHelper extends Helper {
 		});
 		super.updateHelperMatrix();
 	}
-	highlightAxis(axis) {
-		this.traverse(child => {
-			if (child.material) {
-				child.material._opacity = child.material._opacity || child.material.opacity;
-				child.material._color = child.material._color || child.material.color.clone();
+	highlightAxis(child, axis, force) {
+		if (child.material) {
+			child.material._opacity = child.material._opacity || child.material.opacity;
+			child.material._color = child.material._color || child.material.color.clone();
 
-				child.material.color.copy(child.material._color);
-				child.material.opacity = child.material._opacity;
+			child.material.color.copy(child.material._color);
+			child.material.opacity = child.material._opacity;
 
-				child.material.color.lerp(this.colors['white'], 0.25);
+			child.material.color.lerp(this.colors['white'], 0.25);
 
-				if (!this.enabled) {
+			if (!this.enabled) {
+				child.material.opacity *= 0.25;
+				child.material.color.lerp(this.colors['gray'], 0.75);
+			} else if (axis) {
+				if (child.name === axis || force) {
+					child.material.opacity = child.material._opacity * 2;
+					child.material.color.copy(child.material._color);
+				} else if (axis.split('').some(function(a) {return child.name === a;})) {
+					child.material.opacity = child.material._opacity * 2;
+					child.material.color.copy(child.material._color);
+				} else {
 					child.material.opacity *= 0.25;
-					child.material.color.lerp(this.colors['gray'], 0.75);
-				} else if (axis) {
-					if (child.name === axis) {
-						child.material.opacity = child.material._opacity * 2;
-						child.material.color.copy(child.material._color);
-					} else if (axis.split('').some(function(a) {return child.name === a;})) {
-						child.material.opacity = child.material._opacity * 2;
-						child.material.color.copy(child.material._color);
-					} else {
-						child.material.opacity *= 0.25;
-						child.material.color.lerp(this.colors['white'], 0.5);
-					}
+					child.material.color.lerp(this.colors['white'], 0.5);
 				}
 			}
-		});
+		}
 	}
 }

@@ -42,6 +42,7 @@ export class Interactive extends IoLiteMixin(Object3D) {
 		this._pointerEvents.dispose();
 	}
 	_addEvents() {
+		if (this._listening) return;
 		this._pointerEvents.addEventListener('pointerdown', this.onPointerDown);
 		this._pointerEvents.addEventListener('pointerhover', this.onPointerHover);
 		this._pointerEvents.addEventListener('pointermove', this.onPointerMove);
@@ -52,8 +53,10 @@ export class Interactive extends IoLiteMixin(Object3D) {
 		this._pointerEvents.addEventListener('contextmenu', this.onContextmenu);
 		this._pointerEvents.addEventListener('focus', this.onFocus);
 		this._pointerEvents.addEventListener('blur', this.onBlur);
+		this._listening = true;
 	}
 	_removeEvents() {
+		if (!this._listening) return;
 		this._pointerEvents.removeEventListener('pointerdown', this.onPointerDown);
 		this._pointerEvents.removeEventListener('pointerhover', this.onPointerHover);
 		this._pointerEvents.removeEventListener('pointermove', this.onPointerMove);
@@ -64,10 +67,10 @@ export class Interactive extends IoLiteMixin(Object3D) {
 		this._pointerEvents.removeEventListener('contextmenu', this.onContextmenu);
 		this._pointerEvents.removeEventListener('focus', this.onFocus);
 		this._pointerEvents.removeEventListener('blur', this.onBlur);
+		this._listening = false;
 	}
 	enabledChanged(value) {
-		if (value) this._addEvents();
-		else this._removeEvents();
+		value ? this._addEvents() : this._removeEvents();
 	}
 	// Control methods. Implement in subclass!
 	onContextmenu() {} // event

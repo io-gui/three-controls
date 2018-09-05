@@ -136,13 +136,11 @@
 					patent = mesh;
 				}
 
-				selection = new Selection({transformSpace: 'world'});
+				selection = new Selection();
 				helperScene.add(selection);
 
 				selection.addEventListener('change', render);
-				selection.addEventListener('selected-changed', event => {
-					transformControls.object = event.selected.length ? selection : null;
-				})
+
 
 				var selectionControls = new SelectionControls(camera, renderer.domElement, scene, selection);
 
@@ -154,15 +152,23 @@
 				transformControls.addEventListener('space-changed', event => { selection.transformSpace = event.value; });
 				helperScene.add(transformControls);
 
+				selection.addEventListener('selected-changed', event => {
+					transformControls.object = event.selected.length ? selection : null;
+				});
+
+				scene.updateMatrixWorld();
+				selection.replace(mesh);
+
 				viewportControls.addEventListener('active-changed', event => {
-					// transformControls.enabled = !event.value && !!selection.selected.length;
+					transformControls.enabled = event.value ? false : true && !!selection.selected.length;
 				});
 
 				transformControls.addEventListener('active-changed', event => {
-					viewportControls.enabled = !event.value;
+					viewportControls.enabled = event.value ? false : true;
 				});
 				transformControls.addEventListener('axis-changed', event => {
-					selectionControls.enabled = !event.value;
+					selectionControls.enabled = event.value ? false : true;
+					viewportControls.enabled = event.value ? false : true;
 				});
 
 				// selection.addEventListener('change', ()=>{ console.log('Selection change'); } );

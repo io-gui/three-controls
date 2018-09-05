@@ -13,97 +13,90 @@ const unitZ = new Vector3(0, 0, 1);
 
 // reusable geometry
 
-const scaleHandleGeometry = new BoxBufferGeometry(0.125, 0.125, 0.125);
+const handleGeo = new BoxBufferGeometry(0.125, 0.125, 0.125);
 
-const lineGeometry = new BufferGeometry();
-lineGeometry.addAttribute('position', new Float32BufferAttribute([0, 0, 0,	1, 0, 0], 3));
+const lineGeo = new BufferGeometry();
+lineGeo.addAttribute('position', new Float32BufferAttribute([0, 0, 0,	1, 0, 0], 3));
+
+const pickerGeo = new CylinderBufferGeometry(0.2, 0, 0.8, 4, 1, false);
 
 export class AxesScaleHelper extends AxesHelper {
 	init() {
-		const gizmoScale = {
+		const mat = this.setupHelperMaterial.bind(this);
+		const helper = {
 			X: [
-				[new Mesh(scaleHandleGeometry, this.setupHelperMaterial('red')), [0.8, 0, 0], [0, 0, -Math.PI / 2]],
-				[new Line(lineGeometry, this.setupHelperMaterial('red', true)), null, null, [0.8, 1, 1]]
+				[new Mesh(handleGeo, mat('red')), [0.8, 0, 0], [0, 0, -Math.PI / 2]],
+				[new Line(lineGeo, mat('red')), null, null, [0.8, 1, 1]],
+				[new Line(lineGeo, mat('white', 0.33).clone()), [-1e3, 0, 0], null, [1e6, 1, 1], 'helper']
 			],
 			Y: [
-				[new Mesh(scaleHandleGeometry, this.setupHelperMaterial('green')), [0, 0.8, 0]],
-				[new Line(lineGeometry, this.setupHelperMaterial('green', true)), null, [0, 0, Math.PI / 2], [0.8, 1, 1]]
+				[new Mesh(handleGeo, mat('green')), [0, 0.8, 0]],
+				[new Line(lineGeo, mat('green')), null, [0, 0, Math.PI / 2], [0.8, 1, 1]],
+				[new Line(lineGeo, mat('white', 0.33).clone()), [0, -1e3, 0], [0, 0, Math.PI / 2], [1e6, 1, 1], 'helper']
 			],
 			Z: [
-				[new Mesh(scaleHandleGeometry, this.setupHelperMaterial('blue')), [0, 0, 0.8], [Math.PI / 2, 0, 0]],
-				[new Line(lineGeometry, this.setupHelperMaterial('blue', true)), null, [0, -Math.PI / 2, 0], [0.8, 1, 1]]
+				[new Mesh(handleGeo, mat('blue')), [0, 0, 0.8], [Math.PI / 2, 0, 0]],
+				[new Line(lineGeo, mat('blue')), null, [0, -Math.PI / 2, 0], [0.8, 1, 1]],
+				[new Line(lineGeo, mat('white', 0.33).clone()), [0, 0, -1e3], [0, -Math.PI / 2, 0], [1e6, 1, 1], 'helper']
 			],
 			XY: [
-				[new Mesh(scaleHandleGeometry, this.setupHelperMaterial('yellow', false, 0.25)), [0.85, 0.85, 0], null, [2, 2, 0.2]],
-				[new Line(lineGeometry, this.setupHelperMaterial('yellow', true)), [0.855, 0.98, 0], null, [0.125, 1, 1]],
-				[new Line(lineGeometry, this.setupHelperMaterial('yellow', true)), [0.98, 0.855, 0], [0, 0, Math.PI / 2], [0.125, 1, 1]]
+				[new Mesh(handleGeo, mat('yellow', 0.25)), [0.85, 0.85, 0], null, [2, 2, 0.2]],
+				[new Line(lineGeo, mat('yellow')), [0.855, 0.98, 0], null, [0.125, 1, 1]],
+				[new Line(lineGeo, mat('yellow')), [0.98, 0.855, 0], [0, 0, Math.PI / 2], [0.125, 1, 1]]
 			],
 			YZ: [
-				[new Mesh(scaleHandleGeometry, this.setupHelperMaterial('cyan', false, 0.25)), [0, 0.85, 0.85], null, [0.2, 2, 2]],
-				[new Line(lineGeometry, this.setupHelperMaterial('cyan', true)), [0, 0.855, 0.98], [0, 0, Math.PI / 2], [0.125, 1, 1]],
-				[new Line(lineGeometry, this.setupHelperMaterial('cyan', true)), [0, 0.98, 0.855], [0, -Math.PI / 2, 0], [0.125, 1, 1]]
+				[new Mesh(handleGeo, mat('cyan', 0.25)), [0, 0.85, 0.85], null, [0.2, 2, 2]],
+				[new Line(lineGeo, mat('cyan')), [0, 0.855, 0.98], [0, 0, Math.PI / 2], [0.125, 1, 1]],
+				[new Line(lineGeo, mat('cyan')), [0, 0.98, 0.855], [0, -Math.PI / 2, 0], [0.125, 1, 1]]
 			],
 			XZ: [
-				[new Mesh(scaleHandleGeometry, this.setupHelperMaterial('magenta', false, 0.25)), [0.85, 0, 0.85], null, [2, 0.2, 2]],
-				[new Line(lineGeometry, this.setupHelperMaterial('magenta', true)), [0.855, 0, 0.98], null, [0.125, 1, 1]],
-				[new Line(lineGeometry, this.setupHelperMaterial('magenta', true)), [0.98, 0, 0.855], [0, -Math.PI / 2, 0], [0.125, 1, 1]]
+				[new Mesh(handleGeo, mat('magenta', 0.25)), [0.85, 0, 0.85], null, [2, 0.2, 2]],
+				[new Line(lineGeo, mat('magenta')), [0.855, 0, 0.98], null, [0.125, 1, 1]],
+				[new Line(lineGeo, mat('magenta')), [0.98, 0, 0.855], [0, -Math.PI / 2, 0], [0.125, 1, 1]]
 			],
 			XYZX: [
-				[new Mesh(new BoxBufferGeometry(0.125, 0.125, 0.125), this.setupHelperMaterial('white', false, 0.25)), [1.1, 0, 0]],
+				[new Mesh(handleGeo, mat('white', 0.25)), [1.1, 0, 0]],
 			],
 			XYZY: [
-				[new Mesh(new BoxBufferGeometry(0.125, 0.125, 0.125), this.setupHelperMaterial('white', false, 0.25)), [0, 1.1, 0]],
+				[new Mesh(handleGeo, mat('white', 0.25)), [0, 1.1, 0]],
 			],
 			XYZZ: [
-				[new Mesh(new BoxBufferGeometry(0.125, 0.125, 0.125), this.setupHelperMaterial('white', false, 0.25)), [0, 0, 1.1]],
+				[new Mesh(handleGeo, mat('white', 0.25)), [0, 0, 1.1]],
 			]
 		};
 
-		const pickerScale = {
+		const picker = {
 			X: [
-				[new Mesh(new CylinderBufferGeometry(0.2, 0, 0.8, 4, 1, false), this.setupHelperMaterial('white', false, 0.15)), [0.5, 0, 0], [0, 0, -Math.PI / 2]]
+				[new Mesh(pickerGeo, mat('white', 0.15)), [0.5, 0, 0], [0, 0, -Math.PI / 2]]
 			],
 			Y: [
-				[new Mesh(new CylinderBufferGeometry(0.2, 0, 0.8, 4, 1, false), this.setupHelperMaterial('white', false, 0.15)), [0, 0.5, 0]]
+				[new Mesh(pickerGeo, mat('white', 0.15)), [0, 0.5, 0]]
 			],
 			Z: [
-				[new Mesh(new CylinderBufferGeometry(0.2, 0, 0.8, 4, 1, false), this.setupHelperMaterial('white', false, 0.15)), [0, 0, 0.5], [Math.PI / 2, 0, 0]]
+				[new Mesh(pickerGeo, mat('white', 0.15)), [0, 0, 0.5], [Math.PI / 2, 0, 0]]
 			],
 			XY: [
-				[new Mesh(scaleHandleGeometry, this.setupHelperMaterial('white', false, 0.15)), [0.85, 0.85, 0], null, [3, 3, 0.2]],
+				[new Mesh(handleGeo, mat('white', 0.15)), [0.85, 0.85, 0], null, [3, 3, 0.2]],
 			],
 			YZ: [
-				[new Mesh(scaleHandleGeometry, this.setupHelperMaterial('white', false, 0.15)), [0, 0.85, 0.85], null, [0.2, 3, 3]],
+				[new Mesh(handleGeo, mat('white', 0.15)), [0, 0.85, 0.85], null, [0.2, 3, 3]],
 			],
 			XZ: [
-				[new Mesh(scaleHandleGeometry, this.setupHelperMaterial('white', false, 0.15)), [0.85, 0, 0.85], null, [3, 0.2, 3]],
+				[new Mesh(handleGeo, mat('white', 0.15)), [0.85, 0, 0.85], null, [3, 0.2, 3]],
 			],
 			XYZX: [
-				[new Mesh(new BoxBufferGeometry(0.2, 0.2, 0.2), this.setupHelperMaterial('white', false, 0.15)), [1.1, 0, 0]],
+				[new Mesh(handleGeo, mat('white', 0.15)), [1.1, 0, 0]],
 			],
 			XYZY: [
-				[new Mesh(new BoxBufferGeometry(0.2, 0.2, 0.2), this.setupHelperMaterial('white', false, 0.15)), [0, 1.1, 0]],
+				[new Mesh(handleGeo, mat('white', 0.15)), [0, 1.1, 0]],
 			],
 			XYZZ: [
-				[new Mesh(new BoxBufferGeometry(0.2, 0.2, 0.2), this.setupHelperMaterial('white', false, 0.15)), [0, 0, 1.1]],
+				[new Mesh(handleGeo, mat('white', 0.15)), [0, 0, 1.1]],
 			]
 		};
 
-		const helperScale = {
-			X: [
-				[new Line(lineGeometry, this.setupHelperMaterial('white', false, 0.33).clone()), [-1e3, 0, 0], null, [1e6, 1, 1], 'helper']
-			],
-			Y: [
-				[new Line(lineGeometry, this.setupHelperMaterial('white', false, 0.33).clone()), [0, -1e3, 0], [0, 0, Math.PI / 2], [1e6, 1, 1], 'helper']
-			],
-			Z: [
-				[new Line(lineGeometry, this.setupHelperMaterial('white', false, 0.33).clone()), [0, 0, -1e3], [0, -Math.PI / 2, 0], [1e6, 1, 1], 'helper']
-			]
-		};
-
-		this.add(this.gizmo = this.setupHelper(gizmoScale));
-		this.add(this.picker = this.setupHelper(pickerScale));
-		this.add(this.helper = this.setupHelper(helperScale));
+		this.add(this.setupHelper(helper));
+		this.add(this.picker = this.setupHelper(picker));
 	}
 	updateHelperMatrix() {
 		super.updateHelperMatrix();
@@ -188,8 +181,8 @@ export class AxesScaleHelper extends AxesHelper {
 					handle.visible = false;
 				}
 			}
+			this.highlightAxis(handle, this.axis);
 		});
-		this.highlightAxis(this.axis);
 		this.picker.visible = false;
 	}
 }

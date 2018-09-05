@@ -29,94 +29,71 @@ function TranslateHelperGeometry() {
 
 export class AxesTranslateHelper extends AxesHelper {
 	init() {
-		const gizmoTranslate = {
+		const mat = this.setupHelperMaterial.bind(this);
+		const helper = {
 			X: [
-				[new Mesh(arrowGeometry, this.setupHelperMaterial('red')), [1, 0, 0], [0, 0, -Math.PI / 2], null, 'fwd'],
-				[new Mesh(arrowGeometry, this.setupHelperMaterial('red')), [1, 0, 0], [0, 0, Math.PI / 2], null, 'bwd'],
-				[new Line(lineGeometry, this.setupHelperMaterial('red', true))]
+				[new Mesh(arrowGeometry, mat('red')), [1, 0, 0], [0, 0, -Math.PI / 2], null, 'fwd'],
+				[new Mesh(arrowGeometry, mat('red')), [1, 0, 0], [0, 0, Math.PI / 2], null, 'bwd'],
+				[new Line(lineGeometry, mat('red'))]
 			],
 			Y: [
-				[new Mesh(arrowGeometry, this.setupHelperMaterial('green')), [0, 1, 0], null, null, 'fwd'],
-				[new Mesh(arrowGeometry, this.setupHelperMaterial('green')), [0, 1, 0], [Math.PI, 0, 0], null, 'bwd'],
-				[new Line(lineGeometry, this.setupHelperMaterial('green', true)), null, [0, 0, Math.PI / 2]]
+				[new Mesh(arrowGeometry, mat('green')), [0, 1, 0], null, null, 'fwd'],
+				[new Mesh(arrowGeometry, mat('green')), [0, 1, 0], [Math.PI, 0, 0], null, 'bwd'],
+				[new Line(lineGeometry, mat('green')), null, [0, 0, Math.PI / 2]]
 			],
 			Z: [
-				[new Mesh(arrowGeometry, this.setupHelperMaterial('blue')), [0, 0, 1], [Math.PI / 2, 0, 0], null, 'fwd'],
-				[new Mesh(arrowGeometry, this.setupHelperMaterial('blue')), [0, 0, 1], [-Math.PI / 2, 0, 0], null, 'bwd'],
-				[new Line(lineGeometry, this.setupHelperMaterial('blue', true)), null, [0, -Math.PI / 2, 0]]
+				[new Mesh(arrowGeometry, mat('blue')), [0, 0, 1], [Math.PI / 2, 0, 0], null, 'fwd'],
+				[new Mesh(arrowGeometry, mat('blue')), [0, 0, 1], [-Math.PI / 2, 0, 0], null, 'bwd'],
+				[new Line(lineGeometry, mat('blue')), null, [0, -Math.PI / 2, 0]]
 			],
 			XYZ: [
-				[new Mesh(new OctahedronBufferGeometry(0.1, 0), this.setupHelperMaterial('white', false, 0.25)), [0, 0, 0], [0, 0, 0]]
+				[new Mesh(new OctahedronBufferGeometry(0.1, 0), mat('white', 0.25)), [0, 0, 0], [0, 0, 0]]
 			],
 			XY: [
-				[new Mesh(new PlaneBufferGeometry(0.295, 0.295), this.setupHelperMaterial('yellow', false, 0.25)), [0.15, 0.15, 0]],
-				[new Line(lineGeometry, this.setupHelperMaterial('yellow', true)), [0.18, 0.3, 0], null, [0.125, 1, 1]],
-				[new Line(lineGeometry, this.setupHelperMaterial('yellow', true)), [0.3, 0.18, 0], [0, 0, Math.PI / 2], [0.125, 1, 1]]
+				[new Mesh(new PlaneBufferGeometry(0.295, 0.295), mat('yellow', 0.25)), [0.15, 0.15, 0]],
+				[new Line(lineGeometry, mat('yellow')), [0.18, 0.3, 0], null, [0.125, 1, 1]],
+				[new Line(lineGeometry, mat('yellow')), [0.3, 0.18, 0], [0, 0, Math.PI / 2], [0.125, 1, 1]]
 			],
 			YZ: [
-				[new Mesh(new PlaneBufferGeometry(0.295, 0.295), this.setupHelperMaterial('cyan', false, 0.25)), [0, 0.15, 0.15], [0, Math.PI / 2, 0]],
-				[new Line(lineGeometry, this.setupHelperMaterial('cyan', true)), [0, 0.18, 0.3], [0, 0, Math.PI / 2], [0.125, 1, 1]],
-				[new Line(lineGeometry, this.setupHelperMaterial('cyan', true)), [0, 0.3, 0.18], [0, -Math.PI / 2, 0], [0.125, 1, 1]]
+				[new Mesh(new PlaneBufferGeometry(0.295, 0.295), mat('cyan', 0.25)), [0, 0.15, 0.15], [0, Math.PI / 2, 0]],
+				[new Line(lineGeometry, mat('cyan')), [0, 0.18, 0.3], [0, 0, Math.PI / 2], [0.125, 1, 1]],
+				[new Line(lineGeometry, mat('cyan')), [0, 0.3, 0.18], [0, -Math.PI / 2, 0], [0.125, 1, 1]]
 			],
 			XZ: [
-				[new Mesh(new PlaneBufferGeometry(0.295, 0.295), this.setupHelperMaterial('magenta', false, 0.25)), [0.15, 0, 0.15], [-Math.PI / 2, 0, 0]],
-				[new Line(lineGeometry, this.setupHelperMaterial('magenta', true)), [0.18, 0, 0.3], null, [0.125, 1, 1]],
-				[new Line(lineGeometry, this.setupHelperMaterial('magenta', true)), [0.3, 0, 0.18], [0, -Math.PI / 2, 0], [0.125, 1, 1]]
+				[new Mesh(new PlaneBufferGeometry(0.295, 0.295), mat('magenta', 0.25)), [0.15, 0, 0.15], [-Math.PI / 2, 0, 0]],
+				[new Line(lineGeometry, mat('magenta')), [0.18, 0, 0.3], null, [0.125, 1, 1]],
+				[new Line(lineGeometry, mat('magenta')), [0.3, 0, 0.18], [0, -Math.PI / 2, 0], [0.125, 1, 1]]
 			]
 		};
 
-		const pickerTranslate = {
+		const picker = {
 			X: [
-				[new Mesh(new CylinderBufferGeometry(0.2, 0, 1, 4, 1, false), this.setupHelperMaterial('white', false, 0.15)), [0.6, 0, 0], [0, 0, -Math.PI / 2]]
+				[new Mesh(new CylinderBufferGeometry(0.2, 0, 1, 4, 1, false), mat('white', 0.15)), [0.6, 0, 0], [0, 0, -Math.PI / 2]]
 			],
 			Y: [
-				[new Mesh(new CylinderBufferGeometry(0.2, 0, 1, 4, 1, false), this.setupHelperMaterial('white', false, 0.15)), [0, 0.6, 0]]
+				[new Mesh(new CylinderBufferGeometry(0.2, 0, 1, 4, 1, false), mat('white', 0.15)), [0, 0.6, 0]]
 			],
 			Z: [
-				[new Mesh(new CylinderBufferGeometry(0.2, 0, 1, 4, 1, false), this.setupHelperMaterial('white', false, 0.15)), [0, 0, 0.6], [Math.PI / 2, 0, 0]]
+				[new Mesh(new CylinderBufferGeometry(0.2, 0, 1, 4, 1, false), mat('white', 0.15)), [0, 0, 0.6], [Math.PI / 2, 0, 0]]
 			],
 			XYZ: [
-				[new Mesh(new OctahedronBufferGeometry(0.2, 0), this.setupHelperMaterial('white', false, 0.15))]
+				[new Mesh(new OctahedronBufferGeometry(0.2, 0), mat('white', 0.15))]
 			],
 			XY: [
-				[new Mesh(new PlaneBufferGeometry(0.4, 0.4), this.setupHelperMaterial('white', false, 0.15)), [0.2, 0.2, 0]]
+				[new Mesh(new PlaneBufferGeometry(0.4, 0.4), mat('white', 0.15)), [0.2, 0.2, 0]]
 			],
 			YZ: [
-				[new Mesh(new PlaneBufferGeometry(0.4, 0.4), this.setupHelperMaterial('white', false, 0.15)), [0, 0.2, 0.2], [0, Math.PI / 2, 0]]
+				[new Mesh(new PlaneBufferGeometry(0.4, 0.4), mat('white', 0.15)), [0, 0.2, 0.2], [0, Math.PI / 2, 0]]
 			],
 			XZ: [
-				[new Mesh(new PlaneBufferGeometry(0.4, 0.4), this.setupHelperMaterial('white', false, 0.15)), [0.2, 0, 0.2], [-Math.PI / 2, 0, 0]]
+				[new Mesh(new PlaneBufferGeometry(0.4, 0.4), mat('white', 0.15)), [0.2, 0, 0.2], [-Math.PI / 2, 0, 0]]
 			]
 		};
 
-		const helperTranslate = {
-			START: [
-				[new Mesh(new OctahedronBufferGeometry(0.01, 2), this.setupHelperMaterial('white', false, 0.33)), null, null, null, 'helper']
-			],
-			END: [
-				[new Mesh(new OctahedronBufferGeometry(0.01, 2), this.setupHelperMaterial('white', false, 0.33)), null, null, null, 'helper']
-			],
-			DELTA: [
-				[new Line(TranslateHelperGeometry(), this.setupHelperMaterial('white', false, 0.33)), null, null, null, 'helper']
-			],
-			X: [
-				[new Line(lineGeometry, this.setupHelperMaterial('white', false, 0.33).clone()), [-1e3, 0, 0], null, [1e6, 1, 1], 'helper']
-			],
-			Y: [
-				[new Line(lineGeometry, this.setupHelperMaterial('white', false, 0.33).clone()), [0, -1e3, 0], [0, 0, Math.PI / 2], [1e6, 1, 1], 'helper']
-			],
-			Z: [
-				[new Line(lineGeometry, this.setupHelperMaterial('white', false, 0.33).clone()), [0, 0, -1e3], [0, -Math.PI / 2, 0], [1e6, 1, 1], 'helper']
-			]
-		};
-
-		this.add(this.gizmo = this.setupHelper(gizmoTranslate));
-		this.add(this.picker = this.setupHelper(pickerTranslate));
-		this.add(this.helper = this.setupHelper(helperTranslate));
+		this.add(this.setupHelper(helper));
+		this.add(this.picker = this.setupHelper(picker));
 	}
 	updateHelperMatrix() {
-		super.updateHelperMatrix();
-
 		const quaternion = this.space === "local" ? this.worldQuaternion : identityQuaternion;
 
 		// highlight selected axis
@@ -197,8 +174,9 @@ export class AxesTranslateHelper extends AxesHelper {
 					handle.visible = false;
 				}
 			}
+			this.highlightAxis(handle, this.axis);
 		});
-		this.highlightAxis(this.axis);
 		this.picker.visible = false;
+		super.updateHelperMatrix();
 	}
 }

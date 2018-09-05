@@ -2,7 +2,7 @@
  * @author arodic / https://github.com/arodic
  */
 
-import {Object3D, Vector3, Color, Quaternion, DoubleSide, MeshBasicMaterial, LineBasicMaterial} from "../../three.js/build/three.module.js";
+import {Object3D, Vector3, Color, Quaternion, DoubleSide, MeshBasicMaterial} from "../../three.js/build/three.module.js";
 
 /*
  * Helper is a variant of Object3D which automatically follows its target object.
@@ -23,15 +23,6 @@ const helperMaterial = new MeshBasicMaterial({
 	side: DoubleSide,
 	fog: false
 });
-
-const helperLineMaterial = new LineBasicMaterial({
-	depthTest: false,
-	depthWrite: false,
-	transparent: true,
-	linewidth: 1,
-	fog: false
-});
-
 
 export class Helper extends Object3D {
 	get isHelper() { return true; }
@@ -56,19 +47,20 @@ export class Helper extends Object3D {
 	updateHelperMatrix() {
 		let eyeDistance = 0;
 		let scale = new Vector3();
-		if (this.camera && this.size) {
-			this.camera.updateMatrixWorld();
-			worldPosition.setFromMatrixPosition(this.matrixWorld);
-			cameraWorldPosition.setFromMatrixPosition(this.camera.matrixWorld);
-			eyeDistance = worldPosition.distanceTo(cameraWorldPosition);
-			if (eyeDistance) scale.set(1, 1, 1).multiplyScalar(eyeDistance * this.size);
-		}
 		if (this.target) {
 			this.target.updateMatrixWorld();
 			this.matrix.copy(this.target.matrix);
 			this.matrixWorld.copy(this.target.matrixWorld);
 		} else {
 			super.updateMatrixWorld();
+		}
+
+		if (this.camera && this.size) {
+			this.camera.updateMatrixWorld();
+			worldPosition.setFromMatrixPosition(this.matrixWorld);
+			cameraWorldPosition.setFromMatrixPosition(this.camera.matrixWorld);
+			eyeDistance = worldPosition.distanceTo(cameraWorldPosition);
+			if (eyeDistance) scale.set(1, 1, 1).multiplyScalar(eyeDistance * this.size);
 		}
 
 		this.matrixWorld.decompose(tempPosition, tempQuaternion, tempScale);
@@ -83,8 +75,8 @@ export class Helper extends Object3D {
 			children[i].updateMatrixWorld(true);
 		}
 	}
-	setupHelperMaterial(color, isLine, opacity) {
-		const material = isLine ? helperLineMaterial.clone() : helperMaterial.clone();
+	setupHelperMaterial(color, opacity) {
+		const material = helperMaterial.clone();
 		material.color.set(this.colors[color]);
 		if (opacity !== undefined) material.opacity = opacity;
 		return material;

@@ -14,6 +14,9 @@ const raycaster = new Raycaster();
 // @event change
 const changeEvent = {type: 'change'};
 
+let time = 0, dtime = 0;
+const CLICK_TIME = 100;
+
 export class SelectionControls extends Interactive {
 	constructor(camera, domElement, scene, selection) {
 		super(domElement);
@@ -40,8 +43,12 @@ export class SelectionControls extends Interactive {
 		}
 		this.dispatchEvent(changeEvent);
 	}
+	onPointerDown() {
+		time = Date.now();
+	}
 	onPointerUp(pointers) {
-		if (pointers.length === 0) {
+		dtime = Date.now() - time;
+		if (pointers.length === 0 && dtime < CLICK_TIME) {
 			const dist = pointers.removed[0].distance.length();
 			if (dist < 0.01) {
 				this.select(pointers.removed[0].position, pointers.removed[0].ctrlKey);
