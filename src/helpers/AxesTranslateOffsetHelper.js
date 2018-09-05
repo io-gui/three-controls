@@ -3,7 +3,7 @@ import {
 	Mesh, Line, OctahedronBufferGeometry, PlaneBufferGeometry,
 	Vector3, Quaternion
 } from "../../../three.js/build/three.module.js";
-import {AxesHelper} from "./AxesHelper.js";
+import {AxesHelper, AxisMaterial} from "./AxesHelper.js";
 
 // Reusable utility variables
 const alignVector = new Vector3(0, 1, 0);
@@ -26,34 +26,39 @@ function TranslateHelperGeometry() {
 }
 
 export class AxesTranslateOffsetHelper extends AxesHelper {
-	init() {
-		const mat = this.setupHelperMaterial.bind(this);
-		const helper = {
+	get handlesGroup() {
+		return {
 			X: [
-				[new Line(lineGeometry, mat('white')), [-1e3, 0, 0], null, [1e6, 1, 1]]
+				[new Line(lineGeometry, new AxisMaterial('white')), [-1e3, 0, 0], null, [1e6, 1, 1]]
 			],
 			Y: [
-				[new Line(lineGeometry, mat('white')), [0, -1e3, 0], [0, 0, Math.PI / 2], [1e6, 1, 1]]
+				[new Line(lineGeometry, new AxisMaterial('white')), [0, -1e3, 0], [0, 0, Math.PI / 2], [1e6, 1, 1]]
 			],
 			Z: [
-				[new Line(lineGeometry, mat('white')), [0, 0, -1e3], [0, -Math.PI / 2, 0], [1e6, 1, 1]]
+				[new Line(lineGeometry, new AxisMaterial('white')), [0, 0, -1e3], [0, -Math.PI / 2, 0], [1e6, 1, 1]]
 			],
 			START: [
-				[new Mesh(new OctahedronBufferGeometry(0.01, 2), mat('white', false, 0.33)), null, null, null]
+				[new Mesh(new OctahedronBufferGeometry(0.01, 2), new AxisMaterial('white', false, 0.33)), null, null, null]
 			],
 			END: [
-				[new Mesh(new OctahedronBufferGeometry(0.01, 2), mat('white', false, 0.33)), null, null, null]
+				[new Mesh(new OctahedronBufferGeometry(0.01, 2), new AxisMaterial('white', false, 0.33)), null, null, null]
 			],
 			DELTA: [
-				[new Line(TranslateHelperGeometry(), mat('white', false, 0.33)), null, null, null]
+				[new Line(TranslateHelperGeometry(), new AxisMaterial('white', false, 0.33)), null, null, null]
 			]
 		};
-		this.add(this.setupHelper(helper));
+	}
+	constructor(target, camera) {
+		super(target, camera);
+		this.worldPositionStart = new Vector3();
 	}
 	updateHelperMatrix() {
 		super.updateHelperMatrix();
 
 		const quaternion = this.space === "local" ? this.worldQuaternion : identityQuaternion;
+
+		this.matrixWorld.decompose(this.worldPosition, this.worldQuaternion, this.worldScale);
+		this.matrixWorld.compose(this.worldPositionStart, this.worldQuaternion, this.worldScale);
 
 		// highlight selected axis
 		this.traverse(handle => {
@@ -68,17 +73,17 @@ export class AxesTranslateOffsetHelper extends AxesHelper {
 				handle.scale.set(1,1,1);
 			}
 
-			if (handle.name === 'X' || handle.name === 'XYZX') {
+			if (handle.name === 'X') {
 				if (Math.abs(alignVector.copy(unitX).applyQuaternion(quaternion).dot(this.eye)) > AXIS_HIDE_TRESHOLD) {
 					handle.visible = false;
 				}
 			}
-			if (handle.name === 'Y' || handle.name === 'XYZY') {
+			if (handle.name === 'Y') {
 				if (Math.abs(alignVector.copy(unitY).applyQuaternion(quaternion).dot(this.eye)) > AXIS_HIDE_TRESHOLD) {
 					handle.visible = false;
 				}
 			}
-			if (handle.name === 'Z' || handle.name === 'XYZZ') {
+			if (handle.name === 'Z') {
 				if (Math.abs(alignVector.copy(unitZ).applyQuaternion(quaternion).dot(this.eye)) > AXIS_HIDE_TRESHOLD) {
 					handle.visible = false;
 				}

@@ -39,11 +39,9 @@ export class TransformControls extends Interactive {
 			'scale': new AxesScaleHelper(),
 		};
 		this.add(this._helper.translateOffset);
-
 		this.add(this._helper.translate);
 		this.add(this._helper.rotate);
 		this.add(this._helper.scale);
-
 
 		this.defineProperties({
 			camera: camera,
@@ -80,21 +78,50 @@ export class TransformControls extends Interactive {
 		});
 
 		// TODO: implement better data binding
-		// Defined properties are passed down to gizmo and plane
-		for (let prop in this._properties) {
-			this._helper.translateOffset[prop] = this._properties[prop];
-			this._helper.translate[prop] = this._properties[prop];
-			this._helper.rotate[prop] = this._properties[prop];
-			this._helper.scale[prop] = this._properties[prop];
-		}
-		this.addEventListener('change', function (event) {
-			this._helper.translateOffset[event.prop] = event.value;
-			this._helper.translate[event.prop] = event.value;
-			this._helper.rotate[event.prop] = event.value;
-			this._helper.scale[event.prop] = event.value;
-		});
+		this.showXChanged(this.showX);
+		this.showYChanged(this.showY);
+		this.showZChanged(this.showZ);
+		this.spaceChanged(this.space);
+		this.enabledChanged(this.enabled);
+		this.axisChanged(this.axis);
 		this.modeChanged(this.mode);
 		this.objectChanged(this.object);
+	}
+	showXChanged(value) {
+		this._helper.translateOffset.showX = value;
+		this._helper.translate.showX = value;
+		this._helper.rotate.showX = value;
+		this._helper.scale.showX = value;
+	}
+	showYChanged(value) {
+		this._helper.translateOffset.showY = value;
+		this._helper.translate.showY = value;
+		this._helper.rotate.showY = value;
+		this._helper.scale.showY = value;
+	}
+	showZChanged(value) {
+		this._helper.translateOffset.showZ = value;
+		this._helper.translate.showZ = value;
+		this._helper.rotate.showZ = value;
+		this._helper.scale.showZ = value;
+	}
+	spaceChanged(value) {
+		this._helper.translateOffset.space = value;
+		this._helper.translate.space = value;
+		this._helper.rotate.space = value;
+		this._helper.scale.space = value;
+	}
+	enabledChanged(value) {
+		this._helper.translateOffset.enabled = value;
+		this._helper.translate.enabled = value;
+		this._helper.rotate.enabled = value;
+		this._helper.scale.enabled = value;
+	}
+	axisChanged(value) {
+		this._helper.translateOffset.axis = value;
+		this._helper.translate.axis = value;
+		this._helper.rotate.axis = value;
+		this._helper.scale.axis = value;
 	}
 	modeChanged(value) {
 		this._helper.translateOffset.visible = value === 'translate';
@@ -128,6 +155,9 @@ export class TransformControls extends Interactive {
 		}
 		super.updateMatrixWorld();
 		this.updatePlane();
+
+		// TODO: better bind?
+		this._helper.translateOffset.worldPositionStart.copy(this.worldPositionStart);
 	}
 	onPointerHover(pointers) {
 		if (!this.object || this.active === true) return;

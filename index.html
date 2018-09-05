@@ -149,7 +149,9 @@
 
 				var transformControls = new TransformControls(camera, renderer.domElement);
 				transformControls.addEventListener('change', render);
-				transformControls.addEventListener('space-changed', event => { selection.transformSpace = event.value; });
+				transformControls.addEventListener('space-changed', event => {
+					selection.transformSpace = transformControls.mode !== 'scale' ? event.value : 'local';
+				});
 				helperScene.add(transformControls);
 
 				selection.addEventListener('selected-changed', event => {
