@@ -3,8 +3,8 @@
  */
 
 import {Object3D, Raycaster, Vector3, Quaternion, Plane, Mesh, PlaneBufferGeometry, MeshBasicMaterial} from "../../../three.js/build/three.module.js";
-import {AxesControls} from "./AxesControls.js";
-import {AxesRotateHelper} from "../helpers/AxesRotateHelper.js";
+import {TransformControls} from "./TransformControls.js";
+import {TransformRotateHelper} from "../helpers/TransformRotateHelper.js";
 
 
 // Reusable utility variables
@@ -22,7 +22,7 @@ const _tempVector2 = new Vector3();
 // events
 const changeEvent = { type: "change" };
 
-export class AxesRotateControls extends AxesControls(AxesRotateHelper) {
+export class TransformRotateControls extends TransformControls(TransformRotateHelper) {
 	onPointerDown(pointers) {
 		if (this.axis === null || !this.object || this.active === true || pointers[0].button !== 0) return;
 		_ray.setFromCamera(pointers[0].position, this.camera);

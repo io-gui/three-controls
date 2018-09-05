@@ -23,7 +23,7 @@ const _alignZ = new Vector3(0, 0, 1);
 // events
 const changeEvent = { type: "change" };
 
-export const AxesControls = (superclass) => class extends InteractiveMixin(superclass) {
+export const TransformControls = (superclass) => class extends InteractiveMixin(superclass) {
 	constructor(props) {
 		super(props); // TODO
 

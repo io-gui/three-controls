@@ -12,7 +12,7 @@ const colors = {
 	magenta: new Color(0xff00ff),
 };
 
-export class AxisMaterial extends MeshBasicMaterial {
+export class Material extends MeshBasicMaterial {
 	constructor(color, opacity) {
 		super({
 			depthTest: false,
@@ -30,7 +30,7 @@ export class AxisMaterial extends MeshBasicMaterial {
 const lineGeometry = new BufferGeometry();
 lineGeometry.addAttribute('position', new Float32BufferAttribute([0, 0, 0,	1, 0, 0], 3));
 
-export class AxesHelper extends Helper {
+export class TransformHelper extends Helper {
 	constructor(props) {
 		super(props);
 
@@ -46,16 +46,16 @@ export class AxesHelper extends Helper {
 	}
 	get handlesGroup() {
 		return {
-			X: [[new Line(lineGeometry, new AxisMaterial('red', true))]],
-			Y: [[new Line(lineGeometry, new AxisMaterial('green', true)), null, [0, 0, Math.PI / 2]]],
-			Z: [[new Line(lineGeometry, new AxisMaterial('blue', true)), null, [0, -Math.PI / 2, 0]]]
+			X: [[new Line(lineGeometry, new Material('red', true))]],
+			Y: [[new Line(lineGeometry, new Material('green', true)), null, [0, 0, Math.PI / 2]]],
+			Z: [[new Line(lineGeometry, new Material('blue', true)), null, [0, -Math.PI / 2, 0]]]
 		}
 	}
 	get pickersGroup() {
 		return {}
 	}
 	updateHelperMatrix() {
-		// Hide non-enabled axes
+		// Hide non-enabled Transform
 		this.traverse(axis => {
 			axis.visible = axis.visible && (axis.name.indexOf("X") === -1 || this.showX);
 			axis.visible = axis.visible && (axis.name.indexOf("Y") === -1 || this.showY);
@@ -64,7 +64,7 @@ export class AxesHelper extends Helper {
 		});
 		super.updateHelperMatrix();
 	}
-	// TODO: move to AxesControl
+	// TODO: move to TransformControl
 	highlightAxis(child, axis, force) {
 		if (child.material) {
 			child.material._opacity = child.material._opacity || child.material.opacity;

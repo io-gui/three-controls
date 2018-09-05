@@ -3,7 +3,7 @@ import {
 	Mesh, Line, OctahedronBufferGeometry, TorusBufferGeometry,
 	SphereBufferGeometry, Vector3, Matrix4, Quaternion, Euler
 } from "../../../three.js/build/three.module.js";
-import {AxesHelper, AxisMaterial} from "./AxesHelper.js";
+import {TransformHelper, Material} from "./TransformHelper.js";
 
 // Reusable utility variables
 const tempVector = new Vector3(0, 0, 0);
@@ -38,60 +38,57 @@ const halfCircleGeo = CircleGeometry(1, 0.5);
 const arrowGeo = new CylinderBufferGeometry(0.03, 0, 0.15, 4, 1, false);
 const axisHandleGeo = new OctahedronBufferGeometry(0.04, 0);
 
-export class AxesRotateHelper extends AxesHelper {
+export class TransformRotateHelper extends TransformHelper {
 	get handlesGroup() {
 		return {
 			X: [
-				[new Line(halfCircleGeo, new AxisMaterial('red'))],
-				[new Mesh(axisHandleGeo, new AxisMaterial('red')), [0, 0, 0.99], null, [1, 3, 1]],
+				[new Line(halfCircleGeo, new Material('red'))],
+				[new Mesh(axisHandleGeo, new Material('red')), [0, 0, 0.99], null, [1, 3, 1]],
 			],
 			Y: [
-				[new Line(halfCircleGeo, new AxisMaterial('green')), null, [0, 0, -Math.PI / 2]],
-				[new Mesh(axisHandleGeo, new AxisMaterial('green')), [0, 0, 0.99], null, [3, 1, 1]],
+				[new Line(halfCircleGeo, new Material('green')), null, [0, 0, -Math.PI / 2]],
+				[new Mesh(axisHandleGeo, new Material('green')), [0, 0, 0.99], null, [3, 1, 1]],
 			],
 			Z: [
-				[new Line(halfCircleGeo, new AxisMaterial('blue')), null, [0, Math.PI / 2, 0]],
-				[new Mesh(axisHandleGeo, new AxisMaterial('blue')), [0.99, 0, 0], null, [1, 3, 1]],
+				[new Line(halfCircleGeo, new Material('blue')), null, [0, Math.PI / 2, 0]],
+				[new Mesh(axisHandleGeo, new Material('blue')), [0.99, 0, 0], null, [1, 3, 1]],
 			],
 			E: [
-				[new Line(circleGeo, new AxisMaterial('yellow', 0.25)), null, [0, Math.PI / 2, 0], [1.25, 1.25, 1.25]],
-				[new Mesh(arrowGeo, new AxisMaterial('yellow', 0.25)), [1.17, 0, 0], [0, 0, -Math.PI / 2], [1, 1, 0.001]],
-				[new Mesh(arrowGeo, new AxisMaterial('yellow', 0.25)), [-1.17, 0, 0], [0, 0, Math.PI / 2], [1, 1, 0.001]],
-				[new Mesh(arrowGeo, new AxisMaterial('yellow', 0.25)), [0, -1.17, 0], [Math.PI, 0, 0], [1, 1, 0.001]],
-				[new Mesh(arrowGeo, new AxisMaterial('yellow', 0.25)), [0, 1.17, 0], [0, 0, 0], [1, 1, 0.001]],
+				[new Line(circleGeo, new Material('yellow', 0.25)), null, [0, Math.PI / 2, 0], [1.25, 1.25, 1.25]],
+				[new Mesh(arrowGeo, new Material('yellow', 0.25)), [1.17, 0, 0], [0, 0, -Math.PI / 2], [1, 1, 0.001]],
+				[new Mesh(arrowGeo, new Material('yellow', 0.25)), [-1.17, 0, 0], [0, 0, Math.PI / 2], [1, 1, 0.001]],
+				[new Mesh(arrowGeo, new Material('yellow', 0.25)), [0, -1.17, 0], [Math.PI, 0, 0], [1, 1, 0.001]],
+				[new Mesh(arrowGeo, new Material('yellow', 0.25)), [0, 1.17, 0], [0, 0, 0], [1, 1, 0.001]],
 			],
 			XYZE: [
-				[new Line(circleGeo, new AxisMaterial('gray')), null, [0, Math.PI / 2, 0]],
-				[new Line(circleGeo, new AxisMaterial('gray')), null, [0, Math.PI / 2, 0], [0.25, 0.25, 0.25]],
-			],
-			AXIS: [
-				[new Line(lineGeometry, new AxisMaterial('white', 0.33).clone()), [-1e3, 0, 0], null, [1e6, 1, 1], 'helper']
+				[new Line(circleGeo, new Material('gray')), null, [0, Math.PI / 2, 0]],
+				[new Line(circleGeo, new Material('gray')), null, [0, Math.PI / 2, 0], [0.25, 0.25, 0.25]],
 			]
 		};
 	}
 	get pickersGroup() {
 		return {
 			X: [
-				[new Mesh(new TorusBufferGeometry(1, 0.03, 4, 24, Math.PI), new AxisMaterial('white', 0.15)), [0, 0, 0], [0, -Math.PI / 2, -Math.PI / 2]],
-				[new Mesh(diamondGeo, new AxisMaterial('white', 0.15)), [0, 0, 1]]
+				[new Mesh(new TorusBufferGeometry(1, 0.03, 4, 24, Math.PI), new Material('white', 0.15)), [0, 0, 0], [0, -Math.PI / 2, -Math.PI / 2]],
+				[new Mesh(diamondGeo, new Material('white', 0.15)), [0, 0, 1]]
 			],
 			Y: [
-				[new Mesh(new TorusBufferGeometry(1, 0.03, 4, 24, Math.PI), new AxisMaterial('white', 0.15)), [0, 0, 0], [Math.PI / 2, 0, 0]],
-				[new Mesh(diamondGeo, new AxisMaterial('white', 0.15)), [0, 0, 1]]
+				[new Mesh(new TorusBufferGeometry(1, 0.03, 4, 24, Math.PI), new Material('white', 0.15)), [0, 0, 0], [Math.PI / 2, 0, 0]],
+				[new Mesh(diamondGeo, new Material('white', 0.15)), [0, 0, 1]]
 			],
 			Z: [
-				[new Mesh(new TorusBufferGeometry(1, 0.03, 4, 24, Math.PI), new AxisMaterial('white', 0.15)), [0, 0, 0], [0, 0, -Math.PI / 2]],
-				[new Mesh(diamondGeo, new AxisMaterial('white', 0.15)), [1, 0, 0]]
+				[new Mesh(new TorusBufferGeometry(1, 0.03, 4, 24, Math.PI), new Material('white', 0.15)), [0, 0, 0], [0, 0, -Math.PI / 2]],
+				[new Mesh(diamondGeo, new Material('white', 0.15)), [1, 0, 0]]
 			],
 			E: [
-				[new Mesh(new TorusBufferGeometry(1.25, 0.03, 2, 24), new AxisMaterial('white', 0.15))],
-				[new Mesh(diamondGeo, new AxisMaterial('white', 0.15)), [1.25, 0, 0]],
-				[new Mesh(diamondGeo, new AxisMaterial('white', 0.15)), [-1.25, 0, 0]],
-				[new Mesh(diamondGeo, new AxisMaterial('white', 0.15)), [0, 1.25, 0]],
-				[new Mesh(diamondGeo, new AxisMaterial('white', 0.15)), [0, -1.25, 0]]
+				[new Mesh(new TorusBufferGeometry(1.25, 0.03, 2, 24), new Material('white', 0.15))],
+				[new Mesh(diamondGeo, new Material('white', 0.15)), [1.25, 0, 0]],
+				[new Mesh(diamondGeo, new Material('white', 0.15)), [-1.25, 0, 0]],
+				[new Mesh(diamondGeo, new Material('white', 0.15)), [0, 1.25, 0]],
+				[new Mesh(diamondGeo, new Material('white', 0.15)), [0, -1.25, 0]]
 			],
 			XYZE: [
-				[new Mesh(new SphereBufferGeometry(0.33, 10, 3), new AxisMaterial('white', 0.15))]
+				[new Mesh(new SphereBufferGeometry(0.33, 10, 3), new Material('white', 0.15))]
 			]
 		};
 	}

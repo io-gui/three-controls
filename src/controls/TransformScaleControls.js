@@ -3,8 +3,8 @@
  */
 
 import {Object3D, Raycaster, Vector3, Quaternion, Plane, Mesh, PlaneBufferGeometry, MeshBasicMaterial} from "../../../three.js/build/three.module.js";
-import {AxesControls} from "./AxesControls.js";
-import {AxesScaleHelper} from "../helpers/AxesScaleHelper.js";
+import {TransformControls} from "./TransformControls.js";
+import {TransformScaleHelper} from "../helpers/TransformScaleHelper.js";
 
 
 // Reusable utility variables
@@ -15,7 +15,7 @@ const _tempQuaternion = new Quaternion();
 // events
 const changeEvent = { type: "change" };
 
-export class AxesScaleControls extends AxesControls(AxesScaleHelper) {
+export class TransformScaleControls extends TransformControls(TransformScaleHelper) {
 	onPointerDown(pointers) {
 		if (this.axis === null || !this.object || this.active === true || pointers[0].button !== 0) return;
 		_ray.setFromCamera(pointers[0].position, this.camera);
