@@ -21,7 +21,6 @@ const _unit = {
 };
 const _identityQuaternion = new Quaternion();
 const _alignVector = new Vector3();
-const _plane = new Plane();
 
 // events
 const changeEvent = { type: "change" };
@@ -45,7 +44,6 @@ export class TransformControls extends Interactive {
 		this.add(this._helper.rotate);
 		this.add(this._helper.scale);
 
-		this.add(this._plane = new Mesh(new PlaneBufferGeometry(1000,1000,20,20), new MeshBasicMaterial({wireframe: true})));
 
 		this.defineProperties({
 			camera: camera,
@@ -77,7 +75,8 @@ export class TransformControls extends Interactive {
 			eye: new Vector3(),
 			positionStart: new Vector3(),
 			quaternionStart: new Quaternion(),
-			scaleStart: new Vector3()
+			scaleStart: new Vector3(),
+			_plane: new Plane()
 		});
 
 		// TODO: implement better data binding
@@ -128,13 +127,12 @@ export class TransformControls extends Interactive {
 			this.eye.copy(this.cameraPosition).normalize();
 		}
 		super.updateMatrixWorld();
+		this.updatePlane();
 	}
 	onPointerHover(pointers) {
 		if (!this.object || this.active === true) return;
-		_ray.setFromCamera(pointers[0].position, this.camera);
-		// TODO: remove and unhack
-		// this.object.matrixWorld.decompose(this.worldPositionStart, this.worldQuaternionStart, this.worldScaleStart);
-		//
+		_ray.setFromCamera(pointers[0].position, this.camera); //TODO: unhack
+
 		const intersect = _ray.intersectObjects(this._helper[this.mode].picker.children, true)[0] || false;
 		if (intersect) {
 			this.axis = intersect.object.name;
@@ -146,7 +144,7 @@ export class TransformControls extends Interactive {
 		if (this.axis === null || !this.object || this.active === true || pointers[0].button !== 0) return;
 		_ray.setFromCamera(pointers[0].position, this.camera);
 
-		const planeIntersect = this.intersectPlane();
+		const planeIntersect = _ray.ray.intersectPlane(this._plane, _tempVector);
 		let space = this.space;
 		if (planeIntersect) {
 			if (this.mode === 'scale') {
@@ -175,7 +173,6 @@ export class TransformControls extends Interactive {
 		this.active = true;
 	}
 	onPointerMove(pointers) {
-		// console.log(pointers[0].movement)
 		let axis = this.axis;
 		let mode = this.mode;
 		let object = this.object;
@@ -191,7 +188,7 @@ export class TransformControls extends Interactive {
 
 		_ray.setFromCamera(pointers[0].position, this.camera);
 
-		const planeIntersect = this.intersectPlane();
+		const planeIntersect = _ray.ray.intersectPlane(this._plane, _tempVector);
 
 		if (!planeIntersect) return;
 
@@ -315,12 +312,11 @@ export class TransformControls extends Interactive {
 		if (pointers.length === 0) {
 			this.active = false;
 			if (pointers.removed[0].pointerType === 'touch') this.axis = null;
-			// this.axis = null;
 		} else {
 			if (pointers[0].button === -1) this.axis = null;
 		}
 	}
-	intersectPlane() {
+	updatePlane() {
 		const _alignX = new Vector3(1, 0, 0);
 		const _alignY = new Vector3(0, 1, 0);
 		const _alignZ = new Vector3(0, 0, 1);
@@ -342,40 +338,35 @@ export class TransformControls extends Interactive {
 				switch (this.axis) {
 					case 'X':
 						_alignVector.copy(this.eye).cross(_alignX);
-						_plane.normal.copy(_alignX).cross(_alignVector);
+						this._plane.normal.copy(_alignX).cross(_alignVector);
 						break;
 					case 'Y':
 						_alignVector.copy(this.eye).cross(_alignY);
-						_plane.normal.copy(_alignY).cross(_alignVector);
+						this._plane.normal.copy(_alignY).cross(_alignVector);
 						break;
 					case 'Z':
 						_alignVector.copy(this.eye).cross(_alignZ);
-						_plane.normal.copy(_alignZ).cross(_alignVector);
+						this._plane.normal.copy(_alignZ).cross(_alignVector);
 						break;
 					case 'XY':
-						_plane.normal.copy(_alignZ);
+						this._plane.normal.copy(_alignZ);
 						break;
 					case 'YZ':
-						_plane.normal.copy(_alignX);
+						this._plane.normal.copy(_alignX);
 						break;
 					case 'XZ':
-						_plane.normal.copy(_alignY);
+						this._plane.normal.copy(_alignY);
 						break;
 					case 'XYZ':
 					case 'E':
-						this.camera.getWorldDirection(_plane.normal);
+						this.camera.getWorldDirection(this._plane.normal);
 						break;
 				}
 				break;
 			case 'rotate':
 			default:
-				this.camera.getWorldDirection(_plane.normal);
+				this.camera.getWorldDirection(this._plane.normal);
 		}
-		_plane.setFromNormalAndCoplanarPoint(_plane.normal, this.worldPosition);
-
-		this._plane.position.set(0,0,0);
-		this._plane.lookAt(_plane.normal);
-		this._plane.position.copy(this.worldPosition);
-		return _ray.ray.intersectPlane(_plane, _tempVector);
+		this._plane.setFromNormalAndCoplanarPoint(this._plane.normal, this.worldPosition);
 	}
 }
