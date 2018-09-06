@@ -62,18 +62,22 @@ export class TransformHelperTranslate extends TransformHelper {
 	updateAxis(axis) {
 		super.updateAxis(axis);
 
+		const xDotE = this.axisDotEye.x;
+		const yDotE = this.axisDotEye.y;
+		const zDotE = this.axisDotEye.z;
+
 		// Hide translate and scale axis facing the camera
-		if ((axis.is('X') || axis.is('XYZX')) && Math.abs(this.alignVector.x) > AXIS_HIDE_TRESHOLD) axis.visible = false;
-		if ((axis.is('Y') || axis.is('XYZY')) && Math.abs(this.alignVector.y) > AXIS_HIDE_TRESHOLD) axis.visible = false;
-		if ((axis.is('Z') || axis.is('XYZZ')) && Math.abs(this.alignVector.z) > AXIS_HIDE_TRESHOLD) axis.visible = false;
-		if (axis.is('XY') && Math.abs(this.alignVector.z) < PLANE_HIDE_TRESHOLD) axis.visible = false;
-		if (axis.is('YZ') && Math.abs(this.alignVector.x) < PLANE_HIDE_TRESHOLD) axis.visible = false;
-		if (axis.is('XZ') && Math.abs(this.alignVector.y) < PLANE_HIDE_TRESHOLD) axis.visible = false;
+		if ((axis.is('X') || axis.is('XYZX')) && Math.abs(xDotE) > AXIS_HIDE_TRESHOLD) axis.visible = false;
+		if ((axis.is('Y') || axis.is('XYZY')) && Math.abs(yDotE) > AXIS_HIDE_TRESHOLD) axis.visible = false;
+		if ((axis.is('Z') || axis.is('XYZZ')) && Math.abs(zDotE) > AXIS_HIDE_TRESHOLD) axis.visible = false;
+		if (axis.is('XY') && Math.abs(xDotE) < PLANE_HIDE_TRESHOLD) axis.visible = false;
+		if (axis.is('YZ') && Math.abs(yDotE) < PLANE_HIDE_TRESHOLD) axis.visible = false;
+		if (axis.is('XZ') && Math.abs(zDotE) < PLANE_HIDE_TRESHOLD) axis.visible = false;
 
 		// Flip axis ocluded behind another axis
 		axis.scale.set(1,1,1);
-		if (axis.has('X') && this.alignVector.x < AXIS_FLIP_TRESHOLD) axis.scale.x *= -1;
-		if (axis.has('Y') && this.alignVector.y < AXIS_FLIP_TRESHOLD) axis.scale.y *= -1;
-		if (axis.has('Z') && this.alignVector.z < AXIS_FLIP_TRESHOLD) axis.scale.z *= -1;
+		if (axis.has('X') && xDotE < AXIS_FLIP_TRESHOLD) axis.scale.x *= -1;
+		if (axis.has('Y') && yDotE < AXIS_FLIP_TRESHOLD) axis.scale.y *= -1;
+		if (axis.has('Z') && zDotE < AXIS_FLIP_TRESHOLD) axis.scale.z *= -1;
 	}
 }

@@ -2,8 +2,8 @@
  * @author arodic / https://github.com/arodic
  */
 
-import {Object3D, Raycaster, Vector3, Quaternion, Plane, Mesh, PlaneBufferGeometry, MeshBasicMaterial} from "../../../three.js/build/three.module.js";
-import {TransformControlsMixin} from "./TransformControls.js";
+import {Vector3, Quaternion} from "../../../three.js/build/three.module.js";
+import {TransformControlsMixin} from "./TransformControlsMixin.js";
 import {TransformHelperRotate} from "../helpers/TransformHelperRotate.js";
 
 // Reusable utility variables
@@ -24,8 +24,6 @@ export class TransformControlsRotate extends TransformControlsMixin(TransformHel
 			rotationAxis: new Vector3(),
 			rotationAngle: 0
 		});
-
-		// this.add(this.planeMesh = new Mesh(new PlaneBufferGeometry(1000, 1000, 100, 100), new MeshBasicMaterial({wireframe: true})));
 	}
 	transform(space) {
 		const ROTATION_SPEED = 20 / this.worldPosition.distanceTo(tempVector.setFromMatrixPosition(this.camera.matrixWorld));

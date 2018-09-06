@@ -1,6 +1,6 @@
 import {
 	BufferGeometry, Float32BufferAttribute, Line, Vector3, Quaternion, Color,
-	DoubleSide, Mesh, MeshBasicMaterial, CylinderBufferGeometry
+	DoubleSide, Mesh, MeshBasicMaterial, OctahedronBufferGeometry
 } from "../../../three.js/build/three.module.js";
 import {Helper} from "../Helper.js";
 
@@ -46,7 +46,10 @@ export class TransformHelper extends Helper {
 			showX: true,
 			showY: true,
 			showZ: true,
-			alignVector: new Vector3()
+			worldX: new Vector3(),
+			worldY: new Vector3(),
+			worldZ: new Vector3(),
+			axisDotEye: new Vector3()
 		});
 		this.size = 0.1;
 
@@ -62,11 +65,8 @@ export class TransformHelper extends Helper {
 	}
 	get pickersGroup() {
 		const mat = new Material('white', 0.15);
-		const geo = new CylinderBufferGeometry(0.2, 0, 1, 4, 1, false);
 		return {
-			X: [[new Mesh(geo, mat), [0.6, 0, 0], [0, 0, -Math.PI / 2]]],
-			Y: [[new Mesh(geo, mat), [0, 0.6, 0]]],
-			Z: [[new Mesh(geo, mat), [0, 0, 0.6], [Math.PI / 2, 0, 0]]]
+			XYZ: [[new Mesh(new OctahedronBufferGeometry(0.2, 0), mat)]]
 		}
 	}
 	updateHelperMatrix() {
@@ -79,10 +79,14 @@ export class TransformHelper extends Helper {
 			this.updateAxis(this.picker.children[i]);
 		}
 
-		this.alignVector.set(
-			_tempVector.copy(_unitX).applyQuaternion(this.worldQuaternion).dot(this.eye),
-			_tempVector.copy(_unitY).applyQuaternion(this.worldQuaternion).dot(this.eye),
-			_tempVector.copy(_unitZ).applyQuaternion(this.worldQuaternion).dot(this.eye)
+		this.worldX.set(1, 0, 0).applyQuaternion(this.worldQuaternion);
+		this.worldY.set(0, 1, 0).applyQuaternion(this.worldQuaternion);
+		this.worldZ.set(0, 0, 1).applyQuaternion(this.worldQuaternion);
+
+		this.axisDotEye.set(
+			this.worldX.dot(this.eye),
+			this.worldY.dot(this.eye),
+			this.worldZ.dot(this.eye)
 		);
 
 		this.picker.visible = false;

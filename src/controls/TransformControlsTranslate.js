@@ -2,8 +2,7 @@
  * @author arodic / https://github.com/arodic
  */
 
-import {Object3D, Raycaster, Vector3, Quaternion, Plane, Mesh, PlaneBufferGeometry, MeshBasicMaterial} from "../../../three.js/build/three.module.js";
-import {TransformControlsMixin} from "./TransformControls.js";
+import {TransformControlsMixin} from "./TransformControlsMixin.js";
 import {TransformHelperTranslate} from "../helpers/TransformHelperTranslate.js";
 
 export class TransformControlsTranslate extends TransformControlsMixin(TransformHelperTranslate) {

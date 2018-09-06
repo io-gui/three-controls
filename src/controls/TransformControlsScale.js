@@ -2,8 +2,8 @@
  * @author arodic / https://github.com/arodic
  */
 
-import {Object3D, Raycaster, Vector3, Quaternion, Plane, Mesh, PlaneBufferGeometry, MeshBasicMaterial} from "../../../three.js/build/three.module.js";
-import {TransformControlsMixin} from "./TransformControls.js";
+import {Vector3} from "../../../three.js/build/three.module.js";
+import {TransformControlsMixin} from "./TransformControlsMixin.js";
 import {TransformHelperScale} from "../helpers/TransformHelperScale.js";
 
 // Reusable utility variables

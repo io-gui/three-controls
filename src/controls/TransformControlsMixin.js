@@ -2,7 +2,7 @@
  * @author arodic / https://github.com/arodic
  */
 
-import {Object3D, Raycaster, Vector3, Quaternion, Color, Plane, Mesh, PlaneBufferGeometry, MeshBasicMaterial} from "../../../three.js/build/three.module.js";
+import {Raycaster, Vector3, Quaternion, Color, Plane} from "../../../three.js/build/three.module.js";
 import {InteractiveMixin} from "../Interactive.js";
 import {TransformHelper} from "../helpers/TransformHelper.js";
 
@@ -14,9 +14,6 @@ const colors = {
 	white: new Color(0xffffff),
 	gray: new Color(0x787878)
 };
-const alignX = new Vector3(1, 0, 0);
-const alignY = new Vector3(0, 1, 0);
-const alignZ = new Vector3(0, 0, 1);
 
 // events
 const changeEvent = { type: "change" };
@@ -40,8 +37,6 @@ export const TransformControlsMixin = (superclass) => class extends InteractiveM
 			scaleStart: new Vector3(),
 			plane: new Plane()
 		});
-
-		// this.add(this.planeMesh = new Mesh(new PlaneBufferGeometry(1000, 1000, 100, 100), new MeshBasicMaterial({wireframe: true})));
 	}
 	// TODO: document
 	hasAxis(str) {
@@ -80,10 +75,6 @@ export const TransformControlsMixin = (superclass) => class extends InteractiveM
 
 		const intersect = ray.intersectObjects(this.picker.children, true)[0] || false;
 		if (intersect) {
-			// TODO: better translateOffset update
-			this.object.updateMatrixWorld();
-			this.object.matrixWorld.decompose(this.worldPositionStart, this.worldQuaternionStart, this.worldScaleStart);
-			//
 			this.axis = intersect.object.name;
 		} else {
 			this.axis = null;
@@ -171,52 +162,17 @@ export const TransformControlsMixin = (superclass) => class extends InteractiveM
 		}
 	}
 	updatePlane() {
-		alignX.set(1, 0, 0);
-		alignY.set(0, 1, 0);
-		alignZ.set(0, 0, 1);
+		const axis = this.axis;
+		const normal = this.plane.normal;
 
-		// TODO: this check might be unnecessary
-		if (this.space === "local") { // scale always oriented to local rotation
-			alignX.applyQuaternion(this.worldQuaternion);
-			alignY.applyQuaternion(this.worldQuaternion);
-			alignZ.applyQuaternion(this.worldQuaternion);
-		}
+		if (axis === 'X') normal.copy(this.worldX).cross(tempVector.copy(this.eye).cross(this.worldX));
+		if (axis === 'Y') normal.copy(this.worldY).cross(tempVector.copy(this.eye).cross(this.worldY));
+		if (axis === 'Z') normal.copy(this.worldZ).cross(tempVector.copy(this.eye).cross(this.worldZ));
+		if (axis === 'XY') normal.copy(this.worldZ);
+		if (axis === 'YZ') normal.copy(this.worldX);
+		if (axis === 'XZ') normal.copy(this.worldY);
+		if (axis === 'XYZ' || axis === 'E') this.camera.getWorldDirection(normal);
 
-		switch (this.axis) {
-			case 'X':
-				tempVector.copy(this.eye).cross(alignX);
-				this.plane.normal.copy(alignX).cross(tempVector);
-				break;
-			case 'Y':
-				tempVector.copy(this.eye).cross(alignY);
-				this.plane.normal.copy(alignY).cross(tempVector);
-				break;
-			case 'Z':
-				tempVector.copy(this.eye).cross(alignZ);
-				this.plane.normal.copy(alignZ).cross(tempVector);
-				break;
-			case 'XY':
-				this.plane.normal.copy(alignZ);
-				break;
-			case 'YZ':
-				this.plane.normal.copy(alignX);
-				break;
-			case 'XZ':
-				this.plane.normal.copy(alignY);
-				break;
-			case 'XYZ':
-			case 'E':
-				this.camera.getWorldDirection(this.plane.normal);
-				break;
-		}
-
-		this.plane.setFromNormalAndCoplanarPoint(this.plane.normal, this.worldPosition);
-
-		// this.parent.add(this.planeMesh);
-		// this.planeMesh.position.set(0,0,0);
-		// this.planeMesh.lookAt(this.plane.normal);
-		// this.planeMesh.position.copy(this.worldPosition);
+		this.plane.setFromNormalAndCoplanarPoint(normal, this.worldPosition);
 	}
 }
-
-export class TransformControls extends TransformControlsMixin(TransformHelper) {}
