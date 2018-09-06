@@ -55,41 +55,20 @@ export class TransformHelper extends Helper {
 		return {}
 	}
 	updateHelperMatrix() {
-		// Hide non-enabled Transform
-		this.traverse(axis => {
-			axis.visible = axis.visible && (axis.name.indexOf("X") === -1 || this.showX);
-			axis.visible = axis.visible && (axis.name.indexOf("Y") === -1 || this.showY);
-			axis.visible = axis.visible && (axis.name.indexOf("Z") === -1 || this.showZ);
-			axis.visible = axis.visible && (axis.name.indexOf("E") === -1 || (this.showX && this.showY && this.showZ));
-		});
+		for (var i = 0; i < this.handle.children.length; i++) {
+			this.updateAxis(this.handle.children[i]);
+		}
+		for (var i = 0; i < this.picker.children.length; i++) {
+			this.updateAxis(this.picker.children[i]);
+		}
+		this.picker.visible = false;
 		super.updateHelperMatrix();
 	}
-	// TODO: move to TransformControl
-	highlightAxis(child, axis, force) {
-		if (child.material) {
-			child.material._opacity = child.material._opacity || child.material.opacity;
-			child.material._color = child.material._color || child.material.color.clone();
-
-			child.material.color.copy(child.material._color);
-			child.material.opacity = child.material._opacity;
-
-			child.material.color.lerp(colors['white'], 0.25);
-
-			if (!this.enabled) {
-				child.material.opacity *= 0.25;
-				child.material.color.lerp(colors['gray'], 0.75);
-			} else if (axis) {
-				if (child.name === axis || force) {
-					child.material.opacity = child.material._opacity * 2;
-					child.material.color.copy(child.material._color);
-				} else if (axis.split('').some(function(a) {return child.name === a;})) {
-					child.material.opacity = child.material._opacity * 2;
-					child.material.color.copy(child.material._color);
-				} else {
-					child.material.opacity *= 0.25;
-					child.material.color.lerp(colors['white'], 0.5);
-				}
-			}
-		}
+	updateAxis(axis) {
+		// Hide non-enabled Transform
+		axis.visible = axis.visible && (axis.name.indexOf("X") === -1 || this.showX);
+		axis.visible = axis.visible && (axis.name.indexOf("Y") === -1 || this.showY);
+		axis.visible = axis.visible && (axis.name.indexOf("Z") === -1 || this.showZ);
+		axis.visible = axis.visible && (axis.name.indexOf("E") === -1 || (this.showX && this.showY && this.showZ));
 	}
 }

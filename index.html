@@ -43,9 +43,10 @@
 
 		<script type="module">
 
-			import {TransformTranslateControls} from "./src/controls/TransformTranslateControls.js";
-			import {TransformRotateControls} from "./src/controls/TransformRotateControls.js";
-			import {TransformScaleControls} from "./src/controls/TransformScaleControls.js";
+			import {TransformControls} from "./src/controls/TransformControls.js";
+			import {TransformControlsTranslate} from "./src/controls/TransformControlsTranslate.js";
+			import {TransformControlsRotate} from "./src/controls/TransformControlsRotate.js";
+			import {TransformControlsScale} from "./src/controls/TransformControlsScale.js";
 
 			import {ViewportControls} from "./src/controls/ViewportControls.js";
 			import {EditorControls} from "./src/controls/EditorControls.js";
@@ -141,7 +142,7 @@
 				var viewportControls = new OrbitControls({domElement: canvas, camera: camera});
 				viewportControls.addEventListener('change', render);
 
-				var transformControls = new TransformRotateControls({domElement: canvas, camera: camera});
+				var transformControls = new TransformControlsTranslate({domElement: canvas, camera: camera});
 				transformControls.addEventListener('change', render);
 				transformControls.addEventListener('space-changed', event => {
 					// TODO

@@ -2,8 +2,9 @@
  * @author arodic / https://github.com/arodic
  */
 
-import {Object3D, Raycaster, Vector3, Quaternion, Plane, Mesh, PlaneBufferGeometry, MeshBasicMaterial} from "../../../three.js/build/three.module.js";
+import {Object3D, Raycaster, Vector3, Quaternion, Color, Plane, Mesh, PlaneBufferGeometry, MeshBasicMaterial} from "../../../three.js/build/three.module.js";
 import {InteractiveMixin} from "../Interactive.js";
+import {TransformHelper} from "../helpers/TransformHelper.js";
 
 // Reusable utility variables
 const _ray = new Raycaster();
@@ -15,6 +16,12 @@ const _unit = {
 	Y: new Vector3(0, 1, 0),
 	Z: new Vector3(0, 0, 1)
 };
+
+const colors = {
+	white: new Color(0xffffff),
+	gray: new Color(0x787878)
+};
+
 const _identityQuaternion = new Quaternion();
 const _alignVector = new Vector3();
 const _alignX = new Vector3(1, 0, 0);
@@ -23,7 +30,7 @@ const _alignZ = new Vector3(0, 0, 1);
 // events
 const changeEvent = { type: "change" };
 
-export const TransformControls = (superclass) => class extends InteractiveMixin(superclass) {
+export const TransformControlsMixin = (superclass) => class extends InteractiveMixin(superclass) {
 	constructor(props) {
 		super(props); // TODO
 
@@ -79,6 +86,7 @@ export const TransformControls = (superclass) => class extends InteractiveMixin(
 			// TODO: better translateOffset update
 			this.object.updateMatrixWorld();
 			this.object.matrixWorld.decompose(this.worldPositionStart, this.worldQuaternionStart, this.worldScaleStart);
+			//
 			this.axis = intersect.object.name;
 		} else {
 			this.axis = null;
@@ -90,6 +98,37 @@ export const TransformControls = (superclass) => class extends InteractiveMixin(
 			if (pointers.removed[0].pointerType === 'touch') this.axis = null;
 		} else {
 			if (pointers[0].button === -1) this.axis = null;
+		}
+	}
+	updateAxis(axis) {
+		super.updateAxis(axis);
+		this.highlightAxis(axis, this.axis);
+	}
+	highlightAxis(child, axis, force) {
+		if (child.material) {
+			child.material._opacity = child.material._opacity || child.material.opacity;
+			child.material._color = child.material._color || child.material.color.clone();
+
+			child.material.color.copy(child.material._color);
+			child.material.opacity = child.material._opacity;
+
+			child.material.color.lerp(colors['white'], 0.25);
+
+			if (!this.enabled) {
+				child.material.opacity *= 0.25;
+				child.material.color.lerp(colors['gray'], 0.75);
+			} else if (axis) {
+				if (child.name === axis || force) {
+					child.material.opacity = child.material._opacity * 2;
+					child.material.color.copy(child.material._color);
+				} else if (axis.split('').some(function(a) {return child.name === a;})) {
+					child.material.opacity = child.material._opacity * 2;
+					child.material.color.copy(child.material._color);
+				} else {
+					child.material.opacity *= 0.25;
+					child.material.color.lerp(colors['white'], 0.5);
+				}
+			}
 		}
 	}
 	updatePlane() {
@@ -134,3 +173,5 @@ export const TransformControls = (superclass) => class extends InteractiveMixin(
 		this._plane.setFromNormalAndCoplanarPoint(this._plane.normal, this.worldPosition);
 	}
 }
+
+export class TransformControls extends TransformControlsMixin(TransformHelper) {}

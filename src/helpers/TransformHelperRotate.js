@@ -38,7 +38,7 @@ const halfCircleGeo = CircleGeometry(1, 0.5);
 const arrowGeo = new CylinderBufferGeometry(0.03, 0, 0.15, 4, 1, false);
 const axisHandleGeo = new OctahedronBufferGeometry(0.04, 0);
 
-export class TransformRotateHelper extends TransformHelper {
+export class TransformHelperRotate extends TransformHelper {
 	get handlesGroup() {
 		return {
 			X: [
@@ -93,8 +93,6 @@ export class TransformRotateHelper extends TransformHelper {
 		};
 	}
 	updateHelperMatrix() {
-		super.updateHelperMatrix();
-
 		const quaternion = this.space === "local" ? this.worldQuaternion : identityQuaternion;
 
 		// Align handles to current local or world rotation
@@ -125,14 +123,13 @@ export class TransformRotateHelper extends TransformHelper {
 				handle.quaternion.copy(tempQuaternion);
 			}
 
-			if (handle !== this) {
-				handle.visible = true;
-				handle.scale.set(1,1,1);
-			} else {
-				handle.quaternion.copy(this.worldQuaternion);
-			}
-			this.highlightAxis(handle, this.axis);
+			// if (handle !== this) {
+			// 	handle.visible = true;
+			// 	handle.scale.set(1,1,1);
+			// } else {
+			// 	handle.quaternion.copy(this.worldQuaternion);
+			// }
 		});
-		this.picker.visible = false;
+		super.updateHelperMatrix();
 	}
 }
