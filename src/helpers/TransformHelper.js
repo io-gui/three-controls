@@ -1,7 +1,11 @@
-import {BufferGeometry, Float32BufferAttribute, Line, Color, DoubleSide, MeshBasicMaterial} from "../../../three.js/build/three.module.js";
+import {
+	BufferGeometry, Float32BufferAttribute, Line, Vector3, Quaternion, Color,
+	DoubleSide, Mesh, MeshBasicMaterial, CylinderBufferGeometry
+} from "../../../three.js/build/three.module.js";
 import {Helper} from "../Helper.js";
 
-const colors = {
+// Reusable utility variables
+const _colors = {
 	red: new Color(0xff0000),
 	green: new Color(0x00ff00),
 	blue: new Color(0x0000ff),
@@ -11,6 +15,10 @@ const colors = {
 	cyan: new Color(0x00ffff),
 	magenta: new Color(0xff00ff),
 };
+const _tempVector = new Vector3();
+const _unitX = new Vector3(1, 0, 0);
+const _unitY = new Vector3(0, 1, 0);
+const _unitZ = new Vector3(0, 0, 1);
 
 export class Material extends MeshBasicMaterial {
 	constructor(color, opacity) {
@@ -20,7 +28,7 @@ export class Material extends MeshBasicMaterial {
 			transparent: true,
 			side: DoubleSide,
 			fog: false,
-			color: color !== undefined ? color : colors['white'],
+			color: color !== undefined ? color : _colors['white'],
 			opacity: opacity !== undefined ? opacity : 1
 		});
 	}
@@ -37,7 +45,8 @@ export class TransformHelper extends Helper {
 		this.defineProperties({
 			showX: true,
 			showY: true,
-			showZ: true
+			showZ: true,
+			alignVector: new Vector3()
 		});
 		this.size = 0.1;
 
@@ -52,23 +61,48 @@ export class TransformHelper extends Helper {
 		}
 	}
 	get pickersGroup() {
-		return {}
+		const mat = new Material('white', 0.15);
+		const geo = new CylinderBufferGeometry(0.2, 0, 1, 4, 1, false);
+		return {
+			X: [[new Mesh(geo, mat), [0.6, 0, 0], [0, 0, -Math.PI / 2]]],
+			Y: [[new Mesh(geo, mat), [0, 0.6, 0]]],
+			Z: [[new Mesh(geo, mat), [0, 0, 0.6], [Math.PI / 2, 0, 0]]]
+		}
 	}
 	updateHelperMatrix() {
-		for (var i = 0; i < this.handle.children.length; i++) {
+		super.updateHelperMatrix();
+
+		for (var i = this.handle.children.length; i--;) {
 			this.updateAxis(this.handle.children[i]);
 		}
-		for (var i = 0; i < this.picker.children.length; i++) {
+		for (var i = this.picker.children.length; i--;) {
 			this.updateAxis(this.picker.children[i]);
 		}
+
+		this.alignVector.set(
+			_tempVector.copy(_unitX).applyQuaternion(this.worldQuaternion).dot(this.eye),
+			_tempVector.copy(_unitY).applyQuaternion(this.worldQuaternion).dot(this.eye),
+			_tempVector.copy(_unitZ).applyQuaternion(this.worldQuaternion).dot(this.eye)
+		);
+
 		this.picker.visible = false;
-		super.updateHelperMatrix();
+	}
+	combineHelperGroups(groups) {
+		const _groups = super.combineHelperGroups(groups);
+		for (var i = _groups.children.length; i--;) {
+			let object = _groups.children[i];
+			// TODO: document
+			object.has = char => {return object.name.search(char) !== -1;}
+			object.is = char => {return object.name === char;}
+		}
+		return _groups;
 	}
 	updateAxis(axis) {
 		// Hide non-enabled Transform
-		axis.visible = axis.visible && (axis.name.indexOf("X") === -1 || this.showX);
-		axis.visible = axis.visible && (axis.name.indexOf("Y") === -1 || this.showY);
-		axis.visible = axis.visible && (axis.name.indexOf("Z") === -1 || this.showZ);
-		axis.visible = axis.visible && (axis.name.indexOf("E") === -1 || (this.showX && this.showY && this.showZ));
+		axis.visible = true;
+		axis.visible = axis.visible && (!axis.has("X") || this.showX);
+		axis.visible = axis.visible && (!axis.has("Y") || this.showY);
+		axis.visible = axis.visible && (!axis.has("Z") || this.showZ);
+		axis.visible = axis.visible && (!axis.has("E") || (this.showX && this.showY && this.showZ));
 	}
 }

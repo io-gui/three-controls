@@ -7,56 +7,53 @@
 import {Plane, Raycaster, Vector3} from "../../../three.js/build/three.module.js";
 import {Interactive} from "../Interactive.js";
 
-const _plane = new Plane();
-const _raycaster = new Raycaster();
-const _offset = new Vector3();
-const _intersection = new Vector3();
-let _selected = null;
+// Reusable utility variables
+const plane = new Plane();
+const ray = new Raycaster();
+const offset = new Vector3();
+const intersection = new Vector3();
+let selected = null;
 
 // TODO: original controls stick when dragout
 
 export class DragControls extends Interactive {
 	constructor(objects, domElement, props) {
 		super(domElement);
-
 		if (camera === undefined || !camera.isCamera) {
 			console.warn('camera is mandatory in constructor!');
 		}
-
 		// TODO: check objects and implement selection
-
 		this.defineProperties({
 			objects: objects,
 			camera: camera
 		});
-
 	}
 	onPointerDown(pointers) {
-		_raycaster.setFromCamera(pointers[0].position, this.camera);
-		_plane.setFromNormalAndCoplanarPoint(this.camera.getWorldDirection(_plane.normal), this.object.position);
-		let intersects = _raycaster.intersectObjects(this.objects);
+		ray.setFromCamera(pointers[0].position, this.camera);
+		plane.setFromNormalAndCoplanarPoint(this.camera.getWorldDirection(plane.normal), this.object.position);
+		let intersects = ray.intersectObjects(this.objects);
 		if (intersects.length > 0) {
-			_selected = intersects[ 0 ].object;
-			if (_raycaster.ray.intersectPlane(_plane, _intersection)) {
+			selected = intersects[0].object;
+			if (ray.ray.intersectPlane(plane, intersection)) {
 				this.active = true;
-				_offset.copy(_intersection).sub(_selected.position);
+				offset.copy(intersection).sub(selected.position);
 			}
 		}
 	}
 	onPointerMove(pointers) {
 		// let rect = this.domElement.getBoundingClientRect();
-		_raycaster.setFromCamera(pointers[0].position, this.camera);
-		_plane.setFromNormalAndCoplanarPoint(this.camera.getWorldDirection(_plane.normal), this.object.position);
-		if (_selected) {
-			if (_raycaster.ray.intersectPlane(_plane, _intersection)) {
-				_selected.position.copy(_intersection.sub(_offset));
+		ray.setFromCamera(pointers[0].position, this.camera);
+		plane.setFromNormalAndCoplanarPoint(this.camera.getWorldDirection(plane.normal), this.object.position);
+		if (selected) {
+			if (ray.ray.intersectPlane(plane, intersection)) {
+				selected.position.copy(intersection.sub(offset));
 				this.needsUpdate = false;
 			}
 		}
 	}
 	onPointerUp(pointers) {
 		if (pointers.length === 0) {
-			_selected = null;
+			selected = null;
 			this.active = false;
 			// domElement.style.cursor = 'auto';
 		}

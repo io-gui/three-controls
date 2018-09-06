@@ -142,7 +142,7 @@
 				var viewportControls = new OrbitControls({domElement: canvas, camera: camera});
 				viewportControls.addEventListener('change', render);
 
-				var transformControls = new TransformControlsTranslate({domElement: canvas, camera: camera});
+				var transformControls = new TransformControlsRotate({domElement: canvas, camera: camera});
 				transformControls.addEventListener('change', render);
 				transformControls.addEventListener('space-changed', event => {
 					// TODO

@@ -17,7 +17,7 @@ import {ViewportControls} from "./ViewportControls.js";
  *    Pan - right mouse, or left mouse + ctrl/metaKey, wasd, or arrow keys / touch: two-finger move
  */
 
-// Temp variables
+// Reusable utility variables
 const eye = new Vector3();
 const panDirection = new Vector3();
 const eyeDirection = new Vector3();

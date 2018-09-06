@@ -7,52 +7,49 @@ import {InteractiveMixin} from "../Interactive.js";
 import {TransformHelper} from "../helpers/TransformHelper.js";
 
 // Reusable utility variables
-const _ray = new Raycaster();
-const _tempVector = new Vector3();
-const _tempVector2 = new Vector3();
-const _tempQuaternion = new Quaternion();
-const _unit = {
-	X: new Vector3(1, 0, 0),
-	Y: new Vector3(0, 1, 0),
-	Z: new Vector3(0, 0, 1)
-};
-
+const ray = new Raycaster();
+const rayTarget = new Vector3();
+const tempVector = new Vector3();
 const colors = {
 	white: new Color(0xffffff),
 	gray: new Color(0x787878)
 };
+const alignX = new Vector3(1, 0, 0);
+const alignY = new Vector3(0, 1, 0);
+const alignZ = new Vector3(0, 0, 1);
 
-const _identityQuaternion = new Quaternion();
-const _alignVector = new Vector3();
-const _alignX = new Vector3(1, 0, 0);
-const _alignY = new Vector3(0, 1, 0);
-const _alignZ = new Vector3(0, 0, 1);
 // events
 const changeEvent = { type: "change" };
 
 export const TransformControlsMixin = (superclass) => class extends InteractiveMixin(superclass) {
 	constructor(props) {
-		super(props); // TODO
+		super(props);
 
 		this.visible = false;
 
 		this.defineProperties({
 			axis: null,
-				translationSnap: null,
-				rotationSnap: null,
 			active: false,
 			pointStart: new Vector3(),
 			pointEnd: new Vector3(),
-				rotationAxis: new Vector3(),
-				rotationAngle: 0,
 			worldPositionStart: new Vector3(),
 			worldQuaternionStart: new Quaternion(),
 			worldScaleStart: new Vector3(), // TODO: remove
 			positionStart: new Vector3(),
 			quaternionStart: new Quaternion(),
 			scaleStart: new Vector3(),
-			_plane: new Plane()
+			plane: new Plane()
 		});
+
+		// this.add(this.planeMesh = new Mesh(new PlaneBufferGeometry(1000, 1000, 100, 100), new MeshBasicMaterial({wireframe: true})));
+	}
+	// TODO: document
+	hasAxis(str) {
+		let has = true;
+		str.split('').some(a => {
+			if (this.axis.indexOf(a) === -1) has = false;
+		});
+		return has;
 	}
 	objectChanged(value) {
 		let hasObject = value ? true : false;
@@ -79,9 +76,9 @@ export const TransformControlsMixin = (superclass) => class extends InteractiveM
 	}
 	onPointerHover(pointers) {
 		if (!this.object || this.active === true) return;
-		_ray.setFromCamera(pointers[0].position, this.camera); //TODO: unhack
+		ray.setFromCamera(pointers[0].position, this.camera); //TODO: unhack
 
-		const intersect = _ray.intersectObjects(this.picker.children, true)[0] || false;
+		const intersect = ray.intersectObjects(this.picker.children, true)[0] || false;
 		if (intersect) {
 			// TODO: better translateOffset update
 			this.object.updateMatrixWorld();
@@ -92,6 +89,47 @@ export const TransformControlsMixin = (superclass) => class extends InteractiveM
 			this.axis = null;
 		}
 	}
+	onPointerDown(pointers) {
+		if (this.axis === null || !this.object || this.active === true || pointers[0].button !== 0) return;
+		ray.setFromCamera(pointers[0].position, this.camera);
+		const planeIntersect = ray.ray.intersectPlane(this.plane, rayTarget);
+		let space = (this.axis === 'E' || this.axis === 'XYZ') ? 'world' : this.space;
+		if (planeIntersect) {
+			this.object.updateMatrixWorld();
+			if (this.object.parent) {
+				this.object.parent.updateMatrixWorld();
+			}
+			this.positionStart.copy(this.object.position);
+			this.quaternionStart.copy(this.object.quaternion);
+			this.scaleStart.copy(this.object.scale);
+			this.object.matrixWorld.decompose(this.worldPositionStart, this.worldQuaternionStart, this.worldScaleStart);
+			this.pointStart.copy(planeIntersect).sub(this.worldPositionStart);
+			if (space === 'local') this.pointStart.applyQuaternion(this.worldQuaternionStart.clone().inverse());
+			this.active = true;
+		}
+	}
+	onPointerMove(pointers) {
+		let axis = this.axis;
+		let object = this.object;
+		let space = (axis === 'E' || axis === 'XYZ') ? 'world' : this.space;
+
+		if (object === undefined || axis === null || this.active === false || pointers[0].button !== 0) return;
+
+		ray.setFromCamera(pointers[0].position, this.camera);
+
+		const planeIntersect = ray.ray.intersectPlane(this.plane, tempVector);
+
+		if (!planeIntersect) return;
+
+		this.pointEnd.copy(planeIntersect).sub(this.worldPositionStart);
+
+		if (space === 'local') this.pointEnd.applyQuaternion(this.worldQuaternionStart.clone().inverse());
+
+		this.transform(space);
+
+		this.object.updateMatrixWorld();
+		this.dispatchEvent(changeEvent);
+	}
 	onPointerUp(pointers) {
 		if (pointers.length === 0) {
 			this.active = false;
@@ -99,6 +137,10 @@ export const TransformControlsMixin = (superclass) => class extends InteractiveM
 		} else {
 			if (pointers[0].button === -1) this.axis = null;
 		}
+	}
+	transform() {
+		// TODO:
+		return;
 	}
 	updateAxis(axis) {
 		super.updateAxis(axis);
@@ -118,10 +160,7 @@ export const TransformControlsMixin = (superclass) => class extends InteractiveM
 				child.material.opacity *= 0.25;
 				child.material.color.lerp(colors['gray'], 0.75);
 			} else if (axis) {
-				if (child.name === axis || force) {
-					child.material.opacity = child.material._opacity * 2;
-					child.material.color.copy(child.material._color);
-				} else if (axis.split('').some(function(a) {return child.name === a;})) {
+				if (this.hasAxis(child.name) || force) {
 					child.material.opacity = child.material._opacity * 2;
 					child.material.color.copy(child.material._color);
 				} else {
@@ -132,45 +171,51 @@ export const TransformControlsMixin = (superclass) => class extends InteractiveM
 		}
 	}
 	updatePlane() {
-		_alignX.set(1, 0, 0);
-		_alignY.set(0, 1, 0);
-		_alignZ.set(0, 0, 1);
+		alignX.set(1, 0, 0);
+		alignY.set(0, 1, 0);
+		alignZ.set(0, 0, 1);
 
+		// TODO: this check might be unnecessary
 		if (this.space === "local") { // scale always oriented to local rotation
-			_alignX.applyQuaternion(this.worldQuaternion);
-			_alignY.applyQuaternion(this.worldQuaternion);
-			_alignZ.applyQuaternion(this.worldQuaternion);
+			alignX.applyQuaternion(this.worldQuaternion);
+			alignY.applyQuaternion(this.worldQuaternion);
+			alignZ.applyQuaternion(this.worldQuaternion);
 		}
 
 		switch (this.axis) {
 			case 'X':
-			_alignVector.copy(this.eye).cross(_alignX);
-			this._plane.normal.copy(_alignX).cross(_alignVector);
-			break;
+				tempVector.copy(this.eye).cross(alignX);
+				this.plane.normal.copy(alignX).cross(tempVector);
+				break;
 			case 'Y':
-			_alignVector.copy(this.eye).cross(_alignY);
-			this._plane.normal.copy(_alignY).cross(_alignVector);
-			break;
+				tempVector.copy(this.eye).cross(alignY);
+				this.plane.normal.copy(alignY).cross(tempVector);
+				break;
 			case 'Z':
-			_alignVector.copy(this.eye).cross(_alignZ);
-			this._plane.normal.copy(_alignZ).cross(_alignVector);
-			break;
+				tempVector.copy(this.eye).cross(alignZ);
+				this.plane.normal.copy(alignZ).cross(tempVector);
+				break;
 			case 'XY':
-			this._plane.normal.copy(_alignZ);
-			break;
+				this.plane.normal.copy(alignZ);
+				break;
 			case 'YZ':
-			this._plane.normal.copy(_alignX);
-			break;
+				this.plane.normal.copy(alignX);
+				break;
 			case 'XZ':
-			this._plane.normal.copy(_alignY);
-			break;
+				this.plane.normal.copy(alignY);
+				break;
 			case 'XYZ':
 			case 'E':
-			this.camera.getWorldDirection(this._plane.normal);
-			break;
+				this.camera.getWorldDirection(this.plane.normal);
+				break;
 		}
 
-		this._plane.setFromNormalAndCoplanarPoint(this._plane.normal, this.worldPosition);
+		this.plane.setFromNormalAndCoplanarPoint(this.plane.normal, this.worldPosition);
+
+		// this.parent.add(this.planeMesh);
+		// this.planeMesh.position.set(0,0,0);
+		// this.planeMesh.lookAt(this.plane.normal);
+		// this.planeMesh.position.copy(this.worldPosition);
 	}
 }
 

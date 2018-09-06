@@ -9,7 +9,7 @@
 import * as THREE from "../../../three.js/build/three.module.js";
 import {ViewportControls} from "./ViewportControls.js";
 
-// Temp variables
+// Reusable utility variables
 const center = new THREE.Vector3();
 const delta = new THREE.Vector3();
 const box = new THREE.Box3();

@@ -11,7 +11,7 @@ import {IoLiteMixin} from "../lib/IoLiteMixin.js";
  */
 
 export class Helper extends IoLiteMixin(Object3D) {
-	get isHelper() { return true; }
+	get isHelper() {return true;}
 	constructor(params = {}) {
 		super();
 
@@ -77,15 +77,13 @@ export class Helper extends IoLiteMixin(Object3D) {
 				const position = groups[name][i][1];
 				const rotation = groups[name][i][2];
 				const scale = groups[name][i][3];
-				const tag = groups[name][i][4];
 
-				// name and tag properties are essential for picking and updating logic.
+				// name properties are essential for picking and updating logic.
 				object.name = name;
-				object.tag = tag;
 
-				if (position) { object.position.set(position[0], position[1], position[2]); }
-				if (rotation) { object.rotation.set(rotation[0], rotation[1], rotation[2]); }
-				if (scale) { object.scale.set(scale[0], scale[1], scale[2]); }
+				if (position) {object.position.set(position[0], position[1], position[2]);}
+				if (rotation) {object.rotation.set(rotation[0], rotation[1], rotation[2]);}
+				if (scale) {object.scale.set(scale[0], scale[1], scale[2]);}
 
 				object.updateMatrix();
 

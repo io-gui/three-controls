@@ -3,7 +3,6 @@
  */
 
 // TODO: marquee selection
-// TODO: dont select on zero dist drag
 
 import {Raycaster} from "../../../three.js/build/three.module.js";
 import {Interactive} from "../Interactive.js";
@@ -11,7 +10,7 @@ import {Object3D, Vector3, Quaternion} from "../../../three.js/build/three.modul
 import {IoLiteMixin} from "../../lib/IoLiteMixin.js";
 import {SelectionHelper} from "../helpers/SelectionHelper.js";
 
-// Temp variables
+// Reusable utility variables
 const pos = new Vector3();
 const quat = new Quaternion();
 const quatInv = new Quaternion();
@@ -62,7 +61,8 @@ const raycaster = new Raycaster();
 const changeEvent = {type: 'change'};
 
 let time = 0, dtime = 0;
-const CLICK_TIME = 100;
+const CLICK_DIST = 0.01;
+const CLICK_TIME = 250;
 
 /*
  * Selection object stores selection list and implements various methods for selection list manipulation.
@@ -83,6 +83,8 @@ export class SelectionControls extends Interactive {
 			selected: [],
 			transformSelection: true,
 			transformSpace: 'local'
+			// translationSnap: null,
+			// rotationSnap: null
 		});
 	}
 	select(position, add) {
@@ -107,8 +109,7 @@ export class SelectionControls extends Interactive {
 	onPointerUp(pointers) {
 		dtime = Date.now() - time;
 		if (pointers.length === 0 && dtime < CLICK_TIME) {
-			const dist = pointers.removed[0].distance.length();
-			if (dist < 0.01) {
+			if (pointers.removed[0].distance.length() < CLICK_DIST) {
 				this.select(pointers.removed[0].position, pointers.removed[0].ctrlKey);
 			}
 		}
@@ -189,6 +190,37 @@ export class SelectionControls extends Interactive {
 				this.position.copy(pos).divideScalar(this.selected.length);
 			}
 		}
+
+		// TODO: apply snapping
+		// Apply translation snap
+		// if (this.translationSnap) {
+		// 	if (space === 'local') {
+		// 		object.position.applyQuaternion(_tempQuaternion.copy(this.quaternionStart).inverse());
+		// 		if (axis.hasAxis('X')) object.position.x = Math.round(object.position.x / this.translationSnap) * this.translationSnap;
+		// 		if (axis.hasAxis('Y')) object.position.y = Math.round(object.position.y / this.translationSnap) * this.translationSnap;
+		// 		if (axis.hasAxis('Z')) object.position.z = Math.round(object.position.z / this.translationSnap) * this.translationSnap;
+		// 		object.position.applyQuaternion(this.quaternionStart);
+		// 	}
+		// 	if (space === 'world') {
+		// 		if (object.parent) {
+		// 			object.position.add(_tempVector.setFromMatrixPosition(object.parent.matrixWorld));
+		// 		}
+		// 		if (axis.hasAxis('X')) object.position.x = Math.round(object.position.x / this.translationSnap) * this.translationSnap;
+		// 		if (axis.hasAxis('Y')) object.position.y = Math.round(object.position.y / this.translationSnap) * this.translationSnap;
+		// 		if (axis.hasAxis('Z')) object.position.z = Math.round(object.position.z / this.translationSnap) * this.translationSnap;
+		// 		if (object.parent) {
+		// 			object.position.sub(_tempVector.setFromMatrixPosition(object.parent.matrixWorld));
+		// 		}
+		// 	}
+		// }
+		// Apply rotation snap
+		// if (space === 'local') {
+		// 	const snap = this.rotationSnap;
+		// 	if (this.axis === 'X' && snap) this.object.rotation.x = Math.round(this.object.rotation.x / snap) * snap;
+		// 	if (this.axis === 'Y' && snap) this.object.rotation.y = Math.round(this.object.rotation.y / snap) * snap;
+		// 	if (this.axis === 'Z' && snap) this.object.rotation.z = Math.round(this.object.rotation.z / snap) * snap;
+		// }
+		// if (this.rotationSnap) this.rotationAngle = Math.round(this.rotationAngle / this.rotationSnap) * this.rotationSnap;
 
 		// Add helpers
 		// TODO: cache helpers per object
