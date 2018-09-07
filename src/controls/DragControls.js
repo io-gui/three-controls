@@ -3,6 +3,7 @@
  */
 
 import {TransformControlsMixin} from "./TransformControlsMixin.js";
+import {TransformHelper} from "../helpers/TransformHelper.js";
 
 export class DragControls extends TransformControlsMixin(TransformHelper) {
 	transform(space) {

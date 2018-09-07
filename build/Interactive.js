@@ -1,4 +1,4 @@
-import { Object3D } from '../../three.js/build/three.module.js';
+import { Object3D, Vector3, Quaternion } from '../../three.js/build/three.module.js';
 
 /**
  * @author arodic / https://github.com/arodic
@@ -71,6 +71,7 @@ class PointerEvents {
 		}
 		function _onMouseUp( event ) {
 
+			event.preventDefault();
 			if ( event.buttons === 0 ) {
 
 				dragging = false;
@@ -549,28 +550,121 @@ const defineProperty = function ( scope, propName, defaultValue ) {
  * @author arodic / https://github.com/arodic
  */
 
+/*
+ * Helper is a variant of Object3D which automatically follows its target object.
+ * On matrix update, it automatically copies transform matrices from its target Object3D.
+ */
+
+class Helper extends IoLiteMixin( Object3D ) {
+
+	get isHelper() {
+
+		return true;
+
+	}
+	constructor( params = {} ) {
+
+		super();
+
+		this.defineProperties( {
+			object: params.object || null,
+			camera: params.camera || null,
+			space: 'local',
+			size: 0,
+			worldPosition: new Vector3(),
+			worldQuaternion: new Quaternion(),
+			worldScale: new Vector3(),
+			cameraPosition: new Vector3(),
+			cameraQuaternion: new Quaternion(),
+			cameraScale: new Vector3(),
+			eye: new Vector3()
+		} );
+
+	}
+	updateHelperMatrix() {
+
+		if ( this.object ) {
+
+			this.object.updateMatrixWorld();
+			this.matrix.copy( this.object.matrix );
+			this.matrixWorld.copy( this.object.matrixWorld );
+
+		} else {
+
+			super.updateMatrixWorld();
+
+		}
+
+		this.matrixWorld.decompose( this.worldPosition, this.worldQuaternion, this.worldScale );
+
+		let eyeDistance = 1;
+		if ( this.camera ) {
+
+			this.camera.updateMatrixWorld();
+			this.camera.matrixWorld.decompose( this.cameraPosition, this.cameraQuaternion, this.cameraScale );
+			if ( this.camera.isPerspectiveCamera ) {
+
+				this.eye.copy( this.cameraPosition ).sub( this.worldPosition );
+				eyeDistance = this.eye.length();
+				this.eye.normalize();
+
+			} else if ( this.camera.isOrthographicCamera ) {
+
+				this.eye.copy( this.cameraPosition ).normalize();
+
+			}
+
+		}
+
+		if ( this.size || this.space == 'world' ) {
+
+			if ( this.size ) this.worldScale.set( 1, 1, 1 ).multiplyScalar( eyeDistance * this.size );
+			if ( this.space === 'world' ) this.worldQuaternion.set( 0, 0, 0, 1 );
+			this.matrixWorld.compose( this.worldPosition, this.worldQuaternion, this.worldScale );
+
+		}
+
+	}
+	updateMatrixWorld() {
+
+		this.updateHelperMatrix();
+		this.matrixWorldNeedsUpdate = false;
+		const children = this.children;
+		for ( let i = 0, l = children.length; i < l; i ++ ) {
+
+			children[ i ].updateMatrixWorld( true );
+
+		}
+
+	}
+
+}
+
+/**
+ * @author arodic / https://github.com/arodic
+ */
+
 // TODO: documentation
 /*
  * onKeyDown, onKeyUp require domElement to be focused (set tabindex attribute)
  */
 
 // TODO: implement dom element swap and multiple dom elements
-
-class Interactive extends IoLiteMixin( Object3D ) {
+const InteractiveMixin = ( superclass ) => class extends superclass {
 
 	get isInteractive() {
 
 		return true;
 
 	}
-	constructor( domElement ) {
+	constructor( props ) {
 
-		super();
+		super( props );
 
 		this.defineProperties( {
-			domElement: domElement,
+			domElement: props.domElement,
 			enabled: true,
-			_pointerEvents: new PointerEvents( domElement, { normalized: true } )
+			_pointerEvents: new PointerEvents( props.domElement, { normalized: true } )
 		} );
 
 		this.onPointerDown = this.onPointerDown.bind( this );
@@ -595,6 +689,7 @@ class Interactive extends IoLiteMixin( Object3D ) {
 	}
 	_addEvents() {
 
+		if ( this._listening ) return;
 		this._pointerEvents.addEventListener( 'pointerdown', this.onPointerDown );
 		this._pointerEvents.addEventListener( 'pointerhover', this.onPointerHover );
 		this._pointerEvents.addEventListener( 'pointermove', this.onPointerMove );
@@ -605,10 +700,12 @@ class Interactive extends IoLiteMixin( Object3D ) {
 		this._pointerEvents.addEventListener( 'contextmenu', this.onContextmenu );
 		this._pointerEvents.addEventListener( 'focus', this.onFocus );
 		this._pointerEvents.addEventListener( 'blur', this.onBlur );
+		this._listening = true;
 
 	}
 	_removeEvents() {
 
+		if ( ! this._listening ) return;
 		this._pointerEvents.removeEventListener( 'pointerdown', this.onPointerDown );
 		this._pointerEvents.removeEventListener( 'pointerhover', this.onPointerHover );
 		this._pointerEvents.removeEventListener( 'pointermove', this.onPointerMove );
@@ -619,12 +716,12 @@ class Interactive extends IoLiteMixin( Object3D ) {
 		this._pointerEvents.removeEventListener( 'contextmenu', this.onContextmenu );
 		this._pointerEvents.removeEventListener( 'focus', this.onFocus );
 		this._pointerEvents.removeEventListener( 'blur', this.onBlur );
+		this._listening = false;
 
 	}
 	enabledChanged( value ) {
 
-		if ( value ) this._addEvents();
-		else this._removeEvents();
+		value ? this._addEvents() : this._removeEvents();
 
 	}
 	// Control methods. Implement in subclass!
@@ -640,6 +737,8 @@ class Interactive extends IoLiteMixin( Object3D ) {
 	onFocus() {} // event
 	onBlur() {} // event
 
-}
+};
 
-export { Interactive };
+class Interactive extends InteractiveMixin( Helper ) {}
+
+export { InteractiveMixin, Interactive };

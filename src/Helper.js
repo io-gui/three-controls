@@ -68,35 +68,4 @@ export class Helper extends IoLiteMixin(Object3D) {
 			children[i].updateMatrixWorld(true);
 		}
 	}
-	// Creates an Object3D with gizmos described in custom hierarchy definition.
-	combineHelperGroups(groups) {
-		const gizmo = new Object3D();
-		for (let name in groups) {
-			for (let i = groups[name].length; i--;) {
-				const object = groups[name][i][0].clone();
-				const position = groups[name][i][1];
-				const rotation = groups[name][i][2];
-				const scale = groups[name][i][3];
-
-				// name properties are essential for picking and updating logic.
-				object.name = name;
-
-				if (position) {object.position.set(position[0], position[1], position[2]);}
-				if (rotation) {object.rotation.set(rotation[0], rotation[1], rotation[2]);}
-				if (scale) {object.scale.set(scale[0], scale[1], scale[2]);}
-
-				object.updateMatrix();
-
-				const tempGeometry = object.geometry.clone();
-				tempGeometry.applyMatrix(object.matrix);
-				object.geometry = tempGeometry;
-
-				object.position.set(0, 0, 0);
-				object.rotation.set(0, 0, 0);
-				object.scale.set(1, 1, 1);
-				gizmo.add(object);
-			}
-		}
-		return gizmo;
-	}
 }

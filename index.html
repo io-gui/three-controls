@@ -62,10 +62,11 @@
 
 			function init() {
 
-				renderer = new WebGLRenderer({ antialias: false });
+				renderer = new WebGLRenderer({ antialias: true });
 
 				renderer.setSize(window.innerWidth, window.innerHeight);
 				renderer.setPixelRatio(window.devicePixelRatio);
+				renderer.setClearColor(0x666666);
 
 				document.body.appendChild(renderer.domElement);
 
@@ -84,7 +85,7 @@
 				helperScene = new Scene();
 
 				var grid = new GridHelper(1000, 10);
-				helperScene.add(grid);
+				scene.add(grid);
 
 				var light = new DirectionalLight(0x99ffff, 2);
 				light.position.set(1, 0.5, 0.5);
@@ -140,7 +141,7 @@
 				var viewportControls = new OrbitControls({domElement: canvas, camera: camera});
 				viewportControls.addEventListener('change', render);
 
-				var transformControls = new TransformControlsTranslate({domElement: canvas, camera: camera});
+				var transformControls = new TransformControlsRotate({domElement: canvas, camera: camera});
 				transformControls.addEventListener('change', render);
 				transformControls.addEventListener('space-changed', event => {
 					// TODO
@@ -265,6 +266,7 @@
 				renderer.clear();
 				renderer.autoClear = false;
 				renderer.render(scene, camera);
+				renderer.clearDepth();//TODO undo
 				renderer.render(helperScene, camera);
 
 			}

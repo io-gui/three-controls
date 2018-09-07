@@ -2,18 +2,13 @@
  * @author arodic / https://github.com/arodic
  */
 
-import {Raycaster, Vector3, Quaternion, Color, Plane} from "../../../three.js/build/three.module.js";
+import {Raycaster, Vector3, Quaternion, Plane} from "../../../three.js/build/three.module.js";
 import {InteractiveMixin} from "../Interactive.js";
-import {TransformHelper} from "../helpers/TransformHelper.js";
 
 // Reusable utility variables
 const ray = new Raycaster();
 const rayTarget = new Vector3();
 const tempVector = new Vector3();
-const colors = {
-	white: new Color(0xffffff),
-	gray: new Color(0x787878)
-};
 
 // events
 const changeEvent = { type: "change" };
@@ -41,9 +36,7 @@ export const TransformControlsMixin = (superclass) => class extends InteractiveM
 	// TODO: document
 	hasAxis(str) {
 		let has = true;
-		str.split('').some(a => {
-			if (this.axis.indexOf(a) === -1) has = false;
-		});
+		str.split('').some(a => { if (this.axis.indexOf(a) === -1) has = false; });
 		return has;
 	}
 	objectChanged(value) {
@@ -73,7 +66,7 @@ export const TransformControlsMixin = (superclass) => class extends InteractiveM
 		if (!this.object || this.active === true) return;
 		ray.setFromCamera(pointers[0].position, this.camera); //TODO: unhack
 
-		const intersect = ray.intersectObjects(this.picker.children, true)[0] || false;
+		const intersect = ray.intersectObjects(this.pickers, true)[0] || false;
 		if (intersect) {
 			this.axis = intersect.object.name;
 		} else {
@@ -137,28 +130,21 @@ export const TransformControlsMixin = (superclass) => class extends InteractiveM
 		super.updateAxis(axis);
 		this.highlightAxis(axis, this.axis);
 	}
-	highlightAxis(child, axis, force) {
+	highlightAxis(child, axis) {
 		if (child.material) {
-			child.material._opacity = child.material._opacity || child.material.opacity;
-			child.material._color = child.material._color || child.material.color.clone();
-
-			child.material.color.copy(child.material._color);
-			child.material.opacity = child.material._opacity;
-
-			child.material.color.lerp(colors['white'], 0.25);
-
 			if (!this.enabled) {
-				child.material.opacity *= 0.25;
-				child.material.color.lerp(colors['gray'], 0.75);
-			} else if (axis) {
-				if (this.hasAxis(child.name) || force) {
-					child.material.opacity = child.material._opacity * 2;
-					child.material.color.copy(child.material._color);
-				} else {
-					child.material.opacity *= 0.25;
-					child.material.color.lerp(colors['white'], 0.5);
-				}
+				child.material.highlight = -1;
+				return;
 			}
+			if (axis) {
+				if (this.hasAxis(child.name)) {
+					child.material.highlight = 1;
+					return;
+				}
+				child.material.highlight = -1;
+				return;
+			}
+			child.material.highlight = 0;
 		}
 	}
 	updatePlane() {
@@ -175,4 +161,4 @@ export const TransformControlsMixin = (superclass) => class extends InteractiveM
 
 		this.plane.setFromNormalAndCoplanarPoint(normal, this.worldPosition);
 	}
-}
+};

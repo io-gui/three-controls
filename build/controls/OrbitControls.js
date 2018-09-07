@@ -29,9 +29,9 @@ const tempQuatInverse = tempQuat.clone().inverse();
 
 class OrbitControls extends ViewportControls {
 
-	constructor( camera, domElement ) {
+	constructor( props ) {
 
-		super( camera, domElement );
+		super( props );
 
 		this.defineProperties( {
 			minDistance: 0, // PerspectiveCamera dolly limit

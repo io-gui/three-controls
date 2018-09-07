@@ -24,8 +24,8 @@ export default [
     external: external( ['../three.js/build/three.module.js'] )
   },
   {
-    input: 'src/Selection.js',
-    output: output( 'build/Selection.js'),
+    input: 'src/Helper.js',
+    output: output( 'build/Helper.js'),
     external: external( ['../three.js/build/three.module.js'] )
   },
   {
@@ -77,8 +77,24 @@ export default [
     ] )
   },
   {
-    input: 'src/controls/TransformControls.js',
-    output: output( 'build/controls/TransformControls.js' ),
+    input: 'src/controls/TransformControlsTranslate.js',
+    output: output( 'build/controls/TransformControlsTranslate.js' ),
+    external: external( [
+      './src/Interactive.js',
+      '../three.js/build/three.module.js'
+    ] )
+  },
+  {
+    input: 'src/controls/TransformControlsRotate.js',
+    output: output( 'build/controls/TransformControlsRotate.js' ),
+    external: external( [
+      './src/Interactive.js',
+      '../three.js/build/three.module.js'
+    ] )
+  },
+  {
+    input: 'src/controls/TransformControlsScale.js',
+    output: output( 'build/controls/TransformControlsScale.js' ),
     external: external( [
       './src/Interactive.js',
       '../three.js/build/three.module.js'

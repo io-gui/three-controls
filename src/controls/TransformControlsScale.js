@@ -10,7 +10,7 @@ import {TransformHelperScale} from "../helpers/TransformHelperScale.js";
 const tempVector = new Vector3();
 
 export class TransformControlsScale extends TransformControlsMixin(TransformHelperScale) {
-	transform(space) {
+	transform() {
 		if (this.hasAxis('XYZ')) {
 			let d = this.pointEnd.length() / this.pointStart.length();
 			if (this.pointEnd.dot(this.pointStart) < 0) d *= -1;

@@ -9,7 +9,7 @@ import { ViewportControls } from './ViewportControls.js';
  * @author arodic / http://github.com/arodic
  */
 
-// Temp variables
+// Reusable utility variables
 const center = new Vector3();
 const delta = new Vector3();
 const box = new Box3();

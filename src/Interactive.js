@@ -82,6 +82,6 @@ export const InteractiveMixin = (superclass) => class extends superclass {
 	onWheel() {} // event
 	onFocus() {} // event
 	onBlur() {} // event
-}
+};
 
 export class Interactive extends InteractiveMixin(Helper) {}

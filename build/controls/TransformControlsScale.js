@@ -1196,27 +1196,156 @@ class TransformHelper extends Helper {
 
 }
 
-/**
- * @author arodic / https://github.com/arodic
- */
+const AXIS_HIDE_TRESHOLD = 0.99;
+const PLANE_HIDE_TRESHOLD = 0.2;
+const AXIS_FLIP_TRESHOLD = 0;
 
-class DragControls extends TransformControlsMixin( TransformHelper ) {
+class TransformHelperTranslate extends TransformHelper {
 
-	transform( space ) {
+	get handlesGroup() {
 
-		if ( space === 'local' ) {
+		return {
+			X: [ { geometry: arrowGeometry, color: [ 1, 0, 0 ], rotation: [ 0, 0, - Math.PI / 2 ] } ],
+			Y: [ { geometry: arrowGeometry, color: [ 0, 1, 0 ] } ],
+			Z: [ { geometry: arrowGeometry, color: [ 0, 0, 1 ], rotation: [ Math.PI / 2, 0, 0 ] } ],
+			XYZ: [
+				{ geometry: octahedronGeometry, scale: 0.075 }
+			],
+			XY: [
+				{ geometry: planeGeometry, color: [ 1, 1, 0, 0.25 ], position: [ 0.15, 0.15, 0 ], scale: 0.3 },
+				{ geometry: corner2Geometry, color: [ 1, 1, 0 ], position: [ 0.32, 0.32, 0 ], scale: 0.15, rotation: [ Math.PI / 2, 0, Math.PI ] }
+			],
+			YZ: [
+				{ geometry: planeGeometry, color: [ 0, 1, 1, 0.25 ], position: [ 0, 0.15, 0.15 ], rotation: [ 0, Math.PI / 2, 0 ], scale: 0.3 },
+				{ geometry: corner2Geometry, color: [ 0, 1, 1 ], position: [ 0, 0.32, 0.32 ], scale: 0.15, rotation: [ 0, Math.PI, - Math.PI / 2 ] }
+			],
+			XZ: [
+				{ geometry: planeGeometry, color: [ 1, 0, 1, 0.25 ], position: [ 0.15, 0, 0.15 ], rotation: [ - Math.PI / 2, 0, 0 ], scale: 0.3 },
+				{ geometry: corner2Geometry, color: [ 1, 0, 1 ], position: [ 0.32, 0, 0.32 ], scale: 0.15, rotation: [ 0, Math.PI, 0 ] }
+			]
+		};
 
-			this.object.position.copy( this.pointEnd ).sub( this.pointStart ).applyQuaternion( this.quaternionStart );
+	}
+	get pickersGroup() {
 
-		} else {
+		return {
+			X: [ { geometry: pickerHandleGeometry, rotation: [ 0, 0, - Math.PI / 2 ] } ],
+			Y: [ { geometry: pickerHandleGeometry } ],
+			Z: [ { geometry: pickerHandleGeometry, rotation: [ Math.PI / 2, 0, 0 ] } ],
+			XYZ: [ { geometry: octahedronGeometry, scale: 0.4 } ],
+			XY: [ { geometry: planeGeometry, position: [ 0.25, 0.25, 0 ], scale: 0.5 } ],
+			YZ: [ { geometry: planeGeometry, position: [ 0, 0.25, 0.25 ], rotation: [ 0, Math.PI / 2, 0 ], scale: 0.5 } ],
+			XZ: [ { geometry: planeGeometry, position: [ 0.25, 0, 0.25 ], rotation: [ - Math.PI / 2, 0, 0 ], scale: 0.5 } ]
+		};
 
-			this.object.position.copy( this.pointEnd ).sub( this.pointStart );
+	}
+	updateAxis( axis ) {
 
-		}
-		this.object.position.add( this.positionStart );
+		super.updateAxis( axis );
+
+		const xDotE = this.axisDotEye.x;
+		const yDotE = this.axisDotEye.y;
+		const zDotE = this.axisDotEye.z;
+
+		// Hide translate and scale axis facing the camera
+		if ( ( axis.is( 'X' ) || axis.is( 'XYZX' ) ) && Math.abs( xDotE ) > AXIS_HIDE_TRESHOLD ) axis.visible = false;
+		if ( ( axis.is( 'Y' ) || axis.is( 'XYZY' ) ) && Math.abs( yDotE ) > AXIS_HIDE_TRESHOLD ) axis.visible = false;
+		if ( ( axis.is( 'Z' ) || axis.is( 'XYZZ' ) ) && Math.abs( zDotE ) > AXIS_HIDE_TRESHOLD ) axis.visible = false;
+		if ( axis.is( 'XY' ) && Math.abs( zDotE ) < PLANE_HIDE_TRESHOLD ) axis.visible = false;
+		if ( axis.is( 'YZ' ) && Math.abs( xDotE ) < PLANE_HIDE_TRESHOLD ) axis.visible = false;
+		if ( axis.is( 'XZ' ) && Math.abs( yDotE ) < PLANE_HIDE_TRESHOLD ) axis.visible = false;
+
+		// Flip axis ocluded behind another axis
+		axis.scale.set( 1, 1, 1 );
+		if ( axis.has( 'X' ) && xDotE < AXIS_FLIP_TRESHOLD ) axis.scale.x *= - 1;
+		if ( axis.has( 'Y' ) && yDotE < AXIS_FLIP_TRESHOLD ) axis.scale.y *= - 1;
+		if ( axis.has( 'Z' ) && zDotE < AXIS_FLIP_TRESHOLD ) axis.scale.z *= - 1;
 
 	}
 
 }
 
-export { DragControls };
+class TransformHelperScale extends TransformHelperTranslate {
+
+	get handlesGroup() {
+
+		return {
+			X: [ { geometry: scaleArrowGeometry, color: [ 1, 0, 0 ], rotation: [ 0, 0, - Math.PI / 2 ] } ],
+			Y: [ { geometry: scaleArrowGeometry, color: [ 0, 1, 0 ] } ],
+			Z: [ { geometry: scaleArrowGeometry, color: [ 0, 0, 1 ], rotation: [ Math.PI / 2, 0, 0 ] } ],
+			XY: [
+				{ geometry: planeGeometry, color: [ 1, 1, 0, 0.25 ], position: [ 0.71, 0.71, 0 ], scale: 0.25 },
+				{ geometry: corner2Geometry, color: [ 1, 1, 0 ], position: [ 0.85, 0.85, 0 ], scale: 0.15, rotation: [ Math.PI / 2, 0, Math.PI ] }
+			],
+			YZ: [
+				{ geometry: planeGeometry, color: [ 0, 1, 1, 0.25 ], position: [ 0, 0.71, 0.71 ], rotation: [ 0, Math.PI / 2, 0 ], scale: 0.25 },
+				{ geometry: corner2Geometry, color: [ 0, 1, 1 ], position: [ 0, 0.85, 0.85 ], scale: 0.15, rotation: [ 0, Math.PI, - Math.PI / 2 ] }
+			],
+			XZ: [
+				{ geometry: planeGeometry, color: [ 1, 0, 1, 0.25 ], position: [ 0.71, 0, 0.71 ], rotation: [ - Math.PI / 2, 0, 0 ], scale: 0.25 },
+				{ geometry: corner2Geometry, color: [ 1, 0, 1 ], position: [ 0.85, 0, 0.85 ], scale: 0.15, rotation: [ 0, Math.PI, 0 ] }
+			],
+			XYZX: [ { geometry: geosphereGeometry, position: [ 1.1, 0, 0 ], scale: 0.075 } ],
+			XYZY: [ { geometry: geosphereGeometry, position: [ 0, 1.1, 0 ], scale: 0.075 } ],
+			XYZZ: [ { geometry: geosphereGeometry, position: [ 0, 0, 1.1 ], scale: 0.075 } ]
+		};
+
+	}
+	get pickersGroup() {
+
+		return {
+			X: [ { geometry: pickerHandleGeometry, rotation: [ 0, 0, - Math.PI / 2 ] } ],
+			Y: [ { geometry: pickerHandleGeometry } ],
+			Z: [ { geometry: pickerHandleGeometry, rotation: [ Math.PI / 2, 0, 0 ] } ],
+			XY: [ { geometry: planeGeometry, position: [ 0.71, 0.71, 0 ], scale: 0.4 } ],
+			YZ: [ { geometry: planeGeometry, position: [ 0, 0.71, 0.71 ], rotation: [ 0, Math.PI / 2, 0 ], scale: 0.4 } ],
+			XZ: [ { geometry: planeGeometry, position: [ 0.71, 0, 0.71 ], rotation: [ - Math.PI / 2, 0, 0 ], scale: 0.4 } ],
+			XYZX: [ { geometry: geosphereGeometry, position: [ 1.1, 0, 0 ], scale: 0.15 } ],
+			XYZY: [ { geometry: geosphereGeometry, position: [ 0, 1.1, 0 ], scale: 0.15 } ],
+			XYZZ: [ { geometry: geosphereGeometry, position: [ 0, 0, 1.1 ], scale: 0.15 } ]
+		};
+
+	}
+	updateHelperMatrix() {
+
+		this.space = 'local';
+		super.updateHelperMatrix();
+
+	}
+
+}
+
+/**
+ * @author arodic / https://github.com/arodic
+ */
+
+// Reusable utility variables
+const tempVector$1 = new Vector3();
+
+class TransformControlsScale extends TransformControlsMixin( TransformHelperScale ) {
+
+	transform() {
+
+		if ( this.hasAxis( 'XYZ' ) ) {
+
+			let d = this.pointEnd.length() / this.pointStart.length();
+			if ( this.pointEnd.dot( this.pointStart ) < 0 ) d *= - 1;
+			tempVector$1.set( d, d, d );
+
+		} else {
+
+			tempVector$1.copy( this.pointEnd ).divide( this.pointStart );
+			if ( ! this.hasAxis( 'X' ) ) tempVector$1.x = 1;
+			if ( ! this.hasAxis( 'Y' ) ) tempVector$1.y = 1;
+			if ( ! this.hasAxis( 'Z' ) ) tempVector$1.z = 1;
+
+		}
+
+		// Apply scale
+		this.object.scale.copy( this.scaleStart ).multiply( tempVector$1 );
+
+	}
+
+}
+
+export { TransformControlsScale };

@@ -1196,27 +1196,165 @@ class TransformHelper extends Helper {
 
 }
 
-/**
- * @author arodic / https://github.com/arodic
- */
+// Reusable utility variables
+const tempVector$1 = new Vector3( 0, 0, 0 );
+const alignVector = new Vector3( 0, 1, 0 );
+const zeroVector = new Vector3( 0, 0, 0 );
+const lookAtMatrix = new Matrix4();
+const tempQuaternion = new Quaternion();
+const identityQuaternion = new Quaternion();
 
-class DragControls extends TransformControlsMixin( TransformHelper ) {
+const unitX = new Vector3( 1, 0, 0 );
+const unitY = new Vector3( 0, 1, 0 );
+const unitZ = new Vector3( 0, 0, 1 );
 
-	transform( space ) {
+class TransformHelperRotate extends TransformHelper {
 
-		if ( space === 'local' ) {
+	get handlesGroup() {
 
-			this.object.position.copy( this.pointEnd ).sub( this.pointStart ).applyQuaternion( this.quaternionStart );
+		return {
+			X: [ { geometry: rotateHandleGeometry, color: [ 1, 0, 0 ], rotation: [ Math.PI / 2, Math.PI / 2, 0 ] } ],
+			Y: [ { geometry: rotateHandleGeometry, color: [ 0, 1, 0 ], rotation: [ Math.PI / 2, 0, 0 ] } ],
+			Z: [ { geometry: rotateHandleGeometry, color: [ 0, 0, 1 ], rotation: [ 0, 0, - Math.PI / 2 ] } ],
+			E: [ { geometry: ringGeometry, color: [ 1, 1, 0 ], rotation: [ Math.PI / 2, Math.PI / 2, 0 ], scale: 1.2 } ],
+			XYZ: [
+				{ geometry: ringGeometry, color: [ 0.5, 0.5, 0.5 ], rotation: [ Math.PI / 2, Math.PI / 2, 0 ] },
+				{ geometry: circleGeometry, color: [ 0.5, 0.5, 0.5, 0.1 ], rotation: [ Math.PI / 2, Math.PI / 2, 0 ], scale: 0.25 }
+			],
+		};
 
-		} else {
+	}
+	get pickersGroup() {
 
-			this.object.position.copy( this.pointEnd ).sub( this.pointStart );
+		return {
+			X: [ { geometry: rotatePickerGeometry, color: [ 1, 0, 0 ], rotation: [ Math.PI / 2, Math.PI / 2, 0 ] } ],
+			Y: [ { geometry: rotatePickerGeometry, color: [ 0, 1, 0 ], rotation: [ Math.PI / 2, 0, 0 ] } ],
+			Z: [ { geometry: rotatePickerGeometry, color: [ 0, 0, 1 ], rotation: [ 0, 0, - Math.PI / 2 ] } ],
+			E: [ { geometry: ringPickerGeometry, rotation: [ Math.PI / 2, Math.PI / 2, 0 ], scale: 1.2 } ],
+			XYZ: [ { geometry: circleGeometry, rotation: [ Math.PI / 2, Math.PI / 2, 0 ], scale: 0.35 } ],
+		};
+
+	}
+	updateAxis( axis ) {
+
+		super.updateAxis( axis );
+		axis.quaternion.copy( identityQuaternion );
+		if ( axis.has( "E" ) || axis.has( "XYZ" ) ) {
+
+			axis.quaternion.setFromRotationMatrix( lookAtMatrix.lookAt( alignVector, zeroVector, tempVector$1 ) );
 
 		}
-		this.object.position.add( this.positionStart );
+		if ( axis.is( 'X' ) ) {
+
+			tempQuaternion.setFromAxisAngle( unitX, Math.atan2( - alignVector.y, alignVector.z ) );
+			tempQuaternion.multiplyQuaternions( identityQuaternion, tempQuaternion );
+			axis.quaternion.copy( tempQuaternion );
+
+		}
+		if ( axis.is( 'Y' ) ) {
+
+			tempQuaternion.setFromAxisAngle( unitY, Math.atan2( alignVector.x, alignVector.z ) );
+			tempQuaternion.multiplyQuaternions( identityQuaternion, tempQuaternion );
+			axis.quaternion.copy( tempQuaternion );
+
+		}
+		if ( axis.is( 'Z' ) ) {
+
+			tempQuaternion.setFromAxisAngle( unitZ, Math.atan2( alignVector.y, alignVector.x ) );
+			tempQuaternion.multiplyQuaternions( identityQuaternion, tempQuaternion );
+			axis.quaternion.copy( tempQuaternion );
+
+		}
+
+	}
+	updateHelperMatrix() {
+
+		// TODO: simplify rotation handle logic
+		const quaternion = this.space === "local" ? this.worldQuaternion : identityQuaternion;
+		// Align handles to current local or world rotation
+		tempQuaternion.copy( quaternion ).inverse();
+		alignVector.copy( this.eye ).applyQuaternion( tempQuaternion );
+		tempVector$1.copy( unitY ).applyQuaternion( tempQuaternion );
+		super.updateHelperMatrix();
 
 	}
 
 }
 
-export { DragControls };
+/**
+ * @author arodic / https://github.com/arodic
+ */
+
+// Reusable utility variables
+const tempVector$2 = new Vector3();
+const tempQuaternion$1 = new Quaternion();
+const identityQuaternion$1 = new Quaternion();
+const unit = {
+	X: new Vector3( 1, 0, 0 ),
+	Y: new Vector3( 0, 1, 0 ),
+	Z: new Vector3( 0, 0, 1 )
+};
+const tempVector2 = new Vector3();
+
+class TransformControlsRotate extends TransformControlsMixin( TransformHelperRotate ) {
+
+	constructor( props ) {
+
+		super( props );
+		this.defineProperties( {
+			rotationAxis: new Vector3(),
+			rotationAngle: 0
+		} );
+
+	}
+	transform( space ) {
+
+		const ROTATION_SPEED = 20 / this.worldPosition.distanceTo( tempVector$2.setFromMatrixPosition( this.camera.matrixWorld ) );
+		const quaternion = this.space === "local" ? this.worldQuaternion : identityQuaternion$1;
+		const axis = this.axis;
+
+		if ( axis === 'E' ) {
+
+			tempVector$2.copy( this.pointEnd ).cross( this.pointStart );
+			this.rotationAxis.copy( this.eye );
+			this.rotationAngle = this.pointEnd.angleTo( this.pointStart ) * ( tempVector$2.dot( this.eye ) < 0 ? 1 : - 1 );
+
+		} else if ( axis === 'XYZ' ) {
+
+			tempVector$2.copy( this.pointEnd ).sub( this.pointStart ).cross( this.eye ).normalize();
+			this.rotationAxis.copy( tempVector$2 );
+			this.rotationAngle = this.pointEnd.sub( this.pointStart ).dot( tempVector$2.cross( this.eye ) ) * ROTATION_SPEED;
+
+		} else if ( axis === 'X' || axis === 'Y' || axis === 'Z' ) {
+
+			this.rotationAxis.copy( unit[ axis ] );
+			tempVector$2.copy( unit[ axis ] );
+			tempVector2.copy( this.pointEnd ).sub( this.pointStart );
+			if ( space === 'local' ) {
+
+				tempVector$2.applyQuaternion( quaternion );
+				tempVector2.applyQuaternion( this.worldQuaternionStart );
+
+			}
+			this.rotationAngle = tempVector2.dot( tempVector$2.cross( this.eye ).normalize() ) * ROTATION_SPEED;
+
+		}
+
+		// Apply rotate
+		if ( space === 'local' ) {
+
+			this.object.quaternion.copy( this.quaternionStart );
+			this.object.quaternion.multiply( tempQuaternion$1.setFromAxisAngle( this.rotationAxis, this.rotationAngle ) );
+
+		} else {
+
+			this.object.quaternion.copy( tempQuaternion$1.setFromAxisAngle( this.rotationAxis, this.rotationAngle ) );
+			this.object.quaternion.multiply( this.quaternionStart );
+
+		}
+
+	}
+
+}
+
+export { TransformControlsRotate };

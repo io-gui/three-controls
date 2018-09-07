@@ -20,9 +20,9 @@ class Animated extends Interactive {
 		return true;
 
 	}
-	constructor( domElement ) {
+	constructor( props ) {
 
-		super( domElement );
+		super( props );
 
 		this.defineProperties( {
 			needsUpdate: false,
@@ -141,13 +141,11 @@ const changeEvent = { type: 'change' };
 
 class ViewportControls extends Animated {
 
-	constructor( camera, domElement ) {
+	constructor( props ) {
 
-		super( domElement );
+		super( props );
 
 		this.defineProperties( {
-			camera: camera,
-			object: null,
 			target: new Vector3(),
 			active: false,
 			enableOrbit: true,
@@ -189,11 +187,11 @@ class ViewportControls extends Animated {
 		} );
 
 	}
-	// autoRotateChanged( value ) {
-	// 	if ( value ) {
+	// autoRotateChanged(value) {
+	// 	if (value) {
 	// 		this._orbitInertia.x = this.autoRotateSpeed;
 	// 	}
-	// }
+	//}
 	cameraChanged() {
 
 		this.needsUpdate = true;
