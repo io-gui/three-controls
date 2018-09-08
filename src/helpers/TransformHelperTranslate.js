@@ -68,20 +68,22 @@ export class TransformHelperTranslate extends TransformHelper {
 
 		// TODO: implement flipping animation better and make sure animation loop runs while lerping.
 		// Flip axis ocluded behind another axis
-		if (axis.has('X') && xDotE < AXIS_FLIP_TRESHOLD) {
-			axis.scale.x = (axis.scale.x * 5 -1 ) / 6;
-		} else {
-			axis.scale.x = (axis.scale.x * 5 + 1 ) / 6;
-		}
-		if (axis.has('Y') && yDotE < AXIS_FLIP_TRESHOLD) {
-			axis.scale.y = (axis.scale.y * 5 -1 ) / 6;
-		} else {
-			axis.scale.y = (axis.scale.y * 5 + 1 ) / 6;
-		}
-		if (axis.has('Z') && zDotE < AXIS_FLIP_TRESHOLD) {
-			axis.scale.z = (axis.scale.z * 5 -1 ) / 6;
-		} else {
-			axis.scale.z = (axis.scale.z * 5 + 1 ) / 6;
+		if (!this.active) {
+			if (axis.has('X') && xDotE < AXIS_FLIP_TRESHOLD) {
+				axis.scale.x = (axis.scale.x * 5 -1 ) / 6;
+			} else {
+				axis.scale.x = (axis.scale.x * 5 + 1 ) / 6;
+			}
+			if (axis.has('Y') && yDotE < AXIS_FLIP_TRESHOLD) {
+				axis.scale.y = (axis.scale.y * 5 -1 ) / 6;
+			} else {
+				axis.scale.y = (axis.scale.y * 5 + 1 ) / 6;
+			}
+			if (axis.has('Z') && zDotE < AXIS_FLIP_TRESHOLD) {
+				axis.scale.z = (axis.scale.z * 5 -1 ) / 6;
+			} else {
+				axis.scale.z = (axis.scale.z * 5 + 1 ) / 6;
+			}
 		}
 	}
 }
