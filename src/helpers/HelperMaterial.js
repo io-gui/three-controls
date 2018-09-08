@@ -54,11 +54,15 @@ export class HelperMaterial extends IoLiteMixin(ShaderMaterial) {
 				float aspect = projectionMatrix[0][0] / projectionMatrix[1][1];
 				vec3 sNormal = normalize(vec3(vNormal.x, vNormal.y, 0));
 
+				float extrude = 0.0;
 				if (outline > 0.0) {
-					pos.x += sNormal.x * .0018 * (pos.w) * aspect;
-					pos.y += sNormal.y * .0018 * (pos.w);
+					extrude += 0.0015 * outline;
 					pos.z += .1;
+				} else {
+					extrude += 0.001 * -outline;
 				}
+				pos.x += sNormal.x * extrude * (pos.w) * aspect;
+				pos.y += sNormal.y * extrude * (pos.w);
 
 				gl_Position = pos;
 			}
@@ -71,18 +75,14 @@ export class HelperMaterial extends IoLiteMixin(ShaderMaterial) {
 			uniform float uOpacity;
 			uniform float uHighlight;
 			void main() {
-				if (vOutline != 0.0) {
-					if (uHighlight == 0.0) {
-						gl_FragColor = vec4( 0.0, 0.0, 0.0, 1.0 );
-					} else if (uHighlight == 1.0) {
-						gl_FragColor = vec4( 1.0, 1.0, 1.0, 1.0 );
-					} else {
-						gl_FragColor = vec4( 0.5, 0.5, 0.5, 1.0 * 0.15 );
-					}
+				if (vOutline > 0.0) {
+					vec4 c = mix(vec4( 0.0, 0.0, 0.0, 1.0 ), vec4( 1.0, 1.0, 1.0, 2.0 ), max(0.0, uHighlight) );
+					c = mix(c, vec4( 0.5, 0.5, 0.5, 1.0 * 0.15 ), max(0.0, -uHighlight) );
+					gl_FragColor = c;
 					return;
 				}
-				float dimming = 1.0;
-				if (uHighlight == -1.0) dimming = 0.15;
+				float dimming = mix(1.0, 0.2, max(0.0, -uHighlight));
+				dimming = mix(dimming, dimming * 2.0, max(0.0, uHighlight));
 				gl_FragColor = vec4( uColor * vColor.rgb, uOpacity * vColor.a * dimming );
 			}
 		`;

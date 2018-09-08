@@ -11,10 +11,9 @@ export class HelperMesh extends Mesh {
 		super();
 		this.geometry = geometry instanceof Array ? mergeGeometryChunks(geometry) : geometry;
 		this.material = new HelperMaterial(props.color || 'white', props.opacity || 1);
-		// name properties are essential for picking and updating logic.
 		this.name = props.name;
 		// this.material.wireframe = true;
-		this.renderOrder = Infinity;
+		// this.renderOrder = 1000;
 	}
 }
 
@@ -46,6 +45,9 @@ for (let i = chunks.length; i--;) {
 		const rotation = chunk.rotation;
 		let scale = chunk.scale;
 
+		let thickness = chunk.thickness || 0;
+		let outlineThickness = chunk.outlineThickness !== undefined ? chunk.outlineThickness : 1;
+
 		if (scale && typeof scale === 'number') scale = [scale, scale, scale];
 
 		_position.set(0, 0, 0);
@@ -72,21 +74,31 @@ for (let i = chunks.length; i--;) {
 
 		const vertCount = chunkGeo.attributes.position.count;
 
-		const colorArray = [];
+		if (!chunkGeo.attributes.color) {
+			chunkGeo.addAttribute('color', new Float32BufferAttribute(new Array(vertCount * 4), 4));
+		}
+
+		const colorArray = chunkGeo.attributes.color.array;
 		for (let j = 0; j < vertCount; j++) {
+			// TODO: fix 
+			const hasAlpha = colorArray[j * 4 + 3] !== undefined && !isNaN(colorArray[j * 4 + 3]);
 			colorArray[j * 4 + 0] = color[0];
 			colorArray[j * 4 + 1] = color[1];
 			colorArray[j * 4 + 2] = color[2];
-			colorArray[j * 4 + 3] = color[3] !== undefined ? color[3] : 1;
+			if (!hasAlpha) colorArray[j * 4 + 3] = color[3] !== undefined ? color[3] : 0;
 		}
-		chunkGeo.addAttribute('color', new Float32BufferAttribute(colorArray, 4));
 
 		// Duplicate geometry and add outline attribute
-		const outlineArray = [];
-		for (let j = 0; j < vertCount; j++) outlineArray[j] = 1;
-		chunkGeo.addAttribute( 'outline', new Float32BufferAttribute( outlineArray, 1 ) );
-		chunkGeo = BufferGeometryUtils.mergeBufferGeometries([chunkGeo, chunkGeo]);
-		for (let j = 0; j < vertCount; j++) chunkGeo.attributes.outline.array[j] = 0;
+		if (!chunkGeo.attributes.outline) {
+			const outlineArray = [];
+			for (let j = 0; j < vertCount; j++) outlineArray[j] = -thickness || 0;
+			chunkGeo.addAttribute( 'outline', new Float32BufferAttribute( outlineArray, 1 ) );
+		}
+
+		if (outlineThickness) {
+			chunkGeo = BufferGeometryUtils.mergeBufferGeometries([chunkGeo, chunkGeo]);
+			for (let j = 0; j < vertCount; j++) chunkGeo.attributes.outline.array[vertCount + j] = outlineThickness + thickness;
+		}
 
 		geometry = BufferGeometryUtils.mergeBufferGeometries([geometry, chunkGeo]);
 	}

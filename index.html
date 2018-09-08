@@ -46,6 +46,7 @@
 			import {TransformControlsTranslate} from "./src/controls/TransformControlsTranslate.js";
 			import {TransformControlsRotate} from "./src/controls/TransformControlsRotate.js";
 			import {TransformControlsScale} from "./src/controls/TransformControlsScale.js";
+			import {TransformControlsFreeform} from "./src/controls/TransformControlsFreeform.js";
 
 			import {ViewportControls} from "./src/controls/ViewportControls.js";
 			import {EditorControls} from "./src/controls/EditorControls.js";
@@ -141,7 +142,7 @@
 				var viewportControls = new OrbitControls({domElement: canvas, camera: camera});
 				viewportControls.addEventListener('change', render);
 
-				var transformControls = new TransformControlsRotate({domElement: canvas, camera: camera});
+				var transformControls = new TransformControlsFreeform({domElement: canvas, camera: camera});
 				transformControls.addEventListener('change', render);
 				transformControls.addEventListener('space-changed', event => {
 					// TODO
@@ -154,7 +155,7 @@
 				});
 
 				scene.updateMatrixWorld();
-				selectionControls.replace(mesh);
+				selectionControls.replace(mesh0);
 
 				viewportControls.addEventListener('active-changed', event => {
 					transformControls.enabled = event.value ? false : true && !!selectionControls.selected.length;
@@ -270,6 +271,14 @@
 				renderer.render(helperScene, camera);
 
 			}
+
+			// TODO: animate highlight fade with change event
+			function animate() {
+				render();
+				requestAnimationFrame(animate);
+			}
+
+			animate();
 
 		</script>
 

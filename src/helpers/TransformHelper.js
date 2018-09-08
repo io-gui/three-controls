@@ -38,7 +38,7 @@ export class TransformHelper extends Helper {
 		return {
 			X: [{geometry: coneGeometry, color: [1,0,0], position: [0.15, 0, 0], rotation: [0, 0, -Math.PI / 2], scale: [0.5,1,0.5]}],
 			Y: [{geometry: coneGeometry, color: [0,1,0], position: [0, 0.15, 0], rotation: [0, 0, 0], scale: [0.5,1,0.5]}],
-			Z: [{geometry: coneGeometry, color: [0,0,1], position: [0, 0, -0.15], rotation: [-Math.PI / 2, 0, 0], scale: [0.5,1,0.5]}]
+			Z: [{geometry: coneGeometry, color: [0,0,1], position: [0, 0, -0.15], rotation: [Math.PI / 2, 0, 0], scale: [0.5,1,0.5]}]
 		};
 	}
 	get pickersGroup() {

@@ -17,10 +17,10 @@ const unitZ = new Vector3(0, 0, 1);
 export class TransformHelperRotate extends TransformHelper {
 	get handlesGroup() {
 		return {
-			X: [{geometry: rotateHandleGeometry, color: [1, 0, 0], rotation: [Math.PI / 2, Math.PI / 2, 0]}],
-			Y: [{geometry: rotateHandleGeometry, color: [0, 1, 0], rotation: [Math.PI / 2, 0, 0]}],
-			Z: [{geometry: rotateHandleGeometry, color: [0, 0, 1], rotation: [0, 0, -Math.PI / 2]}],
-			E: [{geometry: ringGeometry, color: [1, 1, 0], rotation: [Math.PI / 2, Math.PI / 2, 0], scale: 1.2}],
+			X: [{geometry: rotateHandleGeometry, color: [1, 0.3, 0.3], rotation: [Math.PI / 2, Math.PI / 2, 0]}],
+			Y: [{geometry: rotateHandleGeometry, color: [0.3, 1, 0.3], rotation: [Math.PI / 2, 0, 0]}],
+			Z: [{geometry: rotateHandleGeometry, color: [0.3, 0.3, 1], rotation: [0, 0, -Math.PI / 2]}],
+			E: [{geometry: ringGeometry, color: [1, 1, 0.5], rotation: [Math.PI / 2, Math.PI / 2, 0], scale: 1.2}],
 			XYZ: [
 				{geometry: ringGeometry, color: [0.5, 0.5, 0.5], rotation: [Math.PI / 2, Math.PI / 2, 0]},
 				{geometry: circleGeometry, color: [0.5, 0.5, 0.5, 0.1], rotation: [Math.PI / 2, Math.PI / 2, 0], scale: 0.25}

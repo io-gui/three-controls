@@ -8,23 +8,23 @@ const AXIS_FLIP_TRESHOLD = 0;
 export class TransformHelperTranslate extends TransformHelper {
 	get handlesGroup() {
 		return {
-			X: [{geometry: arrowGeometry, color: [1, 0, 0], rotation: [0, 0, -Math.PI / 2]}],
-			Y: [{geometry: arrowGeometry, color: [0, 1, 0]}],
-			Z: [{geometry: arrowGeometry, color: [0, 0, 1], rotation: [Math.PI / 2, 0, 0]}],
+			X: [{geometry: arrowGeometry, color: [1, 0.3, 0.3], rotation: [0, 0, -Math.PI / 2]}],
+			Y: [{geometry: arrowGeometry, color: [0.3, 1, 0.3]}],
+			Z: [{geometry: arrowGeometry, color: [0.3, 0.3, 1], rotation: [Math.PI / 2, 0, 0]}],
 			XYZ: [
 				{geometry: octahedronGeometry, scale: 0.075}
 			],
 			XY: [
 				{geometry: planeGeometry, color: [1,1,0,0.25], position: [0.15, 0.15, 0], scale: 0.3},
-				{geometry: corner2Geometry, color: [1,1,0], position: [0.32, 0.32, 0], scale: 0.15, rotation: [Math.PI / 2, 0, Math.PI]}
+				{geometry: corner2Geometry, color: [1,1,0.3], position: [0.32, 0.32, 0], scale: 0.15, rotation: [Math.PI / 2, 0, Math.PI]}
 			],
 			YZ: [
 				{geometry: planeGeometry, color: [0,1,1,0.25], position: [0, 0.15, 0.15], rotation: [0, Math.PI / 2, 0], scale: 0.3},
-				{geometry: corner2Geometry, color: [0,1,1], position: [0, 0.32, 0.32], scale: 0.15, rotation: [0, Math.PI, -Math.PI / 2]}
+				{geometry: corner2Geometry, color: [0.3,1,1], position: [0, 0.32, 0.32], scale: 0.15, rotation: [0, Math.PI, -Math.PI / 2]}
 			],
 			XZ: [
 				{geometry: planeGeometry, color: [1,0,1,0.25], position: [0.15, 0, 0.15], rotation: [-Math.PI / 2, 0, 0], scale: 0.3},
-				{geometry: corner2Geometry, color: [1,0,1], position: [0.32, 0, 0.32], scale: 0.15, rotation: [0, Math.PI, 0]}
+				{geometry: corner2Geometry, color: [1,0.3,1], position: [0.32, 0, 0.32], scale: 0.15, rotation: [0, Math.PI, 0]}
 			]
 		};
 	}

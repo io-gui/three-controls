@@ -72,6 +72,7 @@ export const TransformControlsMixin = (superclass) => class extends InteractiveM
 		} else {
 			this.axis = null;
 		}
+		this.dispatchEvent({type:'change'})
 	}
 	onPointerDown(pointers) {
 		if (this.axis === null || !this.object || this.active === true || pointers[0].button !== 0) return;
@@ -132,19 +133,20 @@ export const TransformControlsMixin = (superclass) => class extends InteractiveM
 	}
 	highlightAxis(child, axis) {
 		if (child.material) {
+			const h = child.material.highlight;
 			if (!this.enabled) {
-				child.material.highlight = -1;
+				child.material.highlight = (15 * h -1) / 16;
 				return;
 			}
 			if (axis) {
 				if (this.hasAxis(child.name)) {
-					child.material.highlight = 1;
+					child.material.highlight = (15 * h + 1) / 16;
 					return;
 				}
-				child.material.highlight = -1;
+				child.material.highlight = (15 * h -1) / 16;
 				return;
 			}
-			child.material.highlight = 0;
+			child.material.highlight = (15 * h) / 16;
 		}
 	}
 	updatePlane() {
