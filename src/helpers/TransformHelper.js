@@ -1,4 +1,4 @@
-import {Vector3} from "../../../three.js/build/three.module.js";
+import {Vector3} from "../../lib/three.module.js";
 import {Helper} from "../Helper.js";
 import {HelperMesh} from "./HelperMesh.js";
 import {coneGeometry, octahedronGeometry} from "./HelperGeometries.js";

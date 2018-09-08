@@ -21,19 +21,19 @@ export default [
   {
     input: 'src/Interactive.js',
     output: output( 'build/Interactive.js'),
-    external: external( ['../three.js/build/three.module.js'] )
+    external: external( ['./lib/three.module.js'] )
   },
   {
     input: 'src/Helper.js',
     output: output( 'build/Helper.js'),
-    external: external( ['../three.js/build/three.module.js'] )
+    external: external( ['./lib/three.module.js'] )
   },
   {
     input: 'src/controls/ViewportControls.js',
     output: output( 'build/controls/ViewportControls.js' ),
     external: external( [
       './src/Interactive.js',
-      '../three.js/build/three.module.js'
+      './lib/three.module.js'
     ] )
   },
   {
@@ -41,7 +41,7 @@ export default [
     output: output( 'build/controls/OrbitControls.js' ),
     external: external( [
       'src/controls/ViewportControls.js',
-      '../three.js/build/three.module.js'
+      './lib/three.module.js'
     ] )
   },
   {
@@ -49,7 +49,7 @@ export default [
     output: output( 'build/controls/SelectionControls.js' ),
     external: external( [
       'src/controls/ViewportControls.js',
-      '../three.js/build/three.module.js'
+      './lib/three.module.js'
     ] )
   },
   {
@@ -57,7 +57,7 @@ export default [
     output: output( 'build/controls/TrackballControls.js' ),
     external: external( [
       'src/controls/ViewportControls.js',
-      '../three.js/build/three.module.js'
+      './lib/three.module.js'
     ] )
   },
   {
@@ -65,7 +65,7 @@ export default [
     output: output( 'build/controls/EditorControls.js' ),
     external: external( [
       'src/controls/ViewportControls.js',
-      '../three.js/build/three.module.js'
+      './lib/three.module.js'
     ] )
   },
   {
@@ -73,7 +73,7 @@ export default [
     output: output( 'build/controls/DragControls.js' ),
     external: external( [
       './src/Interactive.js',
-      '../three.js/build/three.module.js'
+      './lib/three.module.js'
     ] )
   },
   {
@@ -81,7 +81,7 @@ export default [
     output: output( 'build/controls/TransformControlsTranslate.js' ),
     external: external( [
       './src/Interactive.js',
-      '../three.js/build/three.module.js'
+      './lib/three.module.js'
     ] )
   },
   {
@@ -89,7 +89,7 @@ export default [
     output: output( 'build/controls/TransformControlsRotate.js' ),
     external: external( [
       './src/Interactive.js',
-      '../three.js/build/three.module.js'
+      './lib/three.module.js'
     ] )
   },
   {
@@ -97,7 +97,7 @@ export default [
     output: output( 'build/controls/TransformControlsScale.js' ),
     external: external( [
       './src/Interactive.js',
-      '../three.js/build/three.module.js'
+      './lib/three.module.js'
     ] )
   }
 ];

@@ -2,7 +2,7 @@
  * @author arodic / https://github.com/arodic
  */
 
-import {Line} from "../../../three.js/build/three.module.js";
+import {Line} from "../../lib/three.module.js";
 import {Helper} from "../Helper.js";
 import {TransformHelper} from "./TransformHelper.js";
 import {HelperMaterial as Material} from "./HelperMaterial.js";

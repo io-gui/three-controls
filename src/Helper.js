@@ -2,7 +2,7 @@
  * @author arodic / https://github.com/arodic
  */
 
-import {Object3D, Vector3, Quaternion} from "../../three.js/build/three.module.js";
+import {Object3D, Vector3, Quaternion} from "../lib/three.module.js";
 import {IoLiteMixin} from "../lib/IoLiteMixin.js";
 
 /*

@@ -1,5 +1,5 @@
 import {IoLiteMixin} from "../../lib/IoLiteMixin.js";
-import {UniformsUtils, Color, DoubleSide, ShaderMaterial} from "../../../three.js/build/three.module.js";
+import {UniformsUtils, Color, DoubleSide, ShaderMaterial} from "../../lib/three.module.js";
 
 const _colors = {
 	black: new Color(0x000000),

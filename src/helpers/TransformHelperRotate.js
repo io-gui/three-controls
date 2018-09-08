@@ -1,4 +1,4 @@
-import {Vector3, Matrix4, Quaternion} from "../../../three.js/build/three.module.js";
+import {Vector3, Matrix4, Quaternion} from "../../lib/three.module.js";
 import {TransformHelper} from "./TransformHelper.js";
 import {rotateHandleGeometry, rotatePickerGeometry, ringGeometry, ringPickerGeometry, circleGeometry} from "./HelperGeometries.js";
 

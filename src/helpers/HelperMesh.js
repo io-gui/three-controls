@@ -2,7 +2,7 @@
  * @author arodic / https://github.com/arodic
  */
 
-import {Mesh, Vector3, Euler, Quaternion, Matrix4, BufferGeometry, Uint16BufferAttribute, Float32BufferAttribute} from "../../../three.js/build/three.module.js";
+import {Mesh, Vector3, Euler, Quaternion, Matrix4, BufferGeometry, Uint16BufferAttribute, Float32BufferAttribute} from "../../lib/three.module.js";
 import {BufferGeometryUtils} from "../../lib/BufferGeometryUtils.js";
 import {HelperMaterial} from "./HelperMaterial.js";
 

@@ -4,7 +4,7 @@
 
 import {
 	SphereBufferGeometry, CylinderBufferGeometry, OctahedronBufferGeometry, BoxBufferGeometry, TorusBufferGeometry
-} from "../../../three.js/build/three.module.js";
+} from "../../lib/three.module.js";
 
 import {HelperMesh} from "./HelperMesh.js";
 

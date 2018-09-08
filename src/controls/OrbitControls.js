@@ -7,7 +7,7 @@
  * @author arodic / http://github.com/arodic
  */
 
-import * as THREE from "../../../three.js/build/three.module.js";
+import * as THREE from "../../lib/three.module.js";
 import {ViewportControls} from "./ViewportControls.js";
 
 /*

@@ -2,7 +2,7 @@
  * @author arodic / http://github.com/arodic
  */
 
-import {Vector2, Vector3, MOUSE} from "../../../three.js/build/three.module.js";
+import {Vector2, Vector3, MOUSE} from "../../lib/three.module.js";
 import {Animated} from "../Animated.js";
 
 /*
