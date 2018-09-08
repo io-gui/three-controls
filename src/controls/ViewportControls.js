@@ -3,7 +3,7 @@
  */
 
 import {Vector2, Vector3, MOUSE} from "../../lib/three.module.js";
-import {Animated} from "../Animated.js";
+import {Interactive} from "../Interactive.js";
 
 /*
  * ViewportControls is a base class for controls performing orbiting, dollying, and panning.
@@ -31,7 +31,7 @@ function dampTo(source, target, smoothing, dt) {
 // Events
 const changeEvent = {type: 'change'};
 
-export class ViewportControls extends Animated {
+export class ViewportControls extends Interactive {
 	constructor(props) {
 		super(props);
 
@@ -75,21 +75,20 @@ export class ViewportControls extends Animated {
 			_dollyOffset: 0,
 			_dollyInertia: 0
 		});
+		this.animation.addEventListener('update', event => {
+			this.update(event.timestep);
+		});
+		this.animation.startAnimation(0);
 	}
-	// autoRotateChanged(value) {
-	// 	if (value) {
-	// 		this._orbitInertia.x = this.autoRotateSpeed;
-	// 	}
-	//}
 	cameraChanged() {
-		this.needsUpdate = true;
+		this.animation.startAnimation(0);
 	}
 	targetChanged() {
-		this.needsUpdate = true;
+		this.animation.startAnimation(0);
 	}
 	stateChanged() {
 		this.active = this.state !== STATE.NONE;
-		this.needsUpdate = true;
+		this.animation.startAnimation(0);
 	}
 	update(timestep) {
 		let dt = timestep / 1000;
@@ -121,15 +120,6 @@ export class ViewportControls extends Animated {
 		}
 		this._dollyOffset += this._dollyInertia * dt;
 
-		// Determine if animation needs to continue
-		let maxVelocity = 0;
-		maxVelocity = Math.max(maxVelocity, Math.abs(this._orbitInertia.x));
-		maxVelocity = Math.max(maxVelocity, Math.abs(this._orbitInertia.y));
-		maxVelocity = Math.max(maxVelocity, Math.abs(this._panInertia.x));
-		maxVelocity = Math.max(maxVelocity, Math.abs(this._panInertia.y));
-		maxVelocity = Math.max(maxVelocity, Math.abs(this._dollyInertia));
-		if (maxVelocity < EPS) this.stopAnimation();
-
 		// set inertiae from current offsets
 		if (this.enableDamping) {
 			if (this.state === STATE.ORBIT) {
@@ -153,8 +143,18 @@ export class ViewportControls extends Animated {
 
 		this.camera.lookAt(this.target);
 
-		this.dispatchEvent(changeEvent);
-		this.needsUpdate = false;
+		// Determine if animation needs to continue
+		let maxVelocity = 0;
+		maxVelocity = Math.max(maxVelocity, Math.abs(this._orbitInertia.x));
+		maxVelocity = Math.max(maxVelocity, Math.abs(this._orbitInertia.y));
+		maxVelocity = Math.max(maxVelocity, Math.abs(this._panInertia.x));
+		maxVelocity = Math.max(maxVelocity, Math.abs(this._panInertia.y));
+		maxVelocity = Math.max(maxVelocity, Math.abs(this._dollyInertia));
+		if (maxVelocity < EPS) {
+			this.animation.stopAnimation();
+		} else {
+			this.animation.startAnimation(1);
+		}
 	}
 	onPointerMove(pointers) {
 		let rect = this.domElement.getBoundingClientRect();
@@ -246,33 +246,33 @@ export class ViewportControls extends Animated {
 		this.state = STATE.DOLLY;
 		this._setDolly(event.delta * this.wheelDollySpeed);
 		this.state = STATE.NONE;
-		this.needsUpdate = true;
+		this.animation.startAnimation(0);
 	}
 	_setPan(dir) {
 		this.state = STATE.PAN;
 		if (this.enablePan) this._panOffset.copy(dir);
-		this.needsUpdate = true;
+		this.animation.startAnimation(0);
 	}
 	_setDolly(dir) {
 		this.state = STATE.DOLLY;
 		if (this.enableDolly) this._dollyOffset = dir;
-		this.needsUpdate = true;
+		this.animation.startAnimation(0);
 	}
 	_setDollyPan(dollyDir, panDir) {
 		this.state = STATE.DOLLY_PAN;
 		if (this.enableDolly) this._dollyOffset = dollyDir;
 		if (this.enablePan) this._panOffset.copy(panDir);
-		this.needsUpdate = true;
+		this.animation.startAnimation(0);
 	}
 	_setOrbit(dir) {
 		this.state = STATE.ORBIT;
 		if (this.enableOrbit) this._orbitOffset.copy(dir);
-		this.needsUpdate = true;
+		this.animation.startAnimation(0);
 	}
 	_setFocus() {
 		this.state = STATE.NONE;
 		if (this.object && this.enableFocus) this.focus(this.object);
-		this.needsUpdate = true;
+		this.animation.startAnimation(0);
 	}
 	// ViewportControl control methods. Implement in subclass!
 	pan() {

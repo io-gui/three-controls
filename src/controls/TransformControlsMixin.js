@@ -47,6 +47,16 @@ export const TransformControlsMixin = (superclass) => class extends InteractiveM
 			this.axis = null;
 		}
 	}
+	enabledChanged(value) {
+		super.enabledChanged(value);
+		this.animation.startAnimation(1);
+	}
+	axisChanged() {
+		this.animation.startAnimation(1);
+	}
+	activeChanged() {
+		this.animation.startAnimation(1);
+	}
 	updateHelperMatrix() {
 		if (this.object) {
 			this.object.updateMatrixWorld();
