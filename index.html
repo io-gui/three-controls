@@ -140,7 +140,7 @@
 				selectionControls.addEventListener('change', render);
 
 				var viewportControls = new OrbitControls({domElement: canvas, camera: camera});
-				viewportControls.enableDamping = false;
+				// viewportControls.enableDamping = false;
 				viewportControls.addEventListener('change', render);
 
 				var transformControls = new TransformControlsTranslate({domElement: canvas, camera: camera});
@@ -159,7 +159,7 @@
 				selectionControls.replace(mesh0);
 
 				viewportControls.addEventListener('active-changed', event => {
-					// transformControls.enabled = event.value ? false : true && !!selectionControls.selected.length;
+					transformControls.enabled = event.value ? false : true && !!selectionControls.selected.length;
 				});
 
 				transformControls.addEventListener('active-changed', event => {

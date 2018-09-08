@@ -3,7 +3,7 @@ import {ArrowGeometry, Corner2Geometry, OctahedronGeometry, PickerHandleGeometry
 
 const AXIS_HIDE_TRESHOLD = 0.99;
 const PLANE_HIDE_TRESHOLD = 0.2;
-const AXIS_FLIP_TRESHOLD = 0;
+const AXIS_FLIP_TRESHOLD = -0.2;
 
 const arrowGeometry = new ArrowGeometry();
 const corner2Geometry = new Corner2Geometry();

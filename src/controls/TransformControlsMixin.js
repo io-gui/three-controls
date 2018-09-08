@@ -157,6 +157,32 @@ export const TransformControlsMixin = (superclass) => class extends InteractiveM
 
 		const mat = axis.material;
 		const h = axis.material.highlight;
+
+		// TODO: resolve conflicts with highlight without return?
+		if (axis.has("X") && !this.showX) {
+			mat.highlight = (10 * h - 2) / 11;
+			if (mat.highlight < -1.99) axis.visible = false;
+			return;
+		}
+
+		if (axis.has("Y") && !this.showY) {
+			mat.highlight = (10 * h - 2) / 11;
+			if (mat.highlight < -1.99) axis.visible = false;
+			return;
+		}
+
+		if (axis.has("Z") && !this.showZ) {
+			mat.highlight = (10 * h - 2) / 11;
+			if (mat.highlight < -1.99) axis.visible = false;
+			return;
+		}
+
+		if (axis.has("E") && (!this.showX && !this.showY && !this.showZ)) {
+			mat.highlight = (10 * h - 2) / 11;
+			if (mat.highlight < -1.99) axis.visible = false;
+			return;
+		}
+
 		if (!this.enabled) {
 			mat.highlight = (15 * h -1) / 16;
 			return;
@@ -170,14 +196,6 @@ export const TransformControlsMixin = (superclass) => class extends InteractiveM
 			return;
 		}
 		mat.highlight = (15 * h) / 16;
-
-		if (axis.has("X") && !this.showX) mat.highlight = (15 * h - 2) / 16;
-		if (axis.has("Y") && !this.showY) mat.highlight = (15 * h - 2) / 16;
-		if (axis.has("Z") && !this.showZ) mat.highlight = (15 * h - 2) / 16;
-		if (axis.has("E") && (!this.showX && !this.showY && !this.showZ)) mat.highlight = (15 * h - 2) / 16;
-
-		if (mat.highlight < -1) axis.visible = false;
-
 	}
 	updatePlane() {
 		const axis = this.axis;
