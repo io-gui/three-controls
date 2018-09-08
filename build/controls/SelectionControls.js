@@ -1,4 +1,4 @@
-import { Object3D, Vector3, Quaternion, Vector2, BufferGeometry, BufferAttribute, UniformsUtils, Color, DoubleSide, ShaderMaterial, Mesh, Euler, Matrix4, Uint16BufferAttribute, Float32BufferAttribute, SphereBufferGeometry, CylinderBufferGeometry, OctahedronBufferGeometry, BoxBufferGeometry, TorusBufferGeometry, Line, Raycaster } from '../../../three.js/build/three.module.js';
+import { Object3D, Vector3, Quaternion, Vector2, BufferGeometry, BufferAttribute, UniformsUtils, Color, DoubleSide, ShaderMaterial, Mesh, Euler, Matrix4, Uint16BufferAttribute, Float32BufferAttribute, SphereBufferGeometry, CylinderBufferGeometry, OctahedronBufferGeometry, Line, Raycaster } from '../../lib/three.module.js';
 
 /**
  * @author arodic / https://github.com/arodic
@@ -1182,11 +1182,15 @@ class HelperMaterial extends IoLiteMixin( ShaderMaterial ) {
 				float aspect = projectionMatrix[0][0] / projectionMatrix[1][1];
 				vec3 sNormal = normalize(vec3(vNormal.x, vNormal.y, 0));
 
+				float extrude = 0.0;
 				if (outline > 0.0) {
-					pos.x += sNormal.x * .0018 * (pos.w) * aspect;
-					pos.y += sNormal.y * .0018 * (pos.w);
+					extrude += 0.0015 * outline;
 					pos.z += .1;
+				} else {
+					extrude += 0.001 * -outline;
 				}
+				pos.x += sNormal.x * extrude * (pos.w) * aspect;
+				pos.y += sNormal.y * extrude * (pos.w);
 
 				gl_Position = pos;
 			}
@@ -1199,18 +1203,14 @@ class HelperMaterial extends IoLiteMixin( ShaderMaterial ) {
 			uniform float uOpacity;
 			uniform float uHighlight;
 			void main() {
-				if (vOutline != 0.0) {
-					if (uHighlight == 0.0) {
-						gl_FragColor = vec4( 0.0, 0.0, 0.0, 1.0 );
-					} else if (uHighlight == 1.0) {
-						gl_FragColor = vec4( 1.0, 1.0, 1.0, 1.0 );
-					} else {
-						gl_FragColor = vec4( 0.5, 0.5, 0.5, 1.0 * 0.15 );
-					}
+				if (vOutline > 0.0) {
+					vec4 c = mix(vec4( 0.0, 0.0, 0.0, 1.0 ), vec4( 1.0, 1.0, 1.0, 2.0 ), max(0.0, uHighlight) );
+					c = mix(c, vec4( 0.5, 0.5, 0.5, 1.0 * 0.15 ), max(0.0, -uHighlight) );
+					gl_FragColor = c;
 					return;
 				}
-				float dimming = 1.0;
-				if (uHighlight == -1.0) dimming = 0.15;
+				float dimming = mix(1.0, 0.2, max(0.0, -uHighlight));
+				dimming = mix(dimming, dimming * 2.0, max(0.0, uHighlight));
 				gl_FragColor = vec4( uColor * vColor.rgb, uOpacity * vColor.a * dimming );
 			}
 		`;
@@ -1250,10 +1250,9 @@ class HelperMesh extends Mesh {
 		super();
 		this.geometry = geometry instanceof Array ? mergeGeometryChunks( geometry ) : geometry;
 		this.material = new HelperMaterial( props.color || 'white', props.opacity || 1 );
-		// name properties are essential for picking and updating logic.
 		this.name = props.name;
 		// this.material.wireframe = true;
-		this.renderOrder = Infinity;
+		// this.renderOrder = 1000;
 
 	}
 
@@ -1287,6 +1286,9 @@ function mergeGeometryChunks( chunks ) {
 		const rotation = chunk.rotation;
 		let scale = chunk.scale;
 
+		let thickness = chunk.thickness || 0;
+		let outlineThickness = chunk.outlineThickness !== undefined ? chunk.outlineThickness : 1;
+
 		if ( scale && typeof scale === 'number' ) scale = [ scale, scale, scale ];
 
 		_position.set( 0, 0, 0 );
@@ -1317,23 +1319,39 @@ function mergeGeometryChunks( chunks ) {
 
 		const vertCount = chunkGeo.attributes.position.count;
 
-		const colorArray = [];
+		if ( ! chunkGeo.attributes.color ) {
+
+			chunkGeo.addAttribute( 'color', new Float32BufferAttribute( new Array( vertCount * 4 ), 4 ) );
+
+		}
+
+		const colorArray = chunkGeo.attributes.color.array;
 		for ( let j = 0; j < vertCount; j ++ ) {
 
+			// TODO: fix
+			const hasAlpha = colorArray[ j * 4 + 3 ] !== undefined && ! isNaN( colorArray[ j * 4 + 3 ] );
 			colorArray[ j * 4 + 0 ] = color[ 0 ];
 			colorArray[ j * 4 + 1 ] = color[ 1 ];
 			colorArray[ j * 4 + 2 ] = color[ 2 ];
-			colorArray[ j * 4 + 3 ] = color[ 3 ] !== undefined ? color[ 3 ] : 1;
+			if ( ! hasAlpha ) colorArray[ j * 4 + 3 ] = color[ 3 ] !== undefined ? color[ 3 ] : 0;
 
 		}
-		chunkGeo.addAttribute( 'color', new Float32BufferAttribute( colorArray, 4 ) );
 
 		// Duplicate geometry and add outline attribute
-		const outlineArray = [];
-		for ( let j = 0; j < vertCount; j ++ ) outlineArray[ j ] = 1;
-		chunkGeo.addAttribute( 'outline', new Float32BufferAttribute( outlineArray, 1 ) );
-		chunkGeo = BufferGeometryUtils.mergeBufferGeometries( [ chunkGeo, chunkGeo ] );
-		for ( let j = 0; j < vertCount; j ++ ) chunkGeo.attributes.outline.array[ j ] = 0;
+		if ( ! chunkGeo.attributes.outline ) {
+
+			const outlineArray = [];
+			for ( let j = 0; j < vertCount; j ++ ) outlineArray[ j ] = - thickness || 0;
+			chunkGeo.addAttribute( 'outline', new Float32BufferAttribute( outlineArray, 1 ) );
+
+		}
+
+		if ( outlineThickness ) {
+
+			chunkGeo = BufferGeometryUtils.mergeBufferGeometries( [ chunkGeo, chunkGeo ] );
+			for ( let j = 0; j < vertCount; j ++ ) chunkGeo.attributes.outline.array[ vertCount + j ] = outlineThickness + thickness;
+
+		}
 
 		geometry = BufferGeometryUtils.mergeBufferGeometries( [ geometry, chunkGeo ] );
 
@@ -1349,72 +1367,51 @@ function mergeGeometryChunks( chunks ) {
 const PI = Math.PI;
 const HPI = Math.PI / 2;
 
-const geosphereGeometry = new OctahedronBufferGeometry( 1, 3 );
+class OctahedronGeometry extends OctahedronBufferGeometry {
 
-const octahedronGeometry = new OctahedronBufferGeometry( 1, 0 );
+	constructor() {
 
-const coneGeometry = new HelperMesh( [
-	{ geometry: new CylinderBufferGeometry( 0, 0.2, 1, 8, 2 ), position: [ 0, 0.5, 0 ] },
-	{ geometry: new SphereBufferGeometry( 0.2, 8, 8 ) }
-] ).geometry;
+		super( 1, 0 );
 
-const lineGeometry = new HelperMesh( [
-	{ geometry: new CylinderBufferGeometry( 0.02, 0.02, 1, 4, 2, false ), position: [ 0, 0.5, 0 ] },
-	{ geometry: new SphereBufferGeometry( 0.02, 4, 4 ), position: [ 0, 0, 0 ] },
-	{ geometry: new SphereBufferGeometry( 0.02, 4, 4 ), position: [ 0, 1, 0 ] }
-] ).geometry;
+	}
 
-const arrowGeometry = new HelperMesh( [
-	{ geometry: coneGeometry, position: [ 0, 0.8, 0 ], scale: 0.2 },
-	{ geometry: new CylinderBufferGeometry( 0.005, 0.005, 0.8, 4, 2, false ), position: [ 0, 0.4, 0 ] }
-] ).geometry;
+}
 
-const scaleArrowGeometry = new HelperMesh( [
-	{ geometry: geosphereGeometry, position: [ 0, 0.8, 0 ], scale: 0.075 },
-	{ geometry: new CylinderBufferGeometry( 0.005, 0.005, 0.8, 4, 2, false ), position: [ 0, 0.4, 0 ] }
-] ).geometry;
+class ConeGeometry extends HelperMesh {
 
-const corner2Geometry = new HelperMesh( [
-	{ geometry: new CylinderBufferGeometry( 0.05, 0.05, 1, 4, 2, false ), position: [ 0.5, 0, 0 ], rotation: [ 0, 0, HPI ] },
-	{ geometry: new CylinderBufferGeometry( 0.05, 0.05, 1, 4, 2, false ), position: [ 0, 0, 0.5 ], rotation: [ HPI, 0, 0 ] },
-	{ geometry: new SphereBufferGeometry( 0.05, 8, 4 ), position: [ 0, 0, 0 ] },
-	{ geometry: new SphereBufferGeometry( 0.05, 4, 4 ), position: [ 1, 0, 0 ], rotation: [ 0, 0, HPI ] },
-	{ geometry: new SphereBufferGeometry( 0.05, 4, 4 ), position: [ 0, 0, 1 ], rotation: [ HPI, 0, 0 ] },
-] ).geometry;
+	constructor() {
 
-const pickerHandleGeometry = new HelperMesh( [
-	{ geometry: new CylinderBufferGeometry( 0.2, 0, 1, 4, 1, false ), position: [ 0, 0.5, 0 ] }
-] ).geometry;
+		super( [
+			{ geometry: new CylinderBufferGeometry( 0, 0.2, 1, 8, 2 ), position: [ 0, 0.5, 0 ] },
+			{ geometry: new SphereBufferGeometry( 0.2, 8, 8 ) }
+		] );
+		return this.geometry;
 
-const planeGeometry = new BoxBufferGeometry( 1, 1, 0.01, 1, 1, 1 );
+	}
 
-const circleGeometry = new HelperMesh( [
-	{ geometry: new OctahedronBufferGeometry( 1, 3 ), scale: [ 1, 0.01, 1 ] },
-] ).geometry;
+}
 
-const ringGeometry = new HelperMesh( [
-	{ geometry: new TorusBufferGeometry( 1, 0.005, 8, 128 ), rotation: [ HPI, 0, 0 ] },
-] ).geometry;
+class Corner3Geometry extends HelperMesh {
 
-const halfRingGeometry = new HelperMesh( [
-	{ geometry: new TorusBufferGeometry( 1, 0.005, 8, 64, PI ), rotation: [ HPI, 0, 0 ] },
-] ).geometry;
+	constructor() {
 
-const ringPickerGeometry = new HelperMesh( [
-	{ geometry: new TorusBufferGeometry( 1, 0.1, 8, 128 ), rotation: [ HPI, 0, 0 ] },
-] ).geometry;
+		super( [
+			{ geometry: new CylinderBufferGeometry( 0.00001, 0.00001, 1, 4, 2, false ), position: [ 0.5, 0, 0 ], rotation: [ 0, 0, HPI ], thickness: 1 },
+			{ geometry: new CylinderBufferGeometry( 0.00001, 0.00001, 1, 4, 2, false ), position: [ 0, 0.5, 0 ], rotation: [ 0, HPI, 0 ], thickness: 1 },
+			{ geometry: new CylinderBufferGeometry( 0.00001, 0.00001, 1, 4, 2, false ), position: [ 0, 0, 0.5 ], rotation: [ HPI, 0, 0 ], thickness: 1 },
+			{ geometry: new SphereBufferGeometry( 0.00001, 8, 4 ), position: [ 0, 0, 0 ], thickness: 1 },
+			{ geometry: new SphereBufferGeometry( 0.00001, 8, 4 ), position: [ 1, 0, 0 ], rotation: [ 0, 0, HPI ], thickness: 1 },
+			{ geometry: new SphereBufferGeometry( 0.00001, 8, 4 ), position: [ 0, 1, 0 ], rotation: [ 0, HPI, 0 ], thickness: 1 },
+			{ geometry: new SphereBufferGeometry( 0.00001, 8, 4 ), position: [ 0, 0, 1 ], rotation: [ HPI, 0, 0 ], thickness: 1 },
+		] );
+		return this.geometry;
 
-const rotateHandleGeometry = new HelperMesh( [
-	{ geometry: new TorusBufferGeometry( 1, 0.005, 4, 64, PI ) },
-	{ geometry: new SphereBufferGeometry( 0.005, 4, 4 ), position: [ 1, 0, 0 ], rotation: [ HPI, 0, 0 ] },
-	{ geometry: new SphereBufferGeometry( 0.005, 4, 4 ), position: [ - 1, 0, 0 ], rotation: [ HPI, 0, 0 ] },
-	{ geometry: octahedronGeometry, position: [ 0, 0.992, 0 ], scale: [ 0.2, 0.05, 0.05 ] }
-] ).geometry;
+	}
 
-const rotatePickerGeometry = new HelperMesh( [
-	{ geometry: new TorusBufferGeometry( 1, 0.03, 4, 8, PI ) },
-	{ geometry: octahedronGeometry, position: [ 0, 0.992, 0 ], scale: 0.2 }
-] ).geometry;
+}
+
+const coneGeometry = new ConeGeometry();
+const octahedronGeometry = new OctahedronGeometry();
 
 class TransformHelper extends Helper {
 
@@ -1467,7 +1464,7 @@ class TransformHelper extends Helper {
 		return {
 			X: [ { geometry: coneGeometry, color: [ 1, 0, 0 ], position: [ 0.15, 0, 0 ], rotation: [ 0, 0, - Math.PI / 2 ], scale: [ 0.5, 1, 0.5 ] } ],
 			Y: [ { geometry: coneGeometry, color: [ 0, 1, 0 ], position: [ 0, 0.15, 0 ], rotation: [ 0, 0, 0 ], scale: [ 0.5, 1, 0.5 ] } ],
-			Z: [ { geometry: coneGeometry, color: [ 0, 0, 1 ], position: [ 0, 0, - 0.15 ], rotation: [ - Math.PI / 2, 0, 0 ], scale: [ 0.5, 1, 0.5 ] } ]
+			Z: [ { geometry: coneGeometry, color: [ 0, 0, 1 ], position: [ 0, 0, - 0.15 ], rotation: [ Math.PI / 2, 0, 0 ], scale: [ 0.5, 1, 0.5 ] } ]
 		};
 
 	}
@@ -1515,8 +1512,29 @@ class TransformHelper extends Helper {
  * @author arodic / https://github.com/arodic
  */
 
+const HPI$1 = Math.PI / 2;
+const PI$1 = Math.PI;
+
+const corner3Geometry = new Corner3Geometry();
+
 class SelectionHelper extends Helper {
 
+	get handlesGroup() {
+
+		return {
+			XYZ: [
+				{ geometry: corner3Geometry, position: [ 1, 1, 1 ], scale: 0.5, rotation: [ HPI$1, 0, PI$1 ] },
+				{ geometry: corner3Geometry, position: [ 1, 1, - 1 ], scale: 0.5, rotation: [ HPI$1, 0, HPI$1 ] },
+				{ geometry: corner3Geometry, position: [ - 1, - 1, - 1 ], scale: 0.5, rotation: [ - HPI$1, 0, - HPI$1 ] },
+				{ geometry: corner3Geometry, position: [ - 1, - 1, 1 ], scale: 0.5, rotation: [ - HPI$1, 0, 0 ] },
+				{ geometry: corner3Geometry, position: [ - 1, 1, 1 ], scale: 0.5, rotation: [ PI$1 / 2, 0, - PI$1 / 2 ] },
+				{ geometry: corner3Geometry, position: [ - 1, 1, - 1 ], scale: 0.5, rotation: [ PI$1 / 2, 0, 0 ] },
+				{ geometry: corner3Geometry, position: [ 1, - 1, - 1 ], scale: 0.5, rotation: [ 0, 0, HPI$1 ] },
+				{ geometry: corner3Geometry, position: [ 1, - 1, 1 ], scale: 0.5, rotation: [ 0, PI$1, 0 ] },
+			]
+		};
+
+	}
 	constructor( props ) {
 
 		super( props );

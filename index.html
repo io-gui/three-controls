@@ -46,7 +46,7 @@
 			import {TransformControlsTranslate} from "./src/controls/TransformControlsTranslate.js";
 			import {TransformControlsRotate} from "./src/controls/TransformControlsRotate.js";
 			import {TransformControlsScale} from "./src/controls/TransformControlsScale.js";
-			import {TransformControlsFreeform} from "./src/controls/TransformControlsFreeform.js";
+			import {TransformControlsFreescale} from "./src/controls/TransformControlsFreescale.js";
 
 			import {ViewportControls} from "./src/controls/ViewportControls.js";
 			import {EditorControls} from "./src/controls/EditorControls.js";
@@ -142,7 +142,7 @@
 				var viewportControls = new OrbitControls({domElement: canvas, camera: camera});
 				viewportControls.addEventListener('change', render);
 
-				var transformControls = new TransformControlsFreeform({domElement: canvas, camera: camera});
+				var transformControls = new TransformControlsFreescale({domElement: canvas, camera: camera});
 				transformControls.addEventListener('change', render);
 				transformControls.addEventListener('space-changed', event => {
 					// TODO

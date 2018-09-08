@@ -1,4 +1,4 @@
-import { Object3D, Vector3, Quaternion } from '../../three.js/build/three.module.js';
+import { Vector3, Quaternion, Raycaster, Plane } from '../../lib/three.module.js';
 
 /**
  * @author arodic / https://github.com/arodic
@@ -444,201 +444,9 @@ class Vector2 {
  * execution of [prop]Changed() funciton if defined.
  */
 
-const IoLiteMixin = ( superclass ) => class extends superclass {
-
-	addEventListener( type, listener ) {
-
-		this._listeners = this._listeners || {};
-		this._listeners[ type ] = this._listeners[ type ] || [];
-		if ( this._listeners[ type ].indexOf( listener ) === - 1 ) {
-
-			this._listeners[ type ].push( listener );
-
-		}
-
-	}
-	hasEventListener( type, listener ) {
-
-		if ( this._listeners === undefined ) return false;
-		return this._listeners[ type ] !== undefined && this._listeners[ type ].indexOf( listener ) !== - 1;
-
-	}
-	removeEventListener( type, listener ) {
-
-		if ( this._listeners === undefined ) return;
-		if ( this._listeners[ type ] !== undefined ) {
-
-			let index = this._listeners[ type ].indexOf( listener );
-			if ( index !== - 1 ) this._listeners[ type ].splice( index, 1 );
-
-		}
-
-	}
-	dispatchEvent( event ) {
-
-		if ( this._listeners === undefined ) return;
-		if ( this._listeners[ event.type ] !== undefined ) {
-
-			event.target = this;
-			let array = this._listeners[ event.type ].slice( 0 );
-			for ( let i = 0, l = array.length; i < l; i ++ ) {
-
-				array[ i ].call( this, event );
-
-			}
-
-		}
-
-	}
-	// Define properties in builk.
-	defineProperties( props ) {
-
-		//Define store for properties.
-		if ( ! this.hasOwnProperty( '_properties' ) ) {
-
-			Object.defineProperty( this, '_properties', {
-				value: {},
-				enumerable: false
-			} );
-
-		}
-		for ( let prop in props ) {
-
-			defineProperty( this, prop, props[ prop ] );
-
-		}
-
-	}
-
-};
-
-// Defines getter, setter
-const defineProperty = function ( scope, propName, defaultValue ) {
-
-	scope._properties[ propName ] = defaultValue;
-	if ( defaultValue === undefined ) {
-
-		console.warn( 'IoLiteMixin: ' + propName + ' is mandatory!' );
-
-	}
-	Object.defineProperty( scope, propName, {
-		get: function () {
-
-			return scope._properties[ propName ] !== undefined ? scope._properties[ propName ] : defaultValue;
-
-		},
-		set: function ( value ) {
-
-			if ( scope._properties[ propName ] !== value ) {
-
-				const oldValue = scope._properties[ propName ];
-				scope._properties[ propName ] = value;
-				if ( typeof scope[ propName + 'Changed' ] === 'function' ) scope[ propName + 'Changed' ]( value, oldValue );
-				scope.dispatchEvent( { type: propName + '-changed', value: value, oldValue: oldValue } );
-				scope.dispatchEvent( { type: 'change', prop: propName, value: value, oldValue: oldValue } );
-
-			}
-
-		},
-		enumerable: propName.charAt( 0 ) !== '_'
-	} );
-	scope[ propName ] = defaultValue;
-
-};
-
 /**
  * @author arodic / https://github.com/arodic
  */
-
-/*
- * Helper is a variant of Object3D which automatically follows its target object.
- * On matrix update, it automatically copies transform matrices from its target Object3D.
- */
-
-class Helper extends IoLiteMixin( Object3D ) {
-
-	get isHelper() {
-
-		return true;
-
-	}
-	constructor( params = {} ) {
-
-		super();
-
-		this.defineProperties( {
-			object: params.object || null,
-			camera: params.camera || null,
-			space: 'local',
-			size: 0,
-			worldPosition: new Vector3(),
-			worldQuaternion: new Quaternion(),
-			worldScale: new Vector3(),
-			cameraPosition: new Vector3(),
-			cameraQuaternion: new Quaternion(),
-			cameraScale: new Vector3(),
-			eye: new Vector3()
-		} );
-
-	}
-	updateHelperMatrix() {
-
-		if ( this.object ) {
-
-			this.object.updateMatrixWorld();
-			this.matrix.copy( this.object.matrix );
-			this.matrixWorld.copy( this.object.matrixWorld );
-
-		} else {
-
-			super.updateMatrixWorld();
-
-		}
-
-		this.matrixWorld.decompose( this.worldPosition, this.worldQuaternion, this.worldScale );
-
-		let eyeDistance = 1;
-		if ( this.camera ) {
-
-			this.camera.updateMatrixWorld();
-			this.camera.matrixWorld.decompose( this.cameraPosition, this.cameraQuaternion, this.cameraScale );
-			if ( this.camera.isPerspectiveCamera ) {
-
-				this.eye.copy( this.cameraPosition ).sub( this.worldPosition );
-				eyeDistance = this.eye.length();
-				this.eye.normalize();
-
-			} else if ( this.camera.isOrthographicCamera ) {
-
-				this.eye.copy( this.cameraPosition ).normalize();
-
-			}
-
-		}
-
-		if ( this.size || this.space == 'world' ) {
-
-			if ( this.size ) this.worldScale.set( 1, 1, 1 ).multiplyScalar( eyeDistance * this.size );
-			if ( this.space === 'world' ) this.worldQuaternion.set( 0, 0, 0, 1 );
-			this.matrixWorld.compose( this.worldPosition, this.worldQuaternion, this.worldScale );
-
-		}
-
-	}
-	updateMatrixWorld() {
-
-		this.updateHelperMatrix();
-		this.matrixWorldNeedsUpdate = false;
-		const children = this.children;
-		for ( let i = 0, l = children.length; i < l; i ++ ) {
-
-			children[ i ].updateMatrixWorld( true );
-
-		}
-
-	}
-
-}
 
 /**
  * @author arodic / https://github.com/arodic
@@ -739,6 +547,225 @@ const InteractiveMixin = ( superclass ) => class extends superclass {
 
 };
 
-class Interactive extends InteractiveMixin( Helper ) {}
+/**
+ * @author arodic / https://github.com/arodic
+ */
 
-export { InteractiveMixin, Interactive };
+// Reusable utility variables
+const ray = new Raycaster();
+const rayTarget = new Vector3();
+const tempVector = new Vector3();
+
+// events
+const changeEvent = { type: "change" };
+
+const TransformControlsMixin = ( superclass ) => class extends InteractiveMixin( superclass ) {
+
+	constructor( props ) {
+
+		super( props );
+
+		this.visible = false;
+
+		this.defineProperties( {
+			axis: null,
+			active: false,
+			pointStart: new Vector3(),
+			pointEnd: new Vector3(),
+			worldPositionStart: new Vector3(),
+			worldQuaternionStart: new Quaternion(),
+			worldScaleStart: new Vector3(), // TODO: remove
+			positionStart: new Vector3(),
+			quaternionStart: new Quaternion(),
+			scaleStart: new Vector3(),
+			plane: new Plane()
+		} );
+
+	}
+	// TODO: document
+	hasAxis( str ) {
+
+		let has = true;
+		str.split( '' ).some( a => {
+
+			if ( this.axis.indexOf( a ) === - 1 ) has = false;
+
+		} );
+		return has;
+
+	}
+	objectChanged( value ) {
+
+		let hasObject = value ? true : false;
+		this.visible = hasObject;
+		if ( ! hasObject ) {
+
+			this.active = false;
+			this.axis = null;
+
+		}
+
+	}
+	updateHelperMatrix() {
+
+		if ( this.object ) {
+
+			this.object.updateMatrixWorld();
+			this.object.matrixWorld.decompose( this.worldPosition, this.worldQuaternion, this.worldScale );
+
+		}
+		this.camera.updateMatrixWorld();
+		this.camera.matrixWorld.decompose( this.cameraPosition, this.cameraQuaternion, this.cameraScale );
+		if ( this.camera.isPerspectiveCamera ) {
+
+			this.eye.copy( this.cameraPosition ).sub( this.worldPosition ).normalize();
+
+		} else if ( this.camera.isOrthographicCamera ) {
+
+			this.eye.copy( this.cameraPosition ).normalize();
+
+		}
+		super.updateHelperMatrix();
+		this.updatePlane();
+
+	}
+	onPointerHover( pointers ) {
+
+		if ( ! this.object || this.active === true ) return;
+		ray.setFromCamera( pointers[ 0 ].position, this.camera ); //TODO: unhack
+
+		const intersect = ray.intersectObjects( this.pickers, true )[ 0 ] || false;
+		if ( intersect ) {
+
+			this.axis = intersect.object.name;
+
+		} else {
+
+			this.axis = null;
+
+		}
+
+	}
+	onPointerDown( pointers ) {
+
+		if ( this.axis === null || ! this.object || this.active === true || pointers[ 0 ].button !== 0 ) return;
+		ray.setFromCamera( pointers[ 0 ].position, this.camera );
+		const planeIntersect = ray.ray.intersectPlane( this.plane, rayTarget );
+		let space = ( this.axis === 'E' || this.axis === 'XYZ' ) ? 'world' : this.space;
+		if ( planeIntersect ) {
+
+			this.object.updateMatrixWorld();
+			if ( this.object.parent ) {
+
+				this.object.parent.updateMatrixWorld();
+
+			}
+			this.positionStart.copy( this.object.position );
+			this.quaternionStart.copy( this.object.quaternion );
+			this.scaleStart.copy( this.object.scale );
+			this.object.matrixWorld.decompose( this.worldPositionStart, this.worldQuaternionStart, this.worldScaleStart );
+			this.pointStart.copy( planeIntersect ).sub( this.worldPositionStart );
+			if ( space === 'local' ) this.pointStart.applyQuaternion( this.worldQuaternionStart.clone().inverse() );
+			this.active = true;
+
+		}
+
+	}
+	onPointerMove( pointers ) {
+
+		let axis = this.axis;
+		let object = this.object;
+		let space = ( axis === 'E' || axis === 'XYZ' ) ? 'world' : this.space;
+
+		if ( object === undefined || axis === null || this.active === false || pointers[ 0 ].button !== 0 ) return;
+
+		ray.setFromCamera( pointers[ 0 ].position, this.camera );
+
+		const planeIntersect = ray.ray.intersectPlane( this.plane, tempVector );
+
+		if ( ! planeIntersect ) return;
+
+		this.pointEnd.copy( planeIntersect ).sub( this.worldPositionStart );
+
+		if ( space === 'local' ) this.pointEnd.applyQuaternion( this.worldQuaternionStart.clone().inverse() );
+
+		this.transform( space );
+
+		this.object.updateMatrixWorld();
+		this.dispatchEvent( changeEvent );
+
+	}
+	onPointerUp( pointers ) {
+
+		if ( pointers.length === 0 ) {
+
+			this.active = false;
+			if ( pointers.removed[ 0 ].pointerType === 'touch' ) this.axis = null;
+
+		} else {
+
+			if ( pointers[ 0 ].button === - 1 ) this.axis = null;
+
+		}
+
+	}
+	transform() {
+
+		// TODO:
+		return;
+
+	}
+	updateAxis( axis ) {
+
+		super.updateAxis( axis );
+		this.highlightAxis( axis, this.axis );
+
+	}
+	highlightAxis( child, axis ) {
+
+		if ( child.material ) {
+
+			const h = child.material.highlight;
+			if ( ! this.enabled ) {
+
+				child.material.highlight = ( 15 * h - 1 ) / 16;
+				return;
+
+			}
+			if ( axis ) {
+
+				if ( this.hasAxis( child.name ) ) {
+
+					child.material.highlight = ( 15 * h + 1 ) / 16;
+					return;
+
+				}
+				child.material.highlight = ( 15 * h - 1 ) / 16;
+				return;
+
+			}
+			child.material.highlight = ( 15 * h ) / 16;
+
+		}
+
+	}
+	updatePlane() {
+
+		const axis = this.axis;
+		const normal = this.plane.normal;
+
+		if ( axis === 'X' ) normal.copy( this.worldX ).cross( tempVector.copy( this.eye ).cross( this.worldX ) );
+		if ( axis === 'Y' ) normal.copy( this.worldY ).cross( tempVector.copy( this.eye ).cross( this.worldY ) );
+		if ( axis === 'Z' ) normal.copy( this.worldZ ).cross( tempVector.copy( this.eye ).cross( this.worldZ ) );
+		if ( axis === 'XY' ) normal.copy( this.worldZ );
+		if ( axis === 'YZ' ) normal.copy( this.worldX );
+		if ( axis === 'XZ' ) normal.copy( this.worldY );
+		if ( axis === 'XYZ' || axis === 'E' ) this.camera.getWorldDirection( normal );
+
+		this.plane.setFromNormalAndCoplanarPoint( normal, this.worldPosition );
+
+	}
+
+};
+
+export { TransformControlsMixin };

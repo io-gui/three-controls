@@ -1,225 +1,5 @@
-import { Raycaster, Vector3, Quaternion, Plane, Object3D, Vector2, BufferGeometry, BufferAttribute, UniformsUtils, Color, DoubleSide, ShaderMaterial, Mesh, Euler, Matrix4, Uint16BufferAttribute, Float32BufferAttribute, SphereBufferGeometry, CylinderBufferGeometry, OctahedronBufferGeometry, BoxBufferGeometry, TorusBufferGeometry } from '../../../three.js/build/three.module.js';
-import { InteractiveMixin } from '../Interactive.js';
-
-/**
- * @author arodic / https://github.com/arodic
- */
-
-// Reusable utility variables
-const ray = new Raycaster();
-const rayTarget = new Vector3();
-const tempVector = new Vector3();
-
-// events
-const changeEvent = { type: "change" };
-
-const TransformControlsMixin = ( superclass ) => class extends InteractiveMixin( superclass ) {
-
-	constructor( props ) {
-
-		super( props );
-
-		this.visible = false;
-
-		this.defineProperties( {
-			axis: null,
-			active: false,
-			pointStart: new Vector3(),
-			pointEnd: new Vector3(),
-			worldPositionStart: new Vector3(),
-			worldQuaternionStart: new Quaternion(),
-			worldScaleStart: new Vector3(), // TODO: remove
-			positionStart: new Vector3(),
-			quaternionStart: new Quaternion(),
-			scaleStart: new Vector3(),
-			plane: new Plane()
-		} );
-
-	}
-	// TODO: document
-	hasAxis( str ) {
-
-		let has = true;
-		str.split( '' ).some( a => {
-
-			if ( this.axis.indexOf( a ) === - 1 ) has = false;
-
-		} );
-		return has;
-
-	}
-	objectChanged( value ) {
-
-		let hasObject = value ? true : false;
-		this.visible = hasObject;
-		if ( ! hasObject ) {
-
-			this.active = false;
-			this.axis = null;
-
-		}
-
-	}
-	updateHelperMatrix() {
-
-		if ( this.object ) {
-
-			this.object.updateMatrixWorld();
-			this.object.matrixWorld.decompose( this.worldPosition, this.worldQuaternion, this.worldScale );
-
-		}
-		this.camera.updateMatrixWorld();
-		this.camera.matrixWorld.decompose( this.cameraPosition, this.cameraQuaternion, this.cameraScale );
-		if ( this.camera.isPerspectiveCamera ) {
-
-			this.eye.copy( this.cameraPosition ).sub( this.worldPosition ).normalize();
-
-		} else if ( this.camera.isOrthographicCamera ) {
-
-			this.eye.copy( this.cameraPosition ).normalize();
-
-		}
-		super.updateHelperMatrix();
-		this.updatePlane();
-
-	}
-	onPointerHover( pointers ) {
-
-		if ( ! this.object || this.active === true ) return;
-		ray.setFromCamera( pointers[ 0 ].position, this.camera ); //TODO: unhack
-
-		const intersect = ray.intersectObjects( this.pickers, true )[ 0 ] || false;
-		if ( intersect ) {
-
-			this.axis = intersect.object.name;
-
-		} else {
-
-			this.axis = null;
-
-		}
-
-	}
-	onPointerDown( pointers ) {
-
-		if ( this.axis === null || ! this.object || this.active === true || pointers[ 0 ].button !== 0 ) return;
-		ray.setFromCamera( pointers[ 0 ].position, this.camera );
-		const planeIntersect = ray.ray.intersectPlane( this.plane, rayTarget );
-		let space = ( this.axis === 'E' || this.axis === 'XYZ' ) ? 'world' : this.space;
-		if ( planeIntersect ) {
-
-			this.object.updateMatrixWorld();
-			if ( this.object.parent ) {
-
-				this.object.parent.updateMatrixWorld();
-
-			}
-			this.positionStart.copy( this.object.position );
-			this.quaternionStart.copy( this.object.quaternion );
-			this.scaleStart.copy( this.object.scale );
-			this.object.matrixWorld.decompose( this.worldPositionStart, this.worldQuaternionStart, this.worldScaleStart );
-			this.pointStart.copy( planeIntersect ).sub( this.worldPositionStart );
-			if ( space === 'local' ) this.pointStart.applyQuaternion( this.worldQuaternionStart.clone().inverse() );
-			this.active = true;
-
-		}
-
-	}
-	onPointerMove( pointers ) {
-
-		let axis = this.axis;
-		let object = this.object;
-		let space = ( axis === 'E' || axis === 'XYZ' ) ? 'world' : this.space;
-
-		if ( object === undefined || axis === null || this.active === false || pointers[ 0 ].button !== 0 ) return;
-
-		ray.setFromCamera( pointers[ 0 ].position, this.camera );
-
-		const planeIntersect = ray.ray.intersectPlane( this.plane, tempVector );
-
-		if ( ! planeIntersect ) return;
-
-		this.pointEnd.copy( planeIntersect ).sub( this.worldPositionStart );
-
-		if ( space === 'local' ) this.pointEnd.applyQuaternion( this.worldQuaternionStart.clone().inverse() );
-
-		this.transform( space );
-
-		this.object.updateMatrixWorld();
-		this.dispatchEvent( changeEvent );
-
-	}
-	onPointerUp( pointers ) {
-
-		if ( pointers.length === 0 ) {
-
-			this.active = false;
-			if ( pointers.removed[ 0 ].pointerType === 'touch' ) this.axis = null;
-
-		} else {
-
-			if ( pointers[ 0 ].button === - 1 ) this.axis = null;
-
-		}
-
-	}
-	transform() {
-
-		// TODO:
-		return;
-
-	}
-	updateAxis( axis ) {
-
-		super.updateAxis( axis );
-		this.highlightAxis( axis, this.axis );
-
-	}
-	highlightAxis( child, axis ) {
-
-		if ( child.material ) {
-
-			if ( ! this.enabled ) {
-
-				child.material.highlight = - 1;
-				return;
-
-			}
-			if ( axis ) {
-
-				if ( this.hasAxis( child.name ) ) {
-
-					child.material.highlight = 1;
-					return;
-
-				}
-				child.material.highlight = - 1;
-				return;
-
-			}
-			child.material.highlight = 0;
-
-		}
-
-	}
-	updatePlane() {
-
-		const axis = this.axis;
-		const normal = this.plane.normal;
-
-		if ( axis === 'X' ) normal.copy( this.worldX ).cross( tempVector.copy( this.eye ).cross( this.worldX ) );
-		if ( axis === 'Y' ) normal.copy( this.worldY ).cross( tempVector.copy( this.eye ).cross( this.worldY ) );
-		if ( axis === 'Z' ) normal.copy( this.worldZ ).cross( tempVector.copy( this.eye ).cross( this.worldZ ) );
-		if ( axis === 'XY' ) normal.copy( this.worldZ );
-		if ( axis === 'YZ' ) normal.copy( this.worldX );
-		if ( axis === 'XZ' ) normal.copy( this.worldY );
-		if ( axis === 'XYZ' || axis === 'E' ) this.camera.getWorldDirection( normal );
-
-		this.plane.setFromNormalAndCoplanarPoint( normal, this.worldPosition );
-
-	}
-
-};
+import { Object3D, Vector3, Quaternion, Vector2, BufferGeometry, BufferAttribute, UniformsUtils, Color, DoubleSide, ShaderMaterial, Mesh, Euler, Matrix4, Uint16BufferAttribute, Float32BufferAttribute, SphereBufferGeometry, CylinderBufferGeometry, OctahedronBufferGeometry, BoxBufferGeometry } from '../../lib/three.module.js';
+import { TransformControlsMixin } from './TransformControlsMixin.js';
 
 /**
  * @author arodic / https://github.com/arodic
@@ -867,11 +647,15 @@ class HelperMaterial extends IoLiteMixin( ShaderMaterial ) {
 				float aspect = projectionMatrix[0][0] / projectionMatrix[1][1];
 				vec3 sNormal = normalize(vec3(vNormal.x, vNormal.y, 0));
 
+				float extrude = 0.0;
 				if (outline > 0.0) {
-					pos.x += sNormal.x * .0018 * (pos.w) * aspect;
-					pos.y += sNormal.y * .0018 * (pos.w);
+					extrude += 0.0015 * outline;
 					pos.z += .1;
+				} else {
+					extrude += 0.001 * -outline;
 				}
+				pos.x += sNormal.x * extrude * (pos.w) * aspect;
+				pos.y += sNormal.y * extrude * (pos.w);
 
 				gl_Position = pos;
 			}
@@ -884,18 +668,14 @@ class HelperMaterial extends IoLiteMixin( ShaderMaterial ) {
 			uniform float uOpacity;
 			uniform float uHighlight;
 			void main() {
-				if (vOutline != 0.0) {
-					if (uHighlight == 0.0) {
-						gl_FragColor = vec4( 0.0, 0.0, 0.0, 1.0 );
-					} else if (uHighlight == 1.0) {
-						gl_FragColor = vec4( 1.0, 1.0, 1.0, 1.0 );
-					} else {
-						gl_FragColor = vec4( 0.5, 0.5, 0.5, 1.0 * 0.15 );
-					}
+				if (vOutline > 0.0) {
+					vec4 c = mix(vec4( 0.0, 0.0, 0.0, 1.0 ), vec4( 1.0, 1.0, 1.0, 2.0 ), max(0.0, uHighlight) );
+					c = mix(c, vec4( 0.5, 0.5, 0.5, 1.0 * 0.15 ), max(0.0, -uHighlight) );
+					gl_FragColor = c;
 					return;
 				}
-				float dimming = 1.0;
-				if (uHighlight == -1.0) dimming = 0.15;
+				float dimming = mix(1.0, 0.2, max(0.0, -uHighlight));
+				dimming = mix(dimming, dimming * 2.0, max(0.0, uHighlight));
 				gl_FragColor = vec4( uColor * vColor.rgb, uOpacity * vColor.a * dimming );
 			}
 		`;
@@ -935,10 +715,9 @@ class HelperMesh extends Mesh {
 		super();
 		this.geometry = geometry instanceof Array ? mergeGeometryChunks( geometry ) : geometry;
 		this.material = new HelperMaterial( props.color || 'white', props.opacity || 1 );
-		// name properties are essential for picking and updating logic.
 		this.name = props.name;
 		// this.material.wireframe = true;
-		this.renderOrder = Infinity;
+		// this.renderOrder = 1000;
 
 	}
 
@@ -972,6 +751,9 @@ function mergeGeometryChunks( chunks ) {
 		const rotation = chunk.rotation;
 		let scale = chunk.scale;
 
+		let thickness = chunk.thickness || 0;
+		let outlineThickness = chunk.outlineThickness !== undefined ? chunk.outlineThickness : 1;
+
 		if ( scale && typeof scale === 'number' ) scale = [ scale, scale, scale ];
 
 		_position.set( 0, 0, 0 );
@@ -1002,23 +784,39 @@ function mergeGeometryChunks( chunks ) {
 
 		const vertCount = chunkGeo.attributes.position.count;
 
-		const colorArray = [];
+		if ( ! chunkGeo.attributes.color ) {
+
+			chunkGeo.addAttribute( 'color', new Float32BufferAttribute( new Array( vertCount * 4 ), 4 ) );
+
+		}
+
+		const colorArray = chunkGeo.attributes.color.array;
 		for ( let j = 0; j < vertCount; j ++ ) {
 
+			// TODO: fix
+			const hasAlpha = colorArray[ j * 4 + 3 ] !== undefined && ! isNaN( colorArray[ j * 4 + 3 ] );
 			colorArray[ j * 4 + 0 ] = color[ 0 ];
 			colorArray[ j * 4 + 1 ] = color[ 1 ];
 			colorArray[ j * 4 + 2 ] = color[ 2 ];
-			colorArray[ j * 4 + 3 ] = color[ 3 ] !== undefined ? color[ 3 ] : 1;
+			if ( ! hasAlpha ) colorArray[ j * 4 + 3 ] = color[ 3 ] !== undefined ? color[ 3 ] : 0;
 
 		}
-		chunkGeo.addAttribute( 'color', new Float32BufferAttribute( colorArray, 4 ) );
 
 		// Duplicate geometry and add outline attribute
-		const outlineArray = [];
-		for ( let j = 0; j < vertCount; j ++ ) outlineArray[ j ] = 1;
-		chunkGeo.addAttribute( 'outline', new Float32BufferAttribute( outlineArray, 1 ) );
-		chunkGeo = BufferGeometryUtils.mergeBufferGeometries( [ chunkGeo, chunkGeo ] );
-		for ( let j = 0; j < vertCount; j ++ ) chunkGeo.attributes.outline.array[ j ] = 0;
+		if ( ! chunkGeo.attributes.outline ) {
+
+			const outlineArray = [];
+			for ( let j = 0; j < vertCount; j ++ ) outlineArray[ j ] = - thickness || 0;
+			chunkGeo.addAttribute( 'outline', new Float32BufferAttribute( outlineArray, 1 ) );
+
+		}
+
+		if ( outlineThickness ) {
+
+			chunkGeo = BufferGeometryUtils.mergeBufferGeometries( [ chunkGeo, chunkGeo ] );
+			for ( let j = 0; j < vertCount; j ++ ) chunkGeo.attributes.outline.array[ vertCount + j ] = outlineThickness + thickness;
+
+		}
 
 		geometry = BufferGeometryUtils.mergeBufferGeometries( [ geometry, chunkGeo ] );
 
@@ -1034,72 +832,110 @@ function mergeGeometryChunks( chunks ) {
 const PI = Math.PI;
 const HPI = Math.PI / 2;
 
-const geosphereGeometry = new OctahedronBufferGeometry( 1, 3 );
+class GeosphereGeometry extends OctahedronBufferGeometry {
 
-const octahedronGeometry = new OctahedronBufferGeometry( 1, 0 );
+	constructor() {
 
-const coneGeometry = new HelperMesh( [
-	{ geometry: new CylinderBufferGeometry( 0, 0.2, 1, 8, 2 ), position: [ 0, 0.5, 0 ] },
-	{ geometry: new SphereBufferGeometry( 0.2, 8, 8 ) }
-] ).geometry;
+		super( 1, 3 );
 
-const lineGeometry = new HelperMesh( [
-	{ geometry: new CylinderBufferGeometry( 0.02, 0.02, 1, 4, 2, false ), position: [ 0, 0.5, 0 ] },
-	{ geometry: new SphereBufferGeometry( 0.02, 4, 4 ), position: [ 0, 0, 0 ] },
-	{ geometry: new SphereBufferGeometry( 0.02, 4, 4 ), position: [ 0, 1, 0 ] }
-] ).geometry;
+	}
 
-const arrowGeometry = new HelperMesh( [
-	{ geometry: coneGeometry, position: [ 0, 0.8, 0 ], scale: 0.2 },
-	{ geometry: new CylinderBufferGeometry( 0.005, 0.005, 0.8, 4, 2, false ), position: [ 0, 0.4, 0 ] }
-] ).geometry;
+}
 
-const scaleArrowGeometry = new HelperMesh( [
-	{ geometry: geosphereGeometry, position: [ 0, 0.8, 0 ], scale: 0.075 },
-	{ geometry: new CylinderBufferGeometry( 0.005, 0.005, 0.8, 4, 2, false ), position: [ 0, 0.4, 0 ] }
-] ).geometry;
+class OctahedronGeometry extends OctahedronBufferGeometry {
 
-const corner2Geometry = new HelperMesh( [
-	{ geometry: new CylinderBufferGeometry( 0.05, 0.05, 1, 4, 2, false ), position: [ 0.5, 0, 0 ], rotation: [ 0, 0, HPI ] },
-	{ geometry: new CylinderBufferGeometry( 0.05, 0.05, 1, 4, 2, false ), position: [ 0, 0, 0.5 ], rotation: [ HPI, 0, 0 ] },
-	{ geometry: new SphereBufferGeometry( 0.05, 8, 4 ), position: [ 0, 0, 0 ] },
-	{ geometry: new SphereBufferGeometry( 0.05, 4, 4 ), position: [ 1, 0, 0 ], rotation: [ 0, 0, HPI ] },
-	{ geometry: new SphereBufferGeometry( 0.05, 4, 4 ), position: [ 0, 0, 1 ], rotation: [ HPI, 0, 0 ] },
-] ).geometry;
+	constructor() {
 
-const pickerHandleGeometry = new HelperMesh( [
-	{ geometry: new CylinderBufferGeometry( 0.2, 0, 1, 4, 1, false ), position: [ 0, 0.5, 0 ] }
-] ).geometry;
+		super( 1, 0 );
 
-const planeGeometry = new BoxBufferGeometry( 1, 1, 0.01, 1, 1, 1 );
+	}
 
-const circleGeometry = new HelperMesh( [
-	{ geometry: new OctahedronBufferGeometry( 1, 3 ), scale: [ 1, 0.01, 1 ] },
-] ).geometry;
+}
 
-const ringGeometry = new HelperMesh( [
-	{ geometry: new TorusBufferGeometry( 1, 0.005, 8, 128 ), rotation: [ HPI, 0, 0 ] },
-] ).geometry;
+class PlaneGeometry extends BoxBufferGeometry {
 
-const halfRingGeometry = new HelperMesh( [
-	{ geometry: new TorusBufferGeometry( 1, 0.005, 8, 64, PI ), rotation: [ HPI, 0, 0 ] },
-] ).geometry;
+	constructor() {
 
-const ringPickerGeometry = new HelperMesh( [
-	{ geometry: new TorusBufferGeometry( 1, 0.1, 8, 128 ), rotation: [ HPI, 0, 0 ] },
-] ).geometry;
+		super( 1, 1, 0.01, 1, 1, 1 );
 
-const rotateHandleGeometry = new HelperMesh( [
-	{ geometry: new TorusBufferGeometry( 1, 0.005, 4, 64, PI ) },
-	{ geometry: new SphereBufferGeometry( 0.005, 4, 4 ), position: [ 1, 0, 0 ], rotation: [ HPI, 0, 0 ] },
-	{ geometry: new SphereBufferGeometry( 0.005, 4, 4 ), position: [ - 1, 0, 0 ], rotation: [ HPI, 0, 0 ] },
-	{ geometry: octahedronGeometry, position: [ 0, 0.992, 0 ], scale: [ 0.2, 0.05, 0.05 ] }
-] ).geometry;
+	}
 
-const rotatePickerGeometry = new HelperMesh( [
-	{ geometry: new TorusBufferGeometry( 1, 0.03, 4, 8, PI ) },
-	{ geometry: octahedronGeometry, position: [ 0, 0.992, 0 ], scale: 0.2 }
-] ).geometry;
+}
+
+class ConeGeometry extends HelperMesh {
+
+	constructor() {
+
+		super( [
+			{ geometry: new CylinderBufferGeometry( 0, 0.2, 1, 8, 2 ), position: [ 0, 0.5, 0 ] },
+			{ geometry: new SphereBufferGeometry( 0.2, 8, 8 ) }
+		] );
+		return this.geometry;
+
+	}
+
+}
+
+class ArrowGeometry extends HelperMesh {
+
+	constructor() {
+
+		super( [
+			{ geometry: new ConeGeometry(), position: [ 0, 0.8, 0 ], scale: 0.2 },
+			{ geometry: new CylinderBufferGeometry( 0.00001, 0.00001, 0.8, 4, 2, false ), position: [ 0, 0.4, 0 ], thickness: 1 }
+		] );
+		return this.geometry;
+
+	}
+
+}
+
+class ScaleArrowGeometry extends HelperMesh {
+
+	constructor() {
+
+		super( [
+			{ geometry: new OctahedronGeometry(), position: [ 0, 0.8, 0 ], scale: 0.075 },
+			{ geometry: new CylinderBufferGeometry( 0.00001, 0.00001, 0.8, 4, 2, false ), position: [ 0, 0.4, 0 ], thickness: 1 }
+		] );
+		return this.geometry;
+
+	}
+
+}
+
+class Corner2Geometry extends HelperMesh {
+
+	constructor() {
+
+		super( [
+			{ geometry: new CylinderBufferGeometry( 0.00001, 0.00001, 1, 4, 2, false ), position: [ 0.5, 0, 0 ], rotation: [ 0, 0, HPI ], thickness: 1 },
+			{ geometry: new CylinderBufferGeometry( 0.00001, 0.00001, 1, 4, 2, false ), position: [ 0, 0, 0.5 ], rotation: [ HPI, 0, 0 ], thickness: 1 },
+			{ geometry: new SphereBufferGeometry( 0.00001, 4, 4 ), position: [ 0, 0, 0 ], thickness: 1 },
+			{ geometry: new SphereBufferGeometry( 0.00001, 4, 4 ), position: [ 1, 0, 0 ], rotation: [ 0, 0, HPI ], thickness: 1 },
+			{ geometry: new SphereBufferGeometry( 0.00001, 4, 4 ), position: [ 0, 0, 1 ], rotation: [ HPI, 0, 0 ], thickness: 1 },
+		] );
+		return this.geometry;
+
+	}
+
+}
+
+class PickerHandleGeometry extends HelperMesh {
+
+	constructor() {
+
+		super( [
+			{ geometry: new CylinderBufferGeometry( 0.2, 0, 1, 4, 1, false ), position: [ 0, 0.5, 0 ] }
+		] );
+		return this.geometry;
+
+	}
+
+}
+
+const coneGeometry = new ConeGeometry();
+const octahedronGeometry = new OctahedronGeometry();
 
 class TransformHelper extends Helper {
 
@@ -1152,7 +988,7 @@ class TransformHelper extends Helper {
 		return {
 			X: [ { geometry: coneGeometry, color: [ 1, 0, 0 ], position: [ 0.15, 0, 0 ], rotation: [ 0, 0, - Math.PI / 2 ], scale: [ 0.5, 1, 0.5 ] } ],
 			Y: [ { geometry: coneGeometry, color: [ 0, 1, 0 ], position: [ 0, 0.15, 0 ], rotation: [ 0, 0, 0 ], scale: [ 0.5, 1, 0.5 ] } ],
-			Z: [ { geometry: coneGeometry, color: [ 0, 0, 1 ], position: [ 0, 0, - 0.15 ], rotation: [ - Math.PI / 2, 0, 0 ], scale: [ 0.5, 1, 0.5 ] } ]
+			Z: [ { geometry: coneGeometry, color: [ 0, 0, 1 ], position: [ 0, 0, - 0.15 ], rotation: [ Math.PI / 2, 0, 0 ], scale: [ 0.5, 1, 0.5 ] } ]
 		};
 
 	}
@@ -1200,28 +1036,34 @@ const AXIS_HIDE_TRESHOLD = 0.99;
 const PLANE_HIDE_TRESHOLD = 0.2;
 const AXIS_FLIP_TRESHOLD = 0;
 
+const arrowGeometry = new ArrowGeometry();
+const corner2Geometry = new Corner2Geometry();
+const octahedronGeometry$1 = new OctahedronGeometry();
+const pickerHandleGeometry = new PickerHandleGeometry();
+const planeGeometry = new PlaneGeometry();
+
 class TransformHelperTranslate extends TransformHelper {
 
 	get handlesGroup() {
 
 		return {
-			X: [ { geometry: arrowGeometry, color: [ 1, 0, 0 ], rotation: [ 0, 0, - Math.PI / 2 ] } ],
-			Y: [ { geometry: arrowGeometry, color: [ 0, 1, 0 ] } ],
-			Z: [ { geometry: arrowGeometry, color: [ 0, 0, 1 ], rotation: [ Math.PI / 2, 0, 0 ] } ],
+			X: [ { geometry: arrowGeometry, color: [ 1, 0.3, 0.3 ], rotation: [ 0, 0, - Math.PI / 2 ] } ],
+			Y: [ { geometry: arrowGeometry, color: [ 0.3, 1, 0.3 ] } ],
+			Z: [ { geometry: arrowGeometry, color: [ 0.3, 0.3, 1 ], rotation: [ Math.PI / 2, 0, 0 ] } ],
 			XYZ: [
-				{ geometry: octahedronGeometry, scale: 0.075 }
+				{ geometry: octahedronGeometry$1, scale: 0.075 }
 			],
 			XY: [
 				{ geometry: planeGeometry, color: [ 1, 1, 0, 0.25 ], position: [ 0.15, 0.15, 0 ], scale: 0.3 },
-				{ geometry: corner2Geometry, color: [ 1, 1, 0 ], position: [ 0.32, 0.32, 0 ], scale: 0.15, rotation: [ Math.PI / 2, 0, Math.PI ] }
+				{ geometry: corner2Geometry, color: [ 1, 1, 0.3 ], position: [ 0.32, 0.32, 0 ], scale: 0.15, rotation: [ Math.PI / 2, 0, Math.PI ] }
 			],
 			YZ: [
 				{ geometry: planeGeometry, color: [ 0, 1, 1, 0.25 ], position: [ 0, 0.15, 0.15 ], rotation: [ 0, Math.PI / 2, 0 ], scale: 0.3 },
-				{ geometry: corner2Geometry, color: [ 0, 1, 1 ], position: [ 0, 0.32, 0.32 ], scale: 0.15, rotation: [ 0, Math.PI, - Math.PI / 2 ] }
+				{ geometry: corner2Geometry, color: [ 0.3, 1, 1 ], position: [ 0, 0.32, 0.32 ], scale: 0.15, rotation: [ 0, Math.PI, - Math.PI / 2 ] }
 			],
 			XZ: [
 				{ geometry: planeGeometry, color: [ 1, 0, 1, 0.25 ], position: [ 0.15, 0, 0.15 ], rotation: [ - Math.PI / 2, 0, 0 ], scale: 0.3 },
-				{ geometry: corner2Geometry, color: [ 1, 0, 1 ], position: [ 0.32, 0, 0.32 ], scale: 0.15, rotation: [ 0, Math.PI, 0 ] }
+				{ geometry: corner2Geometry, color: [ 1, 0.3, 1 ], position: [ 0.32, 0, 0.32 ], scale: 0.15, rotation: [ 0, Math.PI, 0 ] }
 			]
 		};
 
@@ -1232,7 +1074,7 @@ class TransformHelperTranslate extends TransformHelper {
 			X: [ { geometry: pickerHandleGeometry, rotation: [ 0, 0, - Math.PI / 2 ] } ],
 			Y: [ { geometry: pickerHandleGeometry } ],
 			Z: [ { geometry: pickerHandleGeometry, rotation: [ Math.PI / 2, 0, 0 ] } ],
-			XYZ: [ { geometry: octahedronGeometry, scale: 0.4 } ],
+			XYZ: [ { geometry: octahedronGeometry$1, scale: 0.4 } ],
 			XY: [ { geometry: planeGeometry, position: [ 0.25, 0.25, 0 ], scale: 0.5 } ],
 			YZ: [ { geometry: planeGeometry, position: [ 0, 0.25, 0.25 ], rotation: [ 0, Math.PI / 2, 0 ], scale: 0.5 } ],
 			XZ: [ { geometry: planeGeometry, position: [ 0.25, 0, 0.25 ], rotation: [ - Math.PI / 2, 0, 0 ], scale: 0.5 } ]
@@ -1265,25 +1107,31 @@ class TransformHelperTranslate extends TransformHelper {
 
 }
 
+const scaleArrowGeometry = new ScaleArrowGeometry();
+const pickerHandleGeometry$1 = new PickerHandleGeometry();
+const corner2Geometry$1 = new Corner2Geometry();
+const planeGeometry$1 = new PlaneGeometry();
+const geosphereGeometry = new GeosphereGeometry();
+
 class TransformHelperScale extends TransformHelperTranslate {
 
 	get handlesGroup() {
 
 		return {
-			X: [ { geometry: scaleArrowGeometry, color: [ 1, 0, 0 ], rotation: [ 0, 0, - Math.PI / 2 ] } ],
-			Y: [ { geometry: scaleArrowGeometry, color: [ 0, 1, 0 ] } ],
-			Z: [ { geometry: scaleArrowGeometry, color: [ 0, 0, 1 ], rotation: [ Math.PI / 2, 0, 0 ] } ],
+			X: [ { geometry: scaleArrowGeometry, color: [ 1, 0.3, 0.3 ], rotation: [ 0, 0, - Math.PI / 2 ] } ],
+			Y: [ { geometry: scaleArrowGeometry, color: [ 0.3, 1, 0.3 ] } ],
+			Z: [ { geometry: scaleArrowGeometry, color: [ 0.3, 0.3, 1 ], rotation: [ Math.PI / 2, 0, 0 ] } ],
 			XY: [
-				{ geometry: planeGeometry, color: [ 1, 1, 0, 0.25 ], position: [ 0.71, 0.71, 0 ], scale: 0.25 },
-				{ geometry: corner2Geometry, color: [ 1, 1, 0 ], position: [ 0.85, 0.85, 0 ], scale: 0.15, rotation: [ Math.PI / 2, 0, Math.PI ] }
+				{ geometry: planeGeometry$1, color: [ 1, 1, 0, 0.25 ], position: [ 0.71, 0.71, 0 ], scale: 0.25 },
+				{ geometry: corner2Geometry$1, color: [ 1, 1, 0.3 ], position: [ 0.85, 0.85, 0 ], scale: 0.25, rotation: [ Math.PI / 2, 0, Math.PI ] }
 			],
 			YZ: [
-				{ geometry: planeGeometry, color: [ 0, 1, 1, 0.25 ], position: [ 0, 0.71, 0.71 ], rotation: [ 0, Math.PI / 2, 0 ], scale: 0.25 },
-				{ geometry: corner2Geometry, color: [ 0, 1, 1 ], position: [ 0, 0.85, 0.85 ], scale: 0.15, rotation: [ 0, Math.PI, - Math.PI / 2 ] }
+				{ geometry: planeGeometry$1, color: [ 0, 1, 1, 0.25 ], position: [ 0, 0.71, 0.71 ], rotation: [ 0, Math.PI / 2, 0 ], scale: 0.25 },
+				{ geometry: corner2Geometry$1, color: [ 0.3, 1, 1 ], position: [ 0, 0.85, 0.85 ], scale: 0.25, rotation: [ 0, Math.PI, - Math.PI / 2 ] }
 			],
 			XZ: [
-				{ geometry: planeGeometry, color: [ 1, 0, 1, 0.25 ], position: [ 0.71, 0, 0.71 ], rotation: [ - Math.PI / 2, 0, 0 ], scale: 0.25 },
-				{ geometry: corner2Geometry, color: [ 1, 0, 1 ], position: [ 0.85, 0, 0.85 ], scale: 0.15, rotation: [ 0, Math.PI, 0 ] }
+				{ geometry: planeGeometry$1, color: [ 1, 0, 1, 0.25 ], position: [ 0.71, 0, 0.71 ], rotation: [ - Math.PI / 2, 0, 0 ], scale: 0.25 },
+				{ geometry: corner2Geometry$1, color: [ 1, 0.3, 1 ], position: [ 0.85, 0, 0.85 ], scale: 0.25, rotation: [ 0, Math.PI, 0 ] }
 			],
 			XYZX: [ { geometry: geosphereGeometry, position: [ 1.1, 0, 0 ], scale: 0.075 } ],
 			XYZY: [ { geometry: geosphereGeometry, position: [ 0, 1.1, 0 ], scale: 0.075 } ],
@@ -1294,12 +1142,12 @@ class TransformHelperScale extends TransformHelperTranslate {
 	get pickersGroup() {
 
 		return {
-			X: [ { geometry: pickerHandleGeometry, rotation: [ 0, 0, - Math.PI / 2 ] } ],
-			Y: [ { geometry: pickerHandleGeometry } ],
-			Z: [ { geometry: pickerHandleGeometry, rotation: [ Math.PI / 2, 0, 0 ] } ],
-			XY: [ { geometry: planeGeometry, position: [ 0.71, 0.71, 0 ], scale: 0.4 } ],
-			YZ: [ { geometry: planeGeometry, position: [ 0, 0.71, 0.71 ], rotation: [ 0, Math.PI / 2, 0 ], scale: 0.4 } ],
-			XZ: [ { geometry: planeGeometry, position: [ 0.71, 0, 0.71 ], rotation: [ - Math.PI / 2, 0, 0 ], scale: 0.4 } ],
+			X: [ { geometry: pickerHandleGeometry$1, rotation: [ 0, 0, - Math.PI / 2 ] } ],
+			Y: [ { geometry: pickerHandleGeometry$1 } ],
+			Z: [ { geometry: pickerHandleGeometry$1, rotation: [ Math.PI / 2, 0, 0 ] } ],
+			XY: [ { geometry: planeGeometry$1, position: [ 0.71, 0.71, 0 ], scale: 0.4 } ],
+			YZ: [ { geometry: planeGeometry$1, position: [ 0, 0.71, 0.71 ], rotation: [ 0, Math.PI / 2, 0 ], scale: 0.4 } ],
+			XZ: [ { geometry: planeGeometry$1, position: [ 0.71, 0, 0.71 ], rotation: [ - Math.PI / 2, 0, 0 ], scale: 0.4 } ],
 			XYZX: [ { geometry: geosphereGeometry, position: [ 1.1, 0, 0 ], scale: 0.15 } ],
 			XYZY: [ { geometry: geosphereGeometry, position: [ 0, 1.1, 0 ], scale: 0.15 } ],
 			XYZZ: [ { geometry: geosphereGeometry, position: [ 0, 0, 1.1 ], scale: 0.15 } ]
@@ -1320,7 +1168,7 @@ class TransformHelperScale extends TransformHelperTranslate {
  */
 
 // Reusable utility variables
-const tempVector$1 = new Vector3();
+const tempVector = new Vector3();
 
 class TransformControlsScale extends TransformControlsMixin( TransformHelperScale ) {
 
@@ -1330,19 +1178,19 @@ class TransformControlsScale extends TransformControlsMixin( TransformHelperScal
 
 			let d = this.pointEnd.length() / this.pointStart.length();
 			if ( this.pointEnd.dot( this.pointStart ) < 0 ) d *= - 1;
-			tempVector$1.set( d, d, d );
+			tempVector.set( d, d, d );
 
 		} else {
 
-			tempVector$1.copy( this.pointEnd ).divide( this.pointStart );
-			if ( ! this.hasAxis( 'X' ) ) tempVector$1.x = 1;
-			if ( ! this.hasAxis( 'Y' ) ) tempVector$1.y = 1;
-			if ( ! this.hasAxis( 'Z' ) ) tempVector$1.z = 1;
+			tempVector.copy( this.pointEnd ).divide( this.pointStart );
+			if ( ! this.hasAxis( 'X' ) ) tempVector.x = 1;
+			if ( ! this.hasAxis( 'Y' ) ) tempVector.y = 1;
+			if ( ! this.hasAxis( 'Z' ) ) tempVector.z = 1;
 
 		}
 
 		// Apply scale
-		this.object.scale.copy( this.scaleStart ).multiply( tempVector$1 );
+		this.object.scale.copy( this.scaleStart ).multiply( tempVector );
 
 	}
 

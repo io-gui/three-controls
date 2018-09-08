@@ -1,4 +1,4 @@
-import { Object3D, Vector3, Quaternion, Vector2, BufferGeometry, BufferAttribute, UniformsUtils, Color, DoubleSide, ShaderMaterial, Mesh, Euler, Matrix4, Uint16BufferAttribute, Float32BufferAttribute, SphereBufferGeometry, CylinderBufferGeometry, OctahedronBufferGeometry, TorusBufferGeometry } from '../../lib/three.module.js';
+import { Object3D, Vector3, Quaternion, Vector2, BufferGeometry, BufferAttribute, UniformsUtils, Color, DoubleSide, ShaderMaterial, Mesh, Euler, Matrix4, Uint16BufferAttribute, Float32BufferAttribute, SphereBufferGeometry, CylinderBufferGeometry, OctahedronBufferGeometry, BoxBufferGeometry } from '../../lib/three.module.js';
 import { TransformControlsMixin } from './TransformControlsMixin.js';
 
 /**
@@ -842,6 +842,16 @@ class OctahedronGeometry extends OctahedronBufferGeometry {
 
 }
 
+class PlaneGeometry extends BoxBufferGeometry {
+
+	constructor() {
+
+		super( 1, 1, 0.01, 1, 1, 1 );
+
+	}
+
+}
+
 class ConeGeometry extends HelperMesh {
 
 	constructor() {
@@ -856,12 +866,14 @@ class ConeGeometry extends HelperMesh {
 
 }
 
-class CircleGeometry extends HelperMesh {
+class LineGeometry extends HelperMesh {
 
 	constructor() {
 
 		super( [
-			{ geometry: new OctahedronBufferGeometry( 1, 3 ), scale: [ 1, 0.01, 1 ] },
+			{ geometry: new CylinderBufferGeometry( 0.00001, 0.00001, 1, 4, 2, false ), position: [ 0, 0, 0 ], thickness: 1 },
+			{ geometry: new SphereBufferGeometry( 0.00001, 4, 4 ), position: [ 0, - 0.5, 0 ], thickness: 1 },
+			{ geometry: new SphereBufferGeometry( 0.00001, 4, 4 ), position: [ 0, 0.5, 0 ], thickness: 1 }
 		] );
 		return this.geometry;
 
@@ -869,12 +881,13 @@ class CircleGeometry extends HelperMesh {
 
 }
 
-class RingGeometry extends HelperMesh {
+class ArrowGeometry extends HelperMesh {
 
 	constructor() {
 
 		super( [
-			{ geometry: new TorusBufferGeometry( 1, 0.00001, 8, 128 ), rotation: [ HPI, 0, 0 ], thickness: 1 },
+			{ geometry: new ConeGeometry(), position: [ 0, 0.8, 0 ], scale: 0.2 },
+			{ geometry: new CylinderBufferGeometry( 0.00001, 0.00001, 0.8, 4, 2, false ), position: [ 0, 0.4, 0 ], thickness: 1 }
 		] );
 		return this.geometry;
 
@@ -882,12 +895,16 @@ class RingGeometry extends HelperMesh {
 
 }
 
-class RingPickerGeometry extends HelperMesh {
+class Corner2Geometry extends HelperMesh {
 
 	constructor() {
 
 		super( [
-			{ geometry: new TorusBufferGeometry( 1, 0.1, 8, 128 ), rotation: [ HPI, 0, 0 ] },
+			{ geometry: new CylinderBufferGeometry( 0.00001, 0.00001, 1, 4, 2, false ), position: [ 0.5, 0, 0 ], rotation: [ 0, 0, HPI ], thickness: 1 },
+			{ geometry: new CylinderBufferGeometry( 0.00001, 0.00001, 1, 4, 2, false ), position: [ 0, 0, 0.5 ], rotation: [ HPI, 0, 0 ], thickness: 1 },
+			{ geometry: new SphereBufferGeometry( 0.00001, 4, 4 ), position: [ 0, 0, 0 ], thickness: 1 },
+			{ geometry: new SphereBufferGeometry( 0.00001, 4, 4 ), position: [ 1, 0, 0 ], rotation: [ 0, 0, HPI ], thickness: 1 },
+			{ geometry: new SphereBufferGeometry( 0.00001, 4, 4 ), position: [ 0, 0, 1 ], rotation: [ HPI, 0, 0 ], thickness: 1 },
 		] );
 		return this.geometry;
 
@@ -895,29 +912,12 @@ class RingPickerGeometry extends HelperMesh {
 
 }
 
-class RotateHandleGeometry extends HelperMesh {
+class PickerHandleGeometry extends HelperMesh {
 
 	constructor() {
 
 		super( [
-			{ geometry: new TorusBufferGeometry( 1, 0.00001, 4, 64, PI ), thickness: 1 },
-			{ geometry: new SphereBufferGeometry( 0.00001, 4, 4 ), position: [ 1, 0, 0 ], rotation: [ HPI, 0, 0 ] },
-			{ geometry: new SphereBufferGeometry( 0.00001, 4, 4 ), position: [ - 1, 0, 0 ], rotation: [ HPI, 0, 0 ] },
-			{ geometry: new OctahedronGeometry(), position: [ 0, 0.992, 0 ], scale: [ 0.2, 0.05, 0.05 ] }
-		] );
-		return this.geometry;
-
-	}
-
-}
-
-class RotatePickerGeometry extends HelperMesh {
-
-	constructor() {
-
-		super( [
-			{ geometry: new TorusBufferGeometry( 1, 0.03, 4, 8, PI ) },
-			{ geometry: new OctahedronGeometry(), position: [ 0, 0.992, 0 ], scale: 0.2 }
+			{ geometry: new CylinderBufferGeometry( 0.2, 0, 1, 4, 1, false ), position: [ 0, 0.5, 0 ] }
 		] );
 		return this.geometry;
 
@@ -1023,92 +1023,178 @@ class TransformHelper extends Helper {
 
 }
 
-// Reusable utility variables
-const tempVector = new Vector3( 0, 0, 0 );
-const alignVector = new Vector3( 0, 1, 0 );
-const zeroVector = new Vector3( 0, 0, 0 );
-const lookAtMatrix = new Matrix4();
-const tempQuaternion = new Quaternion();
-const identityQuaternion = new Quaternion();
+const AXIS_HIDE_TRESHOLD = 0.99;
+const PLANE_HIDE_TRESHOLD = 0.2;
+const AXIS_FLIP_TRESHOLD = 0;
 
-const unitX = new Vector3( 1, 0, 0 );
-const unitY = new Vector3( 0, 1, 0 );
-const unitZ = new Vector3( 0, 0, 1 );
+const arrowGeometry = new ArrowGeometry();
+const corner2Geometry = new Corner2Geometry();
+const octahedronGeometry$1 = new OctahedronGeometry();
+const pickerHandleGeometry = new PickerHandleGeometry();
+const planeGeometry = new PlaneGeometry();
 
-const rotateHandleGeometry = new RotateHandleGeometry();
-const rotatePickerGeometry = new RotatePickerGeometry();
-const ringGeometry = new RingGeometry();
-const ringPickerGeometry = new RingPickerGeometry();
-const circleGeometry = new CircleGeometry();
-
-class TransformHelperRotate extends TransformHelper {
+class TransformHelperTranslate extends TransformHelper {
 
 	get handlesGroup() {
 
 		return {
-			X: [ { geometry: rotateHandleGeometry, color: [ 1, 0.3, 0.3 ], rotation: [ Math.PI / 2, Math.PI / 2, 0 ] } ],
-			Y: [ { geometry: rotateHandleGeometry, color: [ 0.3, 1, 0.3 ], rotation: [ Math.PI / 2, 0, 0 ] } ],
-			Z: [ { geometry: rotateHandleGeometry, color: [ 0.3, 0.3, 1 ], rotation: [ 0, 0, - Math.PI / 2 ] } ],
-			E: [ { geometry: ringGeometry, color: [ 1, 1, 0.5 ], rotation: [ Math.PI / 2, Math.PI / 2, 0 ], scale: 1.2 } ],
+			X: [ { geometry: arrowGeometry, color: [ 1, 0.3, 0.3 ], rotation: [ 0, 0, - Math.PI / 2 ] } ],
+			Y: [ { geometry: arrowGeometry, color: [ 0.3, 1, 0.3 ] } ],
+			Z: [ { geometry: arrowGeometry, color: [ 0.3, 0.3, 1 ], rotation: [ Math.PI / 2, 0, 0 ] } ],
 			XYZ: [
-				{ geometry: ringGeometry, color: [ 0.5, 0.5, 0.5 ], rotation: [ Math.PI / 2, Math.PI / 2, 0 ] },
-				{ geometry: circleGeometry, color: [ 0.5, 0.5, 0.5, 0.1 ], rotation: [ Math.PI / 2, Math.PI / 2, 0 ], scale: 0.25 }
+				{ geometry: octahedronGeometry$1, scale: 0.075 }
 			],
+			XY: [
+				{ geometry: planeGeometry, color: [ 1, 1, 0, 0.25 ], position: [ 0.15, 0.15, 0 ], scale: 0.3 },
+				{ geometry: corner2Geometry, color: [ 1, 1, 0.3 ], position: [ 0.32, 0.32, 0 ], scale: 0.15, rotation: [ Math.PI / 2, 0, Math.PI ] }
+			],
+			YZ: [
+				{ geometry: planeGeometry, color: [ 0, 1, 1, 0.25 ], position: [ 0, 0.15, 0.15 ], rotation: [ 0, Math.PI / 2, 0 ], scale: 0.3 },
+				{ geometry: corner2Geometry, color: [ 0.3, 1, 1 ], position: [ 0, 0.32, 0.32 ], scale: 0.15, rotation: [ 0, Math.PI, - Math.PI / 2 ] }
+			],
+			XZ: [
+				{ geometry: planeGeometry, color: [ 1, 0, 1, 0.25 ], position: [ 0.15, 0, 0.15 ], rotation: [ - Math.PI / 2, 0, 0 ], scale: 0.3 },
+				{ geometry: corner2Geometry, color: [ 1, 0.3, 1 ], position: [ 0.32, 0, 0.32 ], scale: 0.15, rotation: [ 0, Math.PI, 0 ] }
+			]
 		};
 
 	}
 	get pickersGroup() {
 
 		return {
-			X: [ { geometry: rotatePickerGeometry, color: [ 1, 0, 0 ], rotation: [ Math.PI / 2, Math.PI / 2, 0 ] } ],
-			Y: [ { geometry: rotatePickerGeometry, color: [ 0, 1, 0 ], rotation: [ Math.PI / 2, 0, 0 ] } ],
-			Z: [ { geometry: rotatePickerGeometry, color: [ 0, 0, 1 ], rotation: [ 0, 0, - Math.PI / 2 ] } ],
-			E: [ { geometry: ringPickerGeometry, rotation: [ Math.PI / 2, Math.PI / 2, 0 ], scale: 1.2 } ],
-			XYZ: [ { geometry: circleGeometry, rotation: [ Math.PI / 2, Math.PI / 2, 0 ], scale: 0.35 } ],
+			X: [ { geometry: pickerHandleGeometry, rotation: [ 0, 0, - Math.PI / 2 ] } ],
+			Y: [ { geometry: pickerHandleGeometry } ],
+			Z: [ { geometry: pickerHandleGeometry, rotation: [ Math.PI / 2, 0, 0 ] } ],
+			XYZ: [ { geometry: octahedronGeometry$1, scale: 0.4 } ],
+			XY: [ { geometry: planeGeometry, position: [ 0.25, 0.25, 0 ], scale: 0.5 } ],
+			YZ: [ { geometry: planeGeometry, position: [ 0, 0.25, 0.25 ], rotation: [ 0, Math.PI / 2, 0 ], scale: 0.5 } ],
+			XZ: [ { geometry: planeGeometry, position: [ 0.25, 0, 0.25 ], rotation: [ - Math.PI / 2, 0, 0 ], scale: 0.5 } ]
 		};
 
 	}
 	updateAxis( axis ) {
 
 		super.updateAxis( axis );
-		axis.quaternion.copy( identityQuaternion );
-		if ( axis.has( "E" ) || axis.has( "XYZ" ) ) {
 
-			axis.quaternion.setFromRotationMatrix( lookAtMatrix.lookAt( alignVector, zeroVector, tempVector ) );
+		const xDotE = this.axisDotEye.x;
+		const yDotE = this.axisDotEye.y;
+		const zDotE = this.axisDotEye.z;
 
-		}
-		if ( axis.is( 'X' ) ) {
+		// Hide translate and scale axis facing the camera
+		if ( ( axis.is( 'X' ) || axis.is( 'XYZX' ) ) && Math.abs( xDotE ) > AXIS_HIDE_TRESHOLD ) axis.visible = false;
+		if ( ( axis.is( 'Y' ) || axis.is( 'XYZY' ) ) && Math.abs( yDotE ) > AXIS_HIDE_TRESHOLD ) axis.visible = false;
+		if ( ( axis.is( 'Z' ) || axis.is( 'XYZZ' ) ) && Math.abs( zDotE ) > AXIS_HIDE_TRESHOLD ) axis.visible = false;
+		if ( axis.is( 'XY' ) && Math.abs( zDotE ) < PLANE_HIDE_TRESHOLD ) axis.visible = false;
+		if ( axis.is( 'YZ' ) && Math.abs( xDotE ) < PLANE_HIDE_TRESHOLD ) axis.visible = false;
+		if ( axis.is( 'XZ' ) && Math.abs( yDotE ) < PLANE_HIDE_TRESHOLD ) axis.visible = false;
 
-			tempQuaternion.setFromAxisAngle( unitX, Math.atan2( - alignVector.y, alignVector.z ) );
-			tempQuaternion.multiplyQuaternions( identityQuaternion, tempQuaternion );
-			axis.quaternion.copy( tempQuaternion );
-
-		}
-		if ( axis.is( 'Y' ) ) {
-
-			tempQuaternion.setFromAxisAngle( unitY, Math.atan2( alignVector.x, alignVector.z ) );
-			tempQuaternion.multiplyQuaternions( identityQuaternion, tempQuaternion );
-			axis.quaternion.copy( tempQuaternion );
-
-		}
-		if ( axis.is( 'Z' ) ) {
-
-			tempQuaternion.setFromAxisAngle( unitZ, Math.atan2( alignVector.y, alignVector.x ) );
-			tempQuaternion.multiplyQuaternions( identityQuaternion, tempQuaternion );
-			axis.quaternion.copy( tempQuaternion );
-
-		}
+		// Flip axis ocluded behind another axis
+		axis.scale.set( 1, 1, 1 );
+		if ( axis.has( 'X' ) && xDotE < AXIS_FLIP_TRESHOLD ) axis.scale.x *= - 1;
+		if ( axis.has( 'Y' ) && yDotE < AXIS_FLIP_TRESHOLD ) axis.scale.y *= - 1;
+		if ( axis.has( 'Z' ) && zDotE < AXIS_FLIP_TRESHOLD ) axis.scale.z *= - 1;
 
 	}
-	updateHelperMatrix() {
 
-		// TODO: simplify rotation handle logic
-		const quaternion = this.space === "local" ? this.worldQuaternion : identityQuaternion;
-		// Align handles to current local or world rotation
-		tempQuaternion.copy( quaternion ).inverse();
-		alignVector.copy( this.eye ).applyQuaternion( tempQuaternion );
-		tempVector.copy( unitY ).applyQuaternion( tempQuaternion );
-		super.updateHelperMatrix();
+}
+
+const HPI$1 = Math.PI / 2;
+const PI$1 = Math.PI;
+
+const cornerHandle = new HelperMesh( [
+	{ geometry: new Corner2Geometry(), color: [ 1, 1, 1 ], rotation: [ - HPI$1, 0, 0 ], thickness: 2 },
+	{ geometry: new PlaneGeometry(), color: [ 1, 1, 1, 0.2 ], position: [ 0.51, 0.51, 0 ], scale: 0.98 }
+] ).geometry;
+
+const edgeHandle = new HelperMesh( [
+	{ geometry: new LineGeometry(), color: [ 1, 1, 1 ], position: [ 0, 0, 0 ], thickness: 2 },
+	{ geometry: new PlaneGeometry(), color: [ 1, 1, 1, 0.2 ], position: [ 0.51, 0, 0 ], scale: 0.98 },
+] ).geometry;
+
+const cornerPicker = new HelperMesh( [
+	{ geometry: new PlaneGeometry(), position: [ 0.5, 0.5, 0 ] }
+] ).geometry;
+
+const edgePicker = new HelperMesh( [
+	{ geometry: new PlaneGeometry(), position: [ 0.5, 0, 0 ] },
+] ).geometry;
+
+class TransformHelperFreescale extends TransformHelperTranslate {
+
+	get handlesGroup() {
+
+		return {
+			X_yp: [ { geometry: edgeHandle, color: [ 0.5, 1, 0.5 ], position: [ 1, 0.988, 0 ], rotation: [ HPI$1, - HPI$1, 0 ], scale: [ 0.25, 1, 0.25 ] } ],
+			X_yn: [ { geometry: edgeHandle, color: [ 0.5, 1, 0.5 ], position: [ 1, - 0.988, 0 ], rotation: [ HPI$1, HPI$1, 0 ], scale: [ 0.25, 1, 0.25 ] } ],
+			X_zp: [ { geometry: edgeHandle, color: [ 0.5, 0.5, 1 ], position: [ 1, 0, 0.988 ], rotation: [ 0, HPI$1, 0 ], scale: [ 0.25, 1, 0.25 ] } ],
+			X_zn: [ { geometry: edgeHandle, color: [ 0.5, 0.5, 1 ], position: [ 1, 0, - 0.988 ], rotation: [ 0, - HPI$1, 0 ], scale: [ 0.25, 1, 0.25 ] } ],
+			//
+			Y_zp: [ { geometry: edgeHandle, color: [ 0.5, 0.5, 1 ], position: [ 0, 1, 0.988 ], rotation: [ - HPI$1, 0, HPI$1 ], scale: [ 0.25, 1, 0.25 ] } ],
+			Y_zn: [ { geometry: edgeHandle, color: [ 0.5, 0.5, 1 ], position: [ 0, 1, - 0.988 ], rotation: [ HPI$1, 0, HPI$1 ], scale: [ 0.25, 1, 0.25 ] } ],
+			Y_xp: [ { geometry: edgeHandle, color: [ 1, 0.5, 0.5 ], position: [ 0.988, 1, 0 ], rotation: [ HPI$1, PI$1, 0 ], scale: [ 0.25, 1, 0.25 ] } ],
+			Y_xn: [ { geometry: edgeHandle, color: [ 1, 0.5, 0.5 ], position: [ - 0.988, 1, 0 ], rotation: [ - HPI$1, 0, 0 ], scale: [ 0.25, 1, 0.25 ] } ],
+			//
+			Z_yp: [ { geometry: edgeHandle, color: [ 0.5, 1, 0.5 ], position: [ 0, 0.988, 1 ], rotation: [ 0, 0, - HPI$1 ], scale: [ 0.25, 1, 0.25 ] } ],
+			Z_yn: [ { geometry: edgeHandle, color: [ 0.5, 1, 0.5 ], position: [ 0, - 0.988, 1 ], rotation: [ 0, 0, HPI$1 ], scale: [ 0.25, 1, 0.25 ] } ],
+			Z_xp: [ { geometry: edgeHandle, color: [ 1, 0.5, 0.5 ], position: [ 0.988, 0, 1 ], rotation: [ 0, PI$1, 0 ], scale: [ 0.25, 1, 0.25 ] } ],
+			Z_xn: [ { geometry: edgeHandle, color: [ 1, 0.5, 0.5 ], position: [ - 0.988, 0, 1 ], rotation: [ 0, 0, 0 ], scale: [ 0.25, 1, 0.25 ] } ],
+			//
+			X_zp_yp: [ { geometry: cornerHandle, color: [ 0.5, 1, 1 ], position: [ 1, 0.988, 0.988 ], rotation: [ - HPI$1, HPI$1, 0 ], scale: 0.25 } ],
+			X_zn_yn: [ { geometry: cornerHandle, color: [ 0.5, 1, 1 ], position: [ 1, - 0.988, - 0.988 ], rotation: [ 0, - HPI$1, 0 ], scale: 0.25 } ],
+			X_zp_yn: [ { geometry: cornerHandle, color: [ 0.5, 1, 1 ], position: [ 1, 0.988, - 0.988 ], rotation: [ HPI$1, - HPI$1, 0 ], scale: 0.25 } ],
+			X_zn_yp: [ { geometry: cornerHandle, color: [ 0.5, 1, 1 ], position: [ 1, - 0.988, 0.988 ], rotation: [ 0, HPI$1, 0 ], scale: 0.25 } ],
+
+			Y_xp_zp: [ { geometry: cornerHandle, color: [ 1, 0.5, 1 ], position: [ 0.988, 1, 0.988 ], rotation: [ - HPI$1, 0, HPI$1 ], scale: 0.25 } ],
+			Y_xn_zn: [ { geometry: cornerHandle, color: [ 1, 0.5, 1 ], position: [ - 0.988, 1, - 0.988 ], rotation: [ HPI$1, 0, 0 ], scale: 0.25 } ],
+			Y_xp_zn: [ { geometry: cornerHandle, color: [ 1, 0.5, 1 ], position: [ 0.988, 1, - 0.988 ], rotation: [ HPI$1, 0, HPI$1 ], scale: 0.25 } ],
+			Y_xn_zp: [ { geometry: cornerHandle, color: [ 1, 0.5, 1 ], position: [ - 0.988, 1, 0.988 ], rotation: [ HPI$1, 0, - HPI$1 ], scale: 0.25 } ],
+			//
+			Z_xp_yp: [ { geometry: cornerHandle, color: [ 1, 1, 0.5 ], position: [ 0.988, 0.988, 1 ], rotation: [ PI$1, 0, HPI$1 ], scale: 0.25 } ],
+			Z_xn_yn: [ { geometry: cornerHandle, color: [ 1, 1, 0.5 ], position: [ - 0.988, - 0.988, 1 ], rotation: [ PI$1, 0, - HPI$1 ], scale: 0.25 } ],
+			Z_xp_yn: [ { geometry: cornerHandle, color: [ 1, 1, 0.5 ], position: [ 0.988, - 0.988, 1 ], rotation: [ 0, 0, HPI$1 ], scale: 0.25 } ],
+			Z_xn_yp: [ { geometry: cornerHandle, color: [ 1, 1, 0.5 ], position: [ - 0.988, 0.988, 1 ], rotation: [ PI$1, 0, 0 ], scale: 0.25 } ],
+		};
+
+	}
+	get pickersGroup() {
+
+		return {
+			X_yp: [ { geometry: edgePicker, position: [ 1, 0.988, 0 ], rotation: [ HPI$1, - HPI$1, 0 ], scale: [ 0.25, 1, 0.25 ] } ],
+			X_yn: [ { geometry: edgePicker, position: [ 1, - 0.988, 0 ], rotation: [ HPI$1, HPI$1, 0 ], scale: [ 0.25, 1, 0.25 ] } ],
+			X_zp: [ { geometry: edgePicker, position: [ 1, 0, 0.988 ], rotation: [ 0, HPI$1, 0 ], scale: [ 0.25, 1, 0.25 ] } ],
+			X_zn: [ { geometry: edgePicker, position: [ 1, 0, - 0.988 ], rotation: [ 0, - HPI$1, 0 ], scale: [ 0.25, 1, 0.25 ] } ],
+			//
+			Y_zp: [ { geometry: edgePicker, position: [ 0, 1, 0.988 ], rotation: [ - HPI$1, 0, HPI$1 ], scale: [ 0.25, 1, 0.25 ] } ],
+			Y_zn: [ { geometry: edgePicker, position: [ 0, 1, - 0.988 ], rotation: [ HPI$1, 0, HPI$1 ], scale: [ 0.25, 1, 0.25 ] } ],
+			Y_xp: [ { geometry: edgePicker, position: [ 0.988, 1, 0 ], rotation: [ HPI$1, PI$1, 0 ], scale: [ 0.25, 1, 0.25 ] } ],
+			Y_xn: [ { geometry: edgePicker, position: [ - 0.988, 1, 0 ], rotation: [ - HPI$1, 0, 0 ], scale: [ 0.25, 1, 0.25 ] } ],
+			//
+			Z_yp: [ { geometry: edgePicker, position: [ 0, 0.988, 1 ], rotation: [ 0, 0, - HPI$1 ], scale: [ 0.25, 1, 0.25 ] } ],
+			Z_yn: [ { geometry: edgePicker, position: [ 0, - 0.988, 1 ], rotation: [ 0, 0, HPI$1 ], scale: [ 0.25, 1, 0.25 ] } ],
+			Z_xp: [ { geometry: edgePicker, position: [ 0.988, 0, 1 ], rotation: [ 0, PI$1, 0 ], scale: [ 0.25, 1, 0.25 ] } ],
+			Z_xn: [ { geometry: edgePicker, position: [ - 0.988, 0, 1 ], rotation: [ 0, 0, 0 ], scale: [ 0.25, 1, 0.25 ] } ],
+			//
+			X_zp_yp: [ { geometry: cornerPicker, position: [ 1, 0.988, 0.988 ], rotation: [ - HPI$1, HPI$1, 0 ], scale: 0.25 } ],
+			X_zn_yn: [ { geometry: cornerPicker, position: [ 1, - 0.988, - 0.988 ], rotation: [ 0, - HPI$1, 0 ], scale: 0.25 } ],
+			X_zp_yn: [ { geometry: cornerPicker, position: [ 1, 0.988, - 0.988 ], rotation: [ HPI$1, - HPI$1, 0 ], scale: 0.25 } ],
+			X_zn_yp: [ { geometry: cornerPicker, position: [ 1, - 0.988, 0.988 ], rotation: [ 0, HPI$1, 0 ], scale: 0.25 } ],
+
+			Y_xp_zp: [ { geometry: cornerPicker, position: [ 0.988, 1, 0.988 ], rotation: [ - HPI$1, 0, HPI$1 ], scale: 0.25 } ],
+			Y_xn_zn: [ { geometry: cornerPicker, position: [ - 0.988, 1, - 0.988 ], rotation: [ HPI$1, 0, 0 ], scale: 0.25 } ],
+			Y_xp_zn: [ { geometry: cornerPicker, position: [ 0.988, 1, - 0.988 ], rotation: [ HPI$1, 0, HPI$1 ], scale: 0.25 } ],
+			Y_xn_zp: [ { geometry: cornerPicker, position: [ - 0.988, 1, 0.988 ], rotation: [ HPI$1, 0, - HPI$1 ], scale: 0.25 } ],
+			//
+			Z_xp_yp: [ { geometry: cornerPicker, position: [ 0.988, 0.988, 1 ], rotation: [ PI$1, 0, HPI$1 ], scale: 0.25 } ],
+			Z_xn_yn: [ { geometry: cornerPicker, position: [ - 0.988, - 0.988, 1 ], rotation: [ PI$1, 0, - HPI$1 ], scale: 0.25 } ],
+			Z_xp_yn: [ { geometry: cornerPicker, position: [ 0.988, - 0.988, 1 ], rotation: [ 0, 0, HPI$1 ], scale: 0.25 } ],
+			Z_xn_yp: [ { geometry: cornerPicker, position: [ - 0.988, 0.988, 1 ], rotation: [ PI$1, 0, 0 ], scale: 0.25 } ],
+		};
+
+	}
+	updateAxis( axis ) {
+
+		super.updateAxis( axis );
+		axis.renderOrder = Infinity;
 
 	}
 
@@ -1117,77 +1203,11 @@ class TransformHelperRotate extends TransformHelper {
 /**
  * @author arodic / https://github.com/arodic
  */
+class TransformControlsFreescale extends TransformControlsMixin( TransformHelperFreescale ) {
 
-// Reusable utility variables
-const tempVector$1 = new Vector3();
-const tempQuaternion$1 = new Quaternion();
-const identityQuaternion$1 = new Quaternion();
-const unit = {
-	X: new Vector3( 1, 0, 0 ),
-	Y: new Vector3( 0, 1, 0 ),
-	Z: new Vector3( 0, 0, 1 )
-};
-const tempVector2 = new Vector3();
-
-class TransformControlsRotate extends TransformControlsMixin( TransformHelperRotate ) {
-
-	constructor( props ) {
-
-		super( props );
-		this.defineProperties( {
-			rotationAxis: new Vector3(),
-			rotationAngle: 0
-		} );
-
-	}
-	transform( space ) {
-
-		const ROTATION_SPEED = 20 / this.worldPosition.distanceTo( tempVector$1.setFromMatrixPosition( this.camera.matrixWorld ) );
-		const quaternion = this.space === "local" ? this.worldQuaternion : identityQuaternion$1;
-		const axis = this.axis;
-
-		if ( axis === 'E' ) {
-
-			tempVector$1.copy( this.pointEnd ).cross( this.pointStart );
-			this.rotationAxis.copy( this.eye );
-			this.rotationAngle = this.pointEnd.angleTo( this.pointStart ) * ( tempVector$1.dot( this.eye ) < 0 ? 1 : - 1 );
-
-		} else if ( axis === 'XYZ' ) {
-
-			tempVector$1.copy( this.pointEnd ).sub( this.pointStart ).cross( this.eye ).normalize();
-			this.rotationAxis.copy( tempVector$1 );
-			this.rotationAngle = this.pointEnd.sub( this.pointStart ).dot( tempVector$1.cross( this.eye ) ) * ROTATION_SPEED;
-
-		} else if ( axis === 'X' || axis === 'Y' || axis === 'Z' ) {
-
-			this.rotationAxis.copy( unit[ axis ] );
-			tempVector$1.copy( unit[ axis ] );
-			tempVector2.copy( this.pointEnd ).sub( this.pointStart );
-			if ( space === 'local' ) {
-
-				tempVector$1.applyQuaternion( quaternion );
-				tempVector2.applyQuaternion( this.worldQuaternionStart );
-
-			}
-			this.rotationAngle = tempVector2.dot( tempVector$1.cross( this.eye ).normalize() ) * ROTATION_SPEED;
-
-		}
-
-		// Apply rotate
-		if ( space === 'local' ) {
-
-			this.object.quaternion.copy( this.quaternionStart );
-			this.object.quaternion.multiply( tempQuaternion$1.setFromAxisAngle( this.rotationAxis, this.rotationAngle ) );
-
-		} else {
-
-			this.object.quaternion.copy( tempQuaternion$1.setFromAxisAngle( this.rotationAxis, this.rotationAngle ) );
-			this.object.quaternion.multiply( this.quaternionStart );
-
-		}
-
+	transform() {
 	}
 
 }
 
-export { TransformControlsRotate };
+export { TransformControlsFreescale };

@@ -1,4 +1,4 @@
-import { Vector3, Quaternion, Spherical } from '../../../three.js/build/three.module.js';
+import { Vector3, Quaternion, Spherical } from '../../lib/three.module.js';
 import { ViewportControls } from './ViewportControls.js';
 
 /**

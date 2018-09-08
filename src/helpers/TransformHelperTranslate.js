@@ -1,9 +1,15 @@
 import {TransformHelper} from "./TransformHelper.js";
-import {arrowGeometry, corner2Geometry, octahedronGeometry, pickerHandleGeometry, planeGeometry} from "./HelperGeometries.js";
+import {ArrowGeometry, Corner2Geometry, OctahedronGeometry, PickerHandleGeometry, PlaneGeometry} from "./HelperGeometries.js";
 
 const AXIS_HIDE_TRESHOLD = 0.99;
 const PLANE_HIDE_TRESHOLD = 0.2;
 const AXIS_FLIP_TRESHOLD = 0;
+
+const arrowGeometry = new ArrowGeometry();
+const corner2Geometry = new Corner2Geometry();
+const octahedronGeometry = new OctahedronGeometry();
+const pickerHandleGeometry = new PickerHandleGeometry();
+const planeGeometry = new PlaneGeometry();
 
 export class TransformHelperTranslate extends TransformHelper {
 	get handlesGroup() {

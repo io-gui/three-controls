@@ -1,4 +1,4 @@
-import { Vector3, Box3, Matrix3, Spherical, Sphere } from '../../../three.js/build/three.module.js';
+import { Vector3, Box3, Matrix3, Spherical, Sphere } from '../../lib/three.module.js';
 import { ViewportControls } from './ViewportControls.js';
 
 /**

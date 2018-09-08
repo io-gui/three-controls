@@ -72,7 +72,6 @@ export const TransformControlsMixin = (superclass) => class extends InteractiveM
 		} else {
 			this.axis = null;
 		}
-		this.dispatchEvent({type:'change'})
 	}
 	onPointerDown(pointers) {
 		if (this.axis === null || !this.object || this.active === true || pointers[0].button !== 0) return;

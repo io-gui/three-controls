@@ -1,225 +1,439 @@
-import { Raycaster, Vector3, Quaternion, Plane, Object3D, Vector2, BufferGeometry, BufferAttribute, UniformsUtils, Color, DoubleSide, ShaderMaterial, Mesh, Euler, Matrix4, Uint16BufferAttribute, Float32BufferAttribute, SphereBufferGeometry, CylinderBufferGeometry, OctahedronBufferGeometry, BoxBufferGeometry, TorusBufferGeometry } from '../../../three.js/build/three.module.js';
-import { InteractiveMixin } from '../Interactive.js';
+import { Object3D, Vector3, Quaternion, Raycaster, Plane, Vector2, BufferGeometry, BufferAttribute, UniformsUtils, Color, DoubleSide, ShaderMaterial, Mesh, Euler, Matrix4, Uint16BufferAttribute, Float32BufferAttribute, SphereBufferGeometry, CylinderBufferGeometry, OctahedronBufferGeometry } from '../../lib/three.module.js';
 
 /**
  * @author arodic / https://github.com/arodic
+ *
+ * This class provides events and related interfaces for handling hardware
+ * agnostic pointer input from mouse, touchscreen and keyboard.
+ * It is inspired by PointerEvents https://www.w3.org/TR/pointerevents/
+ *
+ * Please report bugs at https://github.com/arodic/PointerEvents/issues
+ *
+ * @event contextmenu
+ * @event keydown - requires focus
+ * @event keyup - requires focus
+ * @event wheel
+ * @event focus
+ * @event blur
+ * @event pointerdown
+ * @event pointermove
+ * @event pointerhover
+ * @event pointerup
  */
 
-// Reusable utility variables
-const ray = new Raycaster();
-const rayTarget = new Vector3();
-const tempVector = new Vector3();
+class PointerEvents {
 
-// events
-const changeEvent = { type: "change" };
+	constructor( domElement, params = {} ) {
 
-const TransformControlsMixin = ( superclass ) => class extends InteractiveMixin( superclass ) {
+		this.domElement = domElement;
+		this.pointers = new PointerArray( domElement, params.normalized );
 
-	constructor( props ) {
+		const scope = this;
+		let dragging = false;
 
-		super( props );
+		function _onContextmenu( event ) {
 
-		this.visible = false;
-
-		this.defineProperties( {
-			axis: null,
-			active: false,
-			pointStart: new Vector3(),
-			pointEnd: new Vector3(),
-			worldPositionStart: new Vector3(),
-			worldQuaternionStart: new Quaternion(),
-			worldScaleStart: new Vector3(), // TODO: remove
-			positionStart: new Vector3(),
-			quaternionStart: new Quaternion(),
-			scaleStart: new Vector3(),
-			plane: new Plane()
-		} );
-
-	}
-	// TODO: document
-	hasAxis( str ) {
-
-		let has = true;
-		str.split( '' ).some( a => {
-
-			if ( this.axis.indexOf( a ) === - 1 ) has = false;
-
-		} );
-		return has;
-
-	}
-	objectChanged( value ) {
-
-		let hasObject = value ? true : false;
-		this.visible = hasObject;
-		if ( ! hasObject ) {
-
-			this.active = false;
-			this.axis = null;
+			event.preventDefault();
+			scope.dispatchEvent( { type: "contextmenu" } );
 
 		}
 
-	}
-	updateHelperMatrix() {
+		function _onMouseDown( event ) {
 
-		if ( this.object ) {
+			event.preventDefault();
+			if ( ! dragging ) {
 
-			this.object.updateMatrixWorld();
-			this.object.matrixWorld.decompose( this.worldPosition, this.worldQuaternion, this.worldScale );
-
-		}
-		this.camera.updateMatrixWorld();
-		this.camera.matrixWorld.decompose( this.cameraPosition, this.cameraQuaternion, this.cameraScale );
-		if ( this.camera.isPerspectiveCamera ) {
-
-			this.eye.copy( this.cameraPosition ).sub( this.worldPosition ).normalize();
-
-		} else if ( this.camera.isOrthographicCamera ) {
-
-			this.eye.copy( this.cameraPosition ).normalize();
-
-		}
-		super.updateHelperMatrix();
-		this.updatePlane();
-
-	}
-	onPointerHover( pointers ) {
-
-		if ( ! this.object || this.active === true ) return;
-		ray.setFromCamera( pointers[ 0 ].position, this.camera ); //TODO: unhack
-
-		const intersect = ray.intersectObjects( this.pickers, true )[ 0 ] || false;
-		if ( intersect ) {
-
-			this.axis = intersect.object.name;
-
-		} else {
-
-			this.axis = null;
-
-		}
-
-	}
-	onPointerDown( pointers ) {
-
-		if ( this.axis === null || ! this.object || this.active === true || pointers[ 0 ].button !== 0 ) return;
-		ray.setFromCamera( pointers[ 0 ].position, this.camera );
-		const planeIntersect = ray.ray.intersectPlane( this.plane, rayTarget );
-		let space = ( this.axis === 'E' || this.axis === 'XYZ' ) ? 'world' : this.space;
-		if ( planeIntersect ) {
-
-			this.object.updateMatrixWorld();
-			if ( this.object.parent ) {
-
-				this.object.parent.updateMatrixWorld();
+				dragging = true;
+				domElement.removeEventListener( "mousemove", _onMouseHover, false );
+				document.addEventListener( "mousemove", _onMouseMove, false );
+				document.addEventListener( "mouseup", _onMouseUp, false );
+				scope.domElement.focus();
+				scope.pointers.update( event, "pointerdown" );
+				scope.dispatchEvent( makePointerEvent( "pointerdown", scope.pointers ) );
 
 			}
-			this.positionStart.copy( this.object.position );
-			this.quaternionStart.copy( this.object.quaternion );
-			this.scaleStart.copy( this.object.scale );
-			this.object.matrixWorld.decompose( this.worldPositionStart, this.worldQuaternionStart, this.worldScaleStart );
-			this.pointStart.copy( planeIntersect ).sub( this.worldPositionStart );
-			if ( space === 'local' ) this.pointStart.applyQuaternion( this.worldQuaternionStart.clone().inverse() );
-			this.active = true;
 
 		}
+		function _onMouseMove( event ) {
 
-	}
-	onPointerMove( pointers ) {
-
-		let axis = this.axis;
-		let object = this.object;
-		let space = ( axis === 'E' || axis === 'XYZ' ) ? 'world' : this.space;
-
-		if ( object === undefined || axis === null || this.active === false || pointers[ 0 ].button !== 0 ) return;
-
-		ray.setFromCamera( pointers[ 0 ].position, this.camera );
-
-		const planeIntersect = ray.ray.intersectPlane( this.plane, tempVector );
-
-		if ( ! planeIntersect ) return;
-
-		this.pointEnd.copy( planeIntersect ).sub( this.worldPositionStart );
-
-		if ( space === 'local' ) this.pointEnd.applyQuaternion( this.worldQuaternionStart.clone().inverse() );
-
-		this.transform( space );
-
-		this.object.updateMatrixWorld();
-		this.dispatchEvent( changeEvent );
-
-	}
-	onPointerUp( pointers ) {
-
-		if ( pointers.length === 0 ) {
-
-			this.active = false;
-			if ( pointers.removed[ 0 ].pointerType === 'touch' ) this.axis = null;
-
-		} else {
-
-			if ( pointers[ 0 ].button === - 1 ) this.axis = null;
+			event.preventDefault();
+			scope.pointers.update( event, "pointermove" );
+			scope.dispatchEvent( makePointerEvent( "pointermove", scope.pointers ) );
 
 		}
+		function _onMouseHover( event ) {
 
-	}
-	transform() {
+			scope.pointers.update( event, "pointerhover" );
+			// TODO: UNHACK!
+			scope.pointers[ 0 ].start.copy( scope.pointers[ 0 ].position );
+			scope.dispatchEvent( makePointerEvent( "pointerhover", scope.pointers ) );
 
-		// TODO:
-		return;
+		}
+		function _onMouseUp( event ) {
 
-	}
-	updateAxis( axis ) {
+			event.preventDefault();
+			if ( event.buttons === 0 ) {
 
-		super.updateAxis( axis );
-		this.highlightAxis( axis, this.axis );
-
-	}
-	highlightAxis( child, axis ) {
-
-		if ( child.material ) {
-
-			if ( ! this.enabled ) {
-
-				child.material.highlight = - 1;
-				return;
+				dragging = false;
+				domElement.addEventListener( "mousemove", _onMouseHover, false );
+				document.removeEventListener( "mousemove", _onMouseMove, false );
+				document.removeEventListener( "mouseup", _onMouseUp, false );
+				scope.pointers.update( event, "pointerup", true );
+				scope.dispatchEvent( makePointerEvent( "pointerup", scope.pointers ) );
 
 			}
-			if ( axis ) {
 
-				if ( this.hasAxis( child.name ) ) {
+		}
 
-					child.material.highlight = 1;
-					return;
+		function _onTouchDown( event ) {
+
+			event.preventDefault();
+			scope.domElement.focus();
+			scope.pointers.update( event, "pointerdown" );
+			scope.dispatchEvent( makePointerEvent( "pointerdown", scope.pointers ) );
+
+		}
+		function _onTouchMove( event ) {
+
+			event.preventDefault();
+			scope.pointers.update( event, "pointermove" );
+			scope.dispatchEvent( makePointerEvent( "pointermove", scope.pointers ) );
+
+		}
+		function _onTouchHover( event ) {
+
+			scope.pointers.update( event, "pointerhover" );
+			scope.dispatchEvent( makePointerEvent( "pointerhover", scope.pointers ) );
+
+		}
+		function _onTouchUp( event ) {
+
+			scope.pointers.update( event, "pointerup" );
+			scope.dispatchEvent( makePointerEvent( "pointerup", scope.pointers ) );
+
+		}
+
+		function _onKeyDown( event ) {
+
+			scope.dispatchEvent( { type: "keydown", keyCode: event.keyCode } );
+
+		}
+		function _onKeyUp( event ) {
+
+			scope.dispatchEvent( { type: "keyup", keyCode: event.keyCode } );
+
+		}
+
+		function _onWheel( event ) {
+
+			event.preventDefault();
+			// TODO: test on multiple platforms/browsers
+			// Normalize deltaY due to https://bugzilla.mozilla.org/show_bug.cgi?id=1392460
+			const delta = event.deltaY > 0 ? 1 : - 1;
+			scope.dispatchEvent( { type: "wheel", delta: delta } );
+
+		}
+
+		function _onFocus() {
+
+			domElement.addEventListener( "blur", _onBlur, false );
+			scope.dispatchEvent( { type: "focus" } );
+
+		}
+		function _onBlur() {
+
+			domElement.removeEventListener( "blur", _onBlur, false );
+			scope.dispatchEvent( { type: "blur" } );
+
+		}
+
+		{
+
+			domElement.addEventListener( "contextmenu", _onContextmenu, false );
+			domElement.addEventListener( "mousedown", _onMouseDown, false );
+			domElement.addEventListener( "mousemove", _onMouseHover, false );
+			domElement.addEventListener( "touchstart", _onTouchHover, false );
+			domElement.addEventListener( "touchstart", _onTouchDown, false );
+			domElement.addEventListener( "touchmove", _onTouchMove, false );
+			domElement.addEventListener( "touchend", _onTouchUp, false );
+			domElement.addEventListener( "keydown", _onKeyDown, false );
+			domElement.addEventListener( "keyup", _onKeyUp, false );
+			domElement.addEventListener( "wheel", _onWheel, false );
+			domElement.addEventListener( "focus", _onFocus, false );
+
+		}
+
+		this.dispose = function () {
+
+			domElement.removeEventListener( "contextmenu", _onContextmenu, false );
+			domElement.removeEventListener( "mousedown", _onMouseDown, false );
+			domElement.removeEventListener( "mousemove", _onMouseHover, false );
+			document.removeEventListener( "mousemove", _onMouseMove, false );
+			document.removeEventListener( "mouseup", _onMouseUp, false );
+			domElement.removeEventListener( "touchstart", _onTouchHover, false );
+			domElement.removeEventListener( "touchstart", _onTouchDown, false );
+			domElement.removeEventListener( "touchmove", _onTouchMove, false );
+			domElement.removeEventListener( "touchend", _onTouchUp, false );
+			domElement.removeEventListener( "keydown", _onKeyDown, false );
+			domElement.removeEventListener( "keyup", _onKeyUp, false );
+			domElement.removeEventListener( "wheel", _onWheel, false );
+			domElement.removeEventListener( "focus", _onFocus, false );
+			domElement.removeEventListener( "blur", _onBlur, false );
+			delete this._listeners;
+
+		};
+
+	}
+	addEventListener( type, listener ) {
+
+		this._listeners = this._listeners || {};
+		this._listeners[ type ] = this._listeners[ type ] || [];
+		if ( this._listeners[ type ].indexOf( listener ) === - 1 ) {
+
+			this._listeners[ type ].push( listener );
+
+		}
+
+	}
+	hasEventListener( type, listener ) {
+
+		if ( this._listeners === undefined ) return false;
+		return this._listeners[ type ] !== undefined && this._listeners[ type ].indexOf( listener ) !== - 1;
+
+	}
+	removeEventListener( type, listener ) {
+
+		if ( this._listeners === undefined ) return;
+		if ( this._listeners[ type ] !== undefined ) {
+
+			let index = this._listeners[ type ].indexOf( listener );
+			if ( index !== - 1 ) this._listeners[ type ].splice( index, 1 );
+
+		}
+
+	}
+	dispatchEvent( event ) {
+
+		if ( this._listeners === undefined ) return;
+		if ( this._listeners[ event.type ] !== undefined ) {
+
+			// event.target = this; // TODO: consider adding target!
+			let array = this._listeners[ event.type ].slice( 0 );
+			for ( let i = 0, l = array.length; i < l; i ++ ) {
+
+				array[ i ].call( this, event );
+
+			}
+
+		}
+
+	}
+
+}
+
+class Pointer {
+
+	constructor( pointerID, target, type, pointerType ) {
+
+		this.pointerID = pointerID;
+		this.target = target;
+		this.type = type;
+		this.pointerType = pointerType;
+		this.position = new Vector2$1();
+		this.previous = new Vector2$1();
+		this.start = new Vector2$1();
+		this.movement = new Vector2$1();
+		this.distance = new Vector2$1();
+		this.button = - 1;
+		this.buttons = 0;
+
+	}
+	update( previous ) {
+
+		this.pointerID = previous.pointerID;
+		this.previous.copy( previous.position );
+		this.start.copy( previous.start );
+		this.movement.copy( this.position ).sub( previous.position );
+		this.distance.copy( this.position ).sub( this.start );
+
+	}
+
+}
+
+class PointerArray extends Array {
+
+	constructor( target, normalized ) {
+
+		super();
+		this.normalized = normalized || false;
+		this.target = target;
+		this.previous = [];
+		this.removed = [];
+
+	}
+	update( event, type, remove ) {
+
+		this.previous.length = 0;
+		this.removed.length = 0;
+
+		for ( let i = 0; i < this.length; i ++ ) {
+
+			this.previous.push( this[ i ] );
+
+		}
+		this.length = 0;
+
+		const rect = this.target.getBoundingClientRect();
+
+		let touches = event.touches ? event.touches : [ event ];
+		let pointerType = event.touches ? 'touch' : 'mouse';
+		let buttons = event.buttons || 1;
+
+		let id = 0;
+		if ( ! remove ) for ( let i = 0; i < touches.length; i ++ ) {
+
+			if ( isTouchInTarget( touches[ i ], this.target ) || event.touches === undefined ) {
+
+				let pointer = new Pointer( id, this.target, type, pointerType );
+				pointer.position.x = touches[ i ].clientX - rect.x;
+				pointer.position.y = touches[ i ].clientY - rect.y;
+				if ( this.normalized ) {
+
+					const rect = this.target.getBoundingClientRect();
+					pointer.position.x = ( pointer.position.x - rect.left ) / rect.width * 2.0 - 1.0;
+					pointer.position.y = ( pointer.position.y - rect.top ) / rect.height * - 2.0 + 1.0;
 
 				}
-				child.material.highlight = - 1;
-				return;
+				pointer.previous.copy( pointer.position );
+				pointer.start.copy( pointer.position );
+				pointer.buttons = buttons;
+				pointer.button = - 1;
+				if ( buttons === 1 || buttons === 3 || buttons === 5 || buttons === 7 ) pointer.button = 0;
+				else if ( buttons === 2 || buttons === 6 ) pointer.button = 1;
+				else if ( buttons === 4 ) pointer.button = 2;
+				pointer.altKey = event.altKey;
+				pointer.ctrlKey = event.ctrlKey;
+				pointer.metaKey = event.metaKey;
+				pointer.shiftKey = event.shiftKey;
+				this.push( pointer );
+				id ++;
 
 			}
-			child.material.highlight = 0;
+
+		}
+
+		if ( ! remove ) for ( let i = 0; i < this.length; i ++ ) {
+
+			if ( this.previous.length ) {
+
+				let closest = getClosest( this[ i ], this.previous );
+				if ( getClosest( closest, this ) !== this[ i ] ) closest = null;
+				if ( closest ) {
+
+					this[ i ].update( closest );
+					this.previous.splice( this.previous.indexOf( closest ), 1 );
+
+				}
+
+			}
+
+		}
+
+		for ( let i = this.previous.length; i --; ) {
+
+			this.removed.push( this.previous[ i ] );
+			this.previous.splice( i, 1 );
 
 		}
 
 	}
-	updatePlane() {
 
-		const axis = this.axis;
-		const normal = this.plane.normal;
+}
 
-		if ( axis === 'X' ) normal.copy( this.worldX ).cross( tempVector.copy( this.eye ).cross( this.worldX ) );
-		if ( axis === 'Y' ) normal.copy( this.worldY ).cross( tempVector.copy( this.eye ).cross( this.worldY ) );
-		if ( axis === 'Z' ) normal.copy( this.worldZ ).cross( tempVector.copy( this.eye ).cross( this.worldZ ) );
-		if ( axis === 'XY' ) normal.copy( this.worldZ );
-		if ( axis === 'YZ' ) normal.copy( this.worldX );
-		if ( axis === 'XZ' ) normal.copy( this.worldY );
-		if ( axis === 'XYZ' || axis === 'E' ) this.camera.getWorldDirection( normal );
+function makePointerEvent( type, pointers ) {
 
-		this.plane.setFromNormalAndCoplanarPoint( normal, this.worldPosition );
+	const event = Object.assign( { type: type }, pointers );
+	event.length = pointers.length;
+	return event;
+
+}
+
+function isTouchInTarget( event, target ) {
+
+	let eventTarget = event.target;
+	while ( eventTarget ) {
+
+		if ( eventTarget === target ) return true;
+		eventTarget = eventTarget.parentElement;
+
+	}
+	return false;
+
+}
+
+
+function getClosest( pointer, pointers ) {
+
+	let closestDist = Infinity;
+	let closest;
+	for ( let i = 0; i < pointers.length; i ++ ) {
+
+		let dist = pointer.position.distanceTo( pointers[ i ].position );
+		if ( dist < closestDist ) {
+
+			closest = pointers[ i ];
+			closestDist = dist;
+
+		}
+
+	}
+	return closest;
+
+}
+
+class Vector2$1 {
+
+	constructor( x, y ) {
+
+		this.x = x;
+		this.y = y;
+
+	}
+	copy( v ) {
+
+		this.x = v.x;
+		this.y = v.y;
+		return this;
+
+	}
+	add( v ) {
+
+		this.x += v.x;
+		this.y += v.y;
+		return this;
+
+	}
+	sub( v ) {
+
+		this.x -= v.x;
+		this.y -= v.y;
+		return this;
+
+	}
+	length() {
+
+		return Math.sqrt( this.x * this.x + this.y * this.y );
+
+	}
+	distanceTo( v ) {
+
+		const dx = this.x - v.x;
+		const dy = this.y - v.y;
+		return Math.sqrt( dx * dx + dy * dy );
 
 	}
 
-};
+}
 
 /**
  * @author arodic / https://github.com/arodic
@@ -425,6 +639,326 @@ class Helper extends IoLiteMixin( Object3D ) {
 	}
 
 }
+
+/**
+ * @author arodic / https://github.com/arodic
+ */
+
+// TODO: documentation
+/*
+ * onKeyDown, onKeyUp require domElement to be focused (set tabindex attribute)
+ */
+
+// TODO: implement dom element swap and multiple dom elements
+const InteractiveMixin = ( superclass ) => class extends superclass {
+
+	get isInteractive() {
+
+		return true;
+
+	}
+	constructor( props ) {
+
+		super( props );
+
+		this.defineProperties( {
+			domElement: props.domElement,
+			enabled: true,
+			_pointerEvents: new PointerEvents( props.domElement, { normalized: true } )
+		} );
+
+		this.onPointerDown = this.onPointerDown.bind( this );
+		this.onPointerHover = this.onPointerHover.bind( this );
+		this.onPointerMove = this.onPointerMove.bind( this );
+		this.onPointerUp = this.onPointerUp.bind( this );
+		this.onKeyDown = this.onKeyDown.bind( this );
+		this.onKeyUp = this.onKeyUp.bind( this );
+		this.onWheel = this.onWheel.bind( this );
+		this.onContextmenu = this.onContextmenu.bind( this );
+		this.onFocus = this.onFocus.bind( this );
+		this.onBlur = this.onBlur.bind( this );
+
+		this._addEvents();
+
+	}
+	dispose() {
+
+		this._removeEvents();
+		this._pointerEvents.dispose();
+
+	}
+	_addEvents() {
+
+		if ( this._listening ) return;
+		this._pointerEvents.addEventListener( 'pointerdown', this.onPointerDown );
+		this._pointerEvents.addEventListener( 'pointerhover', this.onPointerHover );
+		this._pointerEvents.addEventListener( 'pointermove', this.onPointerMove );
+		this._pointerEvents.addEventListener( 'pointerup', this.onPointerUp );
+		this._pointerEvents.addEventListener( 'keydown', this.onKeyDown );
+		this._pointerEvents.addEventListener( 'keyup', this.onKeyUp );
+		this._pointerEvents.addEventListener( 'wheel', this.onWheel );
+		this._pointerEvents.addEventListener( 'contextmenu', this.onContextmenu );
+		this._pointerEvents.addEventListener( 'focus', this.onFocus );
+		this._pointerEvents.addEventListener( 'blur', this.onBlur );
+		this._listening = true;
+
+	}
+	_removeEvents() {
+
+		if ( ! this._listening ) return;
+		this._pointerEvents.removeEventListener( 'pointerdown', this.onPointerDown );
+		this._pointerEvents.removeEventListener( 'pointerhover', this.onPointerHover );
+		this._pointerEvents.removeEventListener( 'pointermove', this.onPointerMove );
+		this._pointerEvents.removeEventListener( 'pointerup', this.onPointerUp );
+		this._pointerEvents.removeEventListener( 'keydown', this.onKeyDown );
+		this._pointerEvents.removeEventListener( 'keyup', this.onKeyUp );
+		this._pointerEvents.removeEventListener( 'wheel', this.onWheel );
+		this._pointerEvents.removeEventListener( 'contextmenu', this.onContextmenu );
+		this._pointerEvents.removeEventListener( 'focus', this.onFocus );
+		this._pointerEvents.removeEventListener( 'blur', this.onBlur );
+		this._listening = false;
+
+	}
+	enabledChanged( value ) {
+
+		value ? this._addEvents() : this._removeEvents();
+
+	}
+	// Control methods. Implement in subclass!
+	onContextmenu() {} // event
+	onPointerHover() {} // pointer
+	onPointerDown() {} // pointer
+	onPointerMove() {} // pointer
+	onPointerUp() {} // pointer
+	onPointerLeave() {} // pointer
+	onKeyDown() {} // event
+	onKeyUp() {} // event
+	onWheel() {} // event
+	onFocus() {} // event
+	onBlur() {} // event
+
+};
+
+/**
+ * @author arodic / https://github.com/arodic
+ */
+
+// Reusable utility variables
+const ray = new Raycaster();
+const rayTarget = new Vector3();
+const tempVector = new Vector3();
+
+// events
+const changeEvent = { type: "change" };
+
+const TransformControlsMixin = ( superclass ) => class extends InteractiveMixin( superclass ) {
+
+	constructor( props ) {
+
+		super( props );
+
+		this.visible = false;
+
+		this.defineProperties( {
+			axis: null,
+			active: false,
+			pointStart: new Vector3(),
+			pointEnd: new Vector3(),
+			worldPositionStart: new Vector3(),
+			worldQuaternionStart: new Quaternion(),
+			worldScaleStart: new Vector3(), // TODO: remove
+			positionStart: new Vector3(),
+			quaternionStart: new Quaternion(),
+			scaleStart: new Vector3(),
+			plane: new Plane()
+		} );
+
+	}
+	// TODO: document
+	hasAxis( str ) {
+
+		let has = true;
+		str.split( '' ).some( a => {
+
+			if ( this.axis.indexOf( a ) === - 1 ) has = false;
+
+		} );
+		return has;
+
+	}
+	objectChanged( value ) {
+
+		let hasObject = value ? true : false;
+		this.visible = hasObject;
+		if ( ! hasObject ) {
+
+			this.active = false;
+			this.axis = null;
+
+		}
+
+	}
+	updateHelperMatrix() {
+
+		if ( this.object ) {
+
+			this.object.updateMatrixWorld();
+			this.object.matrixWorld.decompose( this.worldPosition, this.worldQuaternion, this.worldScale );
+
+		}
+		this.camera.updateMatrixWorld();
+		this.camera.matrixWorld.decompose( this.cameraPosition, this.cameraQuaternion, this.cameraScale );
+		if ( this.camera.isPerspectiveCamera ) {
+
+			this.eye.copy( this.cameraPosition ).sub( this.worldPosition ).normalize();
+
+		} else if ( this.camera.isOrthographicCamera ) {
+
+			this.eye.copy( this.cameraPosition ).normalize();
+
+		}
+		super.updateHelperMatrix();
+		this.updatePlane();
+
+	}
+	onPointerHover( pointers ) {
+
+		if ( ! this.object || this.active === true ) return;
+		ray.setFromCamera( pointers[ 0 ].position, this.camera ); //TODO: unhack
+
+		const intersect = ray.intersectObjects( this.pickers, true )[ 0 ] || false;
+		if ( intersect ) {
+
+			this.axis = intersect.object.name;
+
+		} else {
+
+			this.axis = null;
+
+		}
+
+	}
+	onPointerDown( pointers ) {
+
+		if ( this.axis === null || ! this.object || this.active === true || pointers[ 0 ].button !== 0 ) return;
+		ray.setFromCamera( pointers[ 0 ].position, this.camera );
+		const planeIntersect = ray.ray.intersectPlane( this.plane, rayTarget );
+		let space = ( this.axis === 'E' || this.axis === 'XYZ' ) ? 'world' : this.space;
+		if ( planeIntersect ) {
+
+			this.object.updateMatrixWorld();
+			if ( this.object.parent ) {
+
+				this.object.parent.updateMatrixWorld();
+
+			}
+			this.positionStart.copy( this.object.position );
+			this.quaternionStart.copy( this.object.quaternion );
+			this.scaleStart.copy( this.object.scale );
+			this.object.matrixWorld.decompose( this.worldPositionStart, this.worldQuaternionStart, this.worldScaleStart );
+			this.pointStart.copy( planeIntersect ).sub( this.worldPositionStart );
+			if ( space === 'local' ) this.pointStart.applyQuaternion( this.worldQuaternionStart.clone().inverse() );
+			this.active = true;
+
+		}
+
+	}
+	onPointerMove( pointers ) {
+
+		let axis = this.axis;
+		let object = this.object;
+		let space = ( axis === 'E' || axis === 'XYZ' ) ? 'world' : this.space;
+
+		if ( object === undefined || axis === null || this.active === false || pointers[ 0 ].button !== 0 ) return;
+
+		ray.setFromCamera( pointers[ 0 ].position, this.camera );
+
+		const planeIntersect = ray.ray.intersectPlane( this.plane, tempVector );
+
+		if ( ! planeIntersect ) return;
+
+		this.pointEnd.copy( planeIntersect ).sub( this.worldPositionStart );
+
+		if ( space === 'local' ) this.pointEnd.applyQuaternion( this.worldQuaternionStart.clone().inverse() );
+
+		this.transform( space );
+
+		this.object.updateMatrixWorld();
+		this.dispatchEvent( changeEvent );
+
+	}
+	onPointerUp( pointers ) {
+
+		if ( pointers.length === 0 ) {
+
+			this.active = false;
+			if ( pointers.removed[ 0 ].pointerType === 'touch' ) this.axis = null;
+
+		} else {
+
+			if ( pointers[ 0 ].button === - 1 ) this.axis = null;
+
+		}
+
+	}
+	transform() {
+
+		// TODO:
+		return;
+
+	}
+	updateAxis( axis ) {
+
+		super.updateAxis( axis );
+		this.highlightAxis( axis, this.axis );
+
+	}
+	highlightAxis( child, axis ) {
+
+		if ( child.material ) {
+
+			const h = child.material.highlight;
+			if ( ! this.enabled ) {
+
+				child.material.highlight = ( 15 * h - 1 ) / 16;
+				return;
+
+			}
+			if ( axis ) {
+
+				if ( this.hasAxis( child.name ) ) {
+
+					child.material.highlight = ( 15 * h + 1 ) / 16;
+					return;
+
+				}
+				child.material.highlight = ( 15 * h - 1 ) / 16;
+				return;
+
+			}
+			child.material.highlight = ( 15 * h ) / 16;
+
+		}
+
+	}
+	updatePlane() {
+
+		const axis = this.axis;
+		const normal = this.plane.normal;
+
+		if ( axis === 'X' ) normal.copy( this.worldX ).cross( tempVector.copy( this.eye ).cross( this.worldX ) );
+		if ( axis === 'Y' ) normal.copy( this.worldY ).cross( tempVector.copy( this.eye ).cross( this.worldY ) );
+		if ( axis === 'Z' ) normal.copy( this.worldZ ).cross( tempVector.copy( this.eye ).cross( this.worldZ ) );
+		if ( axis === 'XY' ) normal.copy( this.worldZ );
+		if ( axis === 'YZ' ) normal.copy( this.worldX );
+		if ( axis === 'XZ' ) normal.copy( this.worldY );
+		if ( axis === 'XYZ' || axis === 'E' ) this.camera.getWorldDirection( normal );
+
+		this.plane.setFromNormalAndCoplanarPoint( normal, this.worldPosition );
+
+	}
+
+};
 
 /**
  * @author mrdoob / http://mrdoob.com/
@@ -867,11 +1401,15 @@ class HelperMaterial extends IoLiteMixin( ShaderMaterial ) {
 				float aspect = projectionMatrix[0][0] / projectionMatrix[1][1];
 				vec3 sNormal = normalize(vec3(vNormal.x, vNormal.y, 0));
 
+				float extrude = 0.0;
 				if (outline > 0.0) {
-					pos.x += sNormal.x * .0018 * (pos.w) * aspect;
-					pos.y += sNormal.y * .0018 * (pos.w);
+					extrude += 0.0015 * outline;
 					pos.z += .1;
+				} else {
+					extrude += 0.001 * -outline;
 				}
+				pos.x += sNormal.x * extrude * (pos.w) * aspect;
+				pos.y += sNormal.y * extrude * (pos.w);
 
 				gl_Position = pos;
 			}
@@ -884,18 +1422,14 @@ class HelperMaterial extends IoLiteMixin( ShaderMaterial ) {
 			uniform float uOpacity;
 			uniform float uHighlight;
 			void main() {
-				if (vOutline != 0.0) {
-					if (uHighlight == 0.0) {
-						gl_FragColor = vec4( 0.0, 0.0, 0.0, 1.0 );
-					} else if (uHighlight == 1.0) {
-						gl_FragColor = vec4( 1.0, 1.0, 1.0, 1.0 );
-					} else {
-						gl_FragColor = vec4( 0.5, 0.5, 0.5, 1.0 * 0.15 );
-					}
+				if (vOutline > 0.0) {
+					vec4 c = mix(vec4( 0.0, 0.0, 0.0, 1.0 ), vec4( 1.0, 1.0, 1.0, 2.0 ), max(0.0, uHighlight) );
+					c = mix(c, vec4( 0.5, 0.5, 0.5, 1.0 * 0.15 ), max(0.0, -uHighlight) );
+					gl_FragColor = c;
 					return;
 				}
-				float dimming = 1.0;
-				if (uHighlight == -1.0) dimming = 0.15;
+				float dimming = mix(1.0, 0.2, max(0.0, -uHighlight));
+				dimming = mix(dimming, dimming * 2.0, max(0.0, uHighlight));
 				gl_FragColor = vec4( uColor * vColor.rgb, uOpacity * vColor.a * dimming );
 			}
 		`;
@@ -935,10 +1469,9 @@ class HelperMesh extends Mesh {
 		super();
 		this.geometry = geometry instanceof Array ? mergeGeometryChunks( geometry ) : geometry;
 		this.material = new HelperMaterial( props.color || 'white', props.opacity || 1 );
-		// name properties are essential for picking and updating logic.
 		this.name = props.name;
 		// this.material.wireframe = true;
-		this.renderOrder = Infinity;
+		// this.renderOrder = 1000;
 
 	}
 
@@ -972,6 +1505,9 @@ function mergeGeometryChunks( chunks ) {
 		const rotation = chunk.rotation;
 		let scale = chunk.scale;
 
+		let thickness = chunk.thickness || 0;
+		let outlineThickness = chunk.outlineThickness !== undefined ? chunk.outlineThickness : 1;
+
 		if ( scale && typeof scale === 'number' ) scale = [ scale, scale, scale ];
 
 		_position.set( 0, 0, 0 );
@@ -1002,23 +1538,39 @@ function mergeGeometryChunks( chunks ) {
 
 		const vertCount = chunkGeo.attributes.position.count;
 
-		const colorArray = [];
+		if ( ! chunkGeo.attributes.color ) {
+
+			chunkGeo.addAttribute( 'color', new Float32BufferAttribute( new Array( vertCount * 4 ), 4 ) );
+
+		}
+
+		const colorArray = chunkGeo.attributes.color.array;
 		for ( let j = 0; j < vertCount; j ++ ) {
 
+			// TODO: fix
+			const hasAlpha = colorArray[ j * 4 + 3 ] !== undefined && ! isNaN( colorArray[ j * 4 + 3 ] );
 			colorArray[ j * 4 + 0 ] = color[ 0 ];
 			colorArray[ j * 4 + 1 ] = color[ 1 ];
 			colorArray[ j * 4 + 2 ] = color[ 2 ];
-			colorArray[ j * 4 + 3 ] = color[ 3 ] !== undefined ? color[ 3 ] : 1;
+			if ( ! hasAlpha ) colorArray[ j * 4 + 3 ] = color[ 3 ] !== undefined ? color[ 3 ] : 0;
 
 		}
-		chunkGeo.addAttribute( 'color', new Float32BufferAttribute( colorArray, 4 ) );
 
 		// Duplicate geometry and add outline attribute
-		const outlineArray = [];
-		for ( let j = 0; j < vertCount; j ++ ) outlineArray[ j ] = 1;
-		chunkGeo.addAttribute( 'outline', new Float32BufferAttribute( outlineArray, 1 ) );
-		chunkGeo = BufferGeometryUtils.mergeBufferGeometries( [ chunkGeo, chunkGeo ] );
-		for ( let j = 0; j < vertCount; j ++ ) chunkGeo.attributes.outline.array[ j ] = 0;
+		if ( ! chunkGeo.attributes.outline ) {
+
+			const outlineArray = [];
+			for ( let j = 0; j < vertCount; j ++ ) outlineArray[ j ] = - thickness || 0;
+			chunkGeo.addAttribute( 'outline', new Float32BufferAttribute( outlineArray, 1 ) );
+
+		}
+
+		if ( outlineThickness ) {
+
+			chunkGeo = BufferGeometryUtils.mergeBufferGeometries( [ chunkGeo, chunkGeo ] );
+			for ( let j = 0; j < vertCount; j ++ ) chunkGeo.attributes.outline.array[ vertCount + j ] = outlineThickness + thickness;
+
+		}
 
 		geometry = BufferGeometryUtils.mergeBufferGeometries( [ geometry, chunkGeo ] );
 
@@ -1034,72 +1586,32 @@ function mergeGeometryChunks( chunks ) {
 const PI = Math.PI;
 const HPI = Math.PI / 2;
 
-const geosphereGeometry = new OctahedronBufferGeometry( 1, 3 );
+class OctahedronGeometry extends OctahedronBufferGeometry {
 
-const octahedronGeometry = new OctahedronBufferGeometry( 1, 0 );
+	constructor() {
 
-const coneGeometry = new HelperMesh( [
-	{ geometry: new CylinderBufferGeometry( 0, 0.2, 1, 8, 2 ), position: [ 0, 0.5, 0 ] },
-	{ geometry: new SphereBufferGeometry( 0.2, 8, 8 ) }
-] ).geometry;
+		super( 1, 0 );
 
-const lineGeometry = new HelperMesh( [
-	{ geometry: new CylinderBufferGeometry( 0.02, 0.02, 1, 4, 2, false ), position: [ 0, 0.5, 0 ] },
-	{ geometry: new SphereBufferGeometry( 0.02, 4, 4 ), position: [ 0, 0, 0 ] },
-	{ geometry: new SphereBufferGeometry( 0.02, 4, 4 ), position: [ 0, 1, 0 ] }
-] ).geometry;
+	}
 
-const arrowGeometry = new HelperMesh( [
-	{ geometry: coneGeometry, position: [ 0, 0.8, 0 ], scale: 0.2 },
-	{ geometry: new CylinderBufferGeometry( 0.005, 0.005, 0.8, 4, 2, false ), position: [ 0, 0.4, 0 ] }
-] ).geometry;
+}
 
-const scaleArrowGeometry = new HelperMesh( [
-	{ geometry: geosphereGeometry, position: [ 0, 0.8, 0 ], scale: 0.075 },
-	{ geometry: new CylinderBufferGeometry( 0.005, 0.005, 0.8, 4, 2, false ), position: [ 0, 0.4, 0 ] }
-] ).geometry;
+class ConeGeometry extends HelperMesh {
 
-const corner2Geometry = new HelperMesh( [
-	{ geometry: new CylinderBufferGeometry( 0.05, 0.05, 1, 4, 2, false ), position: [ 0.5, 0, 0 ], rotation: [ 0, 0, HPI ] },
-	{ geometry: new CylinderBufferGeometry( 0.05, 0.05, 1, 4, 2, false ), position: [ 0, 0, 0.5 ], rotation: [ HPI, 0, 0 ] },
-	{ geometry: new SphereBufferGeometry( 0.05, 8, 4 ), position: [ 0, 0, 0 ] },
-	{ geometry: new SphereBufferGeometry( 0.05, 4, 4 ), position: [ 1, 0, 0 ], rotation: [ 0, 0, HPI ] },
-	{ geometry: new SphereBufferGeometry( 0.05, 4, 4 ), position: [ 0, 0, 1 ], rotation: [ HPI, 0, 0 ] },
-] ).geometry;
+	constructor() {
 
-const pickerHandleGeometry = new HelperMesh( [
-	{ geometry: new CylinderBufferGeometry( 0.2, 0, 1, 4, 1, false ), position: [ 0, 0.5, 0 ] }
-] ).geometry;
+		super( [
+			{ geometry: new CylinderBufferGeometry( 0, 0.2, 1, 8, 2 ), position: [ 0, 0.5, 0 ] },
+			{ geometry: new SphereBufferGeometry( 0.2, 8, 8 ) }
+		] );
+		return this.geometry;
 
-const planeGeometry = new BoxBufferGeometry( 1, 1, 0.01, 1, 1, 1 );
+	}
 
-const circleGeometry = new HelperMesh( [
-	{ geometry: new OctahedronBufferGeometry( 1, 3 ), scale: [ 1, 0.01, 1 ] },
-] ).geometry;
+}
 
-const ringGeometry = new HelperMesh( [
-	{ geometry: new TorusBufferGeometry( 1, 0.005, 8, 128 ), rotation: [ HPI, 0, 0 ] },
-] ).geometry;
-
-const halfRingGeometry = new HelperMesh( [
-	{ geometry: new TorusBufferGeometry( 1, 0.005, 8, 64, PI ), rotation: [ HPI, 0, 0 ] },
-] ).geometry;
-
-const ringPickerGeometry = new HelperMesh( [
-	{ geometry: new TorusBufferGeometry( 1, 0.1, 8, 128 ), rotation: [ HPI, 0, 0 ] },
-] ).geometry;
-
-const rotateHandleGeometry = new HelperMesh( [
-	{ geometry: new TorusBufferGeometry( 1, 0.005, 4, 64, PI ) },
-	{ geometry: new SphereBufferGeometry( 0.005, 4, 4 ), position: [ 1, 0, 0 ], rotation: [ HPI, 0, 0 ] },
-	{ geometry: new SphereBufferGeometry( 0.005, 4, 4 ), position: [ - 1, 0, 0 ], rotation: [ HPI, 0, 0 ] },
-	{ geometry: octahedronGeometry, position: [ 0, 0.992, 0 ], scale: [ 0.2, 0.05, 0.05 ] }
-] ).geometry;
-
-const rotatePickerGeometry = new HelperMesh( [
-	{ geometry: new TorusBufferGeometry( 1, 0.03, 4, 8, PI ) },
-	{ geometry: octahedronGeometry, position: [ 0, 0.992, 0 ], scale: 0.2 }
-] ).geometry;
+const coneGeometry = new ConeGeometry();
+const octahedronGeometry = new OctahedronGeometry();
 
 class TransformHelper extends Helper {
 
@@ -1152,7 +1664,7 @@ class TransformHelper extends Helper {
 		return {
 			X: [ { geometry: coneGeometry, color: [ 1, 0, 0 ], position: [ 0.15, 0, 0 ], rotation: [ 0, 0, - Math.PI / 2 ], scale: [ 0.5, 1, 0.5 ] } ],
 			Y: [ { geometry: coneGeometry, color: [ 0, 1, 0 ], position: [ 0, 0.15, 0 ], rotation: [ 0, 0, 0 ], scale: [ 0.5, 1, 0.5 ] } ],
-			Z: [ { geometry: coneGeometry, color: [ 0, 0, 1 ], position: [ 0, 0, - 0.15 ], rotation: [ - Math.PI / 2, 0, 0 ], scale: [ 0.5, 1, 0.5 ] } ]
+			Z: [ { geometry: coneGeometry, color: [ 0, 0, 1 ], position: [ 0, 0, - 0.15 ], rotation: [ Math.PI / 2, 0, 0 ], scale: [ 0.5, 1, 0.5 ] } ]
 		};
 
 	}

@@ -1,6 +1,6 @@
 import {Vector3, Matrix4, Quaternion} from "../../lib/three.module.js";
 import {TransformHelper} from "./TransformHelper.js";
-import {rotateHandleGeometry, rotatePickerGeometry, ringGeometry, ringPickerGeometry, circleGeometry} from "./HelperGeometries.js";
+import {RotateHandleGeometry, RotatePickerGeometry, RingGeometry, RingPickerGeometry, CircleGeometry} from "./HelperGeometries.js";
 
 // Reusable utility variables
 const tempVector = new Vector3(0, 0, 0);
@@ -13,6 +13,12 @@ const identityQuaternion = new Quaternion();
 const unitX = new Vector3(1, 0, 0);
 const unitY = new Vector3(0, 1, 0);
 const unitZ = new Vector3(0, 0, 1);
+
+const rotateHandleGeometry = new RotateHandleGeometry();
+const rotatePickerGeometry = new RotatePickerGeometry();
+const ringGeometry = new RingGeometry();
+const ringPickerGeometry = new RingPickerGeometry();
+const circleGeometry = new CircleGeometry();
 
 export class TransformHelperRotate extends TransformHelper {
 	get handlesGroup() {

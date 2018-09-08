@@ -19,20 +19,17 @@ function external( list ) {
 
 export default [
   {
-    input: 'src/Interactive.js',
-    output: output( 'build/Interactive.js'),
-    external: external( ['./lib/three.module.js'] )
-  },
-  {
-    input: 'src/Helper.js',
-    output: output( 'build/Helper.js'),
-    external: external( ['./lib/three.module.js'] )
-  },
-  {
-    input: 'src/controls/ViewportControls.js',
-    output: output( 'build/controls/ViewportControls.js' ),
+    input: 'src/controls/DragControls.js',
+    output: output( 'build/controls/DragControls.js' ),
     external: external( [
-      './src/Interactive.js',
+      './lib/three.module.js'
+    ] )
+  },
+  {
+    input: 'src/controls/EditorControls.js',
+    output: output( 'build/controls/EditorControls.js' ),
+    external: external( [
+      'src/controls/ViewportControls.js',
       './lib/three.module.js'
     ] )
   },
@@ -61,26 +58,17 @@ export default [
     ] )
   },
   {
-    input: 'src/controls/EditorControls.js',
-    output: output( 'build/controls/EditorControls.js' ),
+    input: 'src/controls/TransformControlsMixin.js',
+    output: output( 'build/controls/TransformControlsMixin.js' ),
     external: external( [
-      'src/controls/ViewportControls.js',
       './lib/three.module.js'
     ] )
   },
   {
-    input: 'src/controls/DragControls.js',
-    output: output( 'build/controls/DragControls.js' ),
+    input: 'src/controls/TransformControlsFreescale.js',
+    output: output( 'build/controls/TransformControlsFreescale.js' ),
     external: external( [
-      './src/Interactive.js',
-      './lib/three.module.js'
-    ] )
-  },
-  {
-    input: 'src/controls/TransformControlsTranslate.js',
-    output: output( 'build/controls/TransformControlsTranslate.js' ),
-    external: external( [
-      './src/Interactive.js',
+      'src/controls/TransformControlsMixin.js',
       './lib/three.module.js'
     ] )
   },
@@ -88,7 +76,7 @@ export default [
     input: 'src/controls/TransformControlsRotate.js',
     output: output( 'build/controls/TransformControlsRotate.js' ),
     external: external( [
-      './src/Interactive.js',
+      'src/controls/TransformControlsMixin.js',
       './lib/three.module.js'
     ] )
   },
@@ -96,8 +84,23 @@ export default [
     input: 'src/controls/TransformControlsScale.js',
     output: output( 'build/controls/TransformControlsScale.js' ),
     external: external( [
-      './src/Interactive.js',
+      'src/controls/TransformControlsMixin.js',
       './lib/three.module.js'
     ] )
-  }
+  },
+  {
+    input: 'src/controls/TransformControlsTranslate.js',
+    output: output( 'build/controls/TransformControlsTranslate.js' ),
+    external: external( [
+      'src/controls/TransformControlsMixin.js',
+      './lib/three.module.js'
+    ] )
+  },
+  {
+    input: 'src/controls/ViewportControls.js',
+    output: output( 'build/controls/ViewportControls.js' ),
+    external: external( [
+      './lib/three.module.js'
+    ] )
+  },
 ];

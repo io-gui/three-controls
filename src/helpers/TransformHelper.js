@@ -1,7 +1,10 @@
 import {Vector3} from "../../lib/three.module.js";
 import {Helper} from "../Helper.js";
 import {HelperMesh} from "./HelperMesh.js";
-import {coneGeometry, octahedronGeometry} from "./HelperGeometries.js";
+import {ConeGeometry, OctahedronGeometry} from "./HelperGeometries.js";
+
+const coneGeometry = new ConeGeometry();
+const octahedronGeometry = new OctahedronGeometry();
 
 export class TransformHelper extends Helper {
 	constructor(props) {

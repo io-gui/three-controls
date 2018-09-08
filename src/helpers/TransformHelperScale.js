@@ -1,5 +1,11 @@
 import {TransformHelperTranslate} from "./TransformHelperTranslate.js";
-import {scaleArrowGeometry, pickerHandleGeometry, corner2Geometry, planeGeometry, geosphereGeometry} from "./HelperGeometries.js";
+import {ScaleArrowGeometry, PickerHandleGeometry, Corner2Geometry, PlaneGeometry, GeosphereGeometry} from "./HelperGeometries.js";
+
+const scaleArrowGeometry = new ScaleArrowGeometry();
+const pickerHandleGeometry = new PickerHandleGeometry();
+const corner2Geometry = new Corner2Geometry();
+const planeGeometry = new PlaneGeometry();
+const geosphereGeometry = new GeosphereGeometry();
 
 export class TransformHelperScale extends TransformHelperTranslate {
 	get handlesGroup() {
