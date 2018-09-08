@@ -509,6 +509,7 @@ const IoLiteMixin = ( superclass ) => class extends superclass {
 		}
 
 	}
+	// TODO: dispose
 
 };
 
@@ -551,6 +552,87 @@ const defineProperty = function ( scope, propName, defaultValue ) {
  */
 
 /*
+ * Creates a single requestAnimationFrame loop thread.
+ * provides methods to control animation and events to hook into animation updates.
+ */
+
+class Animation extends IoLiteMixin( Object ) {
+
+	get isAnimation() {
+
+		return true;
+
+	}
+	constructor( props ) {
+
+		super( props );
+		this.defineProperties( {
+			_animationActive: false,
+			_animationTime: 0,
+			_animationTimeRemainging: 0,
+			_rafID: 0
+		} );
+
+	}
+	startAnimation( duration ) {
+
+		this._animationTimeRemainging = Math.max( this._animationTimeRemainging, duration * 100000 || 0 );
+		if ( ! this._animationActive ) {
+
+			this._animationActive = true;
+			this._animationTime = performance.now();
+			this._rafID = requestAnimationFrame( () => {
+
+				const time = performance.now();
+				const timestep = time - this._animationTime;
+				this._animationTime = time;
+				this._animationTimeRemainging = Math.max( this._animationTimeRemainging - time, 0 );
+				this.dispatchEvent( { type: 'start', timestep: timestep, time: time } );
+				this.animate( timestep, time );
+
+			} );
+
+		}
+
+	}
+	animate( timestep, time ) {
+
+		if ( this._animationActive && this._animationTimeRemainging ) {
+
+			this._rafID = requestAnimationFrame( () => {
+
+				const time = performance.now();
+				timestep = time - this._animationTime;
+				this._animationTime = time;
+				this._animationTimeRemainging = Math.max( this._animationTimeRemainging - time, 0 );
+				this.animate( timestep, time );
+
+			} );
+
+		} else {
+
+			this.stopAnimation( timestep, time );
+
+		}
+		this.dispatchEvent( { type: 'update', timestep: timestep, time: time } );
+
+	}
+	stopAnimation() {
+
+		const time = performance.now();
+		const timestep = time - this._animationTime;
+		this.dispatchEvent( { type: 'stop', timestep: timestep, time: time } );
+		this._animationActive = false;
+		cancelAnimationFrame( this._rafID );
+
+	}
+
+}
+
+/**
+ * @author arodic / https://github.com/arodic
+ */
+/*
  * Helper is a variant of Object3D which automatically follows its target object.
  * On matrix update, it automatically copies transform matrices from its target Object3D.
  */
@@ -565,7 +647,6 @@ class Helper extends IoLiteMixin( Object3D ) {
 	constructor( params = {} ) {
 
 		super();
-
 		this.defineProperties( {
 			object: params.object || null,
 			camera: params.camera || null,
@@ -577,7 +658,23 @@ class Helper extends IoLiteMixin( Object3D ) {
 			cameraPosition: new Vector3(),
 			cameraQuaternion: new Quaternion(),
 			cameraScale: new Vector3(),
-			eye: new Vector3()
+			eye: new Vector3(),
+			animation: new Animation()
+		} );
+		this.animation.addEventListener( 'start', () => {
+
+			this.dispatchEvent( { type: 'change' } );
+
+		} );
+		this.animation.addEventListener( 'update', () => {
+
+			this.dispatchEvent( { type: 'change' } );
+
+		} );
+		this.animation.addEventListener( 'stop', () => {
+
+			this.dispatchEvent( { type: 'change' } );
+
 		} );
 
 	}
@@ -742,112 +839,6 @@ const InteractiveMixin = ( superclass ) => class extends superclass {
 class Interactive extends InteractiveMixin( Helper ) {}
 
 /**
- * @author arodic / https://github.com/arodic
- */
-
-// TODO: documentation
-/*
- * onKeyDown, onKeyUp require domElement to be focused (set tabindex attribute)
- */
-
-// TODO: nuke this class. Find better way to animate props.
-// TODO: implement dom element swap and multiple dom elements
-
-class Animated extends Interactive {
-
-	get isAnimated() {
-
-		return true;
-
-	}
-	constructor( props ) {
-
-		super( props );
-
-		this.defineProperties( {
-			needsUpdate: false,
-			_animationActive: false,
-			_animationTime: 0,
-			_rafID: 0
-		} );
-
-		this.needsUpdate = true;
-
-	}
-	dispose() {
-
-		super.dispose();
-		this.stopAnimation();
-
-	}
-	needsUpdateChanged( value ) {
-
-		if ( value ) this.startAnimation();
-
-	}
-	enabledChanged( value ) {
-
-		if ( value ) {
-
-			this._addEvents();
-			this.startAnimation();
-
-		} else {
-
-			this._removeEvents();
-			this.stopAnimation();
-
-		}
-
-	}
-	// Optional animation methods
-	startAnimation() {
-
-		if ( ! this._animationActive ) {
-
-			this._animationActive = true;
-			this._animationTime = performance.now();
-			this._rafID = requestAnimationFrame( () => {
-
-				const time = performance.now();
-				this.animate( time - this._animationTime );
-				this._animationTime = time;
-
-			} );
-
-		}
-
-	}
-	animate( timestep ) {
-
-		if ( this._animationActive ) this._rafID = requestAnimationFrame( () => {
-
-			const time = performance.now();
-			timestep = time - this._animationTime;
-			this.animate( timestep );
-			this._animationTime = time;
-
-		} );
-		this.update( timestep );
-
-	}
-	stopAnimation() {
-
-		this._animationActive = false;
-		cancelAnimationFrame( this._rafID );
-
-	}
-	update( timestep ) {
-
-		if ( timestep === undefined ) console.log( 'Control: update function requires timestep parameter!' );
-		this.stopAnimation();
-		this.needsUpdate = false;
-
-	}
-
-}
-
-/**
  * @author arodic / http://github.com/arodic
  */
 
@@ -876,10 +867,7 @@ function dampTo( source, target, smoothing, dt ) {
 
 }
 
-// Events
-const changeEvent = { type: 'change' };
-
-class ViewportControls extends Animated {
+class ViewportControls extends Interactive {
 
 	constructor( props ) {
 
@@ -925,27 +913,28 @@ class ViewportControls extends Animated {
 			_dollyOffset: 0,
 			_dollyInertia: 0
 		} );
+		this.animation.addEventListener( 'update', event => {
+
+			this.update( event.timestep );
+
+		} );
+		this.animation.startAnimation( 0 );
 
 	}
-	// autoRotateChanged(value) {
-	// 	if (value) {
-	// 		this._orbitInertia.x = this.autoRotateSpeed;
-	// 	}
-	//}
 	cameraChanged() {
 
-		this.needsUpdate = true;
+		this.animation.startAnimation( 0 );
 
 	}
 	targetChanged() {
 
-		this.needsUpdate = true;
+		this.animation.startAnimation( 0 );
 
 	}
 	stateChanged() {
 
 		this.active = this.state !== STATE.NONE;
-		this.needsUpdate = true;
+		this.animation.startAnimation( 0 );
 
 	}
 	update( timestep ) {
@@ -989,15 +978,6 @@ class ViewportControls extends Animated {
 		}
 		this._dollyOffset += this._dollyInertia * dt;
 
-		// Determine if animation needs to continue
-		let maxVelocity = 0;
-		maxVelocity = Math.max( maxVelocity, Math.abs( this._orbitInertia.x ) );
-		maxVelocity = Math.max( maxVelocity, Math.abs( this._orbitInertia.y ) );
-		maxVelocity = Math.max( maxVelocity, Math.abs( this._panInertia.x ) );
-		maxVelocity = Math.max( maxVelocity, Math.abs( this._panInertia.y ) );
-		maxVelocity = Math.max( maxVelocity, Math.abs( this._dollyInertia ) );
-		if ( maxVelocity < EPS ) this.stopAnimation();
-
 		// set inertiae from current offsets
 		if ( this.enableDamping ) {
 
@@ -1029,8 +1009,22 @@ class ViewportControls extends Animated {
 
 		this.camera.lookAt( this.target );
 
-		this.dispatchEvent( changeEvent );
-		this.needsUpdate = false;
+		// Determine if animation needs to continue
+		let maxVelocity = 0;
+		maxVelocity = Math.max( maxVelocity, Math.abs( this._orbitInertia.x ) );
+		maxVelocity = Math.max( maxVelocity, Math.abs( this._orbitInertia.y ) );
+		maxVelocity = Math.max( maxVelocity, Math.abs( this._panInertia.x ) );
+		maxVelocity = Math.max( maxVelocity, Math.abs( this._panInertia.y ) );
+		maxVelocity = Math.max( maxVelocity, Math.abs( this._dollyInertia ) );
+		if ( maxVelocity < EPS ) {
+
+			this.animation.stopAnimation();
+
+		} else {
+
+			this.animation.startAnimation( 1 );
+
+		}
 
 	}
 	onPointerMove( pointers ) {
@@ -1144,21 +1138,21 @@ class ViewportControls extends Animated {
 		this.state = STATE.DOLLY;
 		this._setDolly( event.delta * this.wheelDollySpeed );
 		this.state = STATE.NONE;
-		this.needsUpdate = true;
+		this.animation.startAnimation( 0 );
 
 	}
 	_setPan( dir ) {
 
 		this.state = STATE.PAN;
 		if ( this.enablePan ) this._panOffset.copy( dir );
-		this.needsUpdate = true;
+		this.animation.startAnimation( 0 );
 
 	}
 	_setDolly( dir ) {
 
 		this.state = STATE.DOLLY;
 		if ( this.enableDolly ) this._dollyOffset = dir;
-		this.needsUpdate = true;
+		this.animation.startAnimation( 0 );
 
 	}
 	_setDollyPan( dollyDir, panDir ) {
@@ -1166,21 +1160,21 @@ class ViewportControls extends Animated {
 		this.state = STATE.DOLLY_PAN;
 		if ( this.enableDolly ) this._dollyOffset = dollyDir;
 		if ( this.enablePan ) this._panOffset.copy( panDir );
-		this.needsUpdate = true;
+		this.animation.startAnimation( 0 );
 
 	}
 	_setOrbit( dir ) {
 
 		this.state = STATE.ORBIT;
 		if ( this.enableOrbit ) this._orbitOffset.copy( dir );
-		this.needsUpdate = true;
+		this.animation.startAnimation( 0 );
 
 	}
 	_setFocus() {
 
 		this.state = STATE.NONE;
 		if ( this.object && this.enableFocus ) this.focus( this.object );
-		this.needsUpdate = true;
+		this.animation.startAnimation( 0 );
 
 	}
 	// ViewportControl control methods. Implement in subclass!

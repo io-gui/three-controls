@@ -28,13 +28,13 @@ export class Helper extends IoLiteMixin(Object3D) {
 			eye: new Vector3(),
 			animation: new Animation()
 		});
-		this.animation.addEventListener('start', event => {
+		this.animation.addEventListener('start', () => {
 			this.dispatchEvent({type: 'change'});
 		});
-		this.animation.addEventListener('update', event => {
+		this.animation.addEventListener('update', () => {
 			this.dispatchEvent({type: 'change'});
 		});
-		this.animation.addEventListener('stop', event => {
+		this.animation.addEventListener('stop', () => {
 			this.dispatchEvent({type: 'change'});
 		});
 	}

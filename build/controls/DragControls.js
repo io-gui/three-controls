@@ -509,6 +509,7 @@ const IoLiteMixin = ( superclass ) => class extends superclass {
 		}
 
 	}
+	// TODO: dispose
 
 };
 
@@ -551,6 +552,87 @@ const defineProperty = function ( scope, propName, defaultValue ) {
  */
 
 /*
+ * Creates a single requestAnimationFrame loop thread.
+ * provides methods to control animation and events to hook into animation updates.
+ */
+
+class Animation extends IoLiteMixin( Object ) {
+
+	get isAnimation() {
+
+		return true;
+
+	}
+	constructor( props ) {
+
+		super( props );
+		this.defineProperties( {
+			_animationActive: false,
+			_animationTime: 0,
+			_animationTimeRemainging: 0,
+			_rafID: 0
+		} );
+
+	}
+	startAnimation( duration ) {
+
+		this._animationTimeRemainging = Math.max( this._animationTimeRemainging, duration * 100000 || 0 );
+		if ( ! this._animationActive ) {
+
+			this._animationActive = true;
+			this._animationTime = performance.now();
+			this._rafID = requestAnimationFrame( () => {
+
+				const time = performance.now();
+				const timestep = time - this._animationTime;
+				this._animationTime = time;
+				this._animationTimeRemainging = Math.max( this._animationTimeRemainging - time, 0 );
+				this.dispatchEvent( { type: 'start', timestep: timestep, time: time } );
+				this.animate( timestep, time );
+
+			} );
+
+		}
+
+	}
+	animate( timestep, time ) {
+
+		if ( this._animationActive && this._animationTimeRemainging ) {
+
+			this._rafID = requestAnimationFrame( () => {
+
+				const time = performance.now();
+				timestep = time - this._animationTime;
+				this._animationTime = time;
+				this._animationTimeRemainging = Math.max( this._animationTimeRemainging - time, 0 );
+				this.animate( timestep, time );
+
+			} );
+
+		} else {
+
+			this.stopAnimation( timestep, time );
+
+		}
+		this.dispatchEvent( { type: 'update', timestep: timestep, time: time } );
+
+	}
+	stopAnimation() {
+
+		const time = performance.now();
+		const timestep = time - this._animationTime;
+		this.dispatchEvent( { type: 'stop', timestep: timestep, time: time } );
+		this._animationActive = false;
+		cancelAnimationFrame( this._rafID );
+
+	}
+
+}
+
+/**
+ * @author arodic / https://github.com/arodic
+ */
+/*
  * Helper is a variant of Object3D which automatically follows its target object.
  * On matrix update, it automatically copies transform matrices from its target Object3D.
  */
@@ -565,7 +647,6 @@ class Helper extends IoLiteMixin( Object3D ) {
 	constructor( params = {} ) {
 
 		super();
-
 		this.defineProperties( {
 			object: params.object || null,
 			camera: params.camera || null,
@@ -577,7 +658,23 @@ class Helper extends IoLiteMixin( Object3D ) {
 			cameraPosition: new Vector3(),
 			cameraQuaternion: new Quaternion(),
 			cameraScale: new Vector3(),
-			eye: new Vector3()
+			eye: new Vector3(),
+			animation: new Animation()
+		} );
+		this.animation.addEventListener( 'start', () => {
+
+			this.dispatchEvent( { type: 'change' } );
+
+		} );
+		this.animation.addEventListener( 'update', () => {
+
+			this.dispatchEvent( { type: 'change' } );
+
+		} );
+		this.animation.addEventListener( 'stop', () => {
+
+			this.dispatchEvent( { type: 'change' } );
+
 		} );
 
 	}
@@ -796,6 +893,22 @@ const TransformControlsMixin = ( superclass ) => class extends InteractiveMixin(
 			this.axis = null;
 
 		}
+
+	}
+	enabledChanged( value ) {
+
+		super.enabledChanged( value );
+		this.animation.startAnimation( 1 );
+
+	}
+	axisChanged() {
+
+		this.animation.startAnimation( 1 );
+
+	}
+	activeChanged() {
+
+		this.animation.startAnimation( 1 );
 
 	}
 	updateHelperMatrix() {

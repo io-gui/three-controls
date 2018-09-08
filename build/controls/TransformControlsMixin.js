@@ -452,6 +452,10 @@ class Vector2 {
  * @author arodic / https://github.com/arodic
  */
 
+/**
+ * @author arodic / https://github.com/arodic
+ */
+
 // TODO: documentation
 /*
  * onKeyDown, onKeyUp require domElement to be focused (set tabindex attribute)
@@ -604,6 +608,22 @@ const TransformControlsMixin = ( superclass ) => class extends InteractiveMixin(
 			this.axis = null;
 
 		}
+
+	}
+	enabledChanged( value ) {
+
+		super.enabledChanged( value );
+		this.animation.startAnimation( 1 );
+
+	}
+	axisChanged() {
+
+		this.animation.startAnimation( 1 );
+
+	}
+	activeChanged() {
+
+		this.animation.startAnimation( 1 );
 
 	}
 	updateHelperMatrix() {

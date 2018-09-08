@@ -28,9 +28,6 @@ function dampTo(source, target, smoothing, dt) {
 	return source * (1 - t) + target * t;
 }
 
-// Events
-const changeEvent = {type: 'change'};
-
 export class ViewportControls extends Interactive {
 	constructor(props) {
 		super(props);
