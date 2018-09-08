@@ -3,7 +3,7 @@
  */
 
 import {
-	SphereBufferGeometry, CylinderBufferGeometry, OctahedronBufferGeometry, BoxBufferGeometry, TorusBufferGeometry
+	SphereBufferGeometry, CylinderBufferGeometry, OctahedronBufferGeometry, BoxBufferGeometry, TorusBufferGeometry, Float32BufferAttribute, Uint16BufferAttribute
 } from "../../lib/three.module.js";
 
 import {HelperMesh} from "./HelperMesh.js";
@@ -14,18 +14,23 @@ const HPI = Math.PI / 2;
 export class GeosphereGeometry extends OctahedronBufferGeometry {
 	constructor() {
 		super(1, 3);
+		return this.geometry;
 	}
 }
 
-export class OctahedronGeometry extends OctahedronBufferGeometry {
+export class OctahedronGeometry extends HelperMesh {
 	constructor() {
-		super(1, 0);
+		super([
+			{geometry: new OctahedronBufferGeometry(1, 0)}
+		]);
+		return this.geometry;
 	}
 }
 
 export class PlaneGeometry extends BoxBufferGeometry {
 	constructor() {
 		super(1, 1, 0.01, 1, 1, 1);
+		return this.geometry;
 	}
 }
 

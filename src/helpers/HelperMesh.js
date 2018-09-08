@@ -26,16 +26,16 @@ const _matrix = new Matrix4();
 
 export function mergeGeometryChunks(chunks) {
 
-let geometry = new BufferGeometry();
+	let geometry = new BufferGeometry();
 
-geometry.index = new Uint16BufferAttribute([], 1);
-geometry.addAttribute('position', new Float32BufferAttribute([], 3));
-geometry.addAttribute('uv', new Float32BufferAttribute([], 2));
-geometry.addAttribute('color', new Float32BufferAttribute([], 4));
-geometry.addAttribute('normal', new Float32BufferAttribute([], 3));
-geometry.addAttribute('outline', new Float32BufferAttribute([], 1));
+	geometry.index = new Uint16BufferAttribute([], 1);
+	geometry.addAttribute('position', new Float32BufferAttribute([], 3));
+	geometry.addAttribute('uv', new Float32BufferAttribute([], 2));
+	geometry.addAttribute('color', new Float32BufferAttribute([], 4));
+	geometry.addAttribute('normal', new Float32BufferAttribute([], 3));
+	geometry.addAttribute('outline', new Float32BufferAttribute([], 1));
 
-for (let i = chunks.length; i--;) {
+	for (let i = chunks.length; i--;) {
 
 		const chunk = chunks[i];
 		let chunkGeo = chunk.geometry.clone();
@@ -64,40 +64,39 @@ for (let i = chunks.length; i--;) {
 
 		if (chunkGeo.index === null) {
 			const indices = [];
-			for (let j = 0; j < chunkGeo.attributes.position.count; j++) {
-				indices.push(j * 3 + 0);
-				indices.push(j * 3 + 1);
-				indices.push(j * 3 + 2);
+			for (let j = 0; j < chunkGeo.attributes.position.count - 2; j++) {
+				indices.push(j + 0);
+				indices.push(j + 1);
+				indices.push(j + 2);
 			}
 			chunkGeo.index = new Uint16BufferAttribute(indices, 1);
 		}
 
-		const vertCount = chunkGeo.attributes.position.count;
+		let vertCount = chunkGeo.attributes.position.count;
 
 		if (!chunkGeo.attributes.color) {
 			chunkGeo.addAttribute('color', new Float32BufferAttribute(new Array(vertCount * 4), 4));
 		}
 
+		//TODO: enable color overwrite
 		const colorArray = chunkGeo.attributes.color.array;
 		for (let j = 0; j < vertCount; j++) {
-			// TODO: fix 
-			const hasAlpha = colorArray[j * 4 + 3] !== undefined && !isNaN(colorArray[j * 4 + 3]);
 			colorArray[j * 4 + 0] = color[0];
 			colorArray[j * 4 + 1] = color[1];
 			colorArray[j * 4 + 2] = color[2];
-			if (!hasAlpha) colorArray[j * 4 + 3] = color[3] !== undefined ? color[3] : 0;
+			colorArray[j * 4 + 3] = color[3] !== undefined ? color[3] : 1;
 		}
 
 		// Duplicate geometry and add outline attribute
+		//TODO: enable outline overwrite (needs to know if is outline or not in combined geometry)
 		if (!chunkGeo.attributes.outline) {
 			const outlineArray = [];
 			for (let j = 0; j < vertCount; j++) outlineArray[j] = -thickness || 0;
 			chunkGeo.addAttribute( 'outline', new Float32BufferAttribute( outlineArray, 1 ) );
-		}
-
-		if (outlineThickness) {
 			chunkGeo = BufferGeometryUtils.mergeBufferGeometries([chunkGeo, chunkGeo]);
-			for (let j = 0; j < vertCount; j++) chunkGeo.attributes.outline.array[vertCount + j] = outlineThickness + thickness;
+			if (outlineThickness) {
+				for (let j = 0; j < vertCount; j++) chunkGeo.attributes.outline.array[vertCount + j] = outlineThickness + thickness;
+			}
 		}
 
 		geometry = BufferGeometryUtils.mergeBufferGeometries([geometry, chunkGeo]);

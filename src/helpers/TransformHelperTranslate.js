@@ -12,13 +12,19 @@ const pickerHandleGeometry = new PickerHandleGeometry();
 const planeGeometry = new PlaneGeometry();
 
 export class TransformHelperTranslate extends TransformHelper {
+	constructor(props) {
+		super(props);
+		this.traverse(child => {
+			child.renderOrder = 200;
+		});
+	}
 	get handlesGroup() {
 		return {
 			X: [{geometry: arrowGeometry, color: [1, 0.3, 0.3], rotation: [0, 0, -Math.PI / 2]}],
 			Y: [{geometry: arrowGeometry, color: [0.3, 1, 0.3]}],
 			Z: [{geometry: arrowGeometry, color: [0.3, 0.3, 1], rotation: [Math.PI / 2, 0, 0]}],
 			XYZ: [
-				{geometry: octahedronGeometry, scale: 0.075}
+				{geometry: octahedronGeometry, color: [0.75, 0.75, 0.75, 0.5], scale: 0.1}
 			],
 			XY: [
 				{geometry: planeGeometry, color: [1,1,0,0.25], position: [0.15, 0.15, 0], scale: 0.3},
@@ -39,7 +45,7 @@ export class TransformHelperTranslate extends TransformHelper {
 			X: [{geometry: pickerHandleGeometry, rotation: [0, 0, -Math.PI / 2]}],
 			Y: [{geometry: pickerHandleGeometry}],
 			Z: [{geometry: pickerHandleGeometry, rotation: [Math.PI / 2, 0, 0]}],
-			XYZ: [{ geometry: octahedronGeometry, scale: 0.4}],
+			XYZ: [{geometry: octahedronGeometry, scale: 0.4}],
 			XY: [{ geometry: planeGeometry, position: [0.25, 0.25, 0], scale: 0.5}],
 			YZ: [{ geometry: planeGeometry, position: [0, 0.25, 0.25], rotation: [0, Math.PI / 2, 0], scale: 0.5}],
 			XZ: [{ geometry: planeGeometry, position: [0.25, 0, 0.25], rotation: [-Math.PI / 2, 0, 0], scale: 0.5}]
@@ -60,10 +66,22 @@ export class TransformHelperTranslate extends TransformHelper {
 		if (axis.is('YZ') && Math.abs(xDotE) < PLANE_HIDE_TRESHOLD) axis.visible = false;
 		if (axis.is('XZ') && Math.abs(yDotE) < PLANE_HIDE_TRESHOLD) axis.visible = false;
 
+		// TODO: implement flipping animation better and make sure animation loop runs while lerping.
 		// Flip axis ocluded behind another axis
-		axis.scale.set(1,1,1);
-		if (axis.has('X') && xDotE < AXIS_FLIP_TRESHOLD) axis.scale.x *= -1;
-		if (axis.has('Y') && yDotE < AXIS_FLIP_TRESHOLD) axis.scale.y *= -1;
-		if (axis.has('Z') && zDotE < AXIS_FLIP_TRESHOLD) axis.scale.z *= -1;
+		if (axis.has('X') && xDotE < AXIS_FLIP_TRESHOLD) {
+			axis.scale.x = (axis.scale.x * 5 -1 ) / 6;
+		} else {
+			axis.scale.x = (axis.scale.x * 5 + 1 ) / 6;
+		}
+		if (axis.has('Y') && yDotE < AXIS_FLIP_TRESHOLD) {
+			axis.scale.y = (axis.scale.y * 5 -1 ) / 6;
+		} else {
+			axis.scale.y = (axis.scale.y * 5 + 1 ) / 6;
+		}
+		if (axis.has('Z') && zDotE < AXIS_FLIP_TRESHOLD) {
+			axis.scale.z = (axis.scale.z * 5 -1 ) / 6;
+		} else {
+			axis.scale.z = (axis.scale.z * 5 + 1 ) / 6;
+		}
 	}
 }

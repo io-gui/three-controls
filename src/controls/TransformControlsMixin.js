@@ -47,15 +47,25 @@ export const TransformControlsMixin = (superclass) => class extends InteractiveM
 			this.axis = null;
 		}
 	}
+	// TODO: better animation trigger
 	enabledChanged(value) {
 		super.enabledChanged(value);
-		this.animation.startAnimation(1);
+		this.animation.startAnimation(3);
 	}
 	axisChanged() {
-		this.animation.startAnimation(1);
+		this.animation.startAnimation(3);
 	}
 	activeChanged() {
-		this.animation.startAnimation(1);
+		this.animation.startAnimation(3);
+	}
+	showXChanged() {
+		this.animation.startAnimation(3);
+	}
+	showYChanged() {
+		this.animation.startAnimation(3);
+	}
+	showZChanged() {
+		this.animation.startAnimation(3);
 	}
 	updateHelperMatrix() {
 		if (this.object) {
@@ -138,25 +148,36 @@ export const TransformControlsMixin = (superclass) => class extends InteractiveM
 	}
 	updateAxis(axis) {
 		super.updateAxis(axis);
-		this.highlightAxis(axis, this.axis);
+		this.highlightAxis(axis);
 	}
-	highlightAxis(child, axis) {
-		if (child.material) {
-			const h = child.material.highlight;
-			if (!this.enabled) {
-				child.material.highlight = (15 * h -1) / 16;
-				return;
-			}
-			if (axis) {
-				if (this.hasAxis(child.name)) {
-					child.material.highlight = (15 * h + 1) / 16;
-					return;
-				}
-				child.material.highlight = (15 * h -1) / 16;
-				return;
-			}
-			child.material.highlight = (15 * h) / 16;
+	highlightAxis(axis) {
+
+		// TODO: moved from TransformHelper. Consider implementing in TransformHelper.
+		axis.visible = true;
+
+		const mat = axis.material;
+		const h = axis.material.highlight;
+		if (!this.enabled) {
+			mat.highlight = (15 * h -1) / 16;
+			return;
 		}
+		if (this.axis) {
+			if (this.hasAxis(axis.name)) {
+				mat.highlight = (15 * h + 1) / 16;
+				return;
+			}
+			mat.highlight = (15 * h -1) / 16;
+			return;
+		}
+		mat.highlight = (15 * h) / 16;
+
+		if (axis.has("X") && !this.showX) mat.highlight = (15 * h - 2) / 16;
+		if (axis.has("Y") && !this.showY) mat.highlight = (15 * h - 2) / 16;
+		if (axis.has("Z") && !this.showZ) mat.highlight = (15 * h - 2) / 16;
+		if (axis.has("E") && (!this.showX && !this.showY && !this.showZ)) mat.highlight = (15 * h - 2) / 16;
+
+		if (mat.highlight < -1) axis.visible = false;
+
 	}
 	updatePlane() {
 		const axis = this.axis;

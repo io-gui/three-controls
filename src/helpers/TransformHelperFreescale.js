@@ -90,8 +90,8 @@ export class TransformHelperFreescale extends TransformHelperTranslate {
 			Z_xn_yp: [{geometry: cornerPicker, position: [-0.988, 0.988, 1], rotation: [PI, 0, 0], scale: 0.25}],
 		};
 	}
-	updateAxis(axis) {
-		super.updateAxis(axis);
-		axis.renderOrder = Infinity;
-	}
+	// updateAxis(axis) {
+	// 	super.updateAxis(axis);
+	// 	axis.renderOrder = Infinity;
+	// }
 }

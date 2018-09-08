@@ -25,6 +25,11 @@ export class TransformHelper extends Helper {
 		this.pickers = this.combineHelperGroups(this.pickersGroup);
 		if (this.handles.length) this.add(...this.handles);
 		if (this.pickers.length) this.add(...this.pickers);
+
+		this.traverse(child => child.renderOrder = 100);
+
+		// Hide pickers
+		for (let i = 0; i < this.pickers.length; i++) this.pickers[i].material.visible = false;
 	}
 	// Creates an Object3D with gizmos described in custom hierarchy definition.
 	combineHelperGroups(groups) {
@@ -72,7 +77,5 @@ export class TransformHelper extends Helper {
 		axis.visible = axis.visible && (!axis.has("Y") || this.showY);
 		axis.visible = axis.visible && (!axis.has("Z") || this.showZ);
 		axis.visible = axis.visible && (!axis.has("E") || (this.showX && this.showY && this.showZ));
-		// Hide pickers
-		for (let i = 0; i < this.pickers.length; i++) this.pickers[i].material.visible = false;
 	}
 }
