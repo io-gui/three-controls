@@ -91,42 +91,45 @@ export class ViewportControls extends Interactive {
 		let dt = timestep / 1000;
 		// Apply orbit intertia
 		if (this.state !== STATE.ORBIT) {
-			let thetaTarget = this.autoOrbit.x;
 			if (this.enableDamping) {
-				this._orbitInertia.x = dampTo(this._orbitInertia.x, thetaTarget, this.dampingFactor, dt);
+				this._orbitInertia.x = dampTo(this._orbitInertia.x, this.autoOrbit.x, this.dampingFactor, dt);
 				this._orbitInertia.y = dampTo(this._orbitInertia.y, 0.0, this.dampingFactor, dt);
-			} else {
-				this._orbitInertia.x = thetaTarget;
 			}
+		} else {
+			this._orbitInertia.set(this.autoOrbit.x, 0);
 		}
 
-		this._orbitOffset.x += this._orbitInertia.x * dt;
-		this._orbitOffset.y += this._orbitInertia.y * dt;
+		this._orbitOffset.x += this._orbitInertia.x;
+		this._orbitOffset.y += this._orbitInertia.y;
 
 		// Apply pan intertia
 		if (this.state !== STATE.PAN) {
 			this._panInertia.x = dampTo(this._panInertia.x, 0.0, this.dampingFactor, dt);
 			this._panInertia.y = dampTo(this._panInertia.y, 0.0, this.dampingFactor, dt);
+		} else {
+			this._panInertia.set(0, 0);
 		}
-		this._panOffset.x += this._panInertia.x * dt;
-		this._panOffset.y += this._panInertia.y * dt;
+		this._panOffset.x += this._panInertia.x;
+		this._panOffset.y += this._panInertia.y;
 
 		// Apply dolly intertia
 		if (this.state !== STATE.DOLLY) {
 			this._dollyInertia = dampTo(this._dollyInertia, 0.0, this.dampingFactor, dt);
+		} else {
+			this._dollyInertia = 0;
 		}
-		this._dollyOffset += this._dollyInertia * dt;
+		this._dollyOffset += this._dollyInertia;
 
 		// set inertiae from current offsets
 		if (this.enableDamping) {
 			if (this.state === STATE.ORBIT) {
-				this._orbitInertia.copy(this._orbitOffset).multiplyScalar(timestep);
+				this._orbitInertia.copy(this._orbitOffset);
 			}
 			if (this.state === STATE.PAN) {
-				this._panInertia.copy(this._panOffset).multiplyScalar(timestep);
+				this._panInertia.copy(this._panOffset);
 			}
 			if (this.state === STATE.DOLLY) {
-				this._dollyInertia = this._dollyOffset * timestep;
+				this._dollyInertia = this._dollyOffset;
 			}
 		}
 
