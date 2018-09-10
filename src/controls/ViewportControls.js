@@ -78,9 +78,11 @@ export class ViewportControls extends Interactive {
 		this.animation.startAnimation(0);
 	}
 	cameraChanged() {
+		// TODO: consider removing and implementing multi-camera + multi-viewport controls
 		this.animation.startAnimation(0);
 	}
 	targetChanged() {
+		// TODO: consider removing and implementing multi-target + multi-viewport controls
 		this.animation.startAnimation(0);
 	}
 	stateChanged() {

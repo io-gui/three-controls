@@ -6,13 +6,13 @@ const HPI = Math.PI / 2;
 const PI = Math.PI;
 
 const cornerHandle = new HelperMesh([
-	{geometry: new Corner2Geometry(), color: [1, 1, 1], rotation: [-HPI, 0, 0], thickness: 2},
-	{geometry: new PlaneGeometry(), color: [1, 1, 1, 0.2], position: [0.51, 0.51, 0], scale: 0.98}
+	{geometry: new Corner2Geometry(), color: [1, 1, 1], rotation: [-HPI, 0, 0]},
+	{geometry: new PlaneGeometry(), color: [1, 1, 1, 0.25], position: [0.5, 0.5, 0]}
 ]).geometry;
 
 const edgeHandle = new HelperMesh([
-	{geometry: new LineGeometry(), color: [1, 1, 1], position: [0, 0, 0], thickness: 2},
-	{geometry: new PlaneGeometry(), color: [1, 1, 1, 0.2], position: [0.51, 0, 0], scale: 0.98},
+	{geometry: new LineGeometry(), color: [1, 1, 1], position: [0, 0, 0]},
+	{geometry: new PlaneGeometry(), color: [1, 1, 1, 0.25], position: [0.5, 0, 0]},
 ]).geometry;
 
 const cornerPicker = new HelperMesh([

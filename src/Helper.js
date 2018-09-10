@@ -12,11 +12,12 @@ import {Animation} from "./Animation.js";
 
 export class Helper extends IoLiteMixin(Object3D) {
 	get isHelper() {return true;}
-	constructor(params = {}) {
+	constructor(props = {}) {
 		super();
 		this.defineProperties({
-			object: params.object || null,
-			camera: params.camera || null,
+			domElement: props.domElement || null,
+			object: props.object || null,
+			camera: props.camera || null,
 			space: 'local',
 			size: 0,
 			worldPosition: new Vector3(),
@@ -68,7 +69,9 @@ export class Helper extends IoLiteMixin(Object3D) {
 			this.matrixWorld.compose(this.worldPosition, this.worldQuaternion, this.worldScale);
 		}
 	}
-	updateMatrixWorld() {
+	updateMatrixWorld( force, camera ) {
+		this.camera = camera; // TODO
+
 		this.updateHelperMatrix();
 		this.matrixWorldNeedsUpdate = false;
 		const children = this.children;

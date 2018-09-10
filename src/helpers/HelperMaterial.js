@@ -1,5 +1,6 @@
 import {IoLiteMixin} from "../../lib/IoLiteMixin.js";
-import {UniformsUtils, Color, DoubleSide, ShaderMaterial} from "../../lib/three.module.js";
+import {UniformsUtils, Vector3, Color, FrontSide, ShaderMaterial,
+	DataTexture, RGBAFormat, FloatType, NearestFilter, ClampToEdgeWrapping, TextureLoader} from "../../lib/three.module.js";
 
 const _colors = {
 	black: new Color(0x000000),
@@ -21,69 +22,107 @@ export class HelperMaterial extends IoLiteMixin(ShaderMaterial) {
 		super({
 			depthTest: true,
 			depthWrite: true,
+			side: FrontSide,
 		});
+
+		var data = new Float32Array([
+			1.0 / 17.0, 0,0,0, 9.0 / 17.0, 0,0,0, 3.0 / 17.0, 0,0,0, 11.0 / 17.0, 0,0,0,
+			13.0 / 17.0, 0,0,0, 5.0 / 17.0, 0,0,0, 15.0 / 17.0, 0,0,0, 7.0 / 17.0, 0,0,0,
+			4.0 / 17.0, 0,0,0, 12.0 / 17.0, 0,0,0, 2.0 / 17.0, 0,0,0, 10.0 / 17.0, 0,0,0,
+			16.0 / 17.0, 0,0,0, 8.0 / 17.0, 0,0,0, 14.0 / 17.0, 0,0,0, 6.0 / 17.0, 0,0,0,
+		]);
+		var texture = new DataTexture( data, 4, 4, RGBAFormat, FloatType );
 
 		this.defineProperties({
 			color: color !== undefined ? _colors[color] : _colors['white'],
 			opacity: opacity !== undefined ? opacity : 1,
-			side: DoubleSide,
 			transparent: true,
 			highlight: 0,
-			// wireframe: true
+			resolution: new Vector3(window.innerWidth, window.innerHeight, window.devicePixelRatio),
 		});
-
 
 		this.uniforms = UniformsUtils.merge([this.uniforms, {
 			"uColor":  {value: this.color},
 			"uOpacity":  {value: this.opacity},
-			"uHighlight":  {value: this.highlight}
+			"uHighlight":  {value: this.highlight},
+			"uResolution":  {value: this.resolution},
+			"tDitherMatrix":  {value: texture},
 		}]);
+
+		this.uniforms.tDitherMatrix.value = texture;
+		texture.needsUpdate = true;
 
 		this.vertexShader = `
 			attribute vec4 color;
 			attribute float outline;
 			varying vec4 vColor;
-			varying vec3 vNormal;
-			varying float vOutline;
+			varying float isOutline;
+
+			uniform vec3 uResolution;
 			void main() {
+				float aspect = projectionMatrix[0][0] / projectionMatrix[1][1];
+
 				vColor = color;
-				vOutline = outline;
-				vNormal = normalize( normalMatrix * normal );
+				isOutline = outline;
+
+				vec3 nor = normalMatrix * normal;
 				vec4 pos = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
 
-				float aspect = projectionMatrix[0][0] / projectionMatrix[1][1];
-				vec3 sNormal = normalize(vec3(vNormal.x, vNormal.y, 0));
+				nor = (projectionMatrix * vec4(nor, 1.0)).xyz;
+				nor = normalize((nor.xyz) * vec3(1., 1., 0.));
 
 				float extrude = 0.0;
 				if (outline > 0.0) {
-					extrude += 0.0015 * outline;
-					pos.z += .1;
+					extrude = outline;
+					pos.z += 0.01;
 				} else {
-					extrude += 0.001 * -outline;
+					extrude += outline;
 				}
-				pos.x += sNormal.x * extrude * (pos.w) * aspect;
-				pos.y += sNormal.y * extrude * (pos.w);
+
+				pos.xy /= pos.w;
+
+				float dx = nor.x * extrude * 2.2;
+				float dy = nor.y * extrude * 2.2;
+
+				pos.x += (dx) * (1.0 / uResolution.x);
+				pos.y += (dy) * (1.0 / uResolution.y);
+
+				pos.xy *= pos.w;
 
 				gl_Position = pos;
 			}
 		`;
 		this.fragmentShader = `
-			varying vec4 vColor;
-			varying vec3 vNormal;
-			varying float vOutline;
 			uniform vec3 uColor;
 			uniform float uOpacity;
 			uniform float uHighlight;
+			uniform vec3 uResolution;
+			uniform sampler2D tDitherMatrix;
+
+			varying vec4 vColor;
+			varying float isOutline;
+
 			void main() {
-				if (vOutline > 0.0) {
-					vec4 c = mix(vec4( 0.0, 0.0, 0.0, 1.0 ), vec4( 1.0, 1.0, 1.0, 2.0 ), max(0.0, uHighlight) );
-					c = mix(c, vec4( 0.5, 0.5, 0.5, 1.0 * 0.15 ), max(0.0, -uHighlight) );
-					gl_FragColor = c;
-					return;
+
+				float opacity = 1.0;
+				vec3 color = vec3(1.0);
+
+				if (isOutline > 0.0) {
+					color = mix(vec3(0.0), vec3(1.0), max(0.0, uHighlight) );
+					color = mix(color, vec3(0.5), max(0.0, -uHighlight) );
+				} else {
+					color = uColor * vColor.rgb;
 				}
+
 				float dimming = mix(1.0, 0.2, max(0.0, -uHighlight));
 				dimming = mix(dimming, dimming * 2.0, max(0.0, uHighlight));
-				gl_FragColor = vec4( uColor * vColor.rgb, uOpacity * vColor.a * dimming );
+				opacity = uOpacity * vColor.a * dimming;
+
+				gl_FragColor = vec4(color, 1.0);
+
+				vec2 matCoord = ( mod(gl_FragCoord.xy, 4.0) - vec2(0.5) ) / 4.0;
+				vec4 ditherPattern = texture2D( tDitherMatrix, matCoord.xy );
+				if (opacity < ditherPattern.r) discard;
 			}
 		`;
 	}
@@ -93,12 +132,14 @@ export class HelperMaterial extends IoLiteMixin(ShaderMaterial) {
 	}
 	opacityChanged() {
 		this.uniforms.uOpacity.value = this.opacity;
-		// this.transparent = this.opacity < 1 || this.highlight === -1;
 		this.uniformsNeedUpdate = true;
 	}
 	highlightChanged() {
 		this.uniforms.uHighlight.value = this.highlight;
-		// this.transparent = this.opacity < 1 || this.highlight === -1;
+		this.uniformsNeedUpdate = true;
+	}
+	resolutionChanged() {
+		this.uniforms.uResolution.value = this.resolution;
 		this.uniformsNeedUpdate = true;
 	}
 }

@@ -81,23 +81,34 @@ export function mergeGeometryChunks(chunks) {
 		//TODO: enable color overwrite
 		const colorArray = chunkGeo.attributes.color.array;
 		for (let j = 0; j < vertCount; j++) {
-			colorArray[j * 4 + 0] = color[0];
-			colorArray[j * 4 + 1] = color[1];
-			colorArray[j * 4 + 2] = color[2];
-			colorArray[j * 4 + 3] = color[3] !== undefined ? color[3] : 1;
+			const r = j * 4 + 0; colorArray[r] = color[0];
+			const g = j * 4 + 1; colorArray[g] = color[1];
+			const b = j * 4 + 2; colorArray[b] = color[2];
+			const a = j * 4 + 3; colorArray[a] = color[3] !== undefined ? color[3] : colorArray[a] !== undefined ? colorArray[a] : 1;
 		}
 
 		// Duplicate geometry and add outline attribute
 		//TODO: enable outline overwrite (needs to know if is outline or not in combined geometry)
 		if (!chunkGeo.attributes.outline) {
 			const outlineArray = [];
-			for (let j = 0; j < vertCount; j++) outlineArray[j] = -thickness || 0;
+			for (let j = 0; j < vertCount; j++) outlineArray[j] = -(thickness) || 0;
 			chunkGeo.addAttribute( 'outline', new Float32BufferAttribute( outlineArray, 1 ) );
 			chunkGeo = BufferGeometryUtils.mergeBufferGeometries([chunkGeo, chunkGeo]);
 			if (outlineThickness) {
-				for (let j = 0; j < vertCount; j++) chunkGeo.attributes.outline.array[vertCount + j] = outlineThickness + thickness;
+				for (let j = 0; j < vertCount; j++) chunkGeo.attributes.outline.array[(vertCount) + j] = outlineThickness + (thickness);
 			}
+
+			let array = chunkGeo.index.array;
+			for (let j = array.length / 2; j < array.length; j+=3) {
+				let a = array[j + 1];
+				let b = array[j + 2];
+				array[j + 1] = b;
+				array[j + 2] = a;
+			}
+			// console.log(chunkGeo.index.array)
+
 		}
+
 
 		geometry = BufferGeometryUtils.mergeBufferGeometries([geometry, chunkGeo]);
 	}

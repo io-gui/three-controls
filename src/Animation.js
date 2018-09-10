@@ -28,9 +28,9 @@ export class Animation extends IoLiteMixin(Object) {
 			this._rafID = requestAnimationFrame(() => {
 				const time = performance.now();
 				const timestep = time - this._animationTime;
+				this.dispatchEvent({type: 'start', timestep: timestep, time: time});
 				this._animationTime = time;
 				this._animationTimeRemainging = Math.max(this._animationTimeRemainging - time, 0);
-				this.dispatchEvent({type: 'start', timestep: timestep, time: time});
 				this.animate(timestep, time);
 			});
 		}

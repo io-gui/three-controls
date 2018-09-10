@@ -17,7 +17,6 @@ export const InteractiveMixin = (superclass) => class extends superclass {
 		super(props);
 
 		this.defineProperties({
-			domElement: props.domElement,
 			enabled: true,
 			_pointerEvents: new PointerEvents(props.domElement, {normalized: true})
 		});
