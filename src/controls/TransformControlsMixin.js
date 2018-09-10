@@ -20,7 +20,6 @@ export const TransformControlsMixin = (superclass) => class extends InteractiveM
 		this.visible = false;
 
 		this.defineProperties({
-			axis: null,
 			active: false,
 			pointStart: new Vector3(),
 			pointEnd: new Vector3(),
@@ -48,23 +47,13 @@ export const TransformControlsMixin = (superclass) => class extends InteractiveM
 		}
 	}
 	// TODO: better animation trigger
+	// TODO: also trigger on object change
+	// TODO: Debug stalling animations on hover
 	enabledChanged(value) {
 		super.enabledChanged(value);
 		this.animation.startAnimation(3);
 	}
-	axisChanged() {
-		this.animation.startAnimation(3);
-	}
 	activeChanged() {
-		this.animation.startAnimation(3);
-	}
-	showXChanged() {
-		this.animation.startAnimation(3);
-	}
-	showYChanged() {
-		this.animation.startAnimation(3);
-	}
-	showZChanged() {
 		this.animation.startAnimation(3);
 	}
 	updateHelperMatrix() {
@@ -129,7 +118,7 @@ export const TransformControlsMixin = (superclass) => class extends InteractiveM
 
 		if (space === 'local') this.pointEnd.applyQuaternion(this.worldQuaternionStart.clone().inverse());
 
-		this.transform(space);
+		this.transform();
 
 		this.object.updateMatrixWorld();
 		this.dispatchEvent(changeEvent);
@@ -142,60 +131,14 @@ export const TransformControlsMixin = (superclass) => class extends InteractiveM
 			if (pointers[0].button === -1) this.axis = null;
 		}
 	}
-	transform() {
-		// TODO:
-		return;
-	}
+	transform() {}
 	updateAxis(axis) {
 		super.updateAxis(axis);
-		this.highlightAxis(axis);
-	}
-	highlightAxis(axis) {
-
-		// TODO: moved from TransformHelper. Consider implementing in TransformHelper.
-		axis.visible = true;
 
 		const mat = axis.material;
 		const h = axis.material.highlight;
 
-		// TODO: resolve conflicts with highlight without return?
-		if (axis.has("X") && !this.showX) {
-			mat.highlight = (10 * h - 2) / 11;
-			if (mat.highlight < -1.99) axis.visible = false;
-			return;
-		}
-
-		if (axis.has("Y") && !this.showY) {
-			mat.highlight = (10 * h - 2) / 11;
-			if (mat.highlight < -1.99) axis.visible = false;
-			return;
-		}
-
-		if (axis.has("Z") && !this.showZ) {
-			mat.highlight = (10 * h - 2) / 11;
-			if (mat.highlight < -1.99) axis.visible = false;
-			return;
-		}
-
-		if (axis.has("E") && (!this.showX && !this.showY && !this.showZ)) {
-			mat.highlight = (10 * h - 2) / 11;
-			if (mat.highlight < -1.99) axis.visible = false;
-			return;
-		}
-
-		if (!this.enabled) {
-			mat.highlight = (15 * h -1) / 16;
-			return;
-		}
-		if (this.axis) {
-			if (this.hasAxis(axis.name)) {
-				mat.highlight = (15 * h + 1) / 16;
-				return;
-			}
-			mat.highlight = (15 * h -1) / 16;
-			return;
-		}
-		mat.highlight = (15 * h) / 16;
+		if (!this.enabled) mat.highlight = (10 * h - 1.1) / 11;
 	}
 	updatePlane() {
 		const axis = this.axis;

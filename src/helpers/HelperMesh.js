@@ -12,8 +12,6 @@ export class HelperMesh extends Mesh {
 		this.geometry = geometry instanceof Array ? mergeGeometryChunks(geometry) : geometry;
 		this.material = new HelperMaterial(props.color || 'white', props.opacity || 1);
 		this.name = props.name;
-		// this.material.wireframe = true;
-		// this.renderOrder = 1000;
 	}
 }
 
@@ -105,7 +103,6 @@ export function mergeGeometryChunks(chunks) {
 				array[j + 1] = b;
 				array[j + 2] = a;
 			}
-			// console.log(chunkGeo.index.array)
 
 		}
 

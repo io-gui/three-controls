@@ -173,7 +173,7 @@ export class HalfRingGeometry extends HelperMesh {
 export class RingPickerGeometry extends HelperMesh {
 	constructor() {
 		super([
-				{geometry: new TorusBufferGeometry( 1, 0.1, 8, 128 ), rotation: [HPI, 0, 0]},
+				{geometry: new TorusBufferGeometry( 1, 0.1, 3, 12 ), rotation: [HPI, 0, 0]},
 		]);
 		return this.geometry;
 	}
@@ -185,7 +185,7 @@ export class RotateHandleGeometry extends HelperMesh {
 			{geometry: new TorusBufferGeometry( 1, EPS, 4, 64, PI ), thickness: 1},
 			{geometry: new SphereBufferGeometry(EPS, 4, 4), position: [1, 0, 0], rotation: [HPI, 0, 0]},
 			{geometry: new SphereBufferGeometry(EPS, 4, 4), position: [-1, 0, 0], rotation: [HPI, 0, 0]},
-			{geometry: new OctahedronGeometry(), position: [0, 0.992, 0], scale: [0.2, 0.05, 0.05]}
+			{geometry: new OctahedronGeometry(), position: [0, 0.996, 0], scale: [0.1, 0.025, 0.025]}
 		]);
 		return this.geometry;
 	}

@@ -1,6 +1,6 @@
 import {Vector3, Matrix4, Quaternion} from "../../lib/three.module.js";
 import {TransformHelper} from "./TransformHelper.js";
-import {RotateHandleGeometry, RotatePickerGeometry, RingGeometry, RingPickerGeometry, CircleGeometry} from "./HelperGeometries.js";
+import {RotateHandleGeometry, RotatePickerGeometry, RingGeometry, RingPickerGeometry, CircleGeometry, OctahedronGeometry} from "./HelperGeometries.js";
 
 // Reusable utility variables
 const tempVector = new Vector3(0, 0, 0);
@@ -19,6 +19,7 @@ const rotatePickerGeometry = new RotatePickerGeometry();
 const ringGeometry = new RingGeometry();
 const ringPickerGeometry = new RingPickerGeometry();
 const circleGeometry = new CircleGeometry();
+const octahedronGeometry = new OctahedronGeometry();
 
 export class TransformHelperRotate extends TransformHelper {
 	get handlesGroup() {
@@ -29,17 +30,17 @@ export class TransformHelperRotate extends TransformHelper {
 			E: [{geometry: ringGeometry, color: [1, 1, 0.5], rotation: [Math.PI / 2, Math.PI / 2, 0], scale: 1.2}],
 			XYZ: [
 				{geometry: ringGeometry, color: [0.5, 0.5, 0.5], rotation: [Math.PI / 2, Math.PI / 2, 0]},
-				{geometry: circleGeometry, color: [0.5, 0.5, 0.5, 0.1], rotation: [Math.PI / 2, Math.PI / 2, 0], scale: 0.25}
+				{geometry: circleGeometry, color: [0.5, 0.5, 0.5, 0.25], rotation: [Math.PI / 2, Math.PI / 2, 0], scale: 0.25}
 			],
 		};
 	}
 	get pickersGroup() {
 		return {
-			X: [{geometry: rotatePickerGeometry, color: [1, 0, 0], rotation: [Math.PI / 2, Math.PI / 2, 0]}],
-			Y: [{geometry: rotatePickerGeometry, color: [0, 1, 0], rotation: [Math.PI / 2, 0, 0]}],
-			Z: [{geometry: rotatePickerGeometry, color: [0, 0, 1], rotation: [0, 0, -Math.PI / 2]}],
-			E: [{geometry: ringPickerGeometry, rotation: [Math.PI / 2, Math.PI / 2, 0], scale: 1.2}],
-			XYZ: [{geometry: circleGeometry, rotation: [Math.PI / 2, Math.PI / 2, 0], scale: 0.35}],
+			X: [{geometry: rotatePickerGeometry, color: [1, 0, 0, 0.5], rotation: [Math.PI / 2, Math.PI / 2, 0]}],
+			Y: [{geometry: rotatePickerGeometry, color: [0, 1, 0, 0.5], rotation: [Math.PI / 2, 0, 0]}],
+			Z: [{geometry: rotatePickerGeometry, color: [0, 0, 1, 0.5], rotation: [0, 0, -Math.PI / 2]}],
+			E: [{geometry: ringPickerGeometry, color: [1, 1, 0.5, 0.5], rotation: [Math.PI / 2, Math.PI / 2, 0], scale: 1.2}],
+			XYZ: [{geometry: octahedronGeometry, color: [0.5, 0.5, 0.5, 0.15], rotation: [Math.PI / 2, Math.PI / 2, 0], scale: 0.32}],
 		};
 	}
 	updateAxis(axis){

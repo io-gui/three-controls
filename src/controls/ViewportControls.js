@@ -75,14 +75,16 @@ export class ViewportControls extends Interactive {
 		this.animation.addEventListener('update', event => {
 			this.update(event.timestep);
 		});
-		this.animation.startAnimation(0);
+		this.cameraChanged(); // TODO: ahmm...
 	}
 	cameraChanged() {
 		// TODO: consider removing and implementing multi-camera + multi-viewport controls
+		this.camera.lookAt(this.target);
 		this.animation.startAnimation(0);
 	}
 	targetChanged() {
 		// TODO: consider removing and implementing multi-target + multi-viewport controls
+		this.camera.lookAt(this.target);
 		this.animation.startAnimation(0);
 	}
 	stateChanged() {
@@ -152,11 +154,7 @@ export class ViewportControls extends Interactive {
 		maxVelocity = Math.max(maxVelocity, Math.abs(this._panInertia.x));
 		maxVelocity = Math.max(maxVelocity, Math.abs(this._panInertia.y));
 		maxVelocity = Math.max(maxVelocity, Math.abs(this._dollyInertia));
-		if (maxVelocity < EPS) {
-			this.animation.stopAnimation();
-		} else {
-			this.animation.startAnimation(1);
-		}
+		if (maxVelocity > EPS) this.animation.startAnimation(0);
 	}
 	onPointerMove(pointers) {
 		let rect = this.domElement.getBoundingClientRect();
@@ -201,43 +199,43 @@ export class ViewportControls extends Interactive {
 	onKeyDown(event) {
 		// TODO: key inertia
 		// TODO: better state setting
-		switch (event.keyCode) {
-			case this.KEYS.PAN_UP:
-				this._setPan(direction.set(0, -this.keyPanSpeed));
-				break;
-			case this.KEYS.PAN_DOWN:
-				this._setPan(direction.set(0, this.keyPanSpeed));
-				break;
-			case this.KEYS.PAN_LEFT:
-				this._setPan(direction.set(this.keyPanSpeed, 0));
-				break;
-			case this.KEYS.PAN_RIGHT:
-				this._setPan(direction.set(-this.keyPanSpeed, 0));
-				break;
-			case this.KEYS.ORBIT_LEFT:
-				this._setOrbit(direction.set(this.keyOrbitSpeed, 0));
-				break;
-			case this.KEYS.ORBIT_RIGHT:
-				this._setOrbit(direction.set(-this.keyOrbitSpeed, 0));
-				break;
-			case this.KEYS.ORBIT_UP:
-				this._setOrbit(direction.set(0, this.keyOrbitSpeed));
-				break;
-			case this.KEYS.ORBIT_DOWN:
-				this._setOrbit(direction.set(0, -this.keyOrbitSpeed));
-				break;
-			case this.KEYS.DOLLY_IN:
-				this._setDolly(-this.keyDollySpeed);
-				break;
-			case this.KEYS.DOLLY_OUT:
-				this._setDolly(this.keyDollySpeed);
-				break;
-			case this.KEYS.FOCUS:
-				this._setFocus();
-				break;
-			default:
-				break;
-		}
+		// switch (event.keyCode) {
+		// 	case this.KEYS.PAN_UP:
+		// 		this._setPan(direction.set(0, -this.keyPanSpeed));
+		// 		break;
+		// 	case this.KEYS.PAN_DOWN:
+		// 		this._setPan(direction.set(0, this.keyPanSpeed));
+		// 		break;
+		// 	case this.KEYS.PAN_LEFT:
+		// 		this._setPan(direction.set(this.keyPanSpeed, 0));
+		// 		break;
+		// 	case this.KEYS.PAN_RIGHT:
+		// 		this._setPan(direction.set(-this.keyPanSpeed, 0));
+		// 		break;
+		// 	case this.KEYS.ORBIT_LEFT:
+		// 		this._setOrbit(direction.set(this.keyOrbitSpeed, 0));
+		// 		break;
+		// 	case this.KEYS.ORBIT_RIGHT:
+		// 		this._setOrbit(direction.set(-this.keyOrbitSpeed, 0));
+		// 		break;
+		// 	case this.KEYS.ORBIT_UP:
+		// 		this._setOrbit(direction.set(0, this.keyOrbitSpeed));
+		// 		break;
+		// 	case this.KEYS.ORBIT_DOWN:
+		// 		this._setOrbit(direction.set(0, -this.keyOrbitSpeed));
+		// 		break;
+		// 	case this.KEYS.DOLLY_IN:
+		// 		this._setDolly(-this.keyDollySpeed);
+		// 		break;
+		// 	case this.KEYS.DOLLY_OUT:
+		// 		this._setDolly(this.keyDollySpeed);
+		// 		break;
+		// 	case this.KEYS.FOCUS:
+		// 		this._setFocus();
+		// 		break;
+		// 	default:
+		// 		break;
+		// }
 		this.active = false;
 	}
 	onKeyUp() {

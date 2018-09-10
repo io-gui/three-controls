@@ -12,7 +12,7 @@ const cornerHandle = new HelperMesh([
 
 const edgeHandle = new HelperMesh([
 	{geometry: new LineGeometry(), color: [1, 1, 1], position: [0, 0, 0]},
-	{geometry: new PlaneGeometry(), color: [1, 1, 1, 0.25], position: [0.5, 0, 0]},
+	{geometry: new PlaneGeometry(), color: [1, 1, 1, 0.25], position: [0.25, 0, 0], scale: [0.5, 1, 1]},
 ]).geometry;
 
 const cornerPicker = new HelperMesh([

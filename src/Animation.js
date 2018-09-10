@@ -9,6 +9,8 @@ import {IoLiteMixin} from "../lib/IoLiteMixin.js";
  * provides methods to control animation and events to hook into animation updates.
  */
 
+let animationsActive = 0;
+
 export class Animation extends IoLiteMixin(Object) {
 	get isAnimation() { return true; }
 	constructor(props) {
@@ -21,7 +23,7 @@ export class Animation extends IoLiteMixin(Object) {
 		});
 	}
 	startAnimation(duration) {
-		this._animationTimeRemainging = Math.max(this._animationTimeRemainging, duration * 100000 || 0);
+		this._animationTimeRemainging = Math.max(this._animationTimeRemainging, duration * 1000 || 0);
 		if (!this._animationActive) {
 			this._animationActive = true;
 			this._animationTime = performance.now();
@@ -30,7 +32,7 @@ export class Animation extends IoLiteMixin(Object) {
 				const timestep = time - this._animationTime;
 				this.dispatchEvent({type: 'start', timestep: timestep, time: time});
 				this._animationTime = time;
-				this._animationTimeRemainging = Math.max(this._animationTimeRemainging - time, 0);
+				this._animationTimeRemainging = Math.max(this._animationTimeRemainging - timestep, 0);
 				this.animate(timestep, time);
 			});
 		}
@@ -41,7 +43,7 @@ export class Animation extends IoLiteMixin(Object) {
 				const time = performance.now();
 				timestep = time - this._animationTime;
 				this._animationTime = time;
-				this._animationTimeRemainging = Math.max(this._animationTimeRemainging - time, 0);
+				this._animationTimeRemainging = Math.max(this._animationTimeRemainging - timestep, 0);
 				this.animate(timestep, time);
 			});
 		} else {

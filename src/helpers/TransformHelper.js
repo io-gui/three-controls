@@ -14,12 +14,13 @@ export class TransformHelper extends Helper {
 			showX: true,
 			showY: true,
 			showZ: true,
+			axis: null,
 			worldX: new Vector3(),
 			worldY: new Vector3(),
 			worldZ: new Vector3(),
 			axisDotEye: new Vector3()
 		});
-		this.size = 0.1;
+		this.size = 0.15;
 
 		this.handles = this.combineHelperGroups(this.handlesGroup);
 		this.pickers = this.combineHelperGroups(this.pickersGroup);
@@ -30,6 +31,18 @@ export class TransformHelper extends Helper {
 
 		// Hide pickers
 		for (let i = 0; i < this.pickers.length; i++) this.pickers[i].material.visible = false;
+	}
+	axisChanged() {
+		this.animation.startAnimation(4);
+	}
+	showXChanged() {
+		this.animation.startAnimation(4);
+	}
+	showYChanged() {
+		this.animation.startAnimation(4);
+	}
+	showZChanged() {
+		this.animation.startAnimation(4);
 	}
 	// Creates an Object3D with gizmos described in custom hierarchy definition.
 	combineHelperGroups(groups) {
@@ -57,8 +70,8 @@ export class TransformHelper extends Helper {
 	updateHelperMatrix() {
 		super.updateHelperMatrix();
 
-		for (let i = this.handles.length; i--;) this.updateAxis(this.handles[i]);
-		for (let i = this.pickers.length; i--;) this.updateAxis(this.pickers[i]);
+		// for (let i = this.handles.length; i--;) this.updateAxis(this.handles[i]);
+		// for (let i = this.pickers.length; i--;) this.updateAxis(this.pickers[i]);
 
 		this.worldX.set(1, 0, 0).applyQuaternion(this.worldQuaternion);
 		this.worldY.set(0, 1, 0).applyQuaternion(this.worldQuaternion);
@@ -71,11 +84,34 @@ export class TransformHelper extends Helper {
 		);
 	}
 	updateAxis(axis) {
-		// Hide non-enabled Transform
 		axis.visible = true;
-		axis.visible = axis.visible && (!axis.has("X") || this.showX);
-		axis.visible = axis.visible && (!axis.has("Y") || this.showY);
-		axis.visible = axis.visible && (!axis.has("Z") || this.showZ);
-		axis.visible = axis.visible && (!axis.has("E") || (this.showX && this.showY && this.showZ));
+
+		const mat = axis.material;
+		const h = axis.material.highlight;
+
+		let hidden = false;
+		let highlight = 0;
+
+		// TODO: resolve conflicts with highlight without return?
+		if (axis.has("X") && !this.showX) hidden = true;
+		if (axis.has("Y") && !this.showY) hidden = true;
+		if (axis.has("Z") && !this.showZ) hidden = true;
+		if (axis.has("E") && (!this.showX || !this.showY || !this.showZ)) hidden = true;
+
+		if (hidden) {
+			highlight = -1.5;
+		} else {
+			if (this.axis) {
+				if (this.hasAxis(axis.name)) {
+					highlight = 1;
+				} else {
+					highlight = -0.75;
+				}
+			}
+		}
+
+		mat.highlight = (10 * h + highlight) / 11;
+
+		if (mat.highlight < -1.49) axis.visible = false;
 	}
 }

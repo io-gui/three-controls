@@ -25,7 +25,7 @@ export class TransformControlsRotate extends TransformControlsMixin(TransformHel
 			rotationAngle: 0
 		});
 	}
-	transform(space) {
+	transform() {
 		const ROTATION_SPEED = 20 / this.worldPosition.distanceTo(tempVector.setFromMatrixPosition(this.camera.matrixWorld));
 		const quaternion = this.space === "local" ? this.worldQuaternion : identityQuaternion;
 		const axis = this.axis;
@@ -42,7 +42,7 @@ export class TransformControlsRotate extends TransformControlsMixin(TransformHel
 			this.rotationAxis.copy(unit[axis]);
 			tempVector.copy(unit[axis]);
 			tempVector2.copy(this.pointEnd).sub(this.pointStart);
-			if (space === 'local') {
+			if (this.space === 'local') {
 				tempVector.applyQuaternion(quaternion);
 				tempVector2.applyQuaternion(this.worldQuaternionStart);
 			}
@@ -50,7 +50,7 @@ export class TransformControlsRotate extends TransformControlsMixin(TransformHel
 		}
 
 		// Apply rotate
-		if (space === 'local') {
+		if (this.space === 'local') {
 			this.object.quaternion.copy(this.quaternionStart);
 			this.object.quaternion.multiply(tempQuaternion.setFromAxisAngle(this.rotationAxis, this.rotationAngle));
 		} else {

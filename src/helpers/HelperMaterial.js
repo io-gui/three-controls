@@ -115,8 +115,10 @@ export class HelperMaterial extends IoLiteMixin(ShaderMaterial) {
 				}
 
 				float dimming = mix(1.0, 0.2, max(0.0, -uHighlight));
-				dimming = mix(dimming, dimming * 2.0, max(0.0, uHighlight));
+				dimming = mix(dimming, dimming * 1.25, max(0.0, uHighlight));
 				opacity = uOpacity * vColor.a * dimming;
+
+				color = mix(vec3(0.5), color, dimming);
 
 				gl_FragColor = vec4(color, 1.0);
 

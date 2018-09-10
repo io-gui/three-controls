@@ -32,15 +32,15 @@ export class TransformHelperScale extends TransformHelperTranslate {
 	}
 	get pickersGroup() {
 		return {
-			X: [{geometry: pickerHandleGeometry, rotation: [0, 0, -Math.PI / 2]}],
-			Y: [{geometry: pickerHandleGeometry}],
-			Z: [{geometry: pickerHandleGeometry, rotation: [Math.PI / 2, 0, 0]}],
-			XY: [{geometry: planeGeometry, position: [0.71, 0.71, 0], scale: 0.4}],
-			YZ: [{geometry: planeGeometry, position: [0, 0.71, 0.71], rotation: [0, Math.PI / 2, 0], scale: 0.4}],
-			XZ: [{geometry: planeGeometry, position: [0.71, 0, 0.71], rotation: [-Math.PI / 2, 0, 0], scale: 0.4}],
-			XYZX: [{geometry: geosphereGeometry, position: [1.1, 0, 0], scale: 0.15}],
-			XYZY: [{geometry: geosphereGeometry, position: [0, 1.1, 0], scale: 0.15}],
-			XYZZ: [{geometry: geosphereGeometry, position: [0, 0, 1.1], scale: 0.15}]
+			X: [{geometry: pickerHandleGeometry, color: [1, 0.3, 0.3, 0.5], rotation: [0, 0, -Math.PI / 2]}],
+			Y: [{geometry: pickerHandleGeometry, color: [0.3, 1, 0.3, 0.5]}],
+			Z: [{geometry: pickerHandleGeometry, color: [0.3, 0.3, 1, 0.5], rotation: [Math.PI / 2, 0, 0]}],
+			XY: [{geometry: planeGeometry, color: [1,1,0,0.5], position: [0.71, 0.71, 0], scale: 0.4}],
+			YZ: [{geometry: planeGeometry, color: [0,1,1,0.5], position: [0, 0.71, 0.71], rotation: [0, Math.PI / 2, 0], scale: 0.4}],
+			XZ: [{geometry: planeGeometry, color: [1,0,1,0.5], position: [0.71, 0, 0.71], rotation: [-Math.PI / 2, 0, 0], scale: 0.4}],
+			XYZX: [{geometry: geosphereGeometry, color: [0.5, 0.5, 0.5, 0.5], position: [1.1, 0, 0], scale: 0.15}],
+			XYZY: [{geometry: geosphereGeometry, color: [0.5, 0.5, 0.5, 0.5], position: [0, 1.1, 0], scale: 0.15}],
+			XYZZ: [{geometry: geosphereGeometry, color: [0.5, 0.5, 0.5, 0.5], position: [0, 0, 1.1], scale: 0.15}]
 		};
 	}
 	updateHelperMatrix() {

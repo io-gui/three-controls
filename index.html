@@ -70,12 +70,14 @@
 				BoxBufferGeometry, MeshLambertMaterial, Mesh,
 				SphereBufferGeometry, Vector3,BufferGeometry, BufferAttribute} from "./lib/three.module.js";
 
+			let rendered = false;
 			let renderer, camera, scene, selection, helperScene;
+			var transformControls;
 
 			scene = new Scene();
 			helperScene = new Scene();
 
-			window.scale = 1;
+			window.scale = 2;
 			window.Vector3 = Vector3;
 
 			init();
@@ -83,7 +85,8 @@
 
 			function init() {
 
-				renderer = new WebGLRenderer({ antialias: true });
+				renderer = new WebGLRenderer({ antialias: false });
+				renderer.autoClear = false;
 
 				let innerWidth = window.innerWidth / window.scale;
 				let innerHeight = window.innerHeight / window.scale;
@@ -152,6 +155,16 @@
 					patent = mesh;
 				}
 
+				for (var i = 0; i < 11; i++) {
+					for (var j = 0; j < 11; j++) {
+						const helper = new TransformHelperTranslate();
+						helper.size = 0;
+						helper.position.set(i * 100 - 500, 0, j * 100 - 500);
+						helper.scale.set(50,50,50);
+						helperScene.add(helper);
+					}
+				}
+
 				const transformHelperTranslate = new TransformHelperTranslate();
 				transformHelperTranslate.size = 0;
 				transformHelperTranslate.position.set(500,0,500);
@@ -181,12 +194,8 @@
 				// viewportControls.enableDamping = false;
 				viewportControls.addEventListener('change', render);
 
-				var transformControls = new TransformControlsTranslate({domElement: canvas, camera: camera});
+				transformControls = new TransformControlsTranslate({domElement: canvas, camera: camera});
 				transformControls.addEventListener('change', render);
-				transformControls.addEventListener('space-changed', event => {
-					// TODO
-					selectionControls.transformSpace = transformControls.mode !== 'scale' ? event.value : 'local';
-				});
 				helperScene.add(transformControls);
 
 				selectionControls.addEventListener('selected-changed', event => {
@@ -207,6 +216,19 @@
 					selectionControls.enabled = event.value ? false : true;
 					viewportControls.enabled = event.value ? false : true;
 				});
+				transformControls.addEventListener('space-changed', event => {
+					selectionControls.transformSpace = event.value;
+				});
+
+				{
+					let res = new Vector3(Math.round(window.innerWidth / window.scale), Math.round(window.innerHeight / window.scale), window.devicePixelRatio);
+					helperScene.traverse(child => {
+						if (child.material) child.material.resolution = res;
+					})
+				}
+
+
+				render();
 
 				// selectionControls.addEventListener('change', ()=>{ console.log('SelectionControls change'); } );
 				// transformControls.addEventListener('change', ()=>{ console.log('TransformControls change'); } );
@@ -219,7 +241,6 @@
 				window.addEventListener('resize', onWindowResize, false);
 
 				window.addEventListener( 'keydown', function ( event ) {
-
 					switch ( event.keyCode ) {
 
 						case 81: // Q
@@ -227,15 +248,87 @@
 							break;
 
 						case 87: // W
-							transformControls.mode = "translate";
+							transformControls.dispose();
+							helperScene.remove(transformControls);
+							selectionControls.enabled = true;
+							viewportControls.enabled = true;
+							transformControls = new TransformControlsTranslate({domElement: canvas, camera: camera});
+							transformControls.addEventListener('change', render);
+							transformControls.object = selectionControls.selected.length ? selectionControls : null;
+							transformControls.addEventListener('active-changed', event => {
+								viewportControls.enabled = event.value ? false : true;
+							});
+							transformControls.addEventListener('axis-changed', event => {
+								selectionControls.enabled = event.value ? false : true;
+								viewportControls.enabled = event.value ? false : true;
+							});
+							transformControls.addEventListener('space-changed', event => {
+								selectionControls.transformSpace = event.value;
+							});
+							helperScene.add(transformControls);
 							break;
 
 						case 69: // E
-							transformControls.mode = "rotate";
+							transformControls.dispose();
+							helperScene.remove(transformControls);
+							selectionControls.enabled = true;
+							viewportControls.enabled = true;
+							transformControls = new TransformControlsRotate({domElement: canvas, camera: camera});
+							transformControls.addEventListener('change', render);
+							transformControls.object = selectionControls.selected.length ? selectionControls : null;
+							transformControls.addEventListener('active-changed', event => {
+								viewportControls.enabled = event.value ? false : true;
+							});
+							transformControls.addEventListener('axis-changed', event => {
+								selectionControls.enabled = event.value ? false : true;
+								viewportControls.enabled = event.value ? false : true;
+							});
+							transformControls.addEventListener('space-changed', event => {
+								selectionControls.transformSpace = event.value;
+							});
+							helperScene.add(transformControls);
 							break;
 
 						case 82: // R
-							transformControls.mode = "scale";
+							transformControls.dispose();
+							helperScene.remove(transformControls);
+							selectionControls.enabled = true;
+							viewportControls.enabled = true;
+							transformControls = new TransformControlsScale({domElement: canvas, camera: camera});
+							transformControls.addEventListener('change', render);
+							transformControls.object = selectionControls.selected.length ? selectionControls : null;
+							transformControls.addEventListener('active-changed', event => {
+								viewportControls.enabled = event.value ? false : true;
+							});
+							transformControls.addEventListener('axis-changed', event => {
+								selectionControls.enabled = event.value ? false : true;
+								viewportControls.enabled = event.value ? false : true;
+							});
+							transformControls.addEventListener('space-changed', event => {
+								selectionControls.transformSpace = event.value;
+							});
+							helperScene.add(transformControls);
+							break;
+
+						case 84: // T
+							transformControls.dispose();
+							helperScene.remove(transformControls);
+							selectionControls.enabled = true;
+							viewportControls.enabled = true;
+							transformControls = new TransformControlsFreescale({domElement: canvas, camera: camera});
+							transformControls.addEventListener('change', render);
+							transformControls.object = selectionControls.selected.length ? selectionControls : null;
+							transformControls.addEventListener('active-changed', event => {
+								viewportControls.enabled = event.value ? false : true;
+							});
+							transformControls.addEventListener('axis-changed', event => {
+								selectionControls.enabled = event.value ? false : true;
+								viewportControls.enabled = event.value ? false : true;
+							});
+							transformControls.addEventListener('space-changed', event => {
+								selectionControls.transformSpace = event.value;
+							});
+							helperScene.add(transformControls);
 							break;
 
 						case 187:
@@ -306,28 +399,17 @@
 
 			}
 
-			renderer.autoClear = false;
 
 			function render() {
-				// helperScene.traverse(object => object.camera = camera);
-				{
-					// let rect = this.domElement.getBoundingClientRect();
-					let res = new Vector3(Math.round(window.innerWidth / window.scale), Math.round(window.innerHeight / window.scale), window.devicePixelRatio);
-					// console.log(res)
-					helperScene.traverse(child => {
-						if (child.material && child.material.resolution) {
-							child.material.resolution = res;
-							// child.material.uniformsNeedUpdate = true;
-							// console.log(res)
-						}
-					})
-				}
-
+				if (rendered) return;
+				rendered = true;
 
 				renderer.clear();
 				renderer.render(scene, camera);
 				renderer.clearDepth();
 				renderer.render(helperScene, camera);
+
+				requestAnimationFrame(() => { rendered = false; })
 
 			}
 
