@@ -132,8 +132,8 @@ export const TransformControlsMixin = (superclass) => class extends InteractiveM
 		}
 	}
 	transform() {}
-	updateAxis(axis) {
-		super.updateAxis(axis);
+	updateAxisMaterial(axis) {
+		super.updateAxisMaterial(axis);
 
 		const mat = axis.material;
 		const h = axis.material.highlight;

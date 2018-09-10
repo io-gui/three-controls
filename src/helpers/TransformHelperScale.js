@@ -46,5 +46,8 @@ export class TransformHelperScale extends TransformHelperTranslate {
 	updateHelperMatrix() {
 		this.space = 'local';
 		super.updateHelperMatrix();
+		// TODO: optimize!
+		for (let i = this.handles.length; i--;) this.updateAxisMaterial(this.handles[i]);
+		for (let i = this.pickers.length; i--;) this.updateAxisMaterial(this.pickers[i]);
 	}
 }

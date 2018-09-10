@@ -6,6 +6,14 @@ import {ConeGeometry, OctahedronGeometry} from "./HelperGeometries.js";
 const coneGeometry = new ConeGeometry();
 const octahedronGeometry = new OctahedronGeometry();
 
+function stringHas(str, char) {return str.search(char) !== -1;};
+
+function hasAxisAny(str, chars) {
+	let has = true;
+	str.split('').some(a => { if (chars.indexOf(a) === -1) has = false; });
+	return has;
+}
+
 export class TransformHelper extends Helper {
 	constructor(props) {
 		super(props);
@@ -34,15 +42,28 @@ export class TransformHelper extends Helper {
 	}
 	axisChanged() {
 		this.animation.startAnimation(4);
+		this.traverse(axis => {
+			axis.highlight = 0;
+			if (this.axis) {
+				if (hasAxisAny(axis.name, this.axis)) {
+					axis.highlight = 1;
+				} else {
+					axis.highlight = -0.75;
+				}
+			}
+		})
 	}
 	showXChanged() {
 		this.animation.startAnimation(4);
+		this.updateAxis();
 	}
 	showYChanged() {
 		this.animation.startAnimation(4);
+		this.updateAxis();
 	}
 	showZChanged() {
 		this.animation.startAnimation(4);
+		this.updateAxis();
 	}
 	// Creates an Object3D with gizmos described in custom hierarchy definition.
 	combineHelperGroups(groups) {
@@ -67,11 +88,17 @@ export class TransformHelper extends Helper {
 			XYZ: [{geometry: octahedronGeometry, scale: 0.5}]
 		};
 	}
+	updateAxis() {
+		this.traverse(axis => {
+			axis.hidden = false;
+			if (stringHas(axis.name, "X") && !this.showX) axis.hidden = true;
+			if (stringHas(axis.name, "Y") && !this.showY) axis.hidden = true;
+			if (stringHas(axis.name, "Z") && !this.showZ) axis.hidden = true;
+			if (stringHas(axis.name, "E") && (!this.showX || !this.showY || !this.showZ)) axis.hidden = true;
+		})
+	}
 	updateHelperMatrix() {
 		super.updateHelperMatrix();
-
-		// for (let i = this.handles.length; i--;) this.updateAxis(this.handles[i]);
-		// for (let i = this.pickers.length; i--;) this.updateAxis(this.pickers[i]);
 
 		this.worldX.set(1, 0, 0).applyQuaternion(this.worldQuaternion);
 		this.worldY.set(0, 1, 0).applyQuaternion(this.worldQuaternion);
@@ -82,35 +109,22 @@ export class TransformHelper extends Helper {
 			this.worldY.dot(this.eye),
 			this.worldZ.dot(this.eye)
 		);
+
+		if (this.animation._active) {
+			for (let i = this.handles.length; i--;) this.updateAxisMaterial(this.handles[i]);
+			for (let i = this.pickers.length; i--;) this.updateAxisMaterial(this.pickers[i]);
+		}
 	}
-	updateAxis(axis) {
+	// TODO: optimize!
+	updateAxisMaterial(axis) {
 		axis.visible = true;
 
 		const mat = axis.material;
-		const h = axis.material.highlight;
+		const h = axis.material.highlight || 0;
 
-		let hidden = false;
-		let highlight = 0;
+		let highlight = axis.hidden ? -1.5 : axis.highlight;
 
-		// TODO: resolve conflicts with highlight without return?
-		if (axis.has("X") && !this.showX) hidden = true;
-		if (axis.has("Y") && !this.showY) hidden = true;
-		if (axis.has("Z") && !this.showZ) hidden = true;
-		if (axis.has("E") && (!this.showX || !this.showY || !this.showZ)) hidden = true;
-
-		if (hidden) {
-			highlight = -1.5;
-		} else {
-			if (this.axis) {
-				if (this.hasAxis(axis.name)) {
-					highlight = 1;
-				} else {
-					highlight = -0.75;
-				}
-			}
-		}
-
-		mat.highlight = (10 * h + highlight) / 11;
+		mat.highlight = (5 * h + highlight) / 6;
 
 		if (mat.highlight < -1.49) axis.visible = false;
 	}

@@ -76,7 +76,7 @@ export class Helper extends IoLiteMixin(Object3D) {
 		this.matrixWorldNeedsUpdate = false;
 		const children = this.children;
 		for (let i = 0, l = children.length; i < l; i ++) {
-			children[i].updateMatrixWorld(true);
+			children[i].updateMatrixWorld(true, camera);
 		}
 	}
 }

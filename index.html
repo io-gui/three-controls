@@ -77,7 +77,7 @@
 			scene = new Scene();
 			helperScene = new Scene();
 
-			window.scale = 2;
+			window.scale = 1;
 			window.Vector3 = Vector3;
 
 			init();
@@ -85,7 +85,7 @@
 
 			function init() {
 
-				renderer = new WebGLRenderer({ antialias: false });
+				renderer = new WebGLRenderer({ antialias: true });
 				renderer.autoClear = false;
 
 				let innerWidth = window.innerWidth / window.scale;

@@ -43,8 +43,8 @@ export class TransformHelperRotate extends TransformHelper {
 			XYZ: [{geometry: octahedronGeometry, color: [0.5, 0.5, 0.5, 0.15], rotation: [Math.PI / 2, Math.PI / 2, 0], scale: 0.32}],
 		};
 	}
-	updateAxis(axis){
-		super.updateAxis(axis);
+	updateAxisMaterial(axis){
+		super.updateAxisMaterial(axis);
 		axis.quaternion.copy(identityQuaternion);
 		if (axis.has("E") || axis.has("XYZ")) {
 			axis.quaternion.setFromRotationMatrix(lookAtMatrix.lookAt(alignVector, zeroVector, tempVector));
@@ -66,12 +66,18 @@ export class TransformHelperRotate extends TransformHelper {
 		}
 	}
 	updateHelperMatrix() {
+		super.updateHelperMatrix();
+
 		// TODO: simplify rotation handle logic
 		const quaternion = this.space === "local" ? this.worldQuaternion : identityQuaternion;
 		// Align handles to current local or world rotation
+
 		tempQuaternion.copy(quaternion).inverse();
 		alignVector.copy(this.eye).applyQuaternion(tempQuaternion);
 		tempVector.copy(unitY).applyQuaternion(tempQuaternion);
-		super.updateHelperMatrix();
+
+		// TODO: optimize!
+		for (let i = this.handles.length; i--;) this.updateAxisMaterial(this.handles[i]);
+		for (let i = this.pickers.length; i--;) this.updateAxisMaterial(this.pickers[i]);
 	}
 }

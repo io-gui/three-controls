@@ -11,12 +11,38 @@ const octahedronGeometry = new OctahedronGeometry();
 const pickerHandleGeometry = new PickerHandleGeometry();
 const planeGeometry = new PlaneGeometry();
 
+function stringHas(str, char) {return str.search(char) !== -1;};
+
 export class TransformHelperTranslate extends TransformHelper {
 	constructor(props) {
 		super(props);
+		this.defineProperties({
+			hideX: false,
+			hideY: false,
+			hideZ: false,
+			hideXY: false,
+			hideYZ: false,
+			hideXZ: false,
+			flipX: false,
+			flipY: false,
+			flipZ: false
+		})
 		this.traverse(child => {
 			child.renderOrder = 200;
 		});
+	}
+	hideXChanged() { this.updateHidden(); }
+	hideYChanged() { this.updateHidden(); }
+	hideZChanged() { this.updateHidden(); }
+	hideXYChanged() { this.updateHidden(); }
+	hideYZChanged() { this.updateHidden(); }
+	hideXZChanged() { this.updateHidden(); }
+	flipXChanged() { this.updateHidden(); }
+	flipYChanged() { this.updateHidden(); }
+	flipZChanged() { this.updateHidden(); }
+	updateHidden() {
+		this.animation.startAnimation(4);
+		this.updateAxis();
 	}
 	get handlesGroup() {
 		return {
@@ -51,53 +77,58 @@ export class TransformHelperTranslate extends TransformHelper {
 			XZ: [{ geometry: planeGeometry, color: [1,0,1,0.5,0.5], position: [0.25, 0, 0.25], rotation: [-Math.PI / 2, 0, 0], scale: 0.5}]
 		};
 	}
-	updateAxis(axis) {
-		super.updateAxis(axis);
+	updateAxis() {
+		this.traverse(axis => {
+			if (axis !== this) { // TODO: conside better loop
 
+				axis.hidden = false;
+				if (stringHas(axis.name, "X") && !this.showX) axis.hidden = true;
+				if (stringHas(axis.name, "Y") && !this.showY) axis.hidden = true;
+				if (stringHas(axis.name, "Z") && !this.showZ) axis.hidden = true;
+				if (stringHas(axis.name, "E") && (!this.showX || !this.showY || !this.showZ)) axis.hidden = true;
+
+				// Hide axis facing the camera
+				if ((axis.name == 'X' || axis.name == 'XYZX') && this.hideX) axis.hidden = true;
+				if ((axis.name == 'Y' || axis.name == 'XYZY') && this.hideY) axis.hidden = true;
+				if ((axis.name == 'Z' || axis.name == 'XYZZ') && this.hideZ) axis.hidden = true;
+				if (axis.name == 'XY' && this.hideXY) axis.hidden = true;
+				if (axis.name == 'YZ' && this.hideYZ) axis.hidden = true;
+				if (axis.name == 'XZ' && this.hideXZ) axis.hidden = true;
+
+				// Flip axis
+				if (stringHas(axis.name, 'X')) axis.flipX = this.flipX ? -1 : 1;
+				if (stringHas(axis.name, 'Y')) axis.flipY = this.flipY ? -1 : 1;
+				if (stringHas(axis.name, 'Z')) axis.flipZ = this.flipZ ? -1 : 1;
+			}
+		});
+	}
+	// TODO: optimize!
+	updateAxisMaterial(axis) {
+		super.updateAxisMaterial(axis);
+		if (axis.flipX) axis.scale.x = (axis.scale.x * 5 + axis.flipX ) / 6;
+		if (axis.flipY) axis.scale.y = (axis.scale.y * 5 + axis.flipY ) / 6;
+		if (axis.flipZ) axis.scale.z = (axis.scale.z * 5 + axis.flipZ ) / 6;
+	}
+	updateHelperMatrix() {
 		const xDotE = this.axisDotEye.x;
 		const yDotE = this.axisDotEye.y;
 		const zDotE = this.axisDotEye.z;
 
-		const mat = axis.material;
-		const h = axis.material.highlight;
-
-		let hidden = false;
-		let highlight = 0;
-
 		// Hide axis facing the camera
-		if ((axis.is('X') || axis.is('XYZX')) && Math.abs(xDotE) > AXIS_HIDE_TRESHOLD) hidden = true;
-		if ((axis.is('Y') || axis.is('XYZY')) && Math.abs(yDotE) > AXIS_HIDE_TRESHOLD) hidden = true;
-		if ((axis.is('Z') || axis.is('XYZZ')) && Math.abs(zDotE) > AXIS_HIDE_TRESHOLD) hidden = true;
-		if (axis.is('XY') && Math.abs(zDotE) < PLANE_HIDE_TRESHOLD) hidden = true;
-		if (axis.is('YZ') && Math.abs(xDotE) < PLANE_HIDE_TRESHOLD) hidden = true;
-		if (axis.is('XZ') && Math.abs(yDotE) < PLANE_HIDE_TRESHOLD) hidden = true;
-
-		if (hidden) {
-			highlight = -1.5;
-			mat.highlight = (10 * h + highlight) / 11;
+		if (!this.active) { // skip while controls are active
+			this.hideX = Math.abs(xDotE) > AXIS_HIDE_TRESHOLD;
+			this.hideY = Math.abs(yDotE) > AXIS_HIDE_TRESHOLD;
+			this.hideZ = Math.abs(zDotE) > AXIS_HIDE_TRESHOLD;
+			this.hideXY = Math.abs(zDotE) < PLANE_HIDE_TRESHOLD;
+			this.hideYZ = Math.abs(xDotE) < PLANE_HIDE_TRESHOLD;
+			this.hideXZ = Math.abs(yDotE) < PLANE_HIDE_TRESHOLD;
+			this.flipX = xDotE < AXIS_FLIP_TRESHOLD;
+			this.flipY = yDotE < AXIS_FLIP_TRESHOLD;
+			this.flipZ = zDotE < AXIS_FLIP_TRESHOLD;
 		}
 
-		if (mat.highlight < -1.49) axis.visible = false;
+		super.updateHelperMatrix();
 
 
-		// TODO: implement flipping animation better and make sure animation loop runs while lerping.
-		// Flip axis ocluded behind another axis
-		if (!this.active) {
-			if (axis.has('X') && xDotE < AXIS_FLIP_TRESHOLD) {
-				axis.scale.x = (axis.scale.x * 5 -1 ) / 6;
-			} else {
-				axis.scale.x = (axis.scale.x * 5 + 1 ) / 6;
-			}
-			if (axis.has('Y') && yDotE < AXIS_FLIP_TRESHOLD) {
-				axis.scale.y = (axis.scale.y * 5 -1 ) / 6;
-			} else {
-				axis.scale.y = (axis.scale.y * 5 + 1 ) / 6;
-			}
-			if (axis.has('Z') && zDotE < AXIS_FLIP_TRESHOLD) {
-				axis.scale.z = (axis.scale.z * 5 -1 ) / 6;
-			} else {
-				axis.scale.z = (axis.scale.z * 5 + 1 ) / 6;
-			}
-		}
 	}
 }
