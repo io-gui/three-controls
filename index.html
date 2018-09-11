@@ -87,7 +87,7 @@
 
 
 			import {WebGLRenderer, PerspectiveCamera, Scene, GridHelper, DirectionalLight,
-				BoxBufferGeometry, MeshLambertMaterial, Mesh, Object3D, TextureLoader,
+				BoxBufferGeometry, MeshLambertMaterial, Mesh, Object3D, TextureLoader, Color,
 				SphereBufferGeometry, Vector3,BufferGeometry, BufferAttribute} from "./lib/three.module.js";
 
 			let rendered = false;
@@ -143,37 +143,58 @@
 				light.position.set(0.1, -0.3, -1);
 				scene.add(light);
 
-				var texture = new TextureLoader().load( 'examples/textures/crate.gif', render );
+				let sphere = new Mesh(
+					new SphereBufferGeometry(100, 24, 12),
+					new MeshLambertMaterial({color: new Color(0.7,0.7,0.7), map: new TextureLoader().load( 'examples/textures/moon_1024.jpg', render )})
+				);
+				sphere.position.set(200, 300, -200);
+				scene.add(sphere);
+
+				sphere = new Mesh(
+					new SphereBufferGeometry(10, 24, 12),
+					new MeshLambertMaterial({color: new Color(0.7,0.7,0.7), map: new TextureLoader().load( 'examples/textures/moon_1024.jpg', render )})
+				);
+				sphere.position.set(-200, 300, 200);
+				scene.add(sphere);
+
 				var geometry = new BoxBufferGeometry(200, 200, 200);
-				var material = new MeshLambertMaterial({map: texture});
+				var material = new MeshLambertMaterial({map: new TextureLoader().load( 'examples/textures/crate.gif', render )});
+				let box0 = new Mesh(geometry, material);
+				box0.position.set(0,100,0);
+				scene.add(box0);
 
-				let mesh0 = new Mesh(geometry, material);
-				mesh0.position.set(0,0,0);
-				scene.add(mesh0);
-
-				let mesh;
-				let patent = mesh0;
+				let box;
+				let parent = box0;
 				for (let i = 0; i < 2; i++) {
-					mesh = new Mesh(geometry, material);
-					mesh.position.set(0, 200, 0);
-					mesh.rotation.set(0, -(i+1)/3, 0);
-					patent.add(mesh);
-					patent = mesh;
+					box = new Mesh(geometry, material);
+					box.position.set(0, 200, 0);
+					box.rotation.set(0, -(i+1)/3, 0);
+					parent.add(box);
+					parent = box;
 				}
-				patent = mesh0;
+
+				geometry = new BoxBufferGeometry(400, 400, 400);
+
+				parent = box0;
 				for (let i = 0; i < 2; i++) {
-					mesh = new Mesh(geometry, material);
-					mesh.position.set(0, 0, -200);
-					mesh.rotation.set(0, -Math.PI * (i + 1) / 2, 0);
-					patent.add(mesh);
-					patent = mesh;
-				}patent = mesh0;
+					box = new Mesh(geometry, material);
+					if (i == 0) box.scale.set(0.5, 0.5, 0.5);
+					box.position.set(0, 0, -200 / parent.scale.x);
+					box.rotation.set(0, -Math.PI * (i + 1) / 2, 0);
+					parent.add(box);
+					parent = box;
+				}
+				parent = box0;
+
+				geometry = new BoxBufferGeometry(100, 100, 100);
+
 				for (let i = 0; i < 2; i++) {
-					mesh = new Mesh(geometry, material);
-					mesh.position.set(-200, 0, 0);
-					mesh.rotation.set(0, Math.PI * (i + 1) / 2, 0);
-					patent.add(mesh);
-					patent = mesh;
+					box = new Mesh(geometry, material);
+					if (i == 0) box.scale.set(2, 2, 2);
+					box.position.set(-200 / parent.scale.x, 0, 0);
+					box.rotation.set(0, Math.PI * (i + 1) / 2, 0);
+					parent.add(box);
+					parent = box;
 				}
 
 				// for (var i = 0; i < 6; i++) {
@@ -199,11 +220,11 @@
 					transformControls.objectChanged();
 				});
 
-				setupViewportControls(OrbitControls);
-				setupTransformControls(TransformControlsTranslate);
+				setupViewportControls('OrbitControls');
+				setupTransformControls('TransformControlsScale');
 
 				scene.updateMatrixWorld();
-				selectionControls.replace(mesh0);
+				selectionControls.replace(box0);
 
 				{
 					let res = new Vector3(Math.round(window.innerWidth / window.scale), Math.round(window.innerHeight / window.scale), window.devicePixelRatio);
@@ -222,6 +243,7 @@
 						viewportControls.dispose();
 					}
 					viewportControls = new ControlClass({domElement: canvas, camera: camera});
+					viewportControls.enableDamping = false;
 					viewportControls.addEventListener('change', viewportControlsChanged);
 				}
 				window.setupViewportControls = setupViewportControls;

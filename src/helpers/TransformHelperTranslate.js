@@ -37,15 +37,15 @@ export class TransformHelperTranslate extends TransformHelper {
 				{geometry: octahedronGeometry, color: [1, 1, 1], scale: 0.1}
 			],
 			XY: [
-				{geometry: planeGeometry, color: [1,1,0,0.5], position: [0.15, 0.15, 0], scale: 0.3},
+				{geometry: planeGeometry, color: [1,1,0,0.125], position: [0.15, 0.15, 0], scale: 0.3},
 				{geometry: corner2Geometry, color: [1,1,0.3], position: [0.3, 0.3, 0], scale: 0.15, rotation: [Math.PI / 2, 0, Math.PI]}
 			],
 			YZ: [
-				{geometry: planeGeometry, color: [0,1,1,0.5], position: [0, 0.15, 0.15], rotation: [0, Math.PI / 2, 0], scale: 0.3},
+				{geometry: planeGeometry, color: [0,1,1,0.125], position: [0, 0.15, 0.15], rotation: [0, Math.PI / 2, 0], scale: 0.3},
 				{geometry: corner2Geometry, color: [0.3,1,1], position: [0, 0.3, 0.3], scale: 0.15, rotation: [0, Math.PI, -Math.PI / 2]}
 			],
 			XZ: [
-				{geometry: planeGeometry, color: [1,0,1,0.5], position: [0.15, 0, 0.15], rotation: [-Math.PI / 2, 0, 0], scale: 0.3},
+				{geometry: planeGeometry, color: [1,0,1,0.125], position: [0.15, 0, 0.15], rotation: [-Math.PI / 2, 0, 0], scale: 0.3},
 				{geometry: corner2Geometry, color: [1,0.3,1], position: [0.3, 0, 0.3], scale: 0.15, rotation: [0, Math.PI, 0]}
 			]
 		};

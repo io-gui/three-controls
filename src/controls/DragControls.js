@@ -11,9 +11,6 @@ export class DragControls extends TransformControlsMixin(TransformHelper) {
 		super(props);
 		this.size = 0.02;
 	}
-	objectChanged() {
-		super.objectChanged();
-	}
 	transform(space) {
 		if (space === 'local') {
 			this.object.position.copy(this.pointEnd).sub(this.pointStart).applyQuaternion(this.quaternionStart);

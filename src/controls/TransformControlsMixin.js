@@ -10,6 +10,8 @@ const ray = new Raycaster();
 const rayTarget = new Vector3();
 const tempVector = new Vector3();
 
+// TODO: dragging in scaled space not updating helper position during drag.
+
 // events
 const changeEvent = { type: "change" };
 
