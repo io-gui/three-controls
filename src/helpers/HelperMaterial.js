@@ -1,6 +1,6 @@
 import {IoLiteMixin} from "../../lib/IoLiteMixin.js";
 import {UniformsUtils, Vector3, Color, FrontSide, ShaderMaterial,
-	DataTexture, RGBAFormat, FloatType, NearestFilter, ClampToEdgeWrapping, TextureLoader} from "../../lib/three.module.js";
+	DataTexture, RGBAFormat, FloatType, NearestFilter} from "../../lib/three.module.js";
 
 const _colors = {
 	black: new Color(0x000000),
@@ -37,7 +37,7 @@ export class HelperMaterial extends IoLiteMixin(ShaderMaterial) {
 
 		const res = new Vector3(window.innerWidth, window.innerHeight, window.devicePixelRatio);
 		color = color !== undefined ? _colors[color] : _colors['white'];
-		opacity = opacity !== undefined ? opacity : 1
+		opacity = opacity !== undefined ? opacity : 1;
 
 		this.defineProperties({
 			color: { value: color, observer: 'uniformChanged'},

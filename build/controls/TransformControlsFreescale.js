@@ -1,4 +1,4 @@
-import { Object3D, Vector3, Quaternion, Vector2, BufferGeometry, BufferAttribute, UniformsUtils, Color, DoubleSide, ShaderMaterial, Mesh, Euler, Matrix4, Uint16BufferAttribute, Float32BufferAttribute, SphereBufferGeometry, CylinderBufferGeometry, OctahedronBufferGeometry, BoxBufferGeometry } from '../../lib/three.module.js';
+import { Object3D, Vector3, Quaternion, Vector2, BufferGeometry, BufferAttribute, UniformsUtils, Color, FrontSide, ShaderMaterial, DataTexture, RGBAFormat, FloatType, NearestFilter, Mesh, Euler, Matrix4, Uint16BufferAttribute, Float32BufferAttribute, SphereBufferGeometry, CylinderBufferGeometry, OctahedronBufferGeometry } from '../../lib/three.module.js';
 import { TransformControlsMixin } from './TransformControlsMixin.js';
 
 /**
@@ -42,10 +42,9 @@ const IoLiteMixin = ( superclass ) => class extends superclass {
 	}
 	dispatchEvent( event ) {
 
-		if ( this._listeners === undefined ) return;
-		if ( this._listeners[ event.type ] !== undefined ) {
+		event.target = this;
+		if ( this._listeners && this._listeners[ event.type ] !== undefined ) {
 
-			event.target = this;
 			let array = this._listeners[ event.type ].slice( 0 );
 			for ( let i = 0, l = array.length; i < l; i ++ ) {
 
@@ -53,7 +52,7 @@ const IoLiteMixin = ( superclass ) => class extends superclass {
 
 			}
 
-		}
+		} else if ( this.parent && event.bubbles ) ;
 
 	}
 	// Define properties in builk.
@@ -80,10 +79,27 @@ const IoLiteMixin = ( superclass ) => class extends superclass {
 };
 
 // Defines getter, setter
-const defineProperty = function ( scope, propName, defaultValue ) {
+const defineProperty = function ( scope, propName, propDef ) {
 
-	scope._properties[ propName ] = defaultValue;
-	if ( defaultValue === undefined ) {
+	let observer = propName + 'Changed';
+	let initValue = propDef;
+
+	if ( propDef && typeof propDef === 'object' && propDef.value !== undefined ) {
+
+		initValue = propDef.value;
+
+		if ( typeof propDef.observer === 'string' ) {
+
+			observer = propDef.observer;
+
+		}
+
+	}
+
+
+
+	scope._properties[ propName ] = initValue;
+	if ( initValue === undefined ) {
 
 		console.warn( 'IoLiteMixin: ' + propName + ' is mandatory!' );
 
@@ -91,7 +107,7 @@ const defineProperty = function ( scope, propName, defaultValue ) {
 	Object.defineProperty( scope, propName, {
 		get: function () {
 
-			return scope._properties[ propName ] !== undefined ? scope._properties[ propName ] : defaultValue;
+			return scope._properties[ propName ] !== undefined ? scope._properties[ propName ] : initValue;
 
 		},
 		set: function ( value ) {
@@ -100,16 +116,16 @@ const defineProperty = function ( scope, propName, defaultValue ) {
 
 				const oldValue = scope._properties[ propName ];
 				scope._properties[ propName ] = value;
-				if ( typeof scope[ propName + 'Changed' ] === 'function' ) scope[ propName + 'Changed' ]( value, oldValue );
-				scope.dispatchEvent( { type: propName + '-changed', value: value, oldValue: oldValue } );
-				scope.dispatchEvent( { type: 'change', prop: propName, value: value, oldValue: oldValue } );
+				if ( typeof scope[ observer ] === 'function' ) scope[ observer ]( value, oldValue );
+				scope.dispatchEvent( { type: propName + '-changed', value: value, oldValue: oldValue, bubbles: true } );
+				scope.dispatchEvent( { type: 'change', property: propName, value: value, oldValue: oldValue } );
 
 			}
 
 		},
 		enumerable: propName.charAt( 0 ) !== '_'
 	} );
-	scope[ propName ] = defaultValue;
+	scope[ propName ] = initValue;
 
 };
 
@@ -133,28 +149,27 @@ class Animation extends IoLiteMixin( Object ) {
 
 		super( props );
 		this.defineProperties( {
-			_animationActive: false,
-			_animationTime: 0,
-			_animationTimeRemainging: 0,
+			_active: false,
+			_time: 0,
+			_timeRemainging: 0,
 			_rafID: 0
 		} );
 
 	}
 	startAnimation( duration ) {
 
-		this._animationTimeRemainging = Math.max( this._animationTimeRemainging, duration * 100000 || 0 );
-		if ( ! this._animationActive ) {
+		this._timeRemainging = Math.max( this._timeRemainging, duration * 1000 || 0 );
+		if ( ! this._active ) {
 
-			this._animationActive = true;
-			this._animationTime = performance.now();
+			this._active = true;
+			this._time = performance.now();
 			this._rafID = requestAnimationFrame( () => {
 
 				const time = performance.now();
-				const timestep = time - this._animationTime;
-				this._animationTime = time;
-				this._animationTimeRemainging = Math.max( this._animationTimeRemainging - time, 0 );
-				this.dispatchEvent( { type: 'start', timestep: timestep, time: time } );
+				const timestep = time - this._time;
 				this.animate( timestep, time );
+				this._time = time;
+				this._timeRemainging = Math.max( this._timeRemainging - timestep, 0 );
 
 			} );
 
@@ -163,15 +178,15 @@ class Animation extends IoLiteMixin( Object ) {
 	}
 	animate( timestep, time ) {
 
-		if ( this._animationActive && this._animationTimeRemainging ) {
+		if ( this._active && this._timeRemainging ) {
 
 			this._rafID = requestAnimationFrame( () => {
 
 				const time = performance.now();
-				timestep = time - this._animationTime;
-				this._animationTime = time;
-				this._animationTimeRemainging = Math.max( this._animationTimeRemainging - time, 0 );
+				timestep = time - this._time;
 				this.animate( timestep, time );
+				this._time = time;
+				this._timeRemainging = Math.max( this._timeRemainging - timestep, 0 );
 
 			} );
 
@@ -180,20 +195,18 @@ class Animation extends IoLiteMixin( Object ) {
 			this.stopAnimation( timestep, time );
 
 		}
-		this.dispatchEvent( { type: 'update', timestep: timestep, time: time } );
+		this.dispatchEvent( { type: 'update', timestep: timestep } );
 
 	}
 	stopAnimation() {
 
-		const time = performance.now();
-		const timestep = time - this._animationTime;
-		this.dispatchEvent( { type: 'stop', timestep: timestep, time: time } );
-		this._animationActive = false;
+		this._active = false;
 		cancelAnimationFrame( this._rafID );
 
 	}
 
 }
+// TODO: dispose
 
 /**
  * @author arodic / https://github.com/arodic
@@ -210,12 +223,13 @@ class Helper extends IoLiteMixin( Object3D ) {
 		return true;
 
 	}
-	constructor( params = {} ) {
+	constructor( props = {} ) {
 
 		super();
 		this.defineProperties( {
-			object: params.object || null,
-			camera: params.camera || null,
+			domElement: props.domElement || null,
+			object: props.object || null,
+			camera: props.camera || null,
 			space: 'local',
 			size: 0,
 			worldPosition: new Vector3(),
@@ -227,17 +241,7 @@ class Helper extends IoLiteMixin( Object3D ) {
 			eye: new Vector3(),
 			animation: new Animation()
 		} );
-		this.animation.addEventListener( 'start', () => {
-
-			this.dispatchEvent( { type: 'change' } );
-
-		} );
 		this.animation.addEventListener( 'update', () => {
-
-			this.dispatchEvent( { type: 'change' } );
-
-		} );
-		this.animation.addEventListener( 'stop', () => {
 
 			this.dispatchEvent( { type: 'change' } );
 
@@ -254,7 +258,7 @@ class Helper extends IoLiteMixin( Object3D ) {
 
 		} else {
 
-			super.updateMatrixWorld();
+			super.updateMatrixWorld(); // TODO: camera?
 
 		}
 
@@ -288,20 +292,23 @@ class Helper extends IoLiteMixin( Object3D ) {
 		}
 
 	}
-	updateMatrixWorld() {
+	updateMatrixWorld( force, camera ) {
 
-		this.updateHelperMatrix();
+		if ( camera ) this.camera = camera; // TODO
+
+		this.updateHelperMatrix( camera );
 		this.matrixWorldNeedsUpdate = false;
 		const children = this.children;
 		for ( let i = 0, l = children.length; i < l; i ++ ) {
 
-			children[ i ].updateMatrixWorld( true );
+			children[ i ].updateMatrixWorld( true, camera );
 
 		}
 
 	}
 
 }
+// TODO: dispose
 
 /**
  * @author mrdoob / http://mrdoob.com/
@@ -711,90 +718,129 @@ class HelperMaterial extends IoLiteMixin( ShaderMaterial ) {
 		super( {
 			depthTest: true,
 			depthWrite: true,
+			side: FrontSide,
 		} );
+
+		const data = new Float32Array( [
+			1.0 / 17.0, 0, 0, 0, 9.0 / 17.0, 0, 0, 0, 3.0 / 17.0, 0, 0, 0, 11.0 / 17.0, 0, 0, 0,
+			13.0 / 17.0, 0, 0, 0, 5.0 / 17.0, 0, 0, 0, 15.0 / 17.0, 0, 0, 0, 7.0 / 17.0, 0, 0, 0,
+			4.0 / 17.0, 0, 0, 0, 12.0 / 17.0, 0, 0, 0, 2.0 / 17.0, 0, 0, 0, 10.0 / 17.0, 0, 0, 0,
+			16.0 / 17.0, 0, 0, 0, 8.0 / 17.0, 0, 0, 0, 14.0 / 17.0, 0, 0, 0, 6.0 / 17.0, 0, 0, 0,
+		] );
+		const texture = new DataTexture( data, 4, 4, RGBAFormat, FloatType );
+		texture.magFilter = NearestFilter;
+		texture.minFilter = NearestFilter;
+
+		const res = new Vector3( window.innerWidth, window.innerHeight, window.devicePixelRatio );
+		color = color !== undefined ? _colors[ color ] : _colors[ 'white' ];
+		opacity = opacity !== undefined ? opacity : 1;
 
 		this.defineProperties( {
-			color: color !== undefined ? _colors[ color ] : _colors[ 'white' ],
-			opacity: opacity !== undefined ? opacity : 1,
-			side: DoubleSide,
-			transparent: true,
-			highlight: 0,
-			// wireframe: true
+			color: { value: color, observer: 'uniformChanged' },
+			opacity: { value: opacity, observer: 'uniformChanged' },
+			highlight: { value: 0, observer: 'uniformChanged' },
+			resolution: { value: res, observer: 'uniformChanged' },
 		} );
-
 
 		this.uniforms = UniformsUtils.merge( [ this.uniforms, {
 			"uColor": { value: this.color },
 			"uOpacity": { value: this.opacity },
-			"uHighlight": { value: this.highlight }
+			"uHighlight": { value: this.highlight },
+			"uResolution": { value: this.resolution },
+			"tDitherMatrix": { value: texture },
 		} ] );
 
+		this.uniforms.tDitherMatrix.value = texture;
+		texture.needsUpdate = true;
+
 		this.vertexShader = `
+
 			attribute vec4 color;
 			attribute float outline;
-			varying vec4 vColor;
-			varying vec3 vNormal;
-			varying float vOutline;
-			void main() {
-				vColor = color;
-				vOutline = outline;
-				vNormal = normalize( normalMatrix * normal );
-				vec4 pos = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
 
+			varying vec4 vColor;
+			varying float isOutline;
+
+			uniform vec3 uResolution;
+
+			void main() {
 				float aspect = projectionMatrix[0][0] / projectionMatrix[1][1];
-				vec3 sNormal = normalize(vec3(vNormal.x, vNormal.y, 0));
+
+				vColor = color;
+				isOutline = outline;
+
+				vec3 nor = normalMatrix * normal;
+				vec4 pos = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+				float pixelRatio = uResolution.z;
+
+				nor = (projectionMatrix * vec4(nor, 1.0)).xyz;
+				nor = normalize((nor.xyz) * vec3(1., 1., 0.));
 
 				float extrude = 0.0;
 				if (outline > 0.0) {
-					extrude += 0.0015 * outline;
-					pos.z += .1;
+					extrude = outline;
+					pos.z += 0.01;
 				} else {
-					extrude += 0.001 * -outline;
+					extrude += outline;
 				}
-				pos.x += sNormal.x * extrude * (pos.w) * aspect;
-				pos.y += sNormal.y * extrude * (pos.w);
+
+				pos.xy /= pos.w;
+
+				float dx = nor.x * extrude * 2.2;
+				float dy = nor.y * extrude * 2.2;
+
+				pos.x += (dx) * (1.0 / uResolution.x);
+				pos.y += (dy) * (1.0 / uResolution.y);
+
+				pos.xy *= pos.w;
 
 				gl_Position = pos;
 			}
 		`;
 		this.fragmentShader = `
-			varying vec4 vColor;
-			varying vec3 vNormal;
-			varying float vOutline;
 			uniform vec3 uColor;
 			uniform float uOpacity;
 			uniform float uHighlight;
+			uniform vec3 uResolution;
+			uniform sampler2D tDitherMatrix;
+
+			varying vec4 vColor;
+			varying float isOutline;
+
 			void main() {
-				if (vOutline > 0.0) {
-					vec4 c = mix(vec4( 0.0, 0.0, 0.0, 1.0 ), vec4( 1.0, 1.0, 1.0, 2.0 ), max(0.0, uHighlight) );
-					c = mix(c, vec4( 0.5, 0.5, 0.5, 1.0 * 0.15 ), max(0.0, -uHighlight) );
-					gl_FragColor = c;
-					return;
+
+				float opacity = 1.0;
+				vec3 color = vec3(1.0);
+				float pixelRatio = 1.0;//uResolution.z;
+
+				if (isOutline > 0.0) {
+					color = mix(color * vec3(0.2), vec3(1.0), max(0.0, uHighlight) );
+					color = mix(color, vec3(0.5), max(0.0, -uHighlight) );
+				} else {
+					color = uColor * vColor.rgb;
 				}
+
 				float dimming = mix(1.0, 0.2, max(0.0, -uHighlight));
-				dimming = mix(dimming, dimming * 2.0, max(0.0, uHighlight));
-				gl_FragColor = vec4( uColor * vColor.rgb, uOpacity * vColor.a * dimming );
+				dimming = mix(dimming, dimming * 1.25, max(0.0, uHighlight));
+				opacity = uOpacity * vColor.a * dimming;
+
+				color = mix(vec3(0.5), color, dimming);
+
+				gl_FragColor = vec4(color, 1.0);
+
+				vec2 matCoord = ( mod(gl_FragCoord.xy / pixelRatio, 4.0) - vec2(0.5) ) / 4.0;
+				vec4 ditherPattern = texture2D( tDitherMatrix, matCoord.xy );
+				if (opacity < ditherPattern.r) discard;
 			}
 		`;
 
 	}
-	colorChanged() {
+	uniformChanged() {
 
 		this.uniforms.uColor.value = this.color;
-		this.uniformsNeedUpdate = true;
-
-	}
-	opacityChanged() {
-
 		this.uniforms.uOpacity.value = this.opacity;
-		// this.transparent = this.opacity < 1 || this.highlight === -1;
-		this.uniformsNeedUpdate = true;
-
-	}
-	highlightChanged() {
-
 		this.uniforms.uHighlight.value = this.highlight;
-		// this.transparent = this.opacity < 1 || this.highlight === -1;
+		this.uniforms.uResolution.value = this.resolution;
 		this.uniformsNeedUpdate = true;
 
 	}
@@ -813,8 +859,6 @@ class HelperMesh extends Mesh {
 		this.geometry = geometry instanceof Array ? mergeGeometryChunks( geometry ) : geometry;
 		this.material = new HelperMaterial( props.color || 'white', props.opacity || 1 );
 		this.name = props.name;
-		// this.material.wireframe = true;
-		// this.renderOrder = 1000;
 
 	}
 
@@ -848,7 +892,7 @@ function mergeGeometryChunks( chunks ) {
 		const rotation = chunk.rotation;
 		let scale = chunk.scale;
 
-		let thickness = chunk.thickness || 0;
+		let thickness = chunk.thickness / 2 || 0;
 		let outlineThickness = chunk.outlineThickness !== undefined ? chunk.outlineThickness : 1;
 
 		if ( scale && typeof scale === 'number' ) scale = [ scale, scale, scale ];
@@ -868,18 +912,18 @@ function mergeGeometryChunks( chunks ) {
 		if ( chunkGeo.index === null ) {
 
 			const indices = [];
-			for ( let j = 0; j < chunkGeo.attributes.position.count; j ++ ) {
+			for ( let j = 0; j < chunkGeo.attributes.position.count - 2; j ++ ) {
 
-				indices.push( j * 3 + 0 );
-				indices.push( j * 3 + 1 );
-				indices.push( j * 3 + 2 );
+				indices.push( j + 0 );
+				indices.push( j + 1 );
+				indices.push( j + 2 );
 
 			}
 			chunkGeo.index = new Uint16BufferAttribute( indices, 1 );
 
 		}
 
-		const vertCount = chunkGeo.attributes.position.count;
+		let vertCount = chunkGeo.attributes.position.count;
 
 		if ( ! chunkGeo.attributes.color ) {
 
@@ -887,33 +931,43 @@ function mergeGeometryChunks( chunks ) {
 
 		}
 
+		//TODO: enable color overwrite
 		const colorArray = chunkGeo.attributes.color.array;
 		for ( let j = 0; j < vertCount; j ++ ) {
 
-			// TODO: fix
-			const hasAlpha = colorArray[ j * 4 + 3 ] !== undefined && ! isNaN( colorArray[ j * 4 + 3 ] );
-			colorArray[ j * 4 + 0 ] = color[ 0 ];
-			colorArray[ j * 4 + 1 ] = color[ 1 ];
-			colorArray[ j * 4 + 2 ] = color[ 2 ];
-			if ( ! hasAlpha ) colorArray[ j * 4 + 3 ] = color[ 3 ] !== undefined ? color[ 3 ] : 0;
+			const r = j * 4 + 0; colorArray[ r ] = color[ 0 ];
+			const g = j * 4 + 1; colorArray[ g ] = color[ 1 ];
+			const b = j * 4 + 2; colorArray[ b ] = color[ 2 ];
+			const a = j * 4 + 3; colorArray[ a ] = color[ 3 ] !== undefined ? color[ 3 ] : colorArray[ a ] !== undefined ? colorArray[ a ] : 1;
 
 		}
 
 		// Duplicate geometry and add outline attribute
+		//TODO: enable outline overwrite (needs to know if is outline or not in combined geometry)
 		if ( ! chunkGeo.attributes.outline ) {
 
 			const outlineArray = [];
-			for ( let j = 0; j < vertCount; j ++ ) outlineArray[ j ] = - thickness || 0;
+			for ( let j = 0; j < vertCount; j ++ ) outlineArray[ j ] = - ( thickness ) || 0;
 			chunkGeo.addAttribute( 'outline', new Float32BufferAttribute( outlineArray, 1 ) );
-
-		}
-
-		if ( outlineThickness ) {
-
 			chunkGeo = BufferGeometryUtils.mergeBufferGeometries( [ chunkGeo, chunkGeo ] );
-			for ( let j = 0; j < vertCount; j ++ ) chunkGeo.attributes.outline.array[ vertCount + j ] = outlineThickness + thickness;
+			if ( outlineThickness ) {
+
+				for ( let j = 0; j < vertCount; j ++ ) chunkGeo.attributes.outline.array[ ( vertCount ) + j ] = outlineThickness + ( thickness );
+
+			}
+
+			let array = chunkGeo.index.array;
+			for ( let j = array.length / 2; j < array.length; j += 3 ) {
+
+				let a = array[ j + 1 ];
+				let b = array[ j + 2 ];
+				array[ j + 1 ] = b;
+				array[ j + 2 ] = a;
+
+			}
 
 		}
+
 
 		geometry = BufferGeometryUtils.mergeBufferGeometries( [ geometry, chunkGeo ] );
 
@@ -928,22 +982,55 @@ function mergeGeometryChunks( chunks ) {
 
 const PI = Math.PI;
 const HPI = Math.PI / 2;
+const EPS = 0.000001;
 
-class OctahedronGeometry extends OctahedronBufferGeometry {
+class OctahedronGeometry extends HelperMesh {
 
 	constructor() {
 
-		super( 1, 0 );
+		super( [
+			{ geometry: new OctahedronBufferGeometry( 1, 0 ) }
+		] );
+		return this.geometry;
 
 	}
 
 }
 
-class PlaneGeometry extends BoxBufferGeometry {
+
+class PlaneGeometry extends HelperMesh {
 
 	constructor() {
 
-		super( 1, 1, 0.01, 1, 1, 1 );
+		let geometry = new BufferGeometry();
+
+		let indices = [
+			0, 1, 2, 2, 3, 0,
+			4, 1, 0, 5, 1, 4,
+			1, 6, 2, 1, 5, 6,
+			0, 3, 7, 4, 0, 7,
+			7, 2, 6, 2, 7, 3,
+			7, 6, 4, 4, 6, 5
+		];
+		geometry.index = new Uint16BufferAttribute( indices, 1 );
+
+		let positions = [];
+		positions[ 0 ] = 1; positions[ 1 ] = 1; positions[ 2 ] = 1;
+		positions[ 3 ] = - 1; positions[ 4 ] = 1; positions[ 5 ] = 1;
+		positions[ 6 ] = - 1; positions[ 7 ] = - 1; positions[ 8 ] = 1;
+		positions[ 9 ] = 1; positions[ 10 ] = - 1; positions[ 11 ] = 1;
+		positions[ 12 ] = 1; positions[ 13 ] = 1; positions[ 14 ] = - 1;
+		positions[ 15 ] = - 1; positions[ 16 ] = 1; positions[ 17 ] = - 1;
+		positions[ 18 ] = - 1; positions[ 19 ] = - 1; positions[ 20 ] = - 1;
+		positions[ 21 ] = 1; positions[ 22 ] = - 1; positions[ 23 ] = - 1;
+
+		geometry.addAttribute( 'position', new Float32BufferAttribute( positions, 3 ) );
+		geometry.addAttribute( 'normal', new Float32BufferAttribute( positions, 3 ) );
+
+		super( [
+			{ geometry: geometry, scale: [ 0.5, 0.5, 0.00001 ] }
+		] );
+		return this.geometry;
 
 	}
 
@@ -968,9 +1055,9 @@ class LineGeometry extends HelperMesh {
 	constructor() {
 
 		super( [
-			{ geometry: new CylinderBufferGeometry( 0.00001, 0.00001, 1, 4, 2, false ), position: [ 0, 0, 0 ], thickness: 1 },
-			{ geometry: new SphereBufferGeometry( 0.00001, 4, 4 ), position: [ 0, - 0.5, 0 ], thickness: 1 },
-			{ geometry: new SphereBufferGeometry( 0.00001, 4, 4 ), position: [ 0, 0.5, 0 ], thickness: 1 }
+			{ geometry: new CylinderBufferGeometry( EPS, EPS, 1, 16, 2, false ), position: [ 0, 0, 0 ], thickness: 1 },
+			{ geometry: new SphereBufferGeometry( EPS, 4, 4 ), position: [ 0, - 0.5, 0 ], thickness: 1 },
+			{ geometry: new SphereBufferGeometry( EPS, 4, 4 ), position: [ 0, 0.5, 0 ], thickness: 1 }
 		] );
 		return this.geometry;
 
@@ -984,7 +1071,7 @@ class ArrowGeometry extends HelperMesh {
 
 		super( [
 			{ geometry: new ConeGeometry(), position: [ 0, 0.8, 0 ], scale: 0.2 },
-			{ geometry: new CylinderBufferGeometry( 0.00001, 0.00001, 0.8, 4, 2, false ), position: [ 0, 0.4, 0 ], thickness: 1 }
+			{ geometry: new CylinderBufferGeometry( EPS, EPS, 0.8, 5, 2, false ), position: [ 0, 0.4, 0 ], thickness: 1 }
 		] );
 		return this.geometry;
 
@@ -997,11 +1084,11 @@ class Corner2Geometry extends HelperMesh {
 	constructor() {
 
 		super( [
-			{ geometry: new CylinderBufferGeometry( 0.00001, 0.00001, 1, 4, 2, false ), position: [ 0.5, 0, 0 ], rotation: [ 0, 0, HPI ], thickness: 1 },
-			{ geometry: new CylinderBufferGeometry( 0.00001, 0.00001, 1, 4, 2, false ), position: [ 0, 0, 0.5 ], rotation: [ HPI, 0, 0 ], thickness: 1 },
-			{ geometry: new SphereBufferGeometry( 0.00001, 4, 4 ), position: [ 0, 0, 0 ], thickness: 1 },
-			{ geometry: new SphereBufferGeometry( 0.00001, 4, 4 ), position: [ 1, 0, 0 ], rotation: [ 0, 0, HPI ], thickness: 1 },
-			{ geometry: new SphereBufferGeometry( 0.00001, 4, 4 ), position: [ 0, 0, 1 ], rotation: [ HPI, 0, 0 ], thickness: 1 },
+			{ geometry: new CylinderBufferGeometry( EPS, EPS, 1, 5, 2, false ), position: [ 0.5, 0, 0 ], rotation: [ 0, 0, HPI ], thickness: 1 },
+			{ geometry: new CylinderBufferGeometry( EPS, EPS, 1, 5, 2, false ), position: [ 0, 0, 0.5 ], rotation: [ HPI, 0, 0 ], thickness: 1 },
+			{ geometry: new SphereBufferGeometry( EPS, 4, 4 ), position: [ 0, 0, 0 ], thickness: 1 },
+			{ geometry: new SphereBufferGeometry( EPS, 4, 4 ), position: [ 1, 0, 0 ], rotation: [ 0, 0, HPI ], thickness: 1 },
+			{ geometry: new SphereBufferGeometry( EPS, 4, 4 ), position: [ 0, 0, 1 ], rotation: [ HPI, 0, 0 ], thickness: 1 },
 		] );
 		return this.geometry;
 
@@ -1025,6 +1112,24 @@ class PickerHandleGeometry extends HelperMesh {
 const coneGeometry = new ConeGeometry();
 const octahedronGeometry = new OctahedronGeometry();
 
+function stringHas( str, char ) {
+
+	return str.search( char ) !== - 1;
+
+}
+
+function hasAxisAny( str, chars ) {
+
+	let has = true;
+	str.split( '' ).some( a => {
+
+		if ( chars.indexOf( a ) === - 1 ) has = false;
+
+	} );
+	return has;
+
+}
+
 class TransformHelper extends Helper {
 
 	constructor( props ) {
@@ -1032,20 +1137,49 @@ class TransformHelper extends Helper {
 		super( props );
 
 		this.defineProperties( {
-			showX: true,
-			showY: true,
-			showZ: true,
+			showX: { value: true, observer: 'updateAxis' },
+			showY: { value: true, observer: 'updateAxis' },
+			showZ: { value: true, observer: 'updateAxis' },
+			axis: null,
 			worldX: new Vector3(),
 			worldY: new Vector3(),
 			worldZ: new Vector3(),
 			axisDotEye: new Vector3()
 		} );
-		this.size = 0.1;
+		this.size = 0.15;
 
 		this.handles = this.combineHelperGroups( this.handlesGroup );
 		this.pickers = this.combineHelperGroups( this.pickersGroup );
 		if ( this.handles.length ) this.add( ...this.handles );
 		if ( this.pickers.length ) this.add( ...this.pickers );
+
+		this.traverse( child => child.renderOrder = 100 );
+
+		// Hide pickers
+		for ( let i = 0; i < this.pickers.length; i ++ ) this.pickers[ i ].material.visible = false;
+
+	}
+	axisChanged() {
+
+		this.animation.startAnimation( 4 );
+		this.traverse( axis => {
+
+			axis.highlight = 0;
+			if ( this.axis ) {
+
+				if ( hasAxisAny( axis.name, this.axis ) ) {
+
+					axis.highlight = 1;
+
+				} else {
+
+					axis.highlight = - 0.75;
+
+				}
+
+			}
+
+		} );
 
 	}
 	// Creates an Object3D with gizmos described in custom hierarchy definition.
@@ -1054,18 +1188,7 @@ class TransformHelper extends Helper {
 		const meshes = [];
 		for ( let name in groups ) {
 
-			const mesh = new HelperMesh( groups[ name ], { name: name } );
-			mesh.has = char => {
-
-				return mesh.name.search( char ) !== - 1;
-
-			};
-			mesh.is = char => {
-
-				return mesh.name === char;
-
-			};
-			meshes.push( mesh );
+			meshes.push( new HelperMesh( groups[ name ], { name: name } ) );
 
 		}
 		return meshes;
@@ -1076,7 +1199,7 @@ class TransformHelper extends Helper {
 		return {
 			X: [ { geometry: coneGeometry, color: [ 1, 0, 0 ], position: [ 0.15, 0, 0 ], rotation: [ 0, 0, - Math.PI / 2 ], scale: [ 0.5, 1, 0.5 ] } ],
 			Y: [ { geometry: coneGeometry, color: [ 0, 1, 0 ], position: [ 0, 0.15, 0 ], rotation: [ 0, 0, 0 ], scale: [ 0.5, 1, 0.5 ] } ],
-			Z: [ { geometry: coneGeometry, color: [ 0, 0, 1 ], position: [ 0, 0, - 0.15 ], rotation: [ Math.PI / 2, 0, 0 ], scale: [ 0.5, 1, 0.5 ] } ]
+			Z: [ { geometry: coneGeometry, color: [ 0, 0, 1 ], position: [ 0, 0, 0.15 ], rotation: [ Math.PI / 2, 0, 0 ], scale: [ 0.5, 1, 0.5 ] } ]
 		};
 
 	}
@@ -1087,12 +1210,36 @@ class TransformHelper extends Helper {
 		};
 
 	}
+	updateAxis() {
+
+		this.animation.startAnimation( 4 );
+		this.traverse( axis => {
+
+			axis.hidden = false;
+			if ( stringHas( axis.name, "X" ) && ! this.showX ) axis.hidden = true;
+			if ( stringHas( axis.name, "Y" ) && ! this.showY ) axis.hidden = true;
+			if ( stringHas( axis.name, "Z" ) && ! this.showZ ) axis.hidden = true;
+			if ( stringHas( axis.name, "E" ) && ( ! this.showX || ! this.showY || ! this.showZ ) ) axis.hidden = true;
+
+		} );
+
+	}
+	updateMatrixWorld( force, camera ) {
+
+		if ( camera ) this.camera = camera; // TODO
+		this.updateHelperMatrix();
+		this.matrixWorldNeedsUpdate = false;
+		const children = this.children;
+		for ( let i = 0, l = children.length; i < l; i ++ ) {
+
+			children[ i ].updateMatrixWorld( true, camera );
+
+		}
+
+	}
 	updateHelperMatrix() {
 
 		super.updateHelperMatrix();
-
-		for ( let i = this.handles.length; i --; ) this.updateAxis( this.handles[ i ] );
-		for ( let i = this.pickers.length; i --; ) this.updateAxis( this.pickers[ i ] );
 
 		this.worldX.set( 1, 0, 0 ).applyQuaternion( this.worldQuaternion );
 		this.worldY.set( 0, 1, 0 ).applyQuaternion( this.worldQuaternion );
@@ -1104,17 +1251,27 @@ class TransformHelper extends Helper {
 			this.worldZ.dot( this.eye )
 		);
 
-	}
-	updateAxis( axis ) {
+		if ( this.animation._active ) {
 
-		// Hide non-enabled Transform
+			for ( let i = this.handles.length; i --; ) this.updateAxisMaterial( this.handles[ i ] );
+			for ( let i = this.pickers.length; i --; ) this.updateAxisMaterial( this.pickers[ i ] );
+
+		}
+
+	}
+	// TODO: optimize!
+	updateAxisMaterial( axis ) {
+
 		axis.visible = true;
-		axis.visible = axis.visible && ( ! axis.has( "X" ) || this.showX );
-		axis.visible = axis.visible && ( ! axis.has( "Y" ) || this.showY );
-		axis.visible = axis.visible && ( ! axis.has( "Z" ) || this.showZ );
-		axis.visible = axis.visible && ( ! axis.has( "E" ) || ( this.showX && this.showY && this.showZ ) );
-		// Hide pickers
-		for ( let i = 0; i < this.pickers.length; i ++ ) this.pickers[ i ].material.visible = false;
+
+		const mat = axis.material;
+		const h = axis.material.highlight || 0;
+
+		let highlight = axis.hidden ? - 1.5 : axis.highlight || 0;
+
+		mat.highlight = ( 4 * h + highlight ) / 5;
+
+		if ( mat.highlight < - 1.49 ) axis.visible = false;
 
 	}
 
@@ -1122,7 +1279,7 @@ class TransformHelper extends Helper {
 
 const AXIS_HIDE_TRESHOLD = 0.99;
 const PLANE_HIDE_TRESHOLD = 0.2;
-const AXIS_FLIP_TRESHOLD = 0;
+const AXIS_FLIP_TRESHOLD = - 0.2;
 
 const arrowGeometry = new ArrowGeometry();
 const corner2Geometry = new Corner2Geometry();
@@ -1130,8 +1287,35 @@ const octahedronGeometry$1 = new OctahedronGeometry();
 const pickerHandleGeometry = new PickerHandleGeometry();
 const planeGeometry = new PlaneGeometry();
 
+function stringHas$1( str, char ) {
+
+	return str.search( char ) !== - 1;
+
+}
+
 class TransformHelperTranslate extends TransformHelper {
 
+	constructor( props ) {
+
+		super( props );
+		this.defineProperties( {
+			hideX: { value: false, observer: 'updateAxis' },
+			hideY: { value: false, observer: 'updateAxis' },
+			hideZ: { value: false, observer: 'updateAxis' },
+			hideXY: { value: false, observer: 'updateAxis' },
+			hideYZ: { value: false, observer: 'updateAxis' },
+			hideXZ: { value: false, observer: 'updateAxis' },
+			flipX: { value: false, observer: 'updateAxis' },
+			flipY: { value: false, observer: 'updateAxis' },
+			flipZ: { value: false, observer: 'updateAxis' }
+		} );
+		this.traverse( child => {
+
+			child.renderOrder = 200;
+
+		} );
+
+	}
 	get handlesGroup() {
 
 		return {
@@ -1139,19 +1323,19 @@ class TransformHelperTranslate extends TransformHelper {
 			Y: [ { geometry: arrowGeometry, color: [ 0.3, 1, 0.3 ] } ],
 			Z: [ { geometry: arrowGeometry, color: [ 0.3, 0.3, 1 ], rotation: [ Math.PI / 2, 0, 0 ] } ],
 			XYZ: [
-				{ geometry: octahedronGeometry$1, scale: 0.075 }
+				{ geometry: octahedronGeometry$1, color: [ 1, 1, 1 ], scale: 0.1 }
 			],
 			XY: [
-				{ geometry: planeGeometry, color: [ 1, 1, 0, 0.25 ], position: [ 0.15, 0.15, 0 ], scale: 0.3 },
-				{ geometry: corner2Geometry, color: [ 1, 1, 0.3 ], position: [ 0.32, 0.32, 0 ], scale: 0.15, rotation: [ Math.PI / 2, 0, Math.PI ] }
+				{ geometry: planeGeometry, color: [ 1, 1, 0, 0.5 ], position: [ 0.15, 0.15, 0 ], scale: 0.3 },
+				{ geometry: corner2Geometry, color: [ 1, 1, 0.3 ], position: [ 0.3, 0.3, 0 ], scale: 0.15, rotation: [ Math.PI / 2, 0, Math.PI ] }
 			],
 			YZ: [
-				{ geometry: planeGeometry, color: [ 0, 1, 1, 0.25 ], position: [ 0, 0.15, 0.15 ], rotation: [ 0, Math.PI / 2, 0 ], scale: 0.3 },
-				{ geometry: corner2Geometry, color: [ 0.3, 1, 1 ], position: [ 0, 0.32, 0.32 ], scale: 0.15, rotation: [ 0, Math.PI, - Math.PI / 2 ] }
+				{ geometry: planeGeometry, color: [ 0, 1, 1, 0.5 ], position: [ 0, 0.15, 0.15 ], rotation: [ 0, Math.PI / 2, 0 ], scale: 0.3 },
+				{ geometry: corner2Geometry, color: [ 0.3, 1, 1 ], position: [ 0, 0.3, 0.3 ], scale: 0.15, rotation: [ 0, Math.PI, - Math.PI / 2 ] }
 			],
 			XZ: [
-				{ geometry: planeGeometry, color: [ 1, 0, 1, 0.25 ], position: [ 0.15, 0, 0.15 ], rotation: [ - Math.PI / 2, 0, 0 ], scale: 0.3 },
-				{ geometry: corner2Geometry, color: [ 1, 0.3, 1 ], position: [ 0.32, 0, 0.32 ], scale: 0.15, rotation: [ 0, Math.PI, 0 ] }
+				{ geometry: planeGeometry, color: [ 1, 0, 1, 0.5 ], position: [ 0.15, 0, 0.15 ], rotation: [ - Math.PI / 2, 0, 0 ], scale: 0.3 },
+				{ geometry: corner2Geometry, color: [ 1, 0.3, 1 ], position: [ 0.3, 0, 0.3 ], scale: 0.15, rotation: [ 0, Math.PI, 0 ] }
 			]
 		};
 
@@ -1159,37 +1343,79 @@ class TransformHelperTranslate extends TransformHelper {
 	get pickersGroup() {
 
 		return {
-			X: [ { geometry: pickerHandleGeometry, rotation: [ 0, 0, - Math.PI / 2 ] } ],
-			Y: [ { geometry: pickerHandleGeometry } ],
-			Z: [ { geometry: pickerHandleGeometry, rotation: [ Math.PI / 2, 0, 0 ] } ],
-			XYZ: [ { geometry: octahedronGeometry$1, scale: 0.4 } ],
-			XY: [ { geometry: planeGeometry, position: [ 0.25, 0.25, 0 ], scale: 0.5 } ],
-			YZ: [ { geometry: planeGeometry, position: [ 0, 0.25, 0.25 ], rotation: [ 0, Math.PI / 2, 0 ], scale: 0.5 } ],
-			XZ: [ { geometry: planeGeometry, position: [ 0.25, 0, 0.25 ], rotation: [ - Math.PI / 2, 0, 0 ], scale: 0.5 } ]
+			X: [ { geometry: pickerHandleGeometry, color: [ 1, 0.3, 0.3, 0.5 ], rotation: [ 0, 0, - Math.PI / 2 ] } ],
+			Y: [ { geometry: pickerHandleGeometry, color: [ 0.3, 1, 0.3, 0.5 ] } ],
+			Z: [ { geometry: pickerHandleGeometry, color: [ 0.3, 0.3, 1, 0.5 ], rotation: [ Math.PI / 2, 0, 0 ] } ],
+			XYZ: [ { geometry: octahedronGeometry$1, color: [ 0.5, 0.5, 0.5, 0.5 ], scale: 0.2 } ],
+			XY: [ { geometry: planeGeometry, color: [ 1, 1, 0, 0.5, 0.5 ], position: [ 0.25, 0.25, 0 ], scale: 0.5 } ],
+			YZ: [ { geometry: planeGeometry, color: [ 0, 1, 1, 0.5, 0.5 ], position: [ 0, 0.25, 0.25 ], rotation: [ 0, Math.PI / 2, 0 ], scale: 0.5 } ],
+			XZ: [ { geometry: planeGeometry, color: [ 1, 0, 1, 0.5, 0.5 ], position: [ 0.25, 0, 0.25 ], rotation: [ - Math.PI / 2, 0, 0 ], scale: 0.5 } ]
 		};
 
 	}
-	updateAxis( axis ) {
+	updateAxis() {
 
-		super.updateAxis( axis );
+		this.animation.startAnimation( 4 );
+		this.traverse( axis => {
+
+			if ( axis !== this ) { // TODO: conside better loop
+
+				axis.hidden = false;
+				if ( stringHas$1( axis.name, "X" ) && ! this.showX ) axis.hidden = true;
+				if ( stringHas$1( axis.name, "Y" ) && ! this.showY ) axis.hidden = true;
+				if ( stringHas$1( axis.name, "Z" ) && ! this.showZ ) axis.hidden = true;
+				if ( stringHas$1( axis.name, "E" ) && ( ! this.showX || ! this.showY || ! this.showZ ) ) axis.hidden = true;
+
+				// Hide axis facing the camera
+				if ( ( axis.name == 'X' || axis.name == 'XYZX' ) && this.hideX ) axis.hidden = true;
+				if ( ( axis.name == 'Y' || axis.name == 'XYZY' ) && this.hideY ) axis.hidden = true;
+				if ( ( axis.name == 'Z' || axis.name == 'XYZZ' ) && this.hideZ ) axis.hidden = true;
+				if ( axis.name == 'XY' && this.hideXY ) axis.hidden = true;
+				if ( axis.name == 'YZ' && this.hideYZ ) axis.hidden = true;
+				if ( axis.name == 'XZ' && this.hideXZ ) axis.hidden = true;
+
+				// Flip axis
+				if ( stringHas$1( axis.name, 'X' ) ) axis.flipX = this.flipX ? - 1 : 1;
+				if ( stringHas$1( axis.name, 'Y' ) ) axis.flipY = this.flipY ? - 1 : 1;
+				if ( stringHas$1( axis.name, 'Z' ) ) axis.flipZ = this.flipZ ? - 1 : 1;
+
+			}
+
+		} );
+
+	}
+	// TODO: optimize!
+	updateAxisMaterial( axis ) {
+
+		super.updateAxisMaterial( axis );
+		if ( axis.flipX ) axis.scale.x = ( axis.scale.x * 5 + axis.flipX ) / 6;
+		if ( axis.flipY ) axis.scale.y = ( axis.scale.y * 5 + axis.flipY ) / 6;
+		if ( axis.flipZ ) axis.scale.z = ( axis.scale.z * 5 + axis.flipZ ) / 6;
+
+	}
+	updateHelperMatrix() {
 
 		const xDotE = this.axisDotEye.x;
 		const yDotE = this.axisDotEye.y;
 		const zDotE = this.axisDotEye.z;
 
-		// Hide translate and scale axis facing the camera
-		if ( ( axis.is( 'X' ) || axis.is( 'XYZX' ) ) && Math.abs( xDotE ) > AXIS_HIDE_TRESHOLD ) axis.visible = false;
-		if ( ( axis.is( 'Y' ) || axis.is( 'XYZY' ) ) && Math.abs( yDotE ) > AXIS_HIDE_TRESHOLD ) axis.visible = false;
-		if ( ( axis.is( 'Z' ) || axis.is( 'XYZZ' ) ) && Math.abs( zDotE ) > AXIS_HIDE_TRESHOLD ) axis.visible = false;
-		if ( axis.is( 'XY' ) && Math.abs( zDotE ) < PLANE_HIDE_TRESHOLD ) axis.visible = false;
-		if ( axis.is( 'YZ' ) && Math.abs( xDotE ) < PLANE_HIDE_TRESHOLD ) axis.visible = false;
-		if ( axis.is( 'XZ' ) && Math.abs( yDotE ) < PLANE_HIDE_TRESHOLD ) axis.visible = false;
+		// Hide axis facing the camera
+		if ( ! this.active ) { // skip while controls are active
 
-		// Flip axis ocluded behind another axis
-		axis.scale.set( 1, 1, 1 );
-		if ( axis.has( 'X' ) && xDotE < AXIS_FLIP_TRESHOLD ) axis.scale.x *= - 1;
-		if ( axis.has( 'Y' ) && yDotE < AXIS_FLIP_TRESHOLD ) axis.scale.y *= - 1;
-		if ( axis.has( 'Z' ) && zDotE < AXIS_FLIP_TRESHOLD ) axis.scale.z *= - 1;
+			this.hideX = Math.abs( xDotE ) > AXIS_HIDE_TRESHOLD;
+			this.hideY = Math.abs( yDotE ) > AXIS_HIDE_TRESHOLD;
+			this.hideZ = Math.abs( zDotE ) > AXIS_HIDE_TRESHOLD;
+			this.hideXY = Math.abs( zDotE ) < PLANE_HIDE_TRESHOLD;
+			this.hideYZ = Math.abs( xDotE ) < PLANE_HIDE_TRESHOLD;
+			this.hideXZ = Math.abs( yDotE ) < PLANE_HIDE_TRESHOLD;
+			this.flipX = xDotE < AXIS_FLIP_TRESHOLD;
+			this.flipY = yDotE < AXIS_FLIP_TRESHOLD;
+			this.flipZ = zDotE < AXIS_FLIP_TRESHOLD;
+
+		}
+
+		super.updateHelperMatrix();
+
 
 	}
 
@@ -1199,13 +1425,13 @@ const HPI$1 = Math.PI / 2;
 const PI$1 = Math.PI;
 
 const cornerHandle = new HelperMesh( [
-	{ geometry: new Corner2Geometry(), color: [ 1, 1, 1 ], rotation: [ - HPI$1, 0, 0 ], thickness: 2 },
-	{ geometry: new PlaneGeometry(), color: [ 1, 1, 1, 0.2 ], position: [ 0.51, 0.51, 0 ], scale: 0.98 }
+	{ geometry: new Corner2Geometry(), color: [ 1, 1, 1 ], rotation: [ - HPI$1, 0, 0 ] },
+	{ geometry: new PlaneGeometry(), color: [ 1, 1, 1, 0.25 ], position: [ 0.5, 0.5, 0 ] }
 ] ).geometry;
 
 const edgeHandle = new HelperMesh( [
-	{ geometry: new LineGeometry(), color: [ 1, 1, 1 ], position: [ 0, 0, 0 ], thickness: 2 },
-	{ geometry: new PlaneGeometry(), color: [ 1, 1, 1, 0.2 ], position: [ 0.51, 0, 0 ], scale: 0.98 },
+	{ geometry: new LineGeometry(), color: [ 1, 1, 1 ], position: [ 0, 0, 0 ] },
+	{ geometry: new PlaneGeometry(), color: [ 1, 1, 1, 0.25 ], position: [ 0.25, 0, 0 ], scale: [ 0.5, 1, 1 ] },
 ] ).geometry;
 
 const cornerPicker = new HelperMesh( [
@@ -1256,44 +1482,42 @@ class TransformHelperFreescale extends TransformHelperTranslate {
 	get pickersGroup() {
 
 		return {
-			X_yp: [ { geometry: edgePicker, position: [ 1, 0.988, 0 ], rotation: [ HPI$1, - HPI$1, 0 ], scale: [ 0.25, 1, 0.25 ] } ],
-			X_yn: [ { geometry: edgePicker, position: [ 1, - 0.988, 0 ], rotation: [ HPI$1, HPI$1, 0 ], scale: [ 0.25, 1, 0.25 ] } ],
-			X_zp: [ { geometry: edgePicker, position: [ 1, 0, 0.988 ], rotation: [ 0, HPI$1, 0 ], scale: [ 0.25, 1, 0.25 ] } ],
-			X_zn: [ { geometry: edgePicker, position: [ 1, 0, - 0.988 ], rotation: [ 0, - HPI$1, 0 ], scale: [ 0.25, 1, 0.25 ] } ],
+			X_yp: [ { geometry: edgePicker, color: [ 0.5, 1, 0.5, 0.25 ], position: [ 1, 0.988, 0 ], rotation: [ HPI$1, - HPI$1, 0 ], scale: [ 0.25, 1, 0.25 ] } ],
+			X_yn: [ { geometry: edgePicker, color: [ 0.5, 1, 0.5, 0.25 ], position: [ 1, - 0.988, 0 ], rotation: [ HPI$1, HPI$1, 0 ], scale: [ 0.25, 1, 0.25 ] } ],
+			X_zp: [ { geometry: edgePicker, color: [ 0.5, 0.5, 1, 0.25 ], position: [ 1, 0, 0.988 ], rotation: [ 0, HPI$1, 0 ], scale: [ 0.25, 1, 0.25 ] } ],
+			X_zn: [ { geometry: edgePicker, color: [ 0.5, 0.5, 1, 0.25 ], position: [ 1, 0, - 0.988 ], rotation: [ 0, - HPI$1, 0 ], scale: [ 0.25, 1, 0.25 ] } ],
 			//
-			Y_zp: [ { geometry: edgePicker, position: [ 0, 1, 0.988 ], rotation: [ - HPI$1, 0, HPI$1 ], scale: [ 0.25, 1, 0.25 ] } ],
-			Y_zn: [ { geometry: edgePicker, position: [ 0, 1, - 0.988 ], rotation: [ HPI$1, 0, HPI$1 ], scale: [ 0.25, 1, 0.25 ] } ],
-			Y_xp: [ { geometry: edgePicker, position: [ 0.988, 1, 0 ], rotation: [ HPI$1, PI$1, 0 ], scale: [ 0.25, 1, 0.25 ] } ],
-			Y_xn: [ { geometry: edgePicker, position: [ - 0.988, 1, 0 ], rotation: [ - HPI$1, 0, 0 ], scale: [ 0.25, 1, 0.25 ] } ],
+			Y_zp: [ { geometry: edgePicker, color: [ 0.5, 0.5, 1, 0.25 ], position: [ 0, 1, 0.988 ], rotation: [ - HPI$1, 0, HPI$1 ], scale: [ 0.25, 1, 0.25 ] } ],
+			Y_zn: [ { geometry: edgePicker, color: [ 0.5, 0.5, 1, 0.25 ], position: [ 0, 1, - 0.988 ], rotation: [ HPI$1, 0, HPI$1 ], scale: [ 0.25, 1, 0.25 ] } ],
+			Y_xp: [ { geometry: edgePicker, color: [ 1, 0.5, 0.5, 0.25 ], position: [ 0.988, 1, 0 ], rotation: [ HPI$1, PI$1, 0 ], scale: [ 0.25, 1, 0.25 ] } ],
+			Y_xn: [ { geometry: edgePicker, color: [ 1, 0.5, 0.5, 0.25 ], position: [ - 0.988, 1, 0 ], rotation: [ - HPI$1, 0, 0 ], scale: [ 0.25, 1, 0.25 ] } ],
 			//
-			Z_yp: [ { geometry: edgePicker, position: [ 0, 0.988, 1 ], rotation: [ 0, 0, - HPI$1 ], scale: [ 0.25, 1, 0.25 ] } ],
-			Z_yn: [ { geometry: edgePicker, position: [ 0, - 0.988, 1 ], rotation: [ 0, 0, HPI$1 ], scale: [ 0.25, 1, 0.25 ] } ],
-			Z_xp: [ { geometry: edgePicker, position: [ 0.988, 0, 1 ], rotation: [ 0, PI$1, 0 ], scale: [ 0.25, 1, 0.25 ] } ],
-			Z_xn: [ { geometry: edgePicker, position: [ - 0.988, 0, 1 ], rotation: [ 0, 0, 0 ], scale: [ 0.25, 1, 0.25 ] } ],
+			Z_yp: [ { geometry: edgePicker, color: [ 0.5, 1, 0.5, 0.25 ], position: [ 0, 0.988, 1 ], rotation: [ 0, 0, - HPI$1 ], scale: [ 0.25, 1, 0.25 ] } ],
+			Z_yn: [ { geometry: edgePicker, color: [ 0.5, 1, 0.5, 0.25 ], position: [ 0, - 0.988, 1 ], rotation: [ 0, 0, HPI$1 ], scale: [ 0.25, 1, 0.25 ] } ],
+			Z_xp: [ { geometry: edgePicker, color: [ 1, 0.5, 0.5, 0.25 ], position: [ 0.988, 0, 1 ], rotation: [ 0, PI$1, 0 ], scale: [ 0.25, 1, 0.25 ] } ],
+			Z_xn: [ { geometry: edgePicker, color: [ 1, 0.5, 0.5, 0.25 ], position: [ - 0.988, 0, 1 ], rotation: [ 0, 0, 0 ], scale: [ 0.25, 1, 0.25 ] } ],
 			//
-			X_zp_yp: [ { geometry: cornerPicker, position: [ 1, 0.988, 0.988 ], rotation: [ - HPI$1, HPI$1, 0 ], scale: 0.25 } ],
-			X_zn_yn: [ { geometry: cornerPicker, position: [ 1, - 0.988, - 0.988 ], rotation: [ 0, - HPI$1, 0 ], scale: 0.25 } ],
-			X_zp_yn: [ { geometry: cornerPicker, position: [ 1, 0.988, - 0.988 ], rotation: [ HPI$1, - HPI$1, 0 ], scale: 0.25 } ],
-			X_zn_yp: [ { geometry: cornerPicker, position: [ 1, - 0.988, 0.988 ], rotation: [ 0, HPI$1, 0 ], scale: 0.25 } ],
+			X_zp_yp: [ { geometry: cornerPicker, color: [ 0.5, 1, 1, 0.25 ], position: [ 1, 0.988, 0.988 ], rotation: [ - HPI$1, HPI$1, 0 ], scale: 0.25 } ],
+			X_zn_yn: [ { geometry: cornerPicker, color: [ 0.5, 1, 1, 0.25 ], position: [ 1, - 0.988, - 0.988 ], rotation: [ 0, - HPI$1, 0 ], scale: 0.25 } ],
+			X_zp_yn: [ { geometry: cornerPicker, color: [ 0.5, 1, 1, 0.25 ], position: [ 1, 0.988, - 0.988 ], rotation: [ HPI$1, - HPI$1, 0 ], scale: 0.25 } ],
+			X_zn_yp: [ { geometry: cornerPicker, color: [ 0.5, 1, 1, 0.25 ], position: [ 1, - 0.988, 0.988 ], rotation: [ 0, HPI$1, 0 ], scale: 0.25 } ],
 
-			Y_xp_zp: [ { geometry: cornerPicker, position: [ 0.988, 1, 0.988 ], rotation: [ - HPI$1, 0, HPI$1 ], scale: 0.25 } ],
-			Y_xn_zn: [ { geometry: cornerPicker, position: [ - 0.988, 1, - 0.988 ], rotation: [ HPI$1, 0, 0 ], scale: 0.25 } ],
-			Y_xp_zn: [ { geometry: cornerPicker, position: [ 0.988, 1, - 0.988 ], rotation: [ HPI$1, 0, HPI$1 ], scale: 0.25 } ],
-			Y_xn_zp: [ { geometry: cornerPicker, position: [ - 0.988, 1, 0.988 ], rotation: [ HPI$1, 0, - HPI$1 ], scale: 0.25 } ],
+			Y_xp_zp: [ { geometry: cornerPicker, color: [ 1, 0.5, 1, 0.25 ], position: [ 0.988, 1, 0.988 ], rotation: [ - HPI$1, 0, HPI$1 ], scale: 0.25 } ],
+			Y_xn_zn: [ { geometry: cornerPicker, color: [ 1, 0.5, 1, 0.25 ], position: [ - 0.988, 1, - 0.988 ], rotation: [ HPI$1, 0, 0 ], scale: 0.25 } ],
+			Y_xp_zn: [ { geometry: cornerPicker, color: [ 1, 0.5, 1, 0.25 ], position: [ 0.988, 1, - 0.988 ], rotation: [ HPI$1, 0, HPI$1 ], scale: 0.25 } ],
+			Y_xn_zp: [ { geometry: cornerPicker, color: [ 1, 0.5, 1, 0.25 ], position: [ - 0.988, 1, 0.988 ], rotation: [ HPI$1, 0, - HPI$1 ], scale: 0.25 } ],
 			//
-			Z_xp_yp: [ { geometry: cornerPicker, position: [ 0.988, 0.988, 1 ], rotation: [ PI$1, 0, HPI$1 ], scale: 0.25 } ],
-			Z_xn_yn: [ { geometry: cornerPicker, position: [ - 0.988, - 0.988, 1 ], rotation: [ PI$1, 0, - HPI$1 ], scale: 0.25 } ],
-			Z_xp_yn: [ { geometry: cornerPicker, position: [ 0.988, - 0.988, 1 ], rotation: [ 0, 0, HPI$1 ], scale: 0.25 } ],
-			Z_xn_yp: [ { geometry: cornerPicker, position: [ - 0.988, 0.988, 1 ], rotation: [ PI$1, 0, 0 ], scale: 0.25 } ],
+			Z_xp_yp: [ { geometry: cornerPicker, color: [ 1, 1, 0.5, 0.25 ], position: [ 0.988, 0.988, 1 ], rotation: [ PI$1, 0, HPI$1 ], scale: 0.25 } ],
+			Z_xn_yn: [ { geometry: cornerPicker, color: [ 1, 1, 0.5, 0.25 ], position: [ - 0.988, - 0.988, 1 ], rotation: [ PI$1, 0, - HPI$1 ], scale: 0.25 } ],
+			Z_xp_yn: [ { geometry: cornerPicker, color: [ 1, 1, 0.5, 0.25 ], position: [ 0.988, - 0.988, 1 ], rotation: [ 0, 0, HPI$1 ], scale: 0.25 } ],
+			Z_xn_yp: [ { geometry: cornerPicker, color: [ 1, 1, 0.5, 0.25 ], position: [ - 0.988, 0.988, 1 ], rotation: [ PI$1, 0, 0 ], scale: 0.25 } ],
 		};
 
 	}
-	updateAxis( axis ) {
-
-		super.updateAxis( axis );
-		axis.renderOrder = Infinity;
-
-	}
+	// updateAxisMaterial(axis) {
+	// 	super.updateAxisMaterial(axis);
+	// 	axis.renderOrder = Infinity;
+	// }
 
 }
 

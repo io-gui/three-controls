@@ -196,48 +196,48 @@ export class ViewportControls extends Interactive {
 			this.state = STATE.NONE;
 		}
 	}
-	onKeyDown(event) {
-		// TODO: key inertia
-		// TODO: better state setting
-		// switch (event.keyCode) {
-		// 	case this.KEYS.PAN_UP:
-		// 		this._setPan(direction.set(0, -this.keyPanSpeed));
-		// 		break;
-		// 	case this.KEYS.PAN_DOWN:
-		// 		this._setPan(direction.set(0, this.keyPanSpeed));
-		// 		break;
-		// 	case this.KEYS.PAN_LEFT:
-		// 		this._setPan(direction.set(this.keyPanSpeed, 0));
-		// 		break;
-		// 	case this.KEYS.PAN_RIGHT:
-		// 		this._setPan(direction.set(-this.keyPanSpeed, 0));
-		// 		break;
-		// 	case this.KEYS.ORBIT_LEFT:
-		// 		this._setOrbit(direction.set(this.keyOrbitSpeed, 0));
-		// 		break;
-		// 	case this.KEYS.ORBIT_RIGHT:
-		// 		this._setOrbit(direction.set(-this.keyOrbitSpeed, 0));
-		// 		break;
-		// 	case this.KEYS.ORBIT_UP:
-		// 		this._setOrbit(direction.set(0, this.keyOrbitSpeed));
-		// 		break;
-		// 	case this.KEYS.ORBIT_DOWN:
-		// 		this._setOrbit(direction.set(0, -this.keyOrbitSpeed));
-		// 		break;
-		// 	case this.KEYS.DOLLY_IN:
-		// 		this._setDolly(-this.keyDollySpeed);
-		// 		break;
-		// 	case this.KEYS.DOLLY_OUT:
-		// 		this._setDolly(this.keyDollySpeed);
-		// 		break;
-		// 	case this.KEYS.FOCUS:
-		// 		this._setFocus();
-		// 		break;
-		// 	default:
-		// 		break;
-		// }
-		this.active = false;
-	}
+	// onKeyDown(event) {
+	// 	TODO: key inertia
+	// 	TODO: better state setting
+	// 	switch (event.keyCode) {
+	// 		case this.KEYS.PAN_UP:
+	// 			this._setPan(direction.set(0, -this.keyPanSpeed));
+	// 			break;
+	// 		case this.KEYS.PAN_DOWN:
+	// 			this._setPan(direction.set(0, this.keyPanSpeed));
+	// 			break;
+	// 		case this.KEYS.PAN_LEFT:
+	// 			this._setPan(direction.set(this.keyPanSpeed, 0));
+	// 			break;
+	// 		case this.KEYS.PAN_RIGHT:
+	// 			this._setPan(direction.set(-this.keyPanSpeed, 0));
+	// 			break;
+	// 		case this.KEYS.ORBIT_LEFT:
+	// 			this._setOrbit(direction.set(this.keyOrbitSpeed, 0));
+	// 			break;
+	// 		case this.KEYS.ORBIT_RIGHT:
+	// 			this._setOrbit(direction.set(-this.keyOrbitSpeed, 0));
+	// 			break;
+	// 		case this.KEYS.ORBIT_UP:
+	// 			this._setOrbit(direction.set(0, this.keyOrbitSpeed));
+	// 			break;
+	// 		case this.KEYS.ORBIT_DOWN:
+	// 			this._setOrbit(direction.set(0, -this.keyOrbitSpeed));
+	// 			break;
+	// 		case this.KEYS.DOLLY_IN:
+	// 			this._setDolly(-this.keyDollySpeed);
+	// 			break;
+	// 		case this.KEYS.DOLLY_OUT:
+	// 			this._setDolly(this.keyDollySpeed);
+	// 			break;
+	// 		case this.KEYS.FOCUS:
+	// 			this._setFocus();
+	// 			break;
+	// 		default:
+	// 			break;
+	// 	}
+	// 	this.active = false;
+	// }
 	onKeyUp() {
 		// TODO: Consider improving for prevent pointer and multi-key interruptions.
 		// this.active = false;

@@ -3,8 +3,8 @@
  */
 
 import {
-	BufferGeometry, BufferAttribute, SphereBufferGeometry, CylinderBufferGeometry,
-	OctahedronBufferGeometry, BoxBufferGeometry, TorusBufferGeometry, Float32BufferAttribute, Uint16BufferAttribute
+	BufferGeometry, SphereBufferGeometry, CylinderBufferGeometry,
+	OctahedronBufferGeometry, TorusBufferGeometry, Float32BufferAttribute, Uint16BufferAttribute
 } from "../../lib/three.module.js";
 
 import {HelperMesh} from "./HelperMesh.js";
@@ -35,7 +35,7 @@ export class PlaneGeometry extends HelperMesh {
 
 		let geometry = new BufferGeometry();
 
-		var indices = [
+		let indices = [
 			0, 1, 2, 2, 3, 0,
 			4, 1, 0, 5, 1, 4,
 			1, 6, 2, 1, 5, 6,
@@ -45,7 +45,7 @@ export class PlaneGeometry extends HelperMesh {
 		];
 		geometry.index = new Uint16BufferAttribute( indices, 1 );
 
-		var positions = [];
+		let positions = [];
 		positions[ 0 ] = 1; positions[ 1 ] = 1; positions[ 2 ] = 1;
 		positions[ 3 ] = -1; positions[ 4 ] = 1; positions[ 5 ] = 1;
 		positions[ 6 ] = -1; positions[ 7 ] = -1; positions[ 8 ] = 1;

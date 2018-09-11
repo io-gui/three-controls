@@ -33,7 +33,7 @@ export class Helper extends IoLiteMixin(Object3D) {
 			this.dispatchEvent({type: 'change'});
 		});
 	}
-	updateHelperMatrix(camera) {
+	updateHelperMatrix() {
 		if (this.object) {
 			this.object.updateMatrixWorld();
 			this.matrix.copy(this.object.matrix);

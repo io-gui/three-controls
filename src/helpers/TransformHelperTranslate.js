@@ -11,7 +11,7 @@ const octahedronGeometry = new OctahedronGeometry();
 const pickerHandleGeometry = new PickerHandleGeometry();
 const planeGeometry = new PlaneGeometry();
 
-function stringHas(str, char) {return str.search(char) !== -1;};
+function stringHas(str, char) {return str.search(char) !== -1;}
 
 export class TransformHelperTranslate extends TransformHelper {
 	constructor(props) {
@@ -26,7 +26,7 @@ export class TransformHelperTranslate extends TransformHelper {
 			flipX: { value: false, observer: 'updateAxis' },
 			flipY: { value: false, observer: 'updateAxis' },
 			flipZ: { value: false, observer: 'updateAxis' }
-		})
+		});
 		this.traverse(child => {
 			child.renderOrder = 200;
 		});

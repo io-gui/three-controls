@@ -49,8 +49,6 @@ export class Animation extends IoLiteMixin(Object) {
 		this.dispatchEvent({type: 'update', timestep: timestep});
 	}
 	stopAnimation() {
-		const time = performance.now();
-		const timestep = time - this._time;
 		this._active = false;
 		cancelAnimationFrame(this._rafID);
 	}

@@ -21,7 +21,7 @@ const ringPickerGeometry = new RingPickerGeometry();
 const circleGeometry = new CircleGeometry();
 const octahedronGeometry = new OctahedronGeometry();
 
-function stringHas(str, char) {return str.search(char) !== -1;};
+function stringHas(str, char) {return str.search(char) !== -1;}
 
 export class TransformHelperRotate extends TransformHelper {
 	get handlesGroup() {

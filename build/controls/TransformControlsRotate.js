@@ -1,4 +1,4 @@
-import { Object3D, Vector3, Quaternion, Vector2, BufferGeometry, BufferAttribute, UniformsUtils, Color, DoubleSide, ShaderMaterial, Mesh, Euler, Matrix4, Uint16BufferAttribute, Float32BufferAttribute, SphereBufferGeometry, CylinderBufferGeometry, OctahedronBufferGeometry, TorusBufferGeometry } from '../../lib/three.module.js';
+import { Object3D, Vector3, Quaternion, Vector2, BufferGeometry, BufferAttribute, UniformsUtils, Color, FrontSide, ShaderMaterial, DataTexture, RGBAFormat, FloatType, NearestFilter, Mesh, Euler, Matrix4, Uint16BufferAttribute, Float32BufferAttribute, SphereBufferGeometry, CylinderBufferGeometry, OctahedronBufferGeometry, TorusBufferGeometry } from '../../lib/three.module.js';
 import { TransformControlsMixin } from './TransformControlsMixin.js';
 
 /**
@@ -42,10 +42,9 @@ const IoLiteMixin = ( superclass ) => class extends superclass {
 	}
 	dispatchEvent( event ) {
 
-		if ( this._listeners === undefined ) return;
-		if ( this._listeners[ event.type ] !== undefined ) {
+		event.target = this;
+		if ( this._listeners && this._listeners[ event.type ] !== undefined ) {
 
-			event.target = this;
 			let array = this._listeners[ event.type ].slice( 0 );
 			for ( let i = 0, l = array.length; i < l; i ++ ) {
 
@@ -53,7 +52,7 @@ const IoLiteMixin = ( superclass ) => class extends superclass {
 
 			}
 
-		}
+		} else if ( this.parent && event.bubbles ) ;
 
 	}
 	// Define properties in builk.
@@ -80,10 +79,27 @@ const IoLiteMixin = ( superclass ) => class extends superclass {
 };
 
 // Defines getter, setter
-const defineProperty = function ( scope, propName, defaultValue ) {
+const defineProperty = function ( scope, propName, propDef ) {
 
-	scope._properties[ propName ] = defaultValue;
-	if ( defaultValue === undefined ) {
+	let observer = propName + 'Changed';
+	let initValue = propDef;
+
+	if ( propDef && typeof propDef === 'object' && propDef.value !== undefined ) {
+
+		initValue = propDef.value;
+
+		if ( typeof propDef.observer === 'string' ) {
+
+			observer = propDef.observer;
+
+		}
+
+	}
+
+
+
+	scope._properties[ propName ] = initValue;
+	if ( initValue === undefined ) {
 
 		console.warn( 'IoLiteMixin: ' + propName + ' is mandatory!' );
 
@@ -91,7 +107,7 @@ const defineProperty = function ( scope, propName, defaultValue ) {
 	Object.defineProperty( scope, propName, {
 		get: function () {
 
-			return scope._properties[ propName ] !== undefined ? scope._properties[ propName ] : defaultValue;
+			return scope._properties[ propName ] !== undefined ? scope._properties[ propName ] : initValue;
 
 		},
 		set: function ( value ) {
@@ -100,16 +116,16 @@ const defineProperty = function ( scope, propName, defaultValue ) {
 
 				const oldValue = scope._properties[ propName ];
 				scope._properties[ propName ] = value;
-				if ( typeof scope[ propName + 'Changed' ] === 'function' ) scope[ propName + 'Changed' ]( value, oldValue );
-				scope.dispatchEvent( { type: propName + '-changed', value: value, oldValue: oldValue } );
-				scope.dispatchEvent( { type: 'change', prop: propName, value: value, oldValue: oldValue } );
+				if ( typeof scope[ observer ] === 'function' ) scope[ observer ]( value, oldValue );
+				scope.dispatchEvent( { type: propName + '-changed', value: value, oldValue: oldValue, bubbles: true } );
+				scope.dispatchEvent( { type: 'change', property: propName, value: value, oldValue: oldValue } );
 
 			}
 
 		},
 		enumerable: propName.charAt( 0 ) !== '_'
 	} );
-	scope[ propName ] = defaultValue;
+	scope[ propName ] = initValue;
 
 };
 
@@ -133,28 +149,27 @@ class Animation extends IoLiteMixin( Object ) {
 
 		super( props );
 		this.defineProperties( {
-			_animationActive: false,
-			_animationTime: 0,
-			_animationTimeRemainging: 0,
+			_active: false,
+			_time: 0,
+			_timeRemainging: 0,
 			_rafID: 0
 		} );
 
 	}
 	startAnimation( duration ) {
 
-		this._animationTimeRemainging = Math.max( this._animationTimeRemainging, duration * 100000 || 0 );
-		if ( ! this._animationActive ) {
+		this._timeRemainging = Math.max( this._timeRemainging, duration * 1000 || 0 );
+		if ( ! this._active ) {
 
-			this._animationActive = true;
-			this._animationTime = performance.now();
+			this._active = true;
+			this._time = performance.now();
 			this._rafID = requestAnimationFrame( () => {
 
 				const time = performance.now();
-				const timestep = time - this._animationTime;
-				this._animationTime = time;
-				this._animationTimeRemainging = Math.max( this._animationTimeRemainging - time, 0 );
-				this.dispatchEvent( { type: 'start', timestep: timestep, time: time } );
+				const timestep = time - this._time;
 				this.animate( timestep, time );
+				this._time = time;
+				this._timeRemainging = Math.max( this._timeRemainging - timestep, 0 );
 
 			} );
 
@@ -163,15 +178,15 @@ class Animation extends IoLiteMixin( Object ) {
 	}
 	animate( timestep, time ) {
 
-		if ( this._animationActive && this._animationTimeRemainging ) {
+		if ( this._active && this._timeRemainging ) {
 
 			this._rafID = requestAnimationFrame( () => {
 
 				const time = performance.now();
-				timestep = time - this._animationTime;
-				this._animationTime = time;
-				this._animationTimeRemainging = Math.max( this._animationTimeRemainging - time, 0 );
+				timestep = time - this._time;
 				this.animate( timestep, time );
+				this._time = time;
+				this._timeRemainging = Math.max( this._timeRemainging - timestep, 0 );
 
 			} );
 
@@ -180,20 +195,18 @@ class Animation extends IoLiteMixin( Object ) {
 			this.stopAnimation( timestep, time );
 
 		}
-		this.dispatchEvent( { type: 'update', timestep: timestep, time: time } );
+		this.dispatchEvent( { type: 'update', timestep: timestep } );
 
 	}
 	stopAnimation() {
 
-		const time = performance.now();
-		const timestep = time - this._animationTime;
-		this.dispatchEvent( { type: 'stop', timestep: timestep, time: time } );
-		this._animationActive = false;
+		this._active = false;
 		cancelAnimationFrame( this._rafID );
 
 	}
 
 }
+// TODO: dispose
 
 /**
  * @author arodic / https://github.com/arodic
@@ -210,12 +223,13 @@ class Helper extends IoLiteMixin( Object3D ) {
 		return true;
 
 	}
-	constructor( params = {} ) {
+	constructor( props = {} ) {
 
 		super();
 		this.defineProperties( {
-			object: params.object || null,
-			camera: params.camera || null,
+			domElement: props.domElement || null,
+			object: props.object || null,
+			camera: props.camera || null,
 			space: 'local',
 			size: 0,
 			worldPosition: new Vector3(),
@@ -227,17 +241,7 @@ class Helper extends IoLiteMixin( Object3D ) {
 			eye: new Vector3(),
 			animation: new Animation()
 		} );
-		this.animation.addEventListener( 'start', () => {
-
-			this.dispatchEvent( { type: 'change' } );
-
-		} );
 		this.animation.addEventListener( 'update', () => {
-
-			this.dispatchEvent( { type: 'change' } );
-
-		} );
-		this.animation.addEventListener( 'stop', () => {
 
 			this.dispatchEvent( { type: 'change' } );
 
@@ -254,7 +258,7 @@ class Helper extends IoLiteMixin( Object3D ) {
 
 		} else {
 
-			super.updateMatrixWorld();
+			super.updateMatrixWorld(); // TODO: camera?
 
 		}
 
@@ -288,20 +292,23 @@ class Helper extends IoLiteMixin( Object3D ) {
 		}
 
 	}
-	updateMatrixWorld() {
+	updateMatrixWorld( force, camera ) {
 
-		this.updateHelperMatrix();
+		if ( camera ) this.camera = camera; // TODO
+
+		this.updateHelperMatrix( camera );
 		this.matrixWorldNeedsUpdate = false;
 		const children = this.children;
 		for ( let i = 0, l = children.length; i < l; i ++ ) {
 
-			children[ i ].updateMatrixWorld( true );
+			children[ i ].updateMatrixWorld( true, camera );
 
 		}
 
 	}
 
 }
+// TODO: dispose
 
 /**
  * @author mrdoob / http://mrdoob.com/
@@ -711,90 +718,129 @@ class HelperMaterial extends IoLiteMixin( ShaderMaterial ) {
 		super( {
 			depthTest: true,
 			depthWrite: true,
+			side: FrontSide,
 		} );
+
+		const data = new Float32Array( [
+			1.0 / 17.0, 0, 0, 0, 9.0 / 17.0, 0, 0, 0, 3.0 / 17.0, 0, 0, 0, 11.0 / 17.0, 0, 0, 0,
+			13.0 / 17.0, 0, 0, 0, 5.0 / 17.0, 0, 0, 0, 15.0 / 17.0, 0, 0, 0, 7.0 / 17.0, 0, 0, 0,
+			4.0 / 17.0, 0, 0, 0, 12.0 / 17.0, 0, 0, 0, 2.0 / 17.0, 0, 0, 0, 10.0 / 17.0, 0, 0, 0,
+			16.0 / 17.0, 0, 0, 0, 8.0 / 17.0, 0, 0, 0, 14.0 / 17.0, 0, 0, 0, 6.0 / 17.0, 0, 0, 0,
+		] );
+		const texture = new DataTexture( data, 4, 4, RGBAFormat, FloatType );
+		texture.magFilter = NearestFilter;
+		texture.minFilter = NearestFilter;
+
+		const res = new Vector3( window.innerWidth, window.innerHeight, window.devicePixelRatio );
+		color = color !== undefined ? _colors[ color ] : _colors[ 'white' ];
+		opacity = opacity !== undefined ? opacity : 1;
 
 		this.defineProperties( {
-			color: color !== undefined ? _colors[ color ] : _colors[ 'white' ],
-			opacity: opacity !== undefined ? opacity : 1,
-			side: DoubleSide,
-			transparent: true,
-			highlight: 0,
-			// wireframe: true
+			color: { value: color, observer: 'uniformChanged' },
+			opacity: { value: opacity, observer: 'uniformChanged' },
+			highlight: { value: 0, observer: 'uniformChanged' },
+			resolution: { value: res, observer: 'uniformChanged' },
 		} );
-
 
 		this.uniforms = UniformsUtils.merge( [ this.uniforms, {
 			"uColor": { value: this.color },
 			"uOpacity": { value: this.opacity },
-			"uHighlight": { value: this.highlight }
+			"uHighlight": { value: this.highlight },
+			"uResolution": { value: this.resolution },
+			"tDitherMatrix": { value: texture },
 		} ] );
 
+		this.uniforms.tDitherMatrix.value = texture;
+		texture.needsUpdate = true;
+
 		this.vertexShader = `
+
 			attribute vec4 color;
 			attribute float outline;
-			varying vec4 vColor;
-			varying vec3 vNormal;
-			varying float vOutline;
-			void main() {
-				vColor = color;
-				vOutline = outline;
-				vNormal = normalize( normalMatrix * normal );
-				vec4 pos = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
 
+			varying vec4 vColor;
+			varying float isOutline;
+
+			uniform vec3 uResolution;
+
+			void main() {
 				float aspect = projectionMatrix[0][0] / projectionMatrix[1][1];
-				vec3 sNormal = normalize(vec3(vNormal.x, vNormal.y, 0));
+
+				vColor = color;
+				isOutline = outline;
+
+				vec3 nor = normalMatrix * normal;
+				vec4 pos = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+				float pixelRatio = uResolution.z;
+
+				nor = (projectionMatrix * vec4(nor, 1.0)).xyz;
+				nor = normalize((nor.xyz) * vec3(1., 1., 0.));
 
 				float extrude = 0.0;
 				if (outline > 0.0) {
-					extrude += 0.0015 * outline;
-					pos.z += .1;
+					extrude = outline;
+					pos.z += 0.01;
 				} else {
-					extrude += 0.001 * -outline;
+					extrude += outline;
 				}
-				pos.x += sNormal.x * extrude * (pos.w) * aspect;
-				pos.y += sNormal.y * extrude * (pos.w);
+
+				pos.xy /= pos.w;
+
+				float dx = nor.x * extrude * 2.2;
+				float dy = nor.y * extrude * 2.2;
+
+				pos.x += (dx) * (1.0 / uResolution.x);
+				pos.y += (dy) * (1.0 / uResolution.y);
+
+				pos.xy *= pos.w;
 
 				gl_Position = pos;
 			}
 		`;
 		this.fragmentShader = `
-			varying vec4 vColor;
-			varying vec3 vNormal;
-			varying float vOutline;
 			uniform vec3 uColor;
 			uniform float uOpacity;
 			uniform float uHighlight;
+			uniform vec3 uResolution;
+			uniform sampler2D tDitherMatrix;
+
+			varying vec4 vColor;
+			varying float isOutline;
+
 			void main() {
-				if (vOutline > 0.0) {
-					vec4 c = mix(vec4( 0.0, 0.0, 0.0, 1.0 ), vec4( 1.0, 1.0, 1.0, 2.0 ), max(0.0, uHighlight) );
-					c = mix(c, vec4( 0.5, 0.5, 0.5, 1.0 * 0.15 ), max(0.0, -uHighlight) );
-					gl_FragColor = c;
-					return;
+
+				float opacity = 1.0;
+				vec3 color = vec3(1.0);
+				float pixelRatio = 1.0;//uResolution.z;
+
+				if (isOutline > 0.0) {
+					color = mix(color * vec3(0.2), vec3(1.0), max(0.0, uHighlight) );
+					color = mix(color, vec3(0.5), max(0.0, -uHighlight) );
+				} else {
+					color = uColor * vColor.rgb;
 				}
+
 				float dimming = mix(1.0, 0.2, max(0.0, -uHighlight));
-				dimming = mix(dimming, dimming * 2.0, max(0.0, uHighlight));
-				gl_FragColor = vec4( uColor * vColor.rgb, uOpacity * vColor.a * dimming );
+				dimming = mix(dimming, dimming * 1.25, max(0.0, uHighlight));
+				opacity = uOpacity * vColor.a * dimming;
+
+				color = mix(vec3(0.5), color, dimming);
+
+				gl_FragColor = vec4(color, 1.0);
+
+				vec2 matCoord = ( mod(gl_FragCoord.xy / pixelRatio, 4.0) - vec2(0.5) ) / 4.0;
+				vec4 ditherPattern = texture2D( tDitherMatrix, matCoord.xy );
+				if (opacity < ditherPattern.r) discard;
 			}
 		`;
 
 	}
-	colorChanged() {
+	uniformChanged() {
 
 		this.uniforms.uColor.value = this.color;
-		this.uniformsNeedUpdate = true;
-
-	}
-	opacityChanged() {
-
 		this.uniforms.uOpacity.value = this.opacity;
-		// this.transparent = this.opacity < 1 || this.highlight === -1;
-		this.uniformsNeedUpdate = true;
-
-	}
-	highlightChanged() {
-
 		this.uniforms.uHighlight.value = this.highlight;
-		// this.transparent = this.opacity < 1 || this.highlight === -1;
+		this.uniforms.uResolution.value = this.resolution;
 		this.uniformsNeedUpdate = true;
 
 	}
@@ -813,8 +859,6 @@ class HelperMesh extends Mesh {
 		this.geometry = geometry instanceof Array ? mergeGeometryChunks( geometry ) : geometry;
 		this.material = new HelperMaterial( props.color || 'white', props.opacity || 1 );
 		this.name = props.name;
-		// this.material.wireframe = true;
-		// this.renderOrder = 1000;
 
 	}
 
@@ -848,7 +892,7 @@ function mergeGeometryChunks( chunks ) {
 		const rotation = chunk.rotation;
 		let scale = chunk.scale;
 
-		let thickness = chunk.thickness || 0;
+		let thickness = chunk.thickness / 2 || 0;
 		let outlineThickness = chunk.outlineThickness !== undefined ? chunk.outlineThickness : 1;
 
 		if ( scale && typeof scale === 'number' ) scale = [ scale, scale, scale ];
@@ -868,18 +912,18 @@ function mergeGeometryChunks( chunks ) {
 		if ( chunkGeo.index === null ) {
 
 			const indices = [];
-			for ( let j = 0; j < chunkGeo.attributes.position.count; j ++ ) {
+			for ( let j = 0; j < chunkGeo.attributes.position.count - 2; j ++ ) {
 
-				indices.push( j * 3 + 0 );
-				indices.push( j * 3 + 1 );
-				indices.push( j * 3 + 2 );
+				indices.push( j + 0 );
+				indices.push( j + 1 );
+				indices.push( j + 2 );
 
 			}
 			chunkGeo.index = new Uint16BufferAttribute( indices, 1 );
 
 		}
 
-		const vertCount = chunkGeo.attributes.position.count;
+		let vertCount = chunkGeo.attributes.position.count;
 
 		if ( ! chunkGeo.attributes.color ) {
 
@@ -887,33 +931,43 @@ function mergeGeometryChunks( chunks ) {
 
 		}
 
+		//TODO: enable color overwrite
 		const colorArray = chunkGeo.attributes.color.array;
 		for ( let j = 0; j < vertCount; j ++ ) {
 
-			// TODO: fix
-			const hasAlpha = colorArray[ j * 4 + 3 ] !== undefined && ! isNaN( colorArray[ j * 4 + 3 ] );
-			colorArray[ j * 4 + 0 ] = color[ 0 ];
-			colorArray[ j * 4 + 1 ] = color[ 1 ];
-			colorArray[ j * 4 + 2 ] = color[ 2 ];
-			if ( ! hasAlpha ) colorArray[ j * 4 + 3 ] = color[ 3 ] !== undefined ? color[ 3 ] : 0;
+			const r = j * 4 + 0; colorArray[ r ] = color[ 0 ];
+			const g = j * 4 + 1; colorArray[ g ] = color[ 1 ];
+			const b = j * 4 + 2; colorArray[ b ] = color[ 2 ];
+			const a = j * 4 + 3; colorArray[ a ] = color[ 3 ] !== undefined ? color[ 3 ] : colorArray[ a ] !== undefined ? colorArray[ a ] : 1;
 
 		}
 
 		// Duplicate geometry and add outline attribute
+		//TODO: enable outline overwrite (needs to know if is outline or not in combined geometry)
 		if ( ! chunkGeo.attributes.outline ) {
 
 			const outlineArray = [];
-			for ( let j = 0; j < vertCount; j ++ ) outlineArray[ j ] = - thickness || 0;
+			for ( let j = 0; j < vertCount; j ++ ) outlineArray[ j ] = - ( thickness ) || 0;
 			chunkGeo.addAttribute( 'outline', new Float32BufferAttribute( outlineArray, 1 ) );
-
-		}
-
-		if ( outlineThickness ) {
-
 			chunkGeo = BufferGeometryUtils.mergeBufferGeometries( [ chunkGeo, chunkGeo ] );
-			for ( let j = 0; j < vertCount; j ++ ) chunkGeo.attributes.outline.array[ vertCount + j ] = outlineThickness + thickness;
+			if ( outlineThickness ) {
+
+				for ( let j = 0; j < vertCount; j ++ ) chunkGeo.attributes.outline.array[ ( vertCount ) + j ] = outlineThickness + ( thickness );
+
+			}
+
+			let array = chunkGeo.index.array;
+			for ( let j = array.length / 2; j < array.length; j += 3 ) {
+
+				let a = array[ j + 1 ];
+				let b = array[ j + 2 ];
+				array[ j + 1 ] = b;
+				array[ j + 2 ] = a;
+
+			}
 
 		}
+
 
 		geometry = BufferGeometryUtils.mergeBufferGeometries( [ geometry, chunkGeo ] );
 
@@ -928,12 +982,16 @@ function mergeGeometryChunks( chunks ) {
 
 const PI = Math.PI;
 const HPI = Math.PI / 2;
+const EPS = 0.000001;
 
-class OctahedronGeometry extends OctahedronBufferGeometry {
+class OctahedronGeometry extends HelperMesh {
 
 	constructor() {
 
-		super( 1, 0 );
+		super( [
+			{ geometry: new OctahedronBufferGeometry( 1, 0 ) }
+		] );
+		return this.geometry;
 
 	}
 
@@ -971,7 +1029,7 @@ class RingGeometry extends HelperMesh {
 	constructor() {
 
 		super( [
-			{ geometry: new TorusBufferGeometry( 1, 0.00001, 8, 128 ), rotation: [ HPI, 0, 0 ], thickness: 1 },
+			{ geometry: new TorusBufferGeometry( 1, EPS, 8, 128 ), rotation: [ HPI, 0, 0 ], thickness: 1 },
 		] );
 		return this.geometry;
 
@@ -984,7 +1042,7 @@ class RingPickerGeometry extends HelperMesh {
 	constructor() {
 
 		super( [
-			{ geometry: new TorusBufferGeometry( 1, 0.1, 8, 128 ), rotation: [ HPI, 0, 0 ] },
+			{ geometry: new TorusBufferGeometry( 1, 0.1, 3, 12 ), rotation: [ HPI, 0, 0 ] },
 		] );
 		return this.geometry;
 
@@ -997,10 +1055,10 @@ class RotateHandleGeometry extends HelperMesh {
 	constructor() {
 
 		super( [
-			{ geometry: new TorusBufferGeometry( 1, 0.00001, 4, 64, PI ), thickness: 1 },
-			{ geometry: new SphereBufferGeometry( 0.00001, 4, 4 ), position: [ 1, 0, 0 ], rotation: [ HPI, 0, 0 ] },
-			{ geometry: new SphereBufferGeometry( 0.00001, 4, 4 ), position: [ - 1, 0, 0 ], rotation: [ HPI, 0, 0 ] },
-			{ geometry: new OctahedronGeometry(), position: [ 0, 0.992, 0 ], scale: [ 0.2, 0.05, 0.05 ] }
+			{ geometry: new TorusBufferGeometry( 1, EPS, 4, 64, PI ), thickness: 1 },
+			{ geometry: new SphereBufferGeometry( EPS, 4, 4 ), position: [ 1, 0, 0 ], rotation: [ HPI, 0, 0 ] },
+			{ geometry: new SphereBufferGeometry( EPS, 4, 4 ), position: [ - 1, 0, 0 ], rotation: [ HPI, 0, 0 ] },
+			{ geometry: new OctahedronGeometry(), position: [ 0, 0.996, 0 ], scale: [ 0.1, 0.025, 0.025 ] }
 		] );
 		return this.geometry;
 
@@ -1025,6 +1083,24 @@ class RotatePickerGeometry extends HelperMesh {
 const coneGeometry = new ConeGeometry();
 const octahedronGeometry = new OctahedronGeometry();
 
+function stringHas( str, char ) {
+
+	return str.search( char ) !== - 1;
+
+}
+
+function hasAxisAny( str, chars ) {
+
+	let has = true;
+	str.split( '' ).some( a => {
+
+		if ( chars.indexOf( a ) === - 1 ) has = false;
+
+	} );
+	return has;
+
+}
+
 class TransformHelper extends Helper {
 
 	constructor( props ) {
@@ -1032,20 +1108,49 @@ class TransformHelper extends Helper {
 		super( props );
 
 		this.defineProperties( {
-			showX: true,
-			showY: true,
-			showZ: true,
+			showX: { value: true, observer: 'updateAxis' },
+			showY: { value: true, observer: 'updateAxis' },
+			showZ: { value: true, observer: 'updateAxis' },
+			axis: null,
 			worldX: new Vector3(),
 			worldY: new Vector3(),
 			worldZ: new Vector3(),
 			axisDotEye: new Vector3()
 		} );
-		this.size = 0.1;
+		this.size = 0.15;
 
 		this.handles = this.combineHelperGroups( this.handlesGroup );
 		this.pickers = this.combineHelperGroups( this.pickersGroup );
 		if ( this.handles.length ) this.add( ...this.handles );
 		if ( this.pickers.length ) this.add( ...this.pickers );
+
+		this.traverse( child => child.renderOrder = 100 );
+
+		// Hide pickers
+		for ( let i = 0; i < this.pickers.length; i ++ ) this.pickers[ i ].material.visible = false;
+
+	}
+	axisChanged() {
+
+		this.animation.startAnimation( 4 );
+		this.traverse( axis => {
+
+			axis.highlight = 0;
+			if ( this.axis ) {
+
+				if ( hasAxisAny( axis.name, this.axis ) ) {
+
+					axis.highlight = 1;
+
+				} else {
+
+					axis.highlight = - 0.75;
+
+				}
+
+			}
+
+		} );
 
 	}
 	// Creates an Object3D with gizmos described in custom hierarchy definition.
@@ -1054,18 +1159,7 @@ class TransformHelper extends Helper {
 		const meshes = [];
 		for ( let name in groups ) {
 
-			const mesh = new HelperMesh( groups[ name ], { name: name } );
-			mesh.has = char => {
-
-				return mesh.name.search( char ) !== - 1;
-
-			};
-			mesh.is = char => {
-
-				return mesh.name === char;
-
-			};
-			meshes.push( mesh );
+			meshes.push( new HelperMesh( groups[ name ], { name: name } ) );
 
 		}
 		return meshes;
@@ -1076,7 +1170,7 @@ class TransformHelper extends Helper {
 		return {
 			X: [ { geometry: coneGeometry, color: [ 1, 0, 0 ], position: [ 0.15, 0, 0 ], rotation: [ 0, 0, - Math.PI / 2 ], scale: [ 0.5, 1, 0.5 ] } ],
 			Y: [ { geometry: coneGeometry, color: [ 0, 1, 0 ], position: [ 0, 0.15, 0 ], rotation: [ 0, 0, 0 ], scale: [ 0.5, 1, 0.5 ] } ],
-			Z: [ { geometry: coneGeometry, color: [ 0, 0, 1 ], position: [ 0, 0, - 0.15 ], rotation: [ Math.PI / 2, 0, 0 ], scale: [ 0.5, 1, 0.5 ] } ]
+			Z: [ { geometry: coneGeometry, color: [ 0, 0, 1 ], position: [ 0, 0, 0.15 ], rotation: [ Math.PI / 2, 0, 0 ], scale: [ 0.5, 1, 0.5 ] } ]
 		};
 
 	}
@@ -1087,12 +1181,36 @@ class TransformHelper extends Helper {
 		};
 
 	}
+	updateAxis() {
+
+		this.animation.startAnimation( 4 );
+		this.traverse( axis => {
+
+			axis.hidden = false;
+			if ( stringHas( axis.name, "X" ) && ! this.showX ) axis.hidden = true;
+			if ( stringHas( axis.name, "Y" ) && ! this.showY ) axis.hidden = true;
+			if ( stringHas( axis.name, "Z" ) && ! this.showZ ) axis.hidden = true;
+			if ( stringHas( axis.name, "E" ) && ( ! this.showX || ! this.showY || ! this.showZ ) ) axis.hidden = true;
+
+		} );
+
+	}
+	updateMatrixWorld( force, camera ) {
+
+		if ( camera ) this.camera = camera; // TODO
+		this.updateHelperMatrix();
+		this.matrixWorldNeedsUpdate = false;
+		const children = this.children;
+		for ( let i = 0, l = children.length; i < l; i ++ ) {
+
+			children[ i ].updateMatrixWorld( true, camera );
+
+		}
+
+	}
 	updateHelperMatrix() {
 
 		super.updateHelperMatrix();
-
-		for ( let i = this.handles.length; i --; ) this.updateAxis( this.handles[ i ] );
-		for ( let i = this.pickers.length; i --; ) this.updateAxis( this.pickers[ i ] );
 
 		this.worldX.set( 1, 0, 0 ).applyQuaternion( this.worldQuaternion );
 		this.worldY.set( 0, 1, 0 ).applyQuaternion( this.worldQuaternion );
@@ -1104,17 +1222,27 @@ class TransformHelper extends Helper {
 			this.worldZ.dot( this.eye )
 		);
 
-	}
-	updateAxis( axis ) {
+		if ( this.animation._active ) {
 
-		// Hide non-enabled Transform
+			for ( let i = this.handles.length; i --; ) this.updateAxisMaterial( this.handles[ i ] );
+			for ( let i = this.pickers.length; i --; ) this.updateAxisMaterial( this.pickers[ i ] );
+
+		}
+
+	}
+	// TODO: optimize!
+	updateAxisMaterial( axis ) {
+
 		axis.visible = true;
-		axis.visible = axis.visible && ( ! axis.has( "X" ) || this.showX );
-		axis.visible = axis.visible && ( ! axis.has( "Y" ) || this.showY );
-		axis.visible = axis.visible && ( ! axis.has( "Z" ) || this.showZ );
-		axis.visible = axis.visible && ( ! axis.has( "E" ) || ( this.showX && this.showY && this.showZ ) );
-		// Hide pickers
-		for ( let i = 0; i < this.pickers.length; i ++ ) this.pickers[ i ].material.visible = false;
+
+		const mat = axis.material;
+		const h = axis.material.highlight || 0;
+
+		let highlight = axis.hidden ? - 1.5 : axis.highlight || 0;
+
+		mat.highlight = ( 4 * h + highlight ) / 5;
+
+		if ( mat.highlight < - 1.49 ) axis.visible = false;
 
 	}
 
@@ -1137,6 +1265,13 @@ const rotatePickerGeometry = new RotatePickerGeometry();
 const ringGeometry = new RingGeometry();
 const ringPickerGeometry = new RingPickerGeometry();
 const circleGeometry = new CircleGeometry();
+const octahedronGeometry$1 = new OctahedronGeometry();
+
+function stringHas$1( str, char ) {
+
+	return str.search( char ) !== - 1;
+
+}
 
 class TransformHelperRotate extends TransformHelper {
 
@@ -1149,7 +1284,7 @@ class TransformHelperRotate extends TransformHelper {
 			E: [ { geometry: ringGeometry, color: [ 1, 1, 0.5 ], rotation: [ Math.PI / 2, Math.PI / 2, 0 ], scale: 1.2 } ],
 			XYZ: [
 				{ geometry: ringGeometry, color: [ 0.5, 0.5, 0.5 ], rotation: [ Math.PI / 2, Math.PI / 2, 0 ] },
-				{ geometry: circleGeometry, color: [ 0.5, 0.5, 0.5, 0.1 ], rotation: [ Math.PI / 2, Math.PI / 2, 0 ], scale: 0.25 }
+				{ geometry: circleGeometry, color: [ 0.5, 0.5, 0.5, 0.25 ], rotation: [ Math.PI / 2, Math.PI / 2, 0 ], scale: 0.25 }
 			],
 		};
 
@@ -1157,38 +1292,38 @@ class TransformHelperRotate extends TransformHelper {
 	get pickersGroup() {
 
 		return {
-			X: [ { geometry: rotatePickerGeometry, color: [ 1, 0, 0 ], rotation: [ Math.PI / 2, Math.PI / 2, 0 ] } ],
-			Y: [ { geometry: rotatePickerGeometry, color: [ 0, 1, 0 ], rotation: [ Math.PI / 2, 0, 0 ] } ],
-			Z: [ { geometry: rotatePickerGeometry, color: [ 0, 0, 1 ], rotation: [ 0, 0, - Math.PI / 2 ] } ],
-			E: [ { geometry: ringPickerGeometry, rotation: [ Math.PI / 2, Math.PI / 2, 0 ], scale: 1.2 } ],
-			XYZ: [ { geometry: circleGeometry, rotation: [ Math.PI / 2, Math.PI / 2, 0 ], scale: 0.35 } ],
+			X: [ { geometry: rotatePickerGeometry, color: [ 1, 0, 0, 0.5 ], rotation: [ Math.PI / 2, Math.PI / 2, 0 ] } ],
+			Y: [ { geometry: rotatePickerGeometry, color: [ 0, 1, 0, 0.5 ], rotation: [ Math.PI / 2, 0, 0 ] } ],
+			Z: [ { geometry: rotatePickerGeometry, color: [ 0, 0, 1, 0.5 ], rotation: [ 0, 0, - Math.PI / 2 ] } ],
+			E: [ { geometry: ringPickerGeometry, color: [ 1, 1, 0.5, 0.5 ], rotation: [ Math.PI / 2, Math.PI / 2, 0 ], scale: 1.2 } ],
+			XYZ: [ { geometry: octahedronGeometry$1, color: [ 0.5, 0.5, 0.5, 0.15 ], rotation: [ Math.PI / 2, Math.PI / 2, 0 ], scale: 0.32 } ],
 		};
 
 	}
-	updateAxis( axis ) {
+	updateAxisMaterial( axis ) {
 
-		super.updateAxis( axis );
+		super.updateAxisMaterial( axis );
 		axis.quaternion.copy( identityQuaternion );
-		if ( axis.has( "E" ) || axis.has( "XYZ" ) ) {
+		if ( stringHas$1( axis.name, "E" ) || stringHas$1( axis.name, "XYZ" ) ) {
 
 			axis.quaternion.setFromRotationMatrix( lookAtMatrix.lookAt( alignVector, zeroVector, tempVector ) );
 
 		}
-		if ( axis.is( 'X' ) ) {
+		if ( axis.name === 'X' ) {
 
 			tempQuaternion.setFromAxisAngle( unitX, Math.atan2( - alignVector.y, alignVector.z ) );
 			tempQuaternion.multiplyQuaternions( identityQuaternion, tempQuaternion );
 			axis.quaternion.copy( tempQuaternion );
 
 		}
-		if ( axis.is( 'Y' ) ) {
+		if ( axis.name === 'Y' ) {
 
 			tempQuaternion.setFromAxisAngle( unitY, Math.atan2( alignVector.x, alignVector.z ) );
 			tempQuaternion.multiplyQuaternions( identityQuaternion, tempQuaternion );
 			axis.quaternion.copy( tempQuaternion );
 
 		}
-		if ( axis.is( 'Z' ) ) {
+		if ( axis.name === 'Z' ) {
 
 			tempQuaternion.setFromAxisAngle( unitZ, Math.atan2( alignVector.y, alignVector.x ) );
 			tempQuaternion.multiplyQuaternions( identityQuaternion, tempQuaternion );
@@ -1199,13 +1334,19 @@ class TransformHelperRotate extends TransformHelper {
 	}
 	updateHelperMatrix() {
 
+		super.updateHelperMatrix();
+
 		// TODO: simplify rotation handle logic
 		const quaternion = this.space === "local" ? this.worldQuaternion : identityQuaternion;
 		// Align handles to current local or world rotation
+
 		tempQuaternion.copy( quaternion ).inverse();
 		alignVector.copy( this.eye ).applyQuaternion( tempQuaternion );
 		tempVector.copy( unitY ).applyQuaternion( tempQuaternion );
-		super.updateHelperMatrix();
+
+		// TODO: optimize!
+		for ( let i = this.handles.length; i --; ) this.updateAxisMaterial( this.handles[ i ] );
+		for ( let i = this.pickers.length; i --; ) this.updateAxisMaterial( this.pickers[ i ] );
 
 	}
 
@@ -1237,12 +1378,12 @@ class TransformControlsRotate extends TransformControlsMixin( TransformHelperRot
 		} );
 
 	}
-	transform( space ) {
+	transform() {
 
-		const ROTATION_SPEED = 20 / this.worldPosition.distanceTo( tempVector$1.setFromMatrixPosition( this.camera.matrixWorld ) );
-		const quaternion = this.space === "local" ? this.worldQuaternion : identityQuaternion$1;
 		const axis = this.axis;
-
+		const space = ( axis === 'E' || axis === 'XYZ' ) ? 'world' : this.space;
+		const ROTATION_SPEED = 20 / this.worldPosition.distanceTo( tempVector$1.setFromMatrixPosition( this.camera.matrixWorld ) );
+		const quaternion = space === "local" ? this.worldQuaternion : identityQuaternion$1;
 		if ( axis === 'E' ) {
 
 			tempVector$1.copy( this.pointEnd ).cross( this.pointStart );
@@ -1269,7 +1410,6 @@ class TransformControlsRotate extends TransformControlsMixin( TransformHelperRot
 			this.rotationAngle = tempVector2.dot( tempVector$1.cross( this.eye ).normalize() ) * ROTATION_SPEED;
 
 		}
-
 		// Apply rotate
 		if ( space === 'local' ) {
 

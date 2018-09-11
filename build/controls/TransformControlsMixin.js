@@ -447,10 +447,12 @@ class Vector2 {
 /**
  * @author arodic / https://github.com/arodic
  */
+// TODO: dispose
 
 /**
  * @author arodic / https://github.com/arodic
  */
+// TODO: dispose
 
 /**
  * @author arodic / https://github.com/arodic
@@ -474,7 +476,6 @@ const InteractiveMixin = ( superclass ) => class extends superclass {
 		super( props );
 
 		this.defineProperties( {
-			domElement: props.domElement,
 			enabled: true,
 			_pointerEvents: new PointerEvents( props.domElement, { normalized: true } )
 		} );
@@ -572,7 +573,6 @@ const TransformControlsMixin = ( superclass ) => class extends InteractiveMixin(
 		this.visible = false;
 
 		this.defineProperties( {
-			axis: null,
 			active: false,
 			pointStart: new Vector3(),
 			pointEnd: new Vector3(),
@@ -585,17 +585,7 @@ const TransformControlsMixin = ( superclass ) => class extends InteractiveMixin(
 			plane: new Plane()
 		} );
 
-	}
-	// TODO: document
-	hasAxis( str ) {
-
-		let has = true;
-		str.split( '' ).some( a => {
-
-			if ( this.axis.indexOf( a ) === - 1 ) has = false;
-
-		} );
-		return has;
+		// this.add(this.planeMesh = new Mesh(new PlaneBufferGeometry(1000, 1000, 10, 10), new MeshBasicMaterial({wireframe: true})));
 
 	}
 	objectChanged( value ) {
@@ -610,20 +600,18 @@ const TransformControlsMixin = ( superclass ) => class extends InteractiveMixin(
 		}
 
 	}
+	// TODO: better animation trigger
+	// TODO: also trigger on object change
+	// TODO: Debug stalling animations on hover
 	enabledChanged( value ) {
 
 		super.enabledChanged( value );
-		this.animation.startAnimation( 1 );
-
-	}
-	axisChanged() {
-
-		this.animation.startAnimation( 1 );
+		this.animation.startAnimation( 3 );
 
 	}
 	activeChanged() {
 
-		this.animation.startAnimation( 1 );
+		this.animation.startAnimation( 3 );
 
 	}
 	updateHelperMatrix() {
@@ -670,6 +658,7 @@ const TransformControlsMixin = ( superclass ) => class extends InteractiveMixin(
 
 		if ( this.axis === null || ! this.object || this.active === true || pointers[ 0 ].button !== 0 ) return;
 		ray.setFromCamera( pointers[ 0 ].position, this.camera );
+		this.updatePlane();
 		const planeIntersect = ray.ray.intersectPlane( this.plane, rayTarget );
 		let space = ( this.axis === 'E' || this.axis === 'XYZ' ) ? 'world' : this.space;
 		if ( planeIntersect ) {
@@ -709,7 +698,7 @@ const TransformControlsMixin = ( superclass ) => class extends InteractiveMixin(
 
 		if ( space === 'local' ) this.pointEnd.applyQuaternion( this.worldQuaternionStart.clone().inverse() );
 
-		this.transform( space );
+		this.transform();
 
 		this.object.updateMatrixWorld();
 		this.dispatchEvent( changeEvent );
@@ -729,44 +718,15 @@ const TransformControlsMixin = ( superclass ) => class extends InteractiveMixin(
 		}
 
 	}
-	transform() {
+	transform() {}
+	updateAxisMaterial( axis ) {
 
-		// TODO:
-		return;
+		super.updateAxisMaterial( axis );
 
-	}
-	updateAxis( axis ) {
+		const mat = axis.material;
+		const h = axis.material.highlight;
 
-		super.updateAxis( axis );
-		this.highlightAxis( axis, this.axis );
-
-	}
-	highlightAxis( child, axis ) {
-
-		if ( child.material ) {
-
-			const h = child.material.highlight;
-			if ( ! this.enabled ) {
-
-				child.material.highlight = ( 15 * h - 1 ) / 16;
-				return;
-
-			}
-			if ( axis ) {
-
-				if ( this.hasAxis( child.name ) ) {
-
-					child.material.highlight = ( 15 * h + 1 ) / 16;
-					return;
-
-				}
-				child.material.highlight = ( 15 * h - 1 ) / 16;
-				return;
-
-			}
-			child.material.highlight = ( 15 * h ) / 16;
-
-		}
+		if ( ! this.enabled ) mat.highlight = ( 10 * h - 1.1 ) / 11;
 
 	}
 	updatePlane() {
@@ -783,6 +743,11 @@ const TransformControlsMixin = ( superclass ) => class extends InteractiveMixin(
 		if ( axis === 'XYZ' || axis === 'E' ) this.camera.getWorldDirection( normal );
 
 		this.plane.setFromNormalAndCoplanarPoint( normal, this.worldPosition );
+
+		// this.parent.add(this.planeMesh);
+		// this.planeMesh.position.set(0,0,0);
+		// this.planeMesh.lookAt(this.plane.normal);
+		// this.planeMesh.position.copy(this.worldPosition);
 
 	}
 

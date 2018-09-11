@@ -476,10 +476,9 @@ const IoLiteMixin = ( superclass ) => class extends superclass {
 	}
 	dispatchEvent( event ) {
 
-		if ( this._listeners === undefined ) return;
-		if ( this._listeners[ event.type ] !== undefined ) {
+		event.target = this;
+		if ( this._listeners && this._listeners[ event.type ] !== undefined ) {
 
-			event.target = this;
 			let array = this._listeners[ event.type ].slice( 0 );
 			for ( let i = 0, l = array.length; i < l; i ++ ) {
 
@@ -487,7 +486,7 @@ const IoLiteMixin = ( superclass ) => class extends superclass {
 
 			}
 
-		}
+		} else if ( this.parent && event.bubbles ) ;
 
 	}
 	// Define properties in builk.
@@ -514,10 +513,27 @@ const IoLiteMixin = ( superclass ) => class extends superclass {
 };
 
 // Defines getter, setter
-const defineProperty = function ( scope, propName, defaultValue ) {
+const defineProperty = function ( scope, propName, propDef ) {
 
-	scope._properties[ propName ] = defaultValue;
-	if ( defaultValue === undefined ) {
+	let observer = propName + 'Changed';
+	let initValue = propDef;
+
+	if ( propDef && typeof propDef === 'object' && propDef.value !== undefined ) {
+
+		initValue = propDef.value;
+
+		if ( typeof propDef.observer === 'string' ) {
+
+			observer = propDef.observer;
+
+		}
+
+	}
+
+
+
+	scope._properties[ propName ] = initValue;
+	if ( initValue === undefined ) {
 
 		console.warn( 'IoLiteMixin: ' + propName + ' is mandatory!' );
 
@@ -525,7 +541,7 @@ const defineProperty = function ( scope, propName, defaultValue ) {
 	Object.defineProperty( scope, propName, {
 		get: function () {
 
-			return scope._properties[ propName ] !== undefined ? scope._properties[ propName ] : defaultValue;
+			return scope._properties[ propName ] !== undefined ? scope._properties[ propName ] : initValue;
 
 		},
 		set: function ( value ) {
@@ -534,16 +550,16 @@ const defineProperty = function ( scope, propName, defaultValue ) {
 
 				const oldValue = scope._properties[ propName ];
 				scope._properties[ propName ] = value;
-				if ( typeof scope[ propName + 'Changed' ] === 'function' ) scope[ propName + 'Changed' ]( value, oldValue );
-				scope.dispatchEvent( { type: propName + '-changed', value: value, oldValue: oldValue } );
-				scope.dispatchEvent( { type: 'change', prop: propName, value: value, oldValue: oldValue } );
+				if ( typeof scope[ observer ] === 'function' ) scope[ observer ]( value, oldValue );
+				scope.dispatchEvent( { type: propName + '-changed', value: value, oldValue: oldValue, bubbles: true } );
+				scope.dispatchEvent( { type: 'change', property: propName, value: value, oldValue: oldValue } );
 
 			}
 
 		},
 		enumerable: propName.charAt( 0 ) !== '_'
 	} );
-	scope[ propName ] = defaultValue;
+	scope[ propName ] = initValue;
 
 };
 
@@ -567,28 +583,27 @@ class Animation extends IoLiteMixin( Object ) {
 
 		super( props );
 		this.defineProperties( {
-			_animationActive: false,
-			_animationTime: 0,
-			_animationTimeRemainging: 0,
+			_active: false,
+			_time: 0,
+			_timeRemainging: 0,
 			_rafID: 0
 		} );
 
 	}
 	startAnimation( duration ) {
 
-		this._animationTimeRemainging = Math.max( this._animationTimeRemainging, duration * 100000 || 0 );
-		if ( ! this._animationActive ) {
+		this._timeRemainging = Math.max( this._timeRemainging, duration * 1000 || 0 );
+		if ( ! this._active ) {
 
-			this._animationActive = true;
-			this._animationTime = performance.now();
+			this._active = true;
+			this._time = performance.now();
 			this._rafID = requestAnimationFrame( () => {
 
 				const time = performance.now();
-				const timestep = time - this._animationTime;
-				this._animationTime = time;
-				this._animationTimeRemainging = Math.max( this._animationTimeRemainging - time, 0 );
-				this.dispatchEvent( { type: 'start', timestep: timestep, time: time } );
+				const timestep = time - this._time;
 				this.animate( timestep, time );
+				this._time = time;
+				this._timeRemainging = Math.max( this._timeRemainging - timestep, 0 );
 
 			} );
 
@@ -597,15 +612,15 @@ class Animation extends IoLiteMixin( Object ) {
 	}
 	animate( timestep, time ) {
 
-		if ( this._animationActive && this._animationTimeRemainging ) {
+		if ( this._active && this._timeRemainging ) {
 
 			this._rafID = requestAnimationFrame( () => {
 
 				const time = performance.now();
-				timestep = time - this._animationTime;
-				this._animationTime = time;
-				this._animationTimeRemainging = Math.max( this._animationTimeRemainging - time, 0 );
+				timestep = time - this._time;
 				this.animate( timestep, time );
+				this._time = time;
+				this._timeRemainging = Math.max( this._timeRemainging - timestep, 0 );
 
 			} );
 
@@ -614,20 +629,18 @@ class Animation extends IoLiteMixin( Object ) {
 			this.stopAnimation( timestep, time );
 
 		}
-		this.dispatchEvent( { type: 'update', timestep: timestep, time: time } );
+		this.dispatchEvent( { type: 'update', timestep: timestep } );
 
 	}
 	stopAnimation() {
 
-		const time = performance.now();
-		const timestep = time - this._animationTime;
-		this.dispatchEvent( { type: 'stop', timestep: timestep, time: time } );
-		this._animationActive = false;
+		this._active = false;
 		cancelAnimationFrame( this._rafID );
 
 	}
 
 }
+// TODO: dispose
 
 /**
  * @author arodic / https://github.com/arodic
@@ -644,12 +657,13 @@ class Helper extends IoLiteMixin( Object3D ) {
 		return true;
 
 	}
-	constructor( params = {} ) {
+	constructor( props = {} ) {
 
 		super();
 		this.defineProperties( {
-			object: params.object || null,
-			camera: params.camera || null,
+			domElement: props.domElement || null,
+			object: props.object || null,
+			camera: props.camera || null,
 			space: 'local',
 			size: 0,
 			worldPosition: new Vector3(),
@@ -661,17 +675,7 @@ class Helper extends IoLiteMixin( Object3D ) {
 			eye: new Vector3(),
 			animation: new Animation()
 		} );
-		this.animation.addEventListener( 'start', () => {
-
-			this.dispatchEvent( { type: 'change' } );
-
-		} );
 		this.animation.addEventListener( 'update', () => {
-
-			this.dispatchEvent( { type: 'change' } );
-
-		} );
-		this.animation.addEventListener( 'stop', () => {
 
 			this.dispatchEvent( { type: 'change' } );
 
@@ -688,7 +692,7 @@ class Helper extends IoLiteMixin( Object3D ) {
 
 		} else {
 
-			super.updateMatrixWorld();
+			super.updateMatrixWorld(); // TODO: camera?
 
 		}
 
@@ -722,20 +726,23 @@ class Helper extends IoLiteMixin( Object3D ) {
 		}
 
 	}
-	updateMatrixWorld() {
+	updateMatrixWorld( force, camera ) {
 
-		this.updateHelperMatrix();
+		if ( camera ) this.camera = camera; // TODO
+
+		this.updateHelperMatrix( camera );
 		this.matrixWorldNeedsUpdate = false;
 		const children = this.children;
 		for ( let i = 0, l = children.length; i < l; i ++ ) {
 
-			children[ i ].updateMatrixWorld( true );
+			children[ i ].updateMatrixWorld( true, camera );
 
 		}
 
 	}
 
 }
+// TODO: dispose
 
 /**
  * @author arodic / https://github.com/arodic
@@ -759,7 +766,6 @@ const InteractiveMixin = ( superclass ) => class extends superclass {
 		super( props );
 
 		this.defineProperties( {
-			domElement: props.domElement,
 			enabled: true,
 			_pointerEvents: new PointerEvents( props.domElement, { normalized: true } )
 		} );
@@ -886,7 +892,7 @@ class ViewportControls extends Interactive {
 			keyOrbitSpeed: 0.1,
 			keyDollySpeed: 0.1,
 			keyPanSpeed: 0.1,
-			wheelDollySpeed: 0.05,
+			wheelDollySpeed: 0.02,
 			autoOrbit: new Vector2( 0.0, 0.0 ),
 			autoDollyPan: new Vector3( 0.1, 0.0, 0.0 ),
 			enableDamping: true,
@@ -918,16 +924,20 @@ class ViewportControls extends Interactive {
 			this.update( event.timestep );
 
 		} );
-		this.animation.startAnimation( 0 );
+		this.cameraChanged(); // TODO: ahmm...
 
 	}
 	cameraChanged() {
 
+		// TODO: consider removing and implementing multi-camera + multi-viewport controls
+		this.camera.lookAt( this.target );
 		this.animation.startAnimation( 0 );
 
 	}
 	targetChanged() {
 
+		// TODO: consider removing and implementing multi-target + multi-viewport controls
+		this.camera.lookAt( this.target );
 		this.animation.startAnimation( 0 );
 
 	}
@@ -943,22 +953,21 @@ class ViewportControls extends Interactive {
 		// Apply orbit intertia
 		if ( this.state !== STATE.ORBIT ) {
 
-			let thetaTarget = this.autoOrbit.x;
 			if ( this.enableDamping ) {
 
-				this._orbitInertia.x = dampTo( this._orbitInertia.x, thetaTarget, this.dampingFactor, dt );
+				this._orbitInertia.x = dampTo( this._orbitInertia.x, this.autoOrbit.x, this.dampingFactor, dt );
 				this._orbitInertia.y = dampTo( this._orbitInertia.y, 0.0, this.dampingFactor, dt );
-
-			} else {
-
-				this._orbitInertia.x = thetaTarget;
 
 			}
 
+		} else {
+
+			this._orbitInertia.set( this.autoOrbit.x, 0 );
+
 		}
 
-		this._orbitOffset.x += this._orbitInertia.x * dt;
-		this._orbitOffset.y += this._orbitInertia.y * dt;
+		this._orbitOffset.x += this._orbitInertia.x;
+		this._orbitOffset.y += this._orbitInertia.y;
 
 		// Apply pan intertia
 		if ( this.state !== STATE.PAN ) {
@@ -966,34 +975,42 @@ class ViewportControls extends Interactive {
 			this._panInertia.x = dampTo( this._panInertia.x, 0.0, this.dampingFactor, dt );
 			this._panInertia.y = dampTo( this._panInertia.y, 0.0, this.dampingFactor, dt );
 
+		} else {
+
+			this._panInertia.set( 0, 0 );
+
 		}
-		this._panOffset.x += this._panInertia.x * dt;
-		this._panOffset.y += this._panInertia.y * dt;
+		this._panOffset.x += this._panInertia.x;
+		this._panOffset.y += this._panInertia.y;
 
 		// Apply dolly intertia
 		if ( this.state !== STATE.DOLLY ) {
 
 			this._dollyInertia = dampTo( this._dollyInertia, 0.0, this.dampingFactor, dt );
 
+		} else {
+
+			this._dollyInertia = 0;
+
 		}
-		this._dollyOffset += this._dollyInertia * dt;
+		this._dollyOffset += this._dollyInertia;
 
 		// set inertiae from current offsets
 		if ( this.enableDamping ) {
 
 			if ( this.state === STATE.ORBIT ) {
 
-				this._orbitInertia.copy( this._orbitOffset ).multiplyScalar( timestep );
+				this._orbitInertia.copy( this._orbitOffset );
 
 			}
 			if ( this.state === STATE.PAN ) {
 
-				this._panInertia.copy( this._panOffset ).multiplyScalar( timestep );
+				this._panInertia.copy( this._panOffset );
 
 			}
 			if ( this.state === STATE.DOLLY ) {
 
-				this._dollyInertia = this._dollyOffset * timestep;
+				this._dollyInertia = this._dollyOffset;
 
 			}
 
@@ -1016,15 +1033,7 @@ class ViewportControls extends Interactive {
 		maxVelocity = Math.max( maxVelocity, Math.abs( this._panInertia.x ) );
 		maxVelocity = Math.max( maxVelocity, Math.abs( this._panInertia.y ) );
 		maxVelocity = Math.max( maxVelocity, Math.abs( this._dollyInertia ) );
-		if ( maxVelocity < EPS ) {
-
-			this.animation.stopAnimation();
-
-		} else {
-
-			this.animation.startAnimation( 1 );
-
-		}
+		if ( maxVelocity > EPS ) this.animation.startAnimation( 0 );
 
 	}
 	onPointerMove( pointers ) {
@@ -1083,52 +1092,48 @@ class ViewportControls extends Interactive {
 		}
 
 	}
-	onKeyDown( event ) {
-
-		// TODO: key inertia
-		// TODO: better state setting
-		switch ( event.keyCode ) {
-
-			case this.KEYS.PAN_UP:
-				this._setPan( direction.set( 0, - this.keyPanSpeed ) );
-				break;
-			case this.KEYS.PAN_DOWN:
-				this._setPan( direction.set( 0, this.keyPanSpeed ) );
-				break;
-			case this.KEYS.PAN_LEFT:
-				this._setPan( direction.set( this.keyPanSpeed, 0 ) );
-				break;
-			case this.KEYS.PAN_RIGHT:
-				this._setPan( direction.set( - this.keyPanSpeed, 0 ) );
-				break;
-			case this.KEYS.ORBIT_LEFT:
-				this._setOrbit( direction.set( this.keyOrbitSpeed, 0 ) );
-				break;
-			case this.KEYS.ORBIT_RIGHT:
-				this._setOrbit( direction.set( - this.keyOrbitSpeed, 0 ) );
-				break;
-			case this.KEYS.ORBIT_UP:
-				this._setOrbit( direction.set( 0, this.keyOrbitSpeed ) );
-				break;
-			case this.KEYS.ORBIT_DOWN:
-				this._setOrbit( direction.set( 0, - this.keyOrbitSpeed ) );
-				break;
-			case this.KEYS.DOLLY_IN:
-				this._setDolly( - this.keyDollySpeed );
-				break;
-			case this.KEYS.DOLLY_OUT:
-				this._setDolly( this.keyDollySpeed );
-				break;
-			case this.KEYS.FOCUS:
-				this._setFocus();
-				break;
-			default:
-				break;
-
-		}
-		this.active = false;
-
-	}
+	// onKeyDown(event) {
+	// 	TODO: key inertia
+	// 	TODO: better state setting
+	// 	switch (event.keyCode) {
+	// 		case this.KEYS.PAN_UP:
+	// 			this._setPan(direction.set(0, -this.keyPanSpeed));
+	// 			break;
+	// 		case this.KEYS.PAN_DOWN:
+	// 			this._setPan(direction.set(0, this.keyPanSpeed));
+	// 			break;
+	// 		case this.KEYS.PAN_LEFT:
+	// 			this._setPan(direction.set(this.keyPanSpeed, 0));
+	// 			break;
+	// 		case this.KEYS.PAN_RIGHT:
+	// 			this._setPan(direction.set(-this.keyPanSpeed, 0));
+	// 			break;
+	// 		case this.KEYS.ORBIT_LEFT:
+	// 			this._setOrbit(direction.set(this.keyOrbitSpeed, 0));
+	// 			break;
+	// 		case this.KEYS.ORBIT_RIGHT:
+	// 			this._setOrbit(direction.set(-this.keyOrbitSpeed, 0));
+	// 			break;
+	// 		case this.KEYS.ORBIT_UP:
+	// 			this._setOrbit(direction.set(0, this.keyOrbitSpeed));
+	// 			break;
+	// 		case this.KEYS.ORBIT_DOWN:
+	// 			this._setOrbit(direction.set(0, -this.keyOrbitSpeed));
+	// 			break;
+	// 		case this.KEYS.DOLLY_IN:
+	// 			this._setDolly(-this.keyDollySpeed);
+	// 			break;
+	// 		case this.KEYS.DOLLY_OUT:
+	// 			this._setDolly(this.keyDollySpeed);
+	// 			break;
+	// 		case this.KEYS.FOCUS:
+	// 			this._setFocus();
+	// 			break;
+	// 		default:
+	// 			break;
+	// 	}
+	// 	this.active = false;
+	// }
 	onKeyUp() {
 		// TODO: Consider improving for prevent pointer and multi-key interruptions.
 		// this.active = false;

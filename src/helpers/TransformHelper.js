@@ -6,7 +6,7 @@ import {ConeGeometry, OctahedronGeometry} from "./HelperGeometries.js";
 const coneGeometry = new ConeGeometry();
 const octahedronGeometry = new OctahedronGeometry();
 
-function stringHas(str, char) {return str.search(char) !== -1;};
+function stringHas(str, char) {return str.search(char) !== -1;}
 
 function hasAxisAny(str, chars) {
 	let has = true;
@@ -51,7 +51,7 @@ export class TransformHelper extends Helper {
 					axis.highlight = -0.75;
 				}
 			}
-		})
+		});
 	}
 	// Creates an Object3D with gizmos described in custom hierarchy definition.
 	combineHelperGroups(groups) {
@@ -81,7 +81,7 @@ export class TransformHelper extends Helper {
 			if (stringHas(axis.name, "Y") && !this.showY) axis.hidden = true;
 			if (stringHas(axis.name, "Z") && !this.showZ) axis.hidden = true;
 			if (stringHas(axis.name, "E") && (!this.showX || !this.showY || !this.showZ)) axis.hidden = true;
-		})
+		});
 	}
 	updateMatrixWorld( force, camera ) {
 		if (camera) this.camera = camera; // TODO
