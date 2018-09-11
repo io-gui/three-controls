@@ -229,7 +229,7 @@ export class SelectionControls extends Interactive {
 			this.children.push(_helper);
 		}
 
-		super.updateMatrixWorld();
+		super.updateMatrixWorld(); // TODO: camera?
 
 		// gather selection data and emit selection-changed event
 		let added = [];
@@ -248,10 +248,10 @@ export class SelectionControls extends Interactive {
 		this.dispatchEvent({type: 'change'});
 		this.dispatchEvent({type: 'selected-changed', selected: [...this.selected], added: added, removed: removed});
 	}
-	updateMatrixWorld() {
+	updateMatrixWorld(force, camera) {
 		// Extract tranformations before and after matrix update.
 		this.matrix.decompose(posOld, quatOld, scaleOld);
-		super.updateMatrixWorld();
+		super.updateMatrixWorld(force, camera);
 		this.matrix.decompose(pos, quat, scale);
 		// Get transformation offsets from transform deltas.
 		posOffset.copy(pos).sub(posOld);
@@ -265,7 +265,7 @@ export class SelectionControls extends Interactive {
 			// get local transformation variables.
 			this.selected[i].updateMatrixWorld();
 			this.selected[i].matrixWorld.decompose(itemPos, itemQuat, itemScale);
-			this.selected[i].parent.matrixWorld.decompose(parentPos, parentQuat, parentScale);
+			if (this.selected[i].parent) this.selected[i].parent.matrixWorld.decompose(parentPos, parentQuat, parentScale);
 			parentQuatInv.copy(parentQuat).inverse();
 			itemQuatInv.copy(itemQuat).inverse();
 			// Transform selected in local space.

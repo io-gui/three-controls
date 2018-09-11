@@ -33,13 +33,13 @@ export class Helper extends IoLiteMixin(Object3D) {
 			this.dispatchEvent({type: 'change'});
 		});
 	}
-	updateHelperMatrix() {
+	updateHelperMatrix(camera) {
 		if (this.object) {
 			this.object.updateMatrixWorld();
 			this.matrix.copy(this.object.matrix);
 			this.matrixWorld.copy(this.object.matrixWorld);
 		} else {
-			super.updateMatrixWorld();
+			super.updateMatrixWorld(); // TODO: camera?
 		}
 
 		this.matrixWorld.decompose(this.worldPosition, this.worldQuaternion, this.worldScale);
@@ -64,9 +64,9 @@ export class Helper extends IoLiteMixin(Object3D) {
 		}
 	}
 	updateMatrixWorld( force, camera ) {
-		this.camera = camera; // TODO
+		if (camera) this.camera = camera; // TODO
 
-		this.updateHelperMatrix();
+		this.updateHelperMatrix(camera);
 		this.matrixWorldNeedsUpdate = false;
 		const children = this.children;
 		for (let i = 0, l = children.length; i < l; i ++) {

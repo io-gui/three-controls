@@ -5,6 +5,7 @@
 import {TransformControlsMixin} from "./TransformControlsMixin.js";
 import {TransformHelper} from "../helpers/TransformHelper.js";
 
+// TODO: Drag Controls should use object as picker and no handle.
 export class DragControls extends TransformControlsMixin(TransformHelper) {
 	transform(space) {
 		if (space === 'local') {

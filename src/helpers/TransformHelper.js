@@ -65,7 +65,7 @@ export class TransformHelper extends Helper {
 		return {
 			X: [{geometry: coneGeometry, color: [1,0,0], position: [0.15, 0, 0], rotation: [0, 0, -Math.PI / 2], scale: [0.5,1,0.5]}],
 			Y: [{geometry: coneGeometry, color: [0,1,0], position: [0, 0.15, 0], rotation: [0, 0, 0], scale: [0.5,1,0.5]}],
-			Z: [{geometry: coneGeometry, color: [0,0,1], position: [0, 0, -0.15], rotation: [Math.PI / 2, 0, 0], scale: [0.5,1,0.5]}]
+			Z: [{geometry: coneGeometry, color: [0,0,1], position: [0, 0, 0.15], rotation: [Math.PI / 2, 0, 0], scale: [0.5,1,0.5]}]
 		};
 	}
 	get pickersGroup() {
@@ -82,6 +82,15 @@ export class TransformHelper extends Helper {
 			if (stringHas(axis.name, "Z") && !this.showZ) axis.hidden = true;
 			if (stringHas(axis.name, "E") && (!this.showX || !this.showY || !this.showZ)) axis.hidden = true;
 		})
+	}
+	updateMatrixWorld( force, camera ) {
+		if (camera) this.camera = camera; // TODO
+		this.updateHelperMatrix();
+		this.matrixWorldNeedsUpdate = false;
+		const children = this.children;
+		for (let i = 0, l = children.length; i < l; i ++) {
+			children[i].updateMatrixWorld(true, camera);
+		}
 	}
 	updateHelperMatrix() {
 		super.updateHelperMatrix();

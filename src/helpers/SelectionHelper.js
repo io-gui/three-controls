@@ -31,12 +31,12 @@ export class SelectionHelper extends Helper {
 	}
 	constructor(props) {
 		super(props);
-		// const axis = new TransformHelper();
-		// axis.size = 0.02;
-		// this.add(axis);
-		// if (props.object && props.object.geometry) {
-			// this.add(new Line(props.object.geometry, new Material('white', 0.5)));
-		// }
+		const axis = new TransformHelper();
+		axis.size = 0.03;
+		this.add(axis);
+		if (props.object && props.object.geometry) {
+			this.add(new Line(props.object.geometry, new Material('white', 0.5)));
+		}
 		this.handles = this.combineHelperGroups(this.handlesGroup);
 		if (this.handles.length) this.add(...this.handles);
 	}
@@ -46,8 +46,6 @@ export class SelectionHelper extends Helper {
 		for (let name in groups) {
 			const mesh = new HelperMesh(groups[name], {name: name});
 			mesh.scale.set(100, 100, 100);
-			mesh.has = char => {return mesh.name.search(char) !== -1;};
-			mesh.is = char => {return mesh.name === char;};
 			meshes.push(mesh);
 		}
 		return meshes;

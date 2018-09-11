@@ -9,17 +9,23 @@ import {TransformHelperScale} from "../helpers/TransformHelperScale.js";
 // Reusable utility variables
 const tempVector = new Vector3();
 
+function hasAxisAny(str, chars) {
+	let has = true;
+	str.split('').some(a => { if (chars.indexOf(a) === -1) has = false; });
+	return has;
+}
+
 export class TransformControlsScale extends TransformControlsMixin(TransformHelperScale) {
 	transform() {
-		if (this.hasAxis('XYZ')) {
+		if (hasAxisAny('XYZ', this.axis)) {
 			let d = this.pointEnd.length() / this.pointStart.length();
 			if (this.pointEnd.dot(this.pointStart) < 0) d *= -1;
 			tempVector.set(d, d, d);
 		} else {
 			tempVector.copy(this.pointEnd).divide(this.pointStart);
-			if (!this.hasAxis('X')) tempVector.x = 1;
-			if (!this.hasAxis('Y')) tempVector.y = 1;
-			if (!this.hasAxis('Z')) tempVector.z = 1;
+			if (!hasAxisAny('X', this.axis)) tempVector.x = 1;
+			if (!hasAxisAny('Y', this.axis)) tempVector.y = 1;
+			if (!hasAxisAny('Z', this.axis)) tempVector.z = 1;
 		}
 
 		// Apply scale
