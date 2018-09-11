@@ -9,53 +9,50 @@ import {IoLiteMixin} from "../lib/IoLiteMixin.js";
  * provides methods to control animation and events to hook into animation updates.
  */
 
-let animationsActive = 0;
-
 export class Animation extends IoLiteMixin(Object) {
 	get isAnimation() { return true; }
 	constructor(props) {
 		super(props);
 		this.defineProperties({
 			_active: false,
-			_animationTime: 0,
-			_animationTimeRemainging: 0,
+			_time: 0,
+			_timeRemainging: 0,
 			_rafID: 0
 		});
 	}
 	startAnimation(duration) {
-		this._animationTimeRemainging = Math.max(this._animationTimeRemainging, duration * 1000 || 0);
+		this._timeRemainging = Math.max(this._timeRemainging, duration * 1000 || 0);
 		if (!this._active) {
 			this._active = true;
-			this._animationTime = performance.now();
+			this._time = performance.now();
 			this._rafID = requestAnimationFrame(() => {
 				const time = performance.now();
-				const timestep = time - this._animationTime;
-				this.dispatchEvent({type: 'start', timestep: timestep, time: time});
+				const timestep = time - this._time;
 				this.animate(timestep, time);
-				this._animationTime = time;
-				this._animationTimeRemainging = Math.max(this._animationTimeRemainging - timestep, 0);
+				this._time = time;
+				this._timeRemainging = Math.max(this._timeRemainging - timestep, 0);
 			});
 		}
 	}
 	animate(timestep, time) {
-		if (this._active && this._animationTimeRemainging) {
+		if (this._active && this._timeRemainging) {
 				this._rafID = requestAnimationFrame(() => {
 				const time = performance.now();
-				timestep = time - this._animationTime;
+				timestep = time - this._time;
 				this.animate(timestep, time);
-				this._animationTime = time;
-				this._animationTimeRemainging = Math.max(this._animationTimeRemainging - timestep, 0);
+				this._time = time;
+				this._timeRemainging = Math.max(this._timeRemainging - timestep, 0);
 			});
 		} else {
 			this.stopAnimation(timestep, time);
 		}
-		this.dispatchEvent({type: 'update', timestep: timestep, time: time});
+		this.dispatchEvent({type: 'update', timestep: timestep});
 	}
 	stopAnimation() {
 		const time = performance.now();
-		const timestep = time - this._animationTime;
-		this.dispatchEvent({type: 'stop', timestep: timestep, time: time});
+		const timestep = time - this._time;
 		this._active = false;
 		cancelAnimationFrame(this._rafID);
 	}
 }
+// TODO: dispose

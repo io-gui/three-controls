@@ -25,20 +25,25 @@ export class HelperMaterial extends IoLiteMixin(ShaderMaterial) {
 			side: FrontSide,
 		});
 
-		var data = new Float32Array([
+		const data = new Float32Array([
 			1.0 / 17.0, 0,0,0, 9.0 / 17.0, 0,0,0, 3.0 / 17.0, 0,0,0, 11.0 / 17.0, 0,0,0,
 			13.0 / 17.0, 0,0,0, 5.0 / 17.0, 0,0,0, 15.0 / 17.0, 0,0,0, 7.0 / 17.0, 0,0,0,
 			4.0 / 17.0, 0,0,0, 12.0 / 17.0, 0,0,0, 2.0 / 17.0, 0,0,0, 10.0 / 17.0, 0,0,0,
 			16.0 / 17.0, 0,0,0, 8.0 / 17.0, 0,0,0, 14.0 / 17.0, 0,0,0, 6.0 / 17.0, 0,0,0,
 		]);
-		var texture = new DataTexture( data, 4, 4, RGBAFormat, FloatType );
+		const texture = new DataTexture( data, 4, 4, RGBAFormat, FloatType );
+		texture.magFilter = NearestFilter;
+		texture.minFilter = NearestFilter;
+
+		const res = new Vector3(window.innerWidth, window.innerHeight, window.devicePixelRatio);
+		color = color !== undefined ? _colors[color] : _colors['white'];
+		opacity = opacity !== undefined ? opacity : 1
 
 		this.defineProperties({
-			color: color !== undefined ? _colors[color] : _colors['white'],
-			opacity: opacity !== undefined ? opacity : 1,
-			transparent: true,
-			highlight: 0,
-			resolution: new Vector3(window.innerWidth, window.innerHeight, window.devicePixelRatio),
+			color: { value: color, observer: 'uniformChanged'},
+			opacity: { value: opacity, observer: 'uniformChanged'},
+			highlight: { value: 0, observer: 'uniformChanged'},
+			resolution: { value: res, observer: 'uniformChanged'},
 		});
 
 		this.uniforms = UniformsUtils.merge([this.uniforms, {
@@ -53,12 +58,15 @@ export class HelperMaterial extends IoLiteMixin(ShaderMaterial) {
 		texture.needsUpdate = true;
 
 		this.vertexShader = `
+
 			attribute vec4 color;
 			attribute float outline;
+
 			varying vec4 vColor;
 			varying float isOutline;
 
 			uniform vec3 uResolution;
+
 			void main() {
 				float aspect = projectionMatrix[0][0] / projectionMatrix[1][1];
 
@@ -67,6 +75,7 @@ export class HelperMaterial extends IoLiteMixin(ShaderMaterial) {
 
 				vec3 nor = normalMatrix * normal;
 				vec4 pos = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+				float pixelRatio = uResolution.z;
 
 				nor = (projectionMatrix * vec4(nor, 1.0)).xyz;
 				nor = normalize((nor.xyz) * vec3(1., 1., 0.));
@@ -106,9 +115,10 @@ export class HelperMaterial extends IoLiteMixin(ShaderMaterial) {
 
 				float opacity = 1.0;
 				vec3 color = vec3(1.0);
+				float pixelRatio = 1.0;//uResolution.z;
 
 				if (isOutline > 0.0) {
-					color = mix(vec3(0.0), vec3(1.0), max(0.0, uHighlight) );
+					color = mix(color * vec3(0.2), vec3(1.0), max(0.0, uHighlight) );
 					color = mix(color, vec3(0.5), max(0.0, -uHighlight) );
 				} else {
 					color = uColor * vColor.rgb;
@@ -122,25 +132,16 @@ export class HelperMaterial extends IoLiteMixin(ShaderMaterial) {
 
 				gl_FragColor = vec4(color, 1.0);
 
-				vec2 matCoord = ( mod(gl_FragCoord.xy, 4.0) - vec2(0.5) ) / 4.0;
+				vec2 matCoord = ( mod(gl_FragCoord.xy / pixelRatio, 4.0) - vec2(0.5) ) / 4.0;
 				vec4 ditherPattern = texture2D( tDitherMatrix, matCoord.xy );
 				if (opacity < ditherPattern.r) discard;
 			}
 		`;
 	}
-	colorChanged() {
+	uniformChanged() {
 		this.uniforms.uColor.value = this.color;
-		this.uniformsNeedUpdate = true;
-	}
-	opacityChanged() {
 		this.uniforms.uOpacity.value = this.opacity;
-		this.uniformsNeedUpdate = true;
-	}
-	highlightChanged() {
 		this.uniforms.uHighlight.value = this.highlight;
-		this.uniformsNeedUpdate = true;
-	}
-	resolutionChanged() {
 		this.uniforms.uResolution.value = this.resolution;
 		this.uniformsNeedUpdate = true;
 	}

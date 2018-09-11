@@ -2,7 +2,7 @@
  * @author arodic / https://github.com/arodic
  */
 
-import {Raycaster, Vector3, Quaternion, Plane} from "../../lib/three.module.js";
+import {Raycaster, Vector3, Quaternion, Plane, Mesh, PlaneBufferGeometry, MeshBasicMaterial} from "../../lib/three.module.js";
 import {InteractiveMixin} from "../Interactive.js";
 
 // Reusable utility variables
@@ -31,12 +31,8 @@ export const TransformControlsMixin = (superclass) => class extends InteractiveM
 			scaleStart: new Vector3(),
 			plane: new Plane()
 		});
-	}
-	// TODO: document
-	hasAxis(str) {
-		let has = true;
-		str.split('').some(a => { if (this.axis.indexOf(a) === -1) has = false; });
-		return has;
+
+		// this.add(this.planeMesh = new Mesh(new PlaneBufferGeometry(1000, 1000, 10, 10), new MeshBasicMaterial({wireframe: true})));
 	}
 	objectChanged(value) {
 		let hasObject = value ? true : false;
@@ -85,6 +81,7 @@ export const TransformControlsMixin = (superclass) => class extends InteractiveM
 	onPointerDown(pointers) {
 		if (this.axis === null || !this.object || this.active === true || pointers[0].button !== 0) return;
 		ray.setFromCamera(pointers[0].position, this.camera);
+		this.updatePlane();
 		const planeIntersect = ray.ray.intersectPlane(this.plane, rayTarget);
 		let space = (this.axis === 'E' || this.axis === 'XYZ') ? 'world' : this.space;
 		if (planeIntersect) {
@@ -153,5 +150,10 @@ export const TransformControlsMixin = (superclass) => class extends InteractiveM
 		if (axis === 'XYZ' || axis === 'E') this.camera.getWorldDirection(normal);
 
 		this.plane.setFromNormalAndCoplanarPoint(normal, this.worldPosition);
+
+		// this.parent.add(this.planeMesh);
+		// this.planeMesh.position.set(0,0,0);
+		// this.planeMesh.lookAt(this.plane.normal);
+		// this.planeMesh.position.copy(this.worldPosition);
 	}
 };

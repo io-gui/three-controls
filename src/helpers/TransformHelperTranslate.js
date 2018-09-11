@@ -17,32 +17,19 @@ export class TransformHelperTranslate extends TransformHelper {
 	constructor(props) {
 		super(props);
 		this.defineProperties({
-			hideX: false,
-			hideY: false,
-			hideZ: false,
-			hideXY: false,
-			hideYZ: false,
-			hideXZ: false,
-			flipX: false,
-			flipY: false,
-			flipZ: false
+			hideX: { value: false, observer: 'updateAxis' },
+			hideY: { value: false, observer: 'updateAxis' },
+			hideZ: { value: false, observer: 'updateAxis' },
+			hideXY: { value: false, observer: 'updateAxis' },
+			hideYZ: { value: false, observer: 'updateAxis' },
+			hideXZ: { value: false, observer: 'updateAxis' },
+			flipX: { value: false, observer: 'updateAxis' },
+			flipY: { value: false, observer: 'updateAxis' },
+			flipZ: { value: false, observer: 'updateAxis' }
 		})
 		this.traverse(child => {
 			child.renderOrder = 200;
 		});
-	}
-	hideXChanged() { this.updateHidden(); }
-	hideYChanged() { this.updateHidden(); }
-	hideZChanged() { this.updateHidden(); }
-	hideXYChanged() { this.updateHidden(); }
-	hideYZChanged() { this.updateHidden(); }
-	hideXZChanged() { this.updateHidden(); }
-	flipXChanged() { this.updateHidden(); }
-	flipYChanged() { this.updateHidden(); }
-	flipZChanged() { this.updateHidden(); }
-	updateHidden() {
-		this.animation.startAnimation(4);
-		this.updateAxis();
 	}
 	get handlesGroup() {
 		return {
@@ -78,6 +65,7 @@ export class TransformHelperTranslate extends TransformHelper {
 		};
 	}
 	updateAxis() {
+		this.animation.startAnimation(4);
 		this.traverse(axis => {
 			if (axis !== this) { // TODO: conside better loop
 

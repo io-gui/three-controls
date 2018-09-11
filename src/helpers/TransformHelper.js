@@ -19,9 +19,9 @@ export class TransformHelper extends Helper {
 		super(props);
 
 		this.defineProperties({
-			showX: true,
-			showY: true,
-			showZ: true,
+			showX: {value: true, observer: 'updateAxis'},
+			showY: {value: true, observer: 'updateAxis'},
+			showZ: {value: true, observer: 'updateAxis'},
 			axis: null,
 			worldX: new Vector3(),
 			worldY: new Vector3(),
@@ -53,26 +53,11 @@ export class TransformHelper extends Helper {
 			}
 		})
 	}
-	showXChanged() {
-		this.animation.startAnimation(4);
-		this.updateAxis();
-	}
-	showYChanged() {
-		this.animation.startAnimation(4);
-		this.updateAxis();
-	}
-	showZChanged() {
-		this.animation.startAnimation(4);
-		this.updateAxis();
-	}
 	// Creates an Object3D with gizmos described in custom hierarchy definition.
 	combineHelperGroups(groups) {
 		const meshes = [];
 		for (let name in groups) {
-			const mesh = new HelperMesh(groups[name], {name: name});
-			mesh.has = char => {return mesh.name.search(char) !== -1;};
-			mesh.is = char => {return mesh.name === char;};
-			meshes.push(mesh);
+			meshes.push(new HelperMesh(groups[name], {name: name}));
 		}
 		return meshes;
 	}
@@ -89,6 +74,7 @@ export class TransformHelper extends Helper {
 		};
 	}
 	updateAxis() {
+		this.animation.startAnimation(4);
 		this.traverse(axis => {
 			axis.hidden = false;
 			if (stringHas(axis.name, "X") && !this.showX) axis.hidden = true;
@@ -122,9 +108,9 @@ export class TransformHelper extends Helper {
 		const mat = axis.material;
 		const h = axis.material.highlight || 0;
 
-		let highlight = axis.hidden ? -1.5 : axis.highlight;
+		let highlight = axis.hidden ? -1.5 : axis.highlight || 0;
 
-		mat.highlight = (5 * h + highlight) / 6;
+		mat.highlight = (4 * h + highlight) / 5;
 
 		if (mat.highlight < -1.49) axis.visible = false;
 	}

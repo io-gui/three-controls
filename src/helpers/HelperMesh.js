@@ -43,7 +43,7 @@ export function mergeGeometryChunks(chunks) {
 		const rotation = chunk.rotation;
 		let scale = chunk.scale;
 
-		let thickness = chunk.thickness || 0;
+		let thickness = chunk.thickness / 2 || 0;
 		let outlineThickness = chunk.outlineThickness !== undefined ? chunk.outlineThickness : 1;
 
 		if (scale && typeof scale === 'number') scale = [scale, scale, scale];

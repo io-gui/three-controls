@@ -26,9 +26,10 @@ export class TransformControlsRotate extends TransformControlsMixin(TransformHel
 		});
 	}
 	transform() {
-		const ROTATION_SPEED = 20 / this.worldPosition.distanceTo(tempVector.setFromMatrixPosition(this.camera.matrixWorld));
-		const quaternion = this.space === "local" ? this.worldQuaternion : identityQuaternion;
 		const axis = this.axis;
+		const space = (axis === 'E' || axis === 'XYZ') ? 'world' : this.space;
+		const ROTATION_SPEED = 20 / this.worldPosition.distanceTo(tempVector.setFromMatrixPosition(this.camera.matrixWorld));
+		const quaternion = space === "local" ? this.worldQuaternion : identityQuaternion;
 
 		if (axis === 'E') {
 			tempVector.copy(this.pointEnd).cross(this.pointStart);
@@ -42,7 +43,7 @@ export class TransformControlsRotate extends TransformControlsMixin(TransformHel
 			this.rotationAxis.copy(unit[axis]);
 			tempVector.copy(unit[axis]);
 			tempVector2.copy(this.pointEnd).sub(this.pointStart);
-			if (this.space === 'local') {
+			if (space === 'local') {
 				tempVector.applyQuaternion(quaternion);
 				tempVector2.applyQuaternion(this.worldQuaternionStart);
 			}
@@ -50,7 +51,7 @@ export class TransformControlsRotate extends TransformControlsMixin(TransformHel
 		}
 
 		// Apply rotate
-		if (this.space === 'local') {
+		if (space === 'local') {
 			this.object.quaternion.copy(this.quaternionStart);
 			this.object.quaternion.multiply(tempQuaternion.setFromAxisAngle(this.rotationAxis, this.rotationAngle));
 		} else {

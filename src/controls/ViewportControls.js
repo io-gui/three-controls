@@ -45,7 +45,7 @@ export class ViewportControls extends Interactive {
 			keyOrbitSpeed: 0.1,
 			keyDollySpeed: 0.1,
 			keyPanSpeed: 0.1,
-			wheelDollySpeed: 0.05,
+			wheelDollySpeed: 0.02,
 			autoOrbit: new Vector2(0.0, 0.0),
 			autoDollyPan: new Vector3(0.1, 0.0, 0.0),
 			enableDamping: true,

@@ -157,34 +157,17 @@
 
 				for (var i = 0; i < 11; i++) {
 					for (var j = 0; j < 11; j++) {
-						const helper = new TransformHelperTranslate();
-						helper.size = 0;
-						helper.position.set(i * 100 - 500, 0, j * 100 - 500);
-						helper.scale.set(50,50,50);
-						helperScene.add(helper);
+						// const helper = new TransformHelperRotate();
+						// helper.size = 0;
+						// helper.position.set(i * 100 - 500, 0, j * 100 - 500);
+						// helper.scale.set(50,50,50);
+						// helperScene.add(helper);
+						//
+						// const control = new TransformControlsTranslate({domElement: canvas, camera: camera});
+						// control.object = helper;
+						// helperScene.add(control);
 					}
 				}
-
-				const transformHelperTranslate = new TransformHelperTranslate();
-				transformHelperTranslate.size = 0;
-				transformHelperTranslate.position.set(500,0,500);
-				transformHelperTranslate.scale.set(50,50,50);
-				helperScene.add(transformHelperTranslate);
-				const transformHelperRotate = new TransformHelperRotate();
-				transformHelperRotate.size = 0;
-				transformHelperRotate.position.set(600,0,400);
-				transformHelperRotate.scale.set(50,50,50);
-				helperScene.add(transformHelperRotate);
-				const transformHelperScale = new TransformHelperScale();
-				transformHelperScale.size = 0;
-				transformHelperScale.position.set(400,0,600);
-				transformHelperScale.scale.set(50,50,50);
-				helperScene.add(transformHelperScale);
-				const transformHelperFreescale = new TransformHelperFreescale();
-				transformHelperFreescale.size = 0;
-				transformHelperFreescale.position.set(300,0,700);
-				transformHelperFreescale.scale.set(50,50,50);
-				helperScene.add(transformHelperFreescale);
 
 				var selectionControls = new SelectionControls({domElement: canvas, camera: camera, scene: scene, selection: selection});
 				helperScene.add(selectionControls);
@@ -220,13 +203,13 @@
 					selectionControls.transformSpace = event.value;
 				});
 
+
 				{
 					let res = new Vector3(Math.round(window.innerWidth / window.scale), Math.round(window.innerHeight / window.scale), window.devicePixelRatio);
 					helperScene.traverse(child => {
 						if (child.material) child.material.resolution = res;
 					})
 				}
-
 
 				render();
 
@@ -343,26 +326,14 @@
 
 						case 88: // X
 							transformControls.showX = !transformControls.showX;
-							transformHelperTranslate.showX = !transformHelperTranslate.showX;
-							transformHelperRotate.showX = !transformHelperRotate.showX;
-							transformHelperScale.showX = !transformHelperScale.showX;
-							transformHelperFreescale.showX = !transformHelperFreescale.showX
 							break;
 
 						case 89: // Y
 							transformControls.showY = !transformControls.showY;
-							transformHelperTranslate.showY = !transformHelperTranslate.showY;
-							transformHelperRotate.showY = !transformHelperRotate.showY;
-							transformHelperScale.showY = !transformHelperScale.showY;
-							transformHelperFreescale.showY = !transformHelperFreescale.showY;
 							break;
 
 						case 90: // Z
 							transformControls.showZ = !transformControls.showZ;
-							transformHelperTranslate.showZ = !transformHelperTranslate.showZ;
-							transformHelperRotate.showZ = !transformHelperRotate.showZ;
-							transformHelperScale.showZ = !transformHelperScale.showZ;
-							transformHelperFreescale.showZ = !transformHelperFreescale.showZ;
 							break;
 
 						case 32: // Spacebar

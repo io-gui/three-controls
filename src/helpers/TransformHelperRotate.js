@@ -21,6 +21,8 @@ const ringPickerGeometry = new RingPickerGeometry();
 const circleGeometry = new CircleGeometry();
 const octahedronGeometry = new OctahedronGeometry();
 
+function stringHas(str, char) {return str.search(char) !== -1;};
+
 export class TransformHelperRotate extends TransformHelper {
 	get handlesGroup() {
 		return {
@@ -46,20 +48,20 @@ export class TransformHelperRotate extends TransformHelper {
 	updateAxisMaterial(axis){
 		super.updateAxisMaterial(axis);
 		axis.quaternion.copy(identityQuaternion);
-		if (axis.has("E") || axis.has("XYZ")) {
+		if (stringHas(axis.name, "E") || stringHas(axis.name, "XYZ")) {
 			axis.quaternion.setFromRotationMatrix(lookAtMatrix.lookAt(alignVector, zeroVector, tempVector));
 		}
-		if (axis.is('X')) {
+		if (axis.name === 'X') {
 			tempQuaternion.setFromAxisAngle(unitX, Math.atan2(-alignVector.y, alignVector.z));
 			tempQuaternion.multiplyQuaternions(identityQuaternion, tempQuaternion);
 			axis.quaternion.copy(tempQuaternion);
 		}
-		if (axis.is('Y')) {
+		if (axis.name === 'Y') {
 			tempQuaternion.setFromAxisAngle(unitY, Math.atan2(alignVector.x, alignVector.z));
 			tempQuaternion.multiplyQuaternions(identityQuaternion, tempQuaternion);
 			axis.quaternion.copy(tempQuaternion);
 		}
-		if (axis.is('Z')) {
+		if (axis.name === 'Z') {
 			tempQuaternion.setFromAxisAngle(unitZ, Math.atan2(alignVector.y, alignVector.x));
 			tempQuaternion.multiplyQuaternions(identityQuaternion, tempQuaternion);
 			axis.quaternion.copy(tempQuaternion);
