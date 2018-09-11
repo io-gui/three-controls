@@ -13,6 +13,8 @@ const tempVector = new Vector3();
 // events
 const changeEvent = { type: "change" };
 
+function stringHas(str, char) {return str.search(char) !== -1;}
+
 export const TransformControlsMixin = (superclass) => class extends InteractiveMixin(superclass) {
 	constructor(props) {
 		super(props);
@@ -34,8 +36,9 @@ export const TransformControlsMixin = (superclass) => class extends InteractiveM
 
 		// this.add(this.planeMesh = new Mesh(new PlaneBufferGeometry(1000, 1000, 10, 10), new MeshBasicMaterial({wireframe: true})));
 	}
-	objectChanged(value) {
-		let hasObject = value ? true : false;
+	objectChanged() {
+		super.objectChanged();
+		let hasObject = this.object ? true : false;
 		this.visible = hasObject;
 		if (!hasObject) {
 			this.active = false;

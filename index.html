@@ -43,26 +43,26 @@
 	<body>
 
 		<div id="info">
+			<span>Transform:</span>
 			<a href="javascript:setupTransformControls('TransformControlsTranslate')">W translate</a> |
 			<a href="javascript:setupTransformControls('TransformControlsRotate')">E rotate</a> |
 			<a href="javascript:setupTransformControls('TransformControlsScale')">R scale</a> |
-			<a href="javascript:setupTransformControls('TransformControlsFreescale')">T freeScale</a> |
+			<a href="javascript:setupTransformControls('TransformControlsFreescale')">T freeScale (n/a) </a> |
 			<a href="javascript:setupTransformControls('DragControls')">Y drag</a><br />
+			<span>Viewport:</span>
 			<a href="javascript:setupViewportControls('OrbitControls')">1 orbit</a> |
 			<a href="javascript:setupViewportControls('EditorControls')">2 editor</a> |
-			<a href="javascript:setupViewportControls('TrackballControls')">3 trackball</a> |
-			<a href="javascript:setupViewportControls('FirstPersonControls')">4 first person</a> |
-			<a href="javascript:setupViewportControls('FlyControls')">3 fly</a><br />
-			<!-- <a href="#">+</a> |
-			<a href="#">- size</a> |
-			<a href="#">Q space</a> |
-			<a href="#">X</a> |
-			<a href="#">Y</a> |
-			<a href="#">Z toggle</a> |
-			<a href="#">Spacebar disable</a><br />
-			<a>Click select</a> + <a href="#">Ctrl toggle</a> |
-			<a>Shift marquee/add</a> |
-			<a>Alt snap</a> -->
+			<a href="javascript:setupViewportControls('TrackballControls')">3 trackball</a><br />
+			<!-- <a href="javascript:setupViewportControls('FirstPersonControls')">4 first person</a> | -->
+			<!-- <a href="javascript:setupViewportControls('FlyControls')">3 fly</a><br /> -->
+			<span>Toggle:</span>
+			<a href="javascript:toggle('space')">Q space</a> |
+			<a href="javascript:toggle('X')">X</a> |
+			<a href="javascript:toggle('Y')">Y</a> |
+			<a href="javascript:toggle('Z')">Z axis</a> |
+			<span>Click select + Ctrl</span>
+			<!-- <a>Shift marquee/add</a> | -->
+			<!-- <a>Alt snap</a> -->
 		</div>
 
 		<script type="module">
@@ -87,7 +87,7 @@
 
 
 			import {WebGLRenderer, PerspectiveCamera, Scene, GridHelper, DirectionalLight,
-				BoxBufferGeometry, MeshLambertMaterial, Mesh, Object3D,
+				BoxBufferGeometry, MeshLambertMaterial, Mesh, Object3D, TextureLoader,
 				SphereBufferGeometry, Vector3,BufferGeometry, BufferAttribute} from "./lib/three.module.js";
 
 			let rendered = false;
@@ -131,20 +131,21 @@
 				var grid = new GridHelper(1000, 10);
 				scene.add(grid);
 
-				var light = new DirectionalLight(0x99ffff, 1);
+				var light = new DirectionalLight(0x99ffff, 2);
 				light.position.set(1, 0.5, 0.5);
 				scene.add(light);
 
-				var light = new DirectionalLight(0xff9999, 1);
+				var light = new DirectionalLight(0xff9999, 2);
 				light.position.set(-0.5, 1, 0.2);
 				scene.add(light);
 
-				var light = new DirectionalLight(0x9999ff, 1);
+				var light = new DirectionalLight(0x9999ff, 2);
 				light.position.set(0.1, -0.3, -1);
 				scene.add(light);
 
+				var texture = new TextureLoader().load( 'examples/textures/crate.gif', render );
 				var geometry = new BoxBufferGeometry(200, 200, 200);
-				var material = new MeshLambertMaterial();
+				var material = new MeshLambertMaterial({map: texture});
 
 				let mesh0 = new Mesh(geometry, material);
 				mesh0.position.set(0,0,0);
@@ -195,6 +196,7 @@
 				selectionControls.addEventListener('change', render);
 				selectionControls.addEventListener('selected-changed', event => {
 					transformControls.object = event.selected.length ? selectionControls : null;
+					transformControls.objectChanged();
 				});
 
 				setupViewportControls(OrbitControls);
@@ -260,6 +262,16 @@
 					render();
 				}
 
+				function toggle(axis) {
+					if (axis === "X") transformControls.showX = !transformControls.showX;
+					if (axis === "Y") transformControls.showY = !transformControls.showY;
+					if (axis === "Z") transformControls.showZ = !transformControls.showZ;
+					if (axis === "space" && !transformControls.active) {
+						transformControls.space = transformControls.space === "local" ? "world" : "local";
+					}
+				}
+				window.toggle = toggle;
+
 				window.addEventListener( 'keydown', function ( event ) {
 					switch ( event.keyCode ) {
 						case 87: // W
@@ -293,9 +305,7 @@
 							// setupViewportControls(FlyControls);
 							break;
 						case 81: // Q
-							if (!transformControls.active) {
-								transformControls.space = transformControls.space === "local" ? "world" : "local";
-							}
+							toggle('space');
 							break;
 						case 187:
 						case 107: // +, =, num+
@@ -306,16 +316,13 @@
 							transformControls.size = Math.max( transformControls.size * 0.9, 0.01 );
 							break;
 						case 88: // X
-							transformControls.showX = !transformControls.showX;
+							toggle('X');
 							break;
 						case 89: // Y
-							transformControls.showY = !transformControls.showY;
+							toggle('Y');
 							break;
 						case 90: // Z
-							transformControls.showZ = !transformControls.showZ;
-							break;
-						case 32: // Spacebar
-							transformControls.enabled = !transformControls.enabled;
+							toggle('Z');
 							break;
 					}
 				});

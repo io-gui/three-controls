@@ -68,8 +68,6 @@ export class TransformHelperRotate extends TransformHelper {
 		}
 	}
 	updateHelperMatrix() {
-		super.updateHelperMatrix();
-
 		// TODO: simplify rotation handle logic
 		const quaternion = this.space === "local" ? this.worldQuaternion : identityQuaternion;
 		// Align handles to current local or world rotation
@@ -78,8 +76,7 @@ export class TransformHelperRotate extends TransformHelper {
 		alignVector.copy(this.eye).applyQuaternion(tempQuaternion);
 		tempVector.copy(unitY).applyQuaternion(tempQuaternion);
 
-		// TODO: optimize!
-		for (let i = this.handles.length; i--;) this.updateAxisMaterial(this.handles[i]);
-		for (let i = this.pickers.length; i--;) this.updateAxisMaterial(this.pickers[i]);
+		// // TODO: optimize!
+		super.updateHelperMatrix();
 	}
 }

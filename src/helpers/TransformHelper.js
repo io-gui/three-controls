@@ -35,10 +35,24 @@ export class TransformHelper extends Helper {
 		if (this.handles.length) this.add(...this.handles);
 		if (this.pickers.length) this.add(...this.pickers);
 
-		this.traverse(child => child.renderOrder = 100);
+		this.traverse(axis => {
+			axis.renderOrder = 100;
+			axis.scaleTarget = axis.scaleTarget || new Vector3(1, 1, 1);
+		});
 
 		// Hide pickers
 		for (let i = 0; i < this.pickers.length; i++) this.pickers[i].material.visible = false;
+	}
+	objectChanged() {
+		this.animation.startAnimation(4);
+		this.traverse(axis => {
+			axis.scale.x = 0.0001;
+			axis.scale.y = 0.0001;
+			axis.scale.z = 0.0001;
+			axis.scaleTarget.x = 1;
+			axis.scaleTarget.y = 1;
+			axis.scaleTarget.z = 1;
+		});
 	}
 	axisChanged() {
 		this.animation.startAnimation(4);
@@ -122,5 +136,7 @@ export class TransformHelper extends Helper {
 		mat.highlight = (4 * h + highlight) / 5;
 
 		if (mat.highlight < -1.49) axis.visible = false;
+
+		axis.scale.multiplyScalar(5).add(axis.scaleTarget).divideScalar(6);
 	}
 }

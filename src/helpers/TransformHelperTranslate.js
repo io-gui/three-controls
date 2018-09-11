@@ -1,3 +1,4 @@
+import {Vector3} from "../../lib/three.module.js";
 import {TransformHelper} from "./TransformHelper.js";
 import {ArrowGeometry, Corner2Geometry, OctahedronGeometry, PickerHandleGeometry, PlaneGeometry} from "./HelperGeometries.js";
 
@@ -26,9 +27,6 @@ export class TransformHelperTranslate extends TransformHelper {
 			flipX: { value: false, observer: 'updateAxis' },
 			flipY: { value: false, observer: 'updateAxis' },
 			flipZ: { value: false, observer: 'updateAxis' }
-		});
-		this.traverse(child => {
-			child.renderOrder = 200;
 		});
 	}
 	get handlesGroup() {
@@ -68,13 +66,11 @@ export class TransformHelperTranslate extends TransformHelper {
 		this.animation.startAnimation(4);
 		this.traverse(axis => {
 			if (axis !== this) { // TODO: conside better loop
-
 				axis.hidden = false;
 				if (stringHas(axis.name, "X") && !this.showX) axis.hidden = true;
 				if (stringHas(axis.name, "Y") && !this.showY) axis.hidden = true;
 				if (stringHas(axis.name, "Z") && !this.showZ) axis.hidden = true;
 				if (stringHas(axis.name, "E") && (!this.showX || !this.showY || !this.showZ)) axis.hidden = true;
-
 				// Hide axis facing the camera
 				if ((axis.name == 'X' || axis.name == 'XYZX') && this.hideX) axis.hidden = true;
 				if ((axis.name == 'Y' || axis.name == 'XYZY') && this.hideY) axis.hidden = true;
@@ -82,20 +78,12 @@ export class TransformHelperTranslate extends TransformHelper {
 				if (axis.name == 'XY' && this.hideXY) axis.hidden = true;
 				if (axis.name == 'YZ' && this.hideYZ) axis.hidden = true;
 				if (axis.name == 'XZ' && this.hideXZ) axis.hidden = true;
-
 				// Flip axis
-				if (stringHas(axis.name, 'X')) axis.flipX = this.flipX ? -1 : 1;
-				if (stringHas(axis.name, 'Y')) axis.flipY = this.flipY ? -1 : 1;
-				if (stringHas(axis.name, 'Z')) axis.flipZ = this.flipZ ? -1 : 1;
+				if (stringHas(axis.name, 'X')) axis.scaleTarget.x = this.flipX ? -1 : 1;
+				if (stringHas(axis.name, 'Y')) axis.scaleTarget.y = this.flipY ? -1 : 1;
+				if (stringHas(axis.name, 'Z')) axis.scaleTarget.z = this.flipZ ? -1 : 1;
 			}
 		});
-	}
-	// TODO: optimize!
-	updateAxisMaterial(axis) {
-		super.updateAxisMaterial(axis);
-		if (axis.flipX) axis.scale.x = (axis.scale.x * 5 + axis.flipX ) / 6;
-		if (axis.flipY) axis.scale.y = (axis.scale.y * 5 + axis.flipY ) / 6;
-		if (axis.flipZ) axis.scale.z = (axis.scale.z * 5 + axis.flipZ ) / 6;
 	}
 	updateHelperMatrix() {
 		const xDotE = this.axisDotEye.x;

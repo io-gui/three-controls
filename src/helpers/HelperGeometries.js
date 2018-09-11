@@ -36,12 +36,8 @@ export class PlaneGeometry extends HelperMesh {
 		let geometry = new BufferGeometry();
 
 		let indices = [
-			0, 1, 2, 2, 3, 0,
-			4, 1, 0, 5, 1, 4,
-			1, 6, 2, 1, 5, 6,
-			0, 3, 7, 4, 0, 7,
-			7, 2, 6, 2, 7, 3,
-			7, 6, 4, 4, 6, 5
+			0, 1, 2, 2, 3, 0, 4, 1, 0, 5, 1, 4, 1, 6, 2, 1, 5, 6,
+			0, 3, 7, 4, 0, 7, 7, 2, 6, 2, 7, 3, 7, 6, 4, 4, 6, 5
 		];
 		geometry.index = new Uint16BufferAttribute( indices, 1 );
 
@@ -183,9 +179,7 @@ export class RotateHandleGeometry extends HelperMesh {
 	constructor() {
 		super([
 			{geometry: new TorusBufferGeometry( 1, EPS, 4, 64, PI ), thickness: 1},
-			{geometry: new SphereBufferGeometry(EPS, 4, 4), position: [1, 0, 0], rotation: [HPI, 0, 0]},
-			{geometry: new SphereBufferGeometry(EPS, 4, 4), position: [-1, 0, 0], rotation: [HPI, 0, 0]},
-			{geometry: new OctahedronGeometry(), position: [0, 0.996, 0], scale: [0.1, 0.025, 0.025]}
+			{geometry: new SphereBufferGeometry(0.05, 12, 16), position: [0, 0.992, 0], scale: [3, .5, .5]}
 		]);
 		return this.geometry;
 	}
