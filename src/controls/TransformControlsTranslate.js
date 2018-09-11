@@ -13,11 +13,11 @@ function hasAxisAny(str, chars) {
 
 export class TransformControlsTranslate extends TransformControlsMixin(TransformHelperTranslate) {
 	transform() {
+		const space = (this.axis === 'XYZ') ? 'world' : this.space;
 		if (!hasAxisAny('X', this.axis)) this.pointEnd.x = this.pointStart.x;
 		if (!hasAxisAny('Y', this.axis)) this.pointEnd.y = this.pointStart.y;
 		if (!hasAxisAny('Z', this.axis)) this.pointEnd.z = this.pointStart.z;
-
-		if (this.space === 'local') {
+		if (space === 'local') {
 			this.object.position.copy(this.pointEnd).sub(this.pointStart).applyQuaternion(this.quaternionStart);
 		} else {
 			this.object.position.copy(this.pointEnd).sub(this.pointStart);

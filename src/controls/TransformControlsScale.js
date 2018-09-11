@@ -27,7 +27,6 @@ export class TransformControlsScale extends TransformControlsMixin(TransformHelp
 			if (!hasAxisAny('Y', this.axis)) tempVector.y = 1;
 			if (!hasAxisAny('Z', this.axis)) tempVector.z = 1;
 		}
-
 		// Apply scale
 		this.object.scale.copy(this.scaleStart).multiply(tempVector);
 	}

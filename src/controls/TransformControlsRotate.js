@@ -30,7 +30,6 @@ export class TransformControlsRotate extends TransformControlsMixin(TransformHel
 		const space = (axis === 'E' || axis === 'XYZ') ? 'world' : this.space;
 		const ROTATION_SPEED = 20 / this.worldPosition.distanceTo(tempVector.setFromMatrixPosition(this.camera.matrixWorld));
 		const quaternion = space === "local" ? this.worldQuaternion : identityQuaternion;
-
 		if (axis === 'E') {
 			tempVector.copy(this.pointEnd).cross(this.pointStart);
 			this.rotationAxis.copy(this.eye);
@@ -49,7 +48,6 @@ export class TransformControlsRotate extends TransformControlsMixin(TransformHel
 			}
 			this.rotationAngle = tempVector2.dot(tempVector.cross(this.eye).normalize()) * ROTATION_SPEED;
 		}
-
 		// Apply rotate
 		if (space === 'local') {
 			this.object.quaternion.copy(this.quaternionStart);
