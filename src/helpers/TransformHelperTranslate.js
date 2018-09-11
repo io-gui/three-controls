@@ -1,4 +1,3 @@
-import {Vector3} from "../../lib/three.module.js";
 import {TransformHelper} from "./TransformHelper.js";
 import {ArrowGeometry, Corner2Geometry, OctahedronGeometry, PickerHandleGeometry, PlaneGeometry} from "./HelperGeometries.js";
 

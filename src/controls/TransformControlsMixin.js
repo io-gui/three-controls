@@ -13,8 +13,6 @@ const tempVector = new Vector3();
 // events
 const changeEvent = { type: "change" };
 
-function stringHas(str, char) {return str.search(char) !== -1;}
-
 export const TransformControlsMixin = (superclass) => class extends InteractiveMixin(superclass) {
 	constructor(props) {
 		super(props);

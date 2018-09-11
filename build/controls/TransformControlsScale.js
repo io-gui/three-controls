@@ -1016,12 +1016,8 @@ class PlaneGeometry extends HelperMesh {
 		let geometry = new BufferGeometry();
 
 		let indices = [
-			0, 1, 2, 2, 3, 0,
-			4, 1, 0, 5, 1, 4,
-			1, 6, 2, 1, 5, 6,
-			0, 3, 7, 4, 0, 7,
-			7, 2, 6, 2, 7, 3,
-			7, 6, 4, 4, 6, 5
+			0, 1, 2, 2, 3, 0, 4, 1, 0, 5, 1, 4, 1, 6, 2, 1, 5, 6,
+			0, 3, 7, 4, 0, 7, 7, 2, 6, 2, 7, 3, 7, 6, 4, 4, 6, 5
 		];
 		geometry.index = new Uint16BufferAttribute( indices, 1 );
 
@@ -1163,10 +1159,30 @@ class TransformHelper extends Helper {
 		if ( this.handles.length ) this.add( ...this.handles );
 		if ( this.pickers.length ) this.add( ...this.pickers );
 
-		this.traverse( child => child.renderOrder = 100 );
+		this.traverse( axis => {
+
+			axis.renderOrder = 100;
+			axis.scaleTarget = axis.scaleTarget || new Vector3( 1, 1, 1 );
+
+		} );
 
 		// Hide pickers
 		for ( let i = 0; i < this.pickers.length; i ++ ) this.pickers[ i ].material.visible = false;
+
+	}
+	objectChanged() {
+
+		this.animation.startAnimation( 4 );
+		this.traverse( axis => {
+
+			axis.scale.x = 0.0001;
+			axis.scale.y = 0.0001;
+			axis.scale.z = 0.0001;
+			axis.scaleTarget.x = 1;
+			axis.scaleTarget.y = 1;
+			axis.scaleTarget.z = 1;
+
+		} );
 
 	}
 	axisChanged() {
@@ -1283,6 +1299,8 @@ class TransformHelper extends Helper {
 
 		if ( mat.highlight < - 1.49 ) axis.visible = false;
 
+		axis.scale.multiplyScalar( 5 ).add( axis.scaleTarget ).divideScalar( 6 );
+
 	}
 
 }
@@ -1318,11 +1336,6 @@ class TransformHelperTranslate extends TransformHelper {
 			flipX: { value: false, observer: 'updateAxis' },
 			flipY: { value: false, observer: 'updateAxis' },
 			flipZ: { value: false, observer: 'updateAxis' }
-		} );
-		this.traverse( child => {
-
-			child.renderOrder = 200;
-
 		} );
 
 	}
@@ -1375,7 +1388,6 @@ class TransformHelperTranslate extends TransformHelper {
 				if ( stringHas$1( axis.name, "Y" ) && ! this.showY ) axis.hidden = true;
 				if ( stringHas$1( axis.name, "Z" ) && ! this.showZ ) axis.hidden = true;
 				if ( stringHas$1( axis.name, "E" ) && ( ! this.showX || ! this.showY || ! this.showZ ) ) axis.hidden = true;
-
 				// Hide axis facing the camera
 				if ( ( axis.name == 'X' || axis.name == 'XYZX' ) && this.hideX ) axis.hidden = true;
 				if ( ( axis.name == 'Y' || axis.name == 'XYZY' ) && this.hideY ) axis.hidden = true;
@@ -1383,24 +1395,14 @@ class TransformHelperTranslate extends TransformHelper {
 				if ( axis.name == 'XY' && this.hideXY ) axis.hidden = true;
 				if ( axis.name == 'YZ' && this.hideYZ ) axis.hidden = true;
 				if ( axis.name == 'XZ' && this.hideXZ ) axis.hidden = true;
-
 				// Flip axis
-				if ( stringHas$1( axis.name, 'X' ) ) axis.flipX = this.flipX ? - 1 : 1;
-				if ( stringHas$1( axis.name, 'Y' ) ) axis.flipY = this.flipY ? - 1 : 1;
-				if ( stringHas$1( axis.name, 'Z' ) ) axis.flipZ = this.flipZ ? - 1 : 1;
+				if ( stringHas$1( axis.name, 'X' ) ) axis.scaleTarget.x = this.flipX ? - 1 : 1;
+				if ( stringHas$1( axis.name, 'Y' ) ) axis.scaleTarget.y = this.flipY ? - 1 : 1;
+				if ( stringHas$1( axis.name, 'Z' ) ) axis.scaleTarget.z = this.flipZ ? - 1 : 1;
 
 			}
 
 		} );
-
-	}
-	// TODO: optimize!
-	updateAxisMaterial( axis ) {
-
-		super.updateAxisMaterial( axis );
-		if ( axis.flipX ) axis.scale.x = ( axis.scale.x * 5 + axis.flipX ) / 6;
-		if ( axis.flipY ) axis.scale.y = ( axis.scale.y * 5 + axis.flipY ) / 6;
-		if ( axis.flipZ ) axis.scale.z = ( axis.scale.z * 5 + axis.flipZ ) / 6;
 
 	}
 	updateHelperMatrix() {

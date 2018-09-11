@@ -1056,9 +1056,7 @@ class RotateHandleGeometry extends HelperMesh {
 
 		super( [
 			{ geometry: new TorusBufferGeometry( 1, EPS, 4, 64, PI ), thickness: 1 },
-			{ geometry: new SphereBufferGeometry( EPS, 4, 4 ), position: [ 1, 0, 0 ], rotation: [ HPI, 0, 0 ] },
-			{ geometry: new SphereBufferGeometry( EPS, 4, 4 ), position: [ - 1, 0, 0 ], rotation: [ HPI, 0, 0 ] },
-			{ geometry: new OctahedronGeometry(), position: [ 0, 0.996, 0 ], scale: [ 0.1, 0.025, 0.025 ] }
+			{ geometry: new SphereBufferGeometry( 0.05, 12, 16 ), position: [ 0, 0.992, 0 ], scale: [ 3, .5, .5 ] }
 		] );
 		return this.geometry;
 
@@ -1124,10 +1122,30 @@ class TransformHelper extends Helper {
 		if ( this.handles.length ) this.add( ...this.handles );
 		if ( this.pickers.length ) this.add( ...this.pickers );
 
-		this.traverse( child => child.renderOrder = 100 );
+		this.traverse( axis => {
+
+			axis.renderOrder = 100;
+			axis.scaleTarget = axis.scaleTarget || new Vector3( 1, 1, 1 );
+
+		} );
 
 		// Hide pickers
 		for ( let i = 0; i < this.pickers.length; i ++ ) this.pickers[ i ].material.visible = false;
+
+	}
+	objectChanged() {
+
+		this.animation.startAnimation( 4 );
+		this.traverse( axis => {
+
+			axis.scale.x = 0.0001;
+			axis.scale.y = 0.0001;
+			axis.scale.z = 0.0001;
+			axis.scaleTarget.x = 1;
+			axis.scaleTarget.y = 1;
+			axis.scaleTarget.z = 1;
+
+		} );
 
 	}
 	axisChanged() {
@@ -1244,6 +1262,8 @@ class TransformHelper extends Helper {
 
 		if ( mat.highlight < - 1.49 ) axis.visible = false;
 
+		axis.scale.multiplyScalar( 5 ).add( axis.scaleTarget ).divideScalar( 6 );
+
 	}
 
 }
@@ -1334,8 +1354,6 @@ class TransformHelperRotate extends TransformHelper {
 	}
 	updateHelperMatrix() {
 
-		super.updateHelperMatrix();
-
 		// TODO: simplify rotation handle logic
 		const quaternion = this.space === "local" ? this.worldQuaternion : identityQuaternion;
 		// Align handles to current local or world rotation
@@ -1344,9 +1362,8 @@ class TransformHelperRotate extends TransformHelper {
 		alignVector.copy( this.eye ).applyQuaternion( tempQuaternion );
 		tempVector.copy( unitY ).applyQuaternion( tempQuaternion );
 
-		// TODO: optimize!
-		for ( let i = this.handles.length; i --; ) this.updateAxisMaterial( this.handles[ i ] );
-		for ( let i = this.pickers.length; i --; ) this.updateAxisMaterial( this.pickers[ i ] );
+		// // TODO: optimize!
+		super.updateHelperMatrix();
 
 	}
 

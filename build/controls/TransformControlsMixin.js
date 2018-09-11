@@ -588,9 +588,10 @@ const TransformControlsMixin = ( superclass ) => class extends InteractiveMixin(
 		// this.add(this.planeMesh = new Mesh(new PlaneBufferGeometry(1000, 1000, 10, 10), new MeshBasicMaterial({wireframe: true})));
 
 	}
-	objectChanged( value ) {
+	objectChanged() {
 
-		let hasObject = value ? true : false;
+		super.objectChanged();
+		let hasObject = this.object ? true : false;
 		this.visible = hasObject;
 		if ( ! hasObject ) {
 

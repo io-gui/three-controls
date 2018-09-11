@@ -878,9 +878,10 @@ const TransformControlsMixin = ( superclass ) => class extends InteractiveMixin(
 		// this.add(this.planeMesh = new Mesh(new PlaneBufferGeometry(1000, 1000, 10, 10), new MeshBasicMaterial({wireframe: true})));
 
 	}
-	objectChanged( value ) {
+	objectChanged() {
 
-		let hasObject = value ? true : false;
+		super.objectChanged();
+		let hasObject = this.object ? true : false;
 		this.visible = hasObject;
 		if ( ! hasObject ) {
 
@@ -1787,10 +1788,30 @@ class TransformHelper extends Helper {
 		if ( this.handles.length ) this.add( ...this.handles );
 		if ( this.pickers.length ) this.add( ...this.pickers );
 
-		this.traverse( child => child.renderOrder = 100 );
+		this.traverse( axis => {
+
+			axis.renderOrder = 100;
+			axis.scaleTarget = axis.scaleTarget || new Vector3( 1, 1, 1 );
+
+		} );
 
 		// Hide pickers
 		for ( let i = 0; i < this.pickers.length; i ++ ) this.pickers[ i ].material.visible = false;
+
+	}
+	objectChanged() {
+
+		this.animation.startAnimation( 4 );
+		this.traverse( axis => {
+
+			axis.scale.x = 0.0001;
+			axis.scale.y = 0.0001;
+			axis.scale.z = 0.0001;
+			axis.scaleTarget.x = 1;
+			axis.scaleTarget.y = 1;
+			axis.scaleTarget.z = 1;
+
+		} );
 
 	}
 	axisChanged() {
@@ -1907,6 +1928,8 @@ class TransformHelper extends Helper {
 
 		if ( mat.highlight < - 1.49 ) axis.visible = false;
 
+		axis.scale.multiplyScalar( 5 ).add( axis.scaleTarget ).divideScalar( 6 );
+
 	}
 
 }
@@ -1918,6 +1941,17 @@ class TransformHelper extends Helper {
 // TODO: Drag Controls should use object as picker and no handle.
 class DragControls extends TransformControlsMixin( TransformHelper ) {
 
+	constructor( props ) {
+
+		super( props );
+		this.size = 0.02;
+
+	}
+	objectChanged() {
+
+		super.objectChanged();
+
+	}
 	transform( space ) {
 
 		if ( space === 'local' ) {
