@@ -25,9 +25,9 @@ export class TransformHelperScale extends TransformHelperTranslate {
 				{geometry: planeGeometry, color: [1,0,1,0.125], position: [0.725, 0, 0.725], rotation: [-Math.PI / 2, 0, 0], scale: 0.25},
 				{geometry: corner2Geometry, color: [1,0.3,1], position: [0.85, 0, 0.85], scale: 0.25, rotation: [0, Math.PI, 0]}
 			],
-			XYZX: [{geometry: geosphereGeometry, position: [1.1, 0, 0], scale: 0.075}],
-			XYZY: [{geometry: geosphereGeometry, position: [0, 1.1, 0], scale: 0.075}],
-			XYZZ: [{geometry: geosphereGeometry, position: [0, 0, 1.1], scale: 0.075}]
+			XYZX: [{geometry: geosphereGeometry, color: [1, 1, 1, 0.5], position: [1.1, 0, 0], scale: 0.075}],
+			XYZY: [{geometry: geosphereGeometry, color: [1, 1, 1, 0.5], position: [0, 1.1, 0], scale: 0.075}],
+			XYZZ: [{geometry: geosphereGeometry, color: [1, 1, 1, 0.5], position: [0, 0, 1.1], scale: 0.075}]
 		};
 	}
 	get pickersGroup() {

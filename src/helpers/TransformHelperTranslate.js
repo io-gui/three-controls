@@ -14,6 +14,7 @@ const planeGeometry = new PlaneGeometry();
 function stringHas(str, char) {return str.search(char) !== -1;}
 
 export class TransformHelperTranslate extends TransformHelper {
+	get isTransformHelperTranslate() { return true; }
 	constructor(props) {
 		super(props);
 		this.defineProperties({
@@ -34,7 +35,7 @@ export class TransformHelperTranslate extends TransformHelper {
 			Y: [{geometry: arrowGeometry, color: [0.3, 1, 0.3]}],
 			Z: [{geometry: arrowGeometry, color: [0.3, 0.3, 1], rotation: [Math.PI / 2, 0, 0]}],
 			XYZ: [
-				{geometry: octahedronGeometry, color: [1, 1, 1], scale: 0.1}
+				{geometry: octahedronGeometry, color: [1, 1, 1, 0.5], scale: 0.1}
 			],
 			XY: [
 				{geometry: planeGeometry, color: [1,1,0,0.125], position: [0.15, 0.15, 0], scale: 0.3},

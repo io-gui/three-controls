@@ -62,7 +62,6 @@ export class SelectionHelper extends Helper {
 			this.corners['XyZ'].position.set(bbMax.x, bbMin.y, bbMax.z);
 		}
 	}
-	// Creates an Object3D with gizmos described in custom hierarchy definition.
 	combineHelperGroups(groups) {
 		this.corners = {};
 		for (let name in groups) {

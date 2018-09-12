@@ -47,7 +47,7 @@
 			<a href="javascript:setupTransformControls('TransformControlsTranslate')">W translate</a> |
 			<a href="javascript:setupTransformControls('TransformControlsRotate')">E rotate</a> |
 			<a href="javascript:setupTransformControls('TransformControlsScale')">R scale</a> |
-			<a href="javascript:setupTransformControls('TransformControlsFreescale')">T freeScale (n/a) </a> |
+			<a href="javascript:setupTransformControls('TransformControlsStretch')">T freeScale (n/a) </a> |
 			<a href="javascript:setupTransformControls('DragControls')">Y drag</a><br />
 			<span>Viewport:</span>
 			<a href="javascript:setupViewportControls('OrbitControls')">1 orbit</a> |
@@ -71,7 +71,7 @@
 			import {TransformControlsTranslate} from "./src/controls/TransformControlsTranslate.js";
 			import {TransformControlsRotate} from "./src/controls/TransformControlsRotate.js";
 			import {TransformControlsScale} from "./src/controls/TransformControlsScale.js";
-			import {TransformControlsFreescale} from "./src/controls/TransformControlsFreescale.js";
+			import {TransformControlsStretch} from "./src/controls/TransformControlsStretch.js";
 
 			import {ViewportControls} from "./src/controls/ViewportControls.js";
 			import {EditorControls} from "./src/controls/EditorControls.js";
@@ -82,7 +82,7 @@
 			import {TransformHelperTranslate} from "./src/helpers/TransformHelperTranslate.js";
 			import {TransformHelperRotate} from "./src/helpers/TransformHelperRotate.js";
 			import {TransformHelperScale} from "./src/helpers/TransformHelperScale.js";
-			import {TransformHelperFreescale} from "./src/helpers/TransformHelperFreescale.js";
+			import {TransformHelperStretch} from "./src/helpers/TransformHelperStretch.js";
 			import {HelperMesh} from "./src/helpers/HelperMesh.js";
 
 
@@ -221,10 +221,13 @@
 				});
 
 				setupViewportControls('OrbitControls');
-				setupTransformControls('TransformControlsRotate');
+				setupTransformControls('TransformControlsStretch');
 
 				scene.updateMatrixWorld();
-				selectionControls.replace(box0);
+				selectionControls.replace([
+					box0.children[1].children[0],
+					box0.children[2].children[0],
+				]);
 
 				{
 					let res = new Vector3(Math.round(window.innerWidth / window.scale), Math.round(window.innerHeight / window.scale), window.devicePixelRatio);
@@ -258,7 +261,7 @@
 					if (controlName === 'TransformControlsTranslate') ControlClass = TransformControlsTranslate;
 					if (controlName === 'TransformControlsRotate') ControlClass = TransformControlsRotate;
 					if (controlName === 'TransformControlsScale') ControlClass = TransformControlsScale;
-					if (controlName === 'TransformControlsFreescale') ControlClass = TransformControlsFreescale;
+					if (controlName === 'TransformControlsStretch') ControlClass = TransformControlsStretch;
 					if (controlName === 'DragControls') ControlClass = DragControls;
 
 					if (transformControls) {
@@ -270,6 +273,7 @@
 					transformControls = new ControlClass({domElement: canvas, camera: camera});
 					transformControls.addEventListener('change', transformControlsChanged);
 					transformControls.object = selectionControls && selectionControls.selected.length ? selectionControls : null;
+					transformControls.space = 'world';
 					helperScene.add(transformControls);
 				}
 				window.setupTransformControls = setupTransformControls;
@@ -306,7 +310,7 @@
 							setupTransformControls('TransformControlsScale');
 							break;
 						case 84: // T
-							setupTransformControls('TransformControlsFreescale');
+							setupTransformControls('TransformControlsStretch');
 							break;
 						case 89: // Y
 							setupTransformControls('DragControls');

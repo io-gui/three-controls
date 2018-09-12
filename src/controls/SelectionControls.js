@@ -6,7 +6,7 @@
 
 import {Raycaster} from "../../lib/three.module.js";
 import {Interactive} from "../Interactive.js";
-import {Vector3, Quaternion} from "../../lib/three.module.js";
+import {Vector3, Quaternion, Box3, Matrix4} from "../../lib/three.module.js";
 import {SelectionHelper} from "../helpers/SelectionHelper.js";
 
 // Reusable utility variables
@@ -37,6 +37,7 @@ const parentScale = new Vector3();
 
 const dist0 = new Vector3();
 const dist1 = new Vector3();
+const bbox = new Box3();
 
 const selectedOld = [];
 
@@ -81,7 +82,8 @@ export class SelectionControls extends Interactive {
 			scene: props.scene || null,
 			selected: [],
 			transformSelection: true,
-			transformSpace: 'local'
+			transformSpace: 'local',
+			boundingBox: new Box3()
 			// translationSnap: null,
 			// rotationSnap: null
 		});
@@ -167,26 +169,69 @@ export class SelectionControls extends Interactive {
 		this.quaternion.set(0,0,0,1);
 		this.scale.set(1,1,1);
 
+		// TODO: temp for testing
+		this.boundingBox.makeEmpty();
+
 		if (this.selected.length && this.transformSelection) {
 			// Set selection transform to last selected item (not ancestor of selected).
 			if (this.transformSpace === 'local') {
 				for (let i = this.selected.length; i--;) {
-					if (this._isAncestorOfSelected(this.selected[i])) continue;
-					this.selected[i].updateMatrixWorld();
-					this.selected[i].matrixWorld.decompose(itemPos, itemQuat, itemScale);
+					let item = this.selected[i];
+					if (this._isAncestorOfSelected(item)) continue;
+					item.updateMatrixWorld();
+					item.matrixWorld.decompose(itemPos, itemQuat, itemScale);
 					this.position.copy(itemPos);
 					this.quaternion.copy(itemQuat);
+
+					if (item.geometry) {
+						if (!item.geometry.boundingBox) item.geometry.computeBoundingBox()
+						bbox.copy(item.geometry.boundingBox);
+						bbox.min.multiply(itemScale);
+						bbox.max.multiply(itemScale);
+						this.boundingBox.copy(bbox);
+					}
+
 					break;
 				}
 				// Set selection transform to the average of selected items.
 			} else if (this.transformSpace === 'world') {
 				pos.set(0,0,0);
 				for (let i = 0; i < this.selected.length; i++) {
-					this.selected[i].updateMatrixWorld();
-					this.selected[i].matrixWorld.decompose(itemPos, itemQuat, itemScale);
+					let item = this.selected[i];
+					item.updateMatrixWorld();
+					item.matrixWorld.decompose(itemPos, itemQuat, itemScale);
 					pos.add(itemPos);
 				}
 				this.position.copy(pos).divideScalar(this.selected.length);
+
+				// this.updateMatrixWorld();
+
+
+				for (let i = 0; i < this.selected.length; i++) {
+					let item = this.selected[i];
+					item.matrixWorld.decompose(itemPos, itemQuat, itemScale);
+					if (item.geometry) {
+						if (!item.geometry.boundingBox) item.geometry.computeBoundingBox()
+						bbox.copy(item.geometry.boundingBox);
+						bbox.min.multiply(itemScale);
+						bbox.max.multiply(itemScale);
+
+						bbox.min.add(itemPos.clone().sub(this.position));
+						bbox.max.add(itemPos.clone().sub(this.position));
+
+						// bbox.min.applyQuaternion(itemQuat);
+						// bbox.max.applyQuaternion(itemQuat);
+
+						// // this.boundingBox.copy(bbox);
+						this.boundingBox.expandByPoint(bbox.min);
+						this.boundingBox.expandByPoint(bbox.max);
+					}
+					else {
+						// TODO: test with non-geometric objects
+						this.boundingBox.expandByPoint(itemPos); // Doesent make sense
+					}
+				}
+
 			}
 		}
 
@@ -271,7 +316,7 @@ export class SelectionControls extends Interactive {
 			// Transform selected in local space.
 			if (this.transformSpace === 'local') {
 					// Position
-					itemPosOffset.copy(posOffset).applyQuaternion(quatInv);
+					itemPosOffset.copy(posOffset).applyQuaternion(quatInv).divide(parentScale);
 					itemPosOffset.applyQuaternion(this.selected[i].quaternion);
 					this.selected[i].position.add(itemPosOffset);
 					// Rotation

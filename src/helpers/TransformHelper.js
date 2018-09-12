@@ -71,7 +71,9 @@ export class TransformHelper extends Helper {
 	combineHelperGroups(groups) {
 		const meshes = [];
 		for (let name in groups) {
-			meshes.push(new HelperMesh(groups[name], {name: name}));
+			const mesh = new HelperMesh(groups[name], {name: name});
+			meshes.push(mesh);
+			meshes[name] = mesh;
 		}
 		return meshes;
 	}
@@ -97,15 +99,6 @@ export class TransformHelper extends Helper {
 			if (stringHas(axis.name, "E") && (!this.showX || !this.showY || !this.showZ)) axis.hidden = true;
 		});
 	}
-	updateMatrixWorld( force, camera ) {
-		if (camera) this.camera = camera; // TODO
-		this.updateHelperMatrix();
-		this.matrixWorldNeedsUpdate = false;
-		const children = this.children;
-		for (let i = 0, l = children.length; i < l; i ++) {
-			children[i].updateMatrixWorld(true, camera);
-		}
-	}
 	updateHelperMatrix() {
 		super.updateHelperMatrix();
 
@@ -127,16 +120,11 @@ export class TransformHelper extends Helper {
 	// TODO: optimize!
 	updateAxisMaterial(axis) {
 		axis.visible = true;
-
 		const mat = axis.material;
 		const h = axis.material.highlight || 0;
-
 		let highlight = axis.hidden ? -1.5 : axis.highlight || 0;
-
 		mat.highlight = (4 * h + highlight) / 5;
-
 		if (mat.highlight < -1.49) axis.visible = false;
-
 		axis.scale.multiplyScalar(5).add(axis.scaleTarget).divideScalar(6);
 	}
 }

@@ -4,8 +4,8 @@
 
 // import {Vector3} from "../../lib/three.module.js";
 import {TransformControlsMixin} from "./TransformControlsMixin.js";
-import {TransformHelperFreescale} from "../helpers/TransformHelperFreescale.js";
-export class TransformControlsFreescale extends TransformControlsMixin(TransformHelperFreescale) {
+import {TransformHelperStretch} from "../helpers/TransformHelperStretch.js";
+export class TransformControlsStretch extends TransformControlsMixin(TransformHelperStretch) {
 	transform() {
 	}
 }

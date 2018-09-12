@@ -5,6 +5,7 @@
 import {Object3D, Vector3, Quaternion} from "../lib/three.module.js";
 import {IoLiteMixin} from "../lib/IoLiteMixin.js";
 import {Animation} from "./Animation.js";
+
 /*
  * Helper is a variant of Object3D which automatically follows its target object.
  * On matrix update, it automatically copies transform matrices from its target Object3D.
@@ -68,9 +69,9 @@ export class Helper extends IoLiteMixin(Object3D) {
 
 		this.updateHelperMatrix(camera);
 		this.matrixWorldNeedsUpdate = false;
-		const children = this.children;
-		for (let i = 0, l = children.length; i < l; i ++) {
-			children[i].updateMatrixWorld(true, camera);
+
+		for (let i = 0, l = this.children.length; i < l; i ++) {
+			this.children[i].updateMatrixWorld(true, camera);
 		}
 	}
 }
