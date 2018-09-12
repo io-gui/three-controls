@@ -85,6 +85,8 @@ export class TransformHelperTranslate extends TransformHelper {
 		});
 	}
 	updateHelperMatrix() {
+		super.updateHelperMatrix();
+
 		const xDotE = this.axisDotEye.x;
 		const yDotE = this.axisDotEye.y;
 		const zDotE = this.axisDotEye.z;
@@ -102,7 +104,6 @@ export class TransformHelperTranslate extends TransformHelper {
 			this.flipZ = zDotE < AXIS_FLIP_TRESHOLD;
 		}
 
-		super.updateHelperMatrix();
 
 
 	}

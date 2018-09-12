@@ -11,6 +11,8 @@ const rayTarget = new Vector3();
 const tempVector = new Vector3();
 
 // TODO: dragging in scaled space not updating helper position during drag.
+// TODO: long drag on rotate control messed up.
+// TODO: selecting selected messes up space.
 
 // events
 const changeEvent = { type: "change" };

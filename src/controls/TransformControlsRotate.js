@@ -51,10 +51,10 @@ export class TransformControlsRotate extends TransformControlsMixin(TransformHel
 		// Apply rotate
 		if (space === 'local') {
 			this.object.quaternion.copy(this.quaternionStart);
-			this.object.quaternion.multiply(tempQuaternion.setFromAxisAngle(this.rotationAxis, this.rotationAngle));
+			this.object.quaternion.multiply(tempQuaternion.setFromAxisAngle(this.rotationAxis, this.rotationAngle)).normalize();
 		} else {
 			this.object.quaternion.copy(tempQuaternion.setFromAxisAngle(this.rotationAxis, this.rotationAngle));
-			this.object.quaternion.multiply(this.quaternionStart);
+			this.object.quaternion.multiply(this.quaternionStart).normalize();
 		}
 	}
 }
