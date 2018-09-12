@@ -12,6 +12,8 @@ import {Corner3Geometry} from "./HelperGeometries.js";
 const HPI = Math.PI / 2;
 const PI = Math.PI;
 
+// TODO: consider supporting objects with skewed transforms.
+
 // Reusable utility variables
 const _vector = new Vector3();
 const _position = new Vector3();

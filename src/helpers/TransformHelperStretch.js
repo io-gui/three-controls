@@ -211,9 +211,9 @@ export class TransformHelperStretch extends TransformHelper {
 			let _by = Math.abs(scaledBoundingBox.min.y) + Math.abs(scaledBoundingBox.max.y);
 			let _bz = Math.abs(scaledBoundingBox.min.z) + Math.abs(scaledBoundingBox.max.z);
 
-			let _x = Math.min(_wScale.x, _bx / 3);
-			let _y = Math.min(_wScale.y, _by / 3);
-			let _z = Math.min(_wScale.z, _bz / 3);
+			let _x = Math.min(_wScale.x, _bx / 4);
+			let _y = Math.min(_wScale.y, _by / 4);
+			let _z = Math.min(_wScale.z, _bz / 4);
 
 			if (name == 'X_yp' || name == 'X_yn') {
 				_wScale.y = _y;
