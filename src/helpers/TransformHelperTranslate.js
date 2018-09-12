@@ -61,6 +61,10 @@ export class TransformHelperTranslate extends TransformHelper {
 			XZ: [{ geometry: planeGeometry, color: [1,0,1,0.5,0.5], position: [0.25, 0, 0.25], rotation: [-Math.PI / 2, 0, 0], scale: 0.5}]
 		};
 	}
+	objectChanged() {
+		super.objectChanged();
+		this.updateAxis();
+	}
 	updateAxis() {
 		this.animation.startAnimation(4);
 		this.traverse(axis => {
