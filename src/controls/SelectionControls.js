@@ -195,6 +195,8 @@ export class SelectionControls extends Interactive {
 				}
 				// Set selection transform to the average of selected items.
 			} else if (this.transformSpace === 'world') {
+				// TODO: center should be in the center of combined boundging box.
+				// TODO: Verify with TransformControlsStretch box handles
 				pos.set(0,0,0);
 				for (let i = 0; i < this.selected.length; i++) {
 					let item = this.selected[i];
@@ -205,7 +207,6 @@ export class SelectionControls extends Interactive {
 				this.position.copy(pos).divideScalar(this.selected.length);
 
 				// this.updateMatrixWorld();
-
 
 				for (let i = 0; i < this.selected.length; i++) {
 					let item = this.selected[i];
@@ -219,10 +220,6 @@ export class SelectionControls extends Interactive {
 						bbox.min.add(itemPos.clone().sub(this.position));
 						bbox.max.add(itemPos.clone().sub(this.position));
 
-						// bbox.min.applyQuaternion(itemQuat);
-						// bbox.max.applyQuaternion(itemQuat);
-
-						// // this.boundingBox.copy(bbox);
 						this.boundingBox.expandByPoint(bbox.min);
 						this.boundingBox.expandByPoint(bbox.max);
 					}
