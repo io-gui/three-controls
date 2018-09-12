@@ -326,7 +326,7 @@ export class SelectionControls extends Interactive {
 			} else if (this.transformSpace === 'world') {
 					if (this._isAncestorOfSelected(this.selected[i])) continue;
 					// Position
-					itemPosOffset.copy(posOffset).applyQuaternion(parentQuatInv);
+					itemPosOffset.copy(posOffset).applyQuaternion(parentQuatInv).divide(parentScale);
 					this.selected[i].position.add(itemPosOffset);
 					// Rotation
 					dist0.subVectors(itemPos, pos);
