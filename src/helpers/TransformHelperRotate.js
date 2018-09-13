@@ -45,7 +45,7 @@ export class TransformHelperRotate extends TransformHelper {
 			XYZ: [{geometry: octahedronGeometry, color: [0.5, 0.5, 0.5, 0.15], rotation: [Math.PI / 2, Math.PI / 2, 0], scale: 0.32}],
 		};
 	}
-	updateAxisDirection(axis){
+	updateAxesDirection(axis){
 		axis.quaternion.copy(identityQuaternion);
 		if (stringHas(axis.name, "E") || stringHas(axis.name, "XYZ")) {
 			axis.quaternion.setFromRotationMatrix(lookAtMatrix.lookAt(alignVector, zeroVector, tempVector));
@@ -75,7 +75,7 @@ export class TransformHelperRotate extends TransformHelper {
 		alignVector.copy(this.eye).applyQuaternion(tempQuaternion);
 		tempVector.copy(unitY).applyQuaternion(tempQuaternion);
 		// // TODO: optimize!
-		for (let i = this.handles.length; i--;) this.updateAxisDirection(this.handles[i]);
-		for (let i = this.pickers.length; i--;) this.updateAxisDirection(this.pickers[i]);
+		for (let i = this.handles.length; i--;) this.updateAxesDirection(this.handles[i]);
+		for (let i = this.pickers.length; i--;) this.updateAxesDirection(this.pickers[i]);
 	}
 }

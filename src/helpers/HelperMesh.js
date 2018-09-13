@@ -11,6 +11,9 @@ export class HelperMesh extends Mesh {
 		super();
 		this.geometry = geometry instanceof Array ? mergeGeometryChunks(geometry) : geometry;
 		this.material = new HelperMaterial(props.color || 'white', props.opacity || 1);
+		this.scaleTarget = new Vector3(1, 1, 1);
+		this.hidden = false;
+		this.highlight = 0;
 		this.name = props.name;
 	}
 }

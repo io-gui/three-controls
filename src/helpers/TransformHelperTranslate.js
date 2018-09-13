@@ -15,20 +15,6 @@ function stringHas(str, char) {return str.search(char) !== -1;}
 
 export class TransformHelperTranslate extends TransformHelper {
 	get isTransformHelperTranslate() { return true; }
-	constructor(props) {
-		super(props);
-		this.defineProperties({
-			hideX: { value: false, observer: 'updateAxis' },
-			hideY: { value: false, observer: 'updateAxis' },
-			hideZ: { value: false, observer: 'updateAxis' },
-			hideXY: { value: false, observer: 'updateAxis' },
-			hideYZ: { value: false, observer: 'updateAxis' },
-			hideXZ: { value: false, observer: 'updateAxis' },
-			flipX: { value: false, observer: 'updateAxis' },
-			flipY: { value: false, observer: 'updateAxis' },
-			flipZ: { value: false, observer: 'updateAxis' }
-		});
-	}
 	get handlesGroup() {
 		return {
 			X: [{geometry: arrowGeometry, color: [1, 0.3, 0.3], rotation: [0, 0, -Math.PI / 2]}],
@@ -62,31 +48,44 @@ export class TransformHelperTranslate extends TransformHelper {
 			XZ: [{ geometry: planeGeometry, color: [1,0,1,0.5,0.5], position: [0.25, 0, 0.25], rotation: [-Math.PI / 2, 0, 0], scale: 0.5}]
 		};
 	}
+	constructor(props) {
+		super(props);
+		this.defineProperties({
+			hideX: { value: false, observer: 'updateAxes' },
+			hideY: { value: false, observer: 'updateAxes' },
+			hideZ: { value: false, observer: 'updateAxes' },
+			hideXY: { value: false, observer: 'updateAxes' },
+			hideYZ: { value: false, observer: 'updateAxes' },
+			hideXZ: { value: false, observer: 'updateAxes' },
+			flipX: { value: false, observer: 'updateAxes' },
+			flipY: { value: false, observer: 'updateAxes' },
+			flipZ: { value: false, observer: 'updateAxes' }
+		});
+	}
 	objectChanged() {
 		super.objectChanged();
-		this.updateAxis();
+		this.updateAxes();
 	}
-	updateAxis() {
-		this.animation.startAnimation(4);
+	updateAxes() {
+		this.animation.startAnimation(0.5);
 		this.traverse(axis => {
-			if (axis !== this) { // TODO: conside better loop
-				axis.hidden = false;
-				if (stringHas(axis.name, "X") && !this.showX) axis.hidden = true;
-				if (stringHas(axis.name, "Y") && !this.showY) axis.hidden = true;
-				if (stringHas(axis.name, "Z") && !this.showZ) axis.hidden = true;
-				if (stringHas(axis.name, "E") && (!this.showX || !this.showY || !this.showZ)) axis.hidden = true;
-				// Hide axis facing the camera
-				if ((axis.name == 'X' || axis.name == 'XYZX') && this.hideX) axis.hidden = true;
-				if ((axis.name == 'Y' || axis.name == 'XYZY') && this.hideY) axis.hidden = true;
-				if ((axis.name == 'Z' || axis.name == 'XYZZ') && this.hideZ) axis.hidden = true;
-				if (axis.name == 'XY' && this.hideXY) axis.hidden = true;
-				if (axis.name == 'YZ' && this.hideYZ) axis.hidden = true;
-				if (axis.name == 'XZ' && this.hideXZ) axis.hidden = true;
-				// Flip axis
-				if (stringHas(axis.name, 'X')) axis.scaleTarget.x = this.flipX ? -1 : 1;
-				if (stringHas(axis.name, 'Y')) axis.scaleTarget.y = this.flipY ? -1 : 1;
-				if (stringHas(axis.name, 'Z')) axis.scaleTarget.z = this.flipZ ? -1 : 1;
-			}
+			if (axis === this) return; // TODO: conside better loop
+			axis.hidden = false;
+			if (stringHas(axis.name, "X") && !this.showX) axis.hidden = true;
+			if (stringHas(axis.name, "Y") && !this.showY) axis.hidden = true;
+			if (stringHas(axis.name, "Z") && !this.showZ) axis.hidden = true;
+			if (stringHas(axis.name, "E") && (!this.showX || !this.showY || !this.showZ)) axis.hidden = true;
+			// Hide axis facing the camera
+			if ((axis.name == 'X' || axis.name == 'XYZX') && this.hideX) axis.hidden = true;
+			if ((axis.name == 'Y' || axis.name == 'XYZY') && this.hideY) axis.hidden = true;
+			if ((axis.name == 'Z' || axis.name == 'XYZZ') && this.hideZ) axis.hidden = true;
+			if (axis.name == 'XY' && this.hideXY) axis.hidden = true;
+			if (axis.name == 'YZ' && this.hideYZ) axis.hidden = true;
+			if (axis.name == 'XZ' && this.hideXZ) axis.hidden = true;
+			// Flip axis
+			if (stringHas(axis.name, 'X')) axis.scaleTarget.x = this.flipX ? -1 : 1;
+			if (stringHas(axis.name, 'Y')) axis.scaleTarget.y = this.flipY ? -1 : 1;
+			if (stringHas(axis.name, 'Z')) axis.scaleTarget.z = this.flipZ ? -1 : 1;
 		});
 	}
 	updateHelperMatrix() {

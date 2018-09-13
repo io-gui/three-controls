@@ -4,6 +4,7 @@
 
 import {Raycaster, Vector3, Quaternion, Plane} from "../../lib/three.module.js";
 import {InteractiveMixin} from "../Interactive.js";
+// import {Animation} from "../../lib/Animation.js";
 
 // Reusable utility variables
 const _ray = new Raycaster();
@@ -32,6 +33,8 @@ export const TransformControlsMixin = (superclass) => class extends InteractiveM
 			plane: new Plane()
 		});
 
+		// this.animation = new Animation();
+
 		// this.add(this.planeMesh = new Mesh(new PlaneBufferGeometry(1000, 1000, 10, 10), new MeshBasicMaterial({wireframe: true})));
 	}
 	objectChanged() {
@@ -48,10 +51,10 @@ export const TransformControlsMixin = (superclass) => class extends InteractiveM
 	// TODO: Debug stalling animations on hover
 	enabledChanged(value) {
 		super.enabledChanged(value);
-		this.animation.startAnimation(3);
+		this.animation.startAnimation(0.5);
 	}
 	activeChanged() {
-		this.animation.startAnimation(3);
+		this.animation.startAnimation(0.5);
 	}
 	updateHelperMatrix() {
 		super.updateHelperMatrix();

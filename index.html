@@ -203,7 +203,7 @@
 				// 			const obj3d = new Object3D();
 				// 			obj3d.position.set(i * 200 - 500, k * 200 - 500, j * 200 - 500);
 				// 			helperScene.add(obj3d);
-				// 			const control = new TransformControlsTranslate({domElement: canvas, camera: camera});
+				// 			const control = new TransformHelperTranslate({domElement: canvas, camera: camera});
 				// 			control.size = 0.1;
 				// 			control.addEventListener('change', transformControlsChanged);
 				// 			control.object = obj3d;
@@ -361,6 +361,14 @@
 				camera.updateProjectionMatrix();
 
 				renderer.setSize(innerWidth, innerHeight);
+
+				render();
+
+			}
+
+			function animate() {
+
+				requestAnimationFrame(animate);
 
 				render();
 
