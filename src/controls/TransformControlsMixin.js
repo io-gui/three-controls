@@ -6,9 +6,9 @@ import {Raycaster, Vector3, Quaternion, Plane} from "../../lib/three.module.js";
 import {InteractiveMixin} from "../Interactive.js";
 
 // Reusable utility variables
-const ray = new Raycaster();
-const rayTarget = new Vector3();
-const tempVector = new Vector3();
+const _ray = new Raycaster();
+const _rayTarget = new Vector3();
+const _tempVector = new Vector3();
 
 // events
 const changeEvent = { type: "change" };
@@ -58,11 +58,14 @@ export const TransformControlsMixin = (superclass) => class extends InteractiveM
 			this.object.updateMatrixWorld();
 			this.object.matrixWorld.decompose(this.worldPosition, this.worldQuaternion, this.worldScale);
 		}
-		this.camera.updateMatrixWorld();
-		this.camera.matrixWorld.decompose(this.cameraPosition, this.cameraQuaternion, this.cameraScale);
-		if (this.camera.isPerspectiveCamera) {
+
+		const camera = this.scene.currentCamera;
+		camera.updateMatrixWorld();
+
+		camera.matrixWorld.decompose(this.cameraPosition, this.cameraQuaternion, _tempVector);
+		if (camera.isPerspectiveCamera) {
 			this.eye.copy(this.cameraPosition).sub(this.worldPosition).normalize();
-		} else if (this.camera.isOrthographicCamera) {
+		} else if (camera.isOrthographicCamera) {
 			this.eye.copy(this.cameraPosition).normalize();
 		}
 		super.updateHelperMatrix();
@@ -70,9 +73,11 @@ export const TransformControlsMixin = (superclass) => class extends InteractiveM
 	}
 	onPointerHover(pointers) {
 		if (!this.object || this.active === true) return;
-		ray.setFromCamera(pointers[0].position, this.camera); //TODO: unhack
 
-		const intersect = ray.intersectObjects(this.pickers, true)[0] || false;
+		const camera = this.scene.currentCamera;
+		_ray.setFromCamera(pointers[0].position, camera); //TODO: unhack
+
+		const intersect = _ray.intersectObjects(this.pickers, true)[0] || false;
 		if (intersect) {
 			this.axis = intersect.object.name;
 		} else {
@@ -81,9 +86,12 @@ export const TransformControlsMixin = (superclass) => class extends InteractiveM
 	}
 	onPointerDown(pointers) {
 		if (this.axis === null || !this.object || this.active === true || pointers[0].button !== 0) return;
-		ray.setFromCamera(pointers[0].position, this.camera);
+
+		const camera = this.scene.currentCamera;
+		_ray.setFromCamera(pointers[0].position, camera);
+
 		this.updatePlane();
-		const planeIntersect = ray.ray.intersectPlane(this.plane, rayTarget);
+		const planeIntersect = _ray.ray.intersectPlane(this.plane, _rayTarget);
 		let space = (this.axis === 'E' || this.axis === 'XYZ') ? 'world' : this.space;
 		if (planeIntersect) {
 			this.object.updateMatrixWorld();
@@ -106,9 +114,10 @@ export const TransformControlsMixin = (superclass) => class extends InteractiveM
 
 		if (object === undefined || axis === null || this.active === false || pointers[0].button !== 0) return;
 
-		ray.setFromCamera(pointers[0].position, this.camera);
+		const camera = this.scene.currentCamera;
+		_ray.setFromCamera(pointers[0].position, camera);
 
-		const planeIntersect = ray.ray.intersectPlane(this.plane, tempVector);
+		const planeIntersect = _ray.ray.intersectPlane(this.plane, _tempVector);
 
 		if (!planeIntersect) return;
 
@@ -141,14 +150,15 @@ export const TransformControlsMixin = (superclass) => class extends InteractiveM
 	updatePlane() {
 		const axis = this.axis;
 		const normal = this.plane.normal;
+		const camera = this.scene.currentCamera;
 
-		if (axis === 'X') normal.copy(this.worldX).cross(tempVector.copy(this.eye).cross(this.worldX));
-		if (axis === 'Y') normal.copy(this.worldY).cross(tempVector.copy(this.eye).cross(this.worldY));
-		if (axis === 'Z') normal.copy(this.worldZ).cross(tempVector.copy(this.eye).cross(this.worldZ));
+		if (axis === 'X') normal.copy(this.worldX).cross(_tempVector.copy(this.eye).cross(this.worldX));
+		if (axis === 'Y') normal.copy(this.worldY).cross(_tempVector.copy(this.eye).cross(this.worldY));
+		if (axis === 'Z') normal.copy(this.worldZ).cross(_tempVector.copy(this.eye).cross(this.worldZ));
 		if (axis === 'XY') normal.copy(this.worldZ);
 		if (axis === 'YZ') normal.copy(this.worldX);
 		if (axis === 'XZ') normal.copy(this.worldY);
-		if (axis === 'XYZ' || axis === 'E') this.camera.getWorldDirection(normal);
+		if (axis === 'XYZ' || axis === 'E') camera.getWorldDirection(normal);
 
 		this.plane.setFromNormalAndCoplanarPoint(normal, this.worldPosition);
 

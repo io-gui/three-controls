@@ -71,10 +71,8 @@ export class SelectionHelper extends Helper {
 			this.add(this.corners[name]);
 		}
 	}
-	updateMatrixWorld( force, camera ) {
-		if (camera) this.camera = camera;
-
-		this.updateHelperMatrix(camera);
+	updateMatrixWorld( force ) {
+		this.updateHelperMatrix();
 		this.matrixWorldNeedsUpdate = false;
 		this.object.matrixWorld.decompose(_position, _quaternion, _scale);
 		_m1.compose(this.worldPosition, this.worldQuaternion, _one);

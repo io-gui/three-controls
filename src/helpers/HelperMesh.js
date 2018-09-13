@@ -76,7 +76,6 @@ export function mergeGeometryChunks(chunks) {
 			chunkGeo.addAttribute('color', new Float32BufferAttribute(new Array(vertCount * 4), 4));
 		}
 
-		//TODO: enable color overwrite
 		const colorArray = chunkGeo.attributes.color.array;
 		for (let j = 0; j < vertCount; j++) {
 			const r = j * 4 + 0; colorArray[r] = color[0];

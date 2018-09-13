@@ -79,7 +79,7 @@ export class SelectionControls extends Interactive {
 		super(props);
 
 		this.defineProperties({
-			scene: props.scene || null,
+			object_: props.object_ || null, // TODO: remove
 			selected: [],
 			transformSelection: true,
 			transformSpace: 'local',
@@ -89,8 +89,11 @@ export class SelectionControls extends Interactive {
 		});
 	}
 	select(position, add) {
-		raycaster.setFromCamera(position, this.camera);
-		const intersects = raycaster.intersectObjects(this.scene.children, true);
+
+		const camera = this.scene.currentCamera;
+		raycaster.setFromCamera(position, camera);
+
+		const intersects = raycaster.intersectObjects(this.object_.children, true);
 		if (intersects.length > 0) {
 			const object = intersects[0].object;
 			// TODO: handle helper selection
@@ -265,10 +268,12 @@ export class SelectionControls extends Interactive {
 
 		// Add helpers
 		// TODO: cache helpers per object
-		this.children.length = 0;
+		for (let i = this.children.length; i--;) {
+			super.remove(this.children[i]);
+		}
 		for (let i = 0; i < this.selected.length; i++) {
 			const _helper = new SelectionHelper({object: this.selected[i]});
-			this.children.push(_helper);
+			super.add(_helper);
 		}
 
 		super.updateMatrixWorld(); // TODO: camera?

@@ -176,10 +176,8 @@ export class TransformHelperStretch extends TransformHelper {
 	// 	super(props);
 	// 	this.size = 3;
 	// }
-	updateMatrixWorld( force, camera ) {
-		if (camera) this.camera = camera; // TODO
-
-		this.updateHelperMatrix(camera);
+	updateMatrixWorld( force ) {
+		this.updateHelperMatrix();
 		this.matrixWorldNeedsUpdate = false;
 
 		if (!this.object) return;

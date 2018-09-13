@@ -91,7 +91,7 @@
 				SphereBufferGeometry, Vector3,BufferGeometry, BufferAttribute} from "./lib/three.module.js";
 
 			let rendered = false;
-			let renderer, camera, scene, selection, helperScene;
+			let renderer, camera, scene, helperScene;
 			var transformControls, viewportControls;
 
 			scene = new Scene();
@@ -212,7 +212,7 @@
 				// 	}
 				// }
 
-				var selectionControls = new SelectionControls({domElement: canvas, camera: camera, scene: scene, selection: selection});
+				var selectionControls = new SelectionControls({domElement: canvas, camera: camera, object_: scene});
 				helperScene.add(selectionControls);
 				selectionControls.addEventListener('change', render);
 				selectionControls.addEventListener('selected-changed', event => {

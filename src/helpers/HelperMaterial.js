@@ -14,7 +14,6 @@ const _colors = {
 	magenta: new Color(0xff00ff),
 };
 
-// TODO: dithering instead transparency
 // TODO: pixel-perfect outlines
 
 export class HelperMaterial extends IoLiteMixin(ShaderMaterial) {
