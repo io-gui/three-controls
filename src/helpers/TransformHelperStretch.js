@@ -183,7 +183,7 @@ export class TransformHelperStretch extends TransformHelper {
 		if (!this.object) return;
 
 		this.object.matrixWorld.decompose(_vector, _quaternion, _scale);
-		_m1.compose(this.worldPosition, this.worldQuaternion, _one);
+		_m1.compose(this.position, this.quaternion, _one);
 
 		let scaledBoundingBox = this.boundingBox.clone();
 		scaledBoundingBox.min.multiply(_scale);
@@ -199,7 +199,7 @@ export class TransformHelperStretch extends TransformHelper {
 
 			_boxVector.copy(handle.position).multiply(_scale);
 
-			_wScale.copy(this.worldScale);
+			_wScale.copy(this.scale);
 
 			_wScale.x *= 0.125;
 			_wScale.y *= 0.125;

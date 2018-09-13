@@ -4,6 +4,7 @@
 
 import {Vector2, Vector3, MOUSE} from "../../lib/three.module.js";
 import {Interactive} from "../Interactive.js";
+import {Animation} from "../Animation.js";
 
 /*
  * ViewportControls is a base class for controls performing orbiting, dollying, and panning.
@@ -73,6 +74,9 @@ export class ViewportControls extends Interactive {
 			_dollyOffset: 0,
 			_dollyInertia: 0
 		});
+
+		this.animation = new Animation();
+
 		this.animation.addEventListener('update', event => {
 			this.update(event.timestep);
 		});

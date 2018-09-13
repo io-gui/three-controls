@@ -2,6 +2,7 @@ import {Vector3} from "../../lib/three.module.js";
 import {Helper} from "../Helper.js";
 import {HelperMesh} from "./HelperMesh.js";
 import {ConeGeometry, OctahedronGeometry} from "./HelperGeometries.js";
+import {Animation} from "../Animation.js";
 
 const coneGeometry = new ConeGeometry();
 const octahedronGeometry = new OctahedronGeometry();
@@ -42,6 +43,12 @@ export class TransformHelper extends Helper {
 
 		// Hide pickers
 		for (let i = 0; i < this.pickers.length; i++) this.pickers[i].material.visible = false;
+
+		this.animation = new Animation();
+
+		this.animation.addEventListener('update', () => {
+			this.dispatchEvent({type: 'change'});
+		});
 	}
 	objectChanged() {
 		this.animation.startAnimation(4);
@@ -102,9 +109,9 @@ export class TransformHelper extends Helper {
 	updateHelperMatrix() {
 		super.updateHelperMatrix();
 
-		this.worldX.set(1, 0, 0).applyQuaternion(this.worldQuaternion);
-		this.worldY.set(0, 1, 0).applyQuaternion(this.worldQuaternion);
-		this.worldZ.set(0, 0, 1).applyQuaternion(this.worldQuaternion);
+		this.worldX.set(1, 0, 0).applyQuaternion(this.quaternion);
+		this.worldY.set(0, 1, 0).applyQuaternion(this.quaternion);
+		this.worldZ.set(0, 0, 1).applyQuaternion(this.quaternion);
 
 		this.axisDotEye.set(
 			this.worldX.dot(this.eye),

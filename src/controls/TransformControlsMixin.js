@@ -54,20 +54,6 @@ export const TransformControlsMixin = (superclass) => class extends InteractiveM
 		this.animation.startAnimation(3);
 	}
 	updateHelperMatrix() {
-		if (this.object) {
-			this.object.updateMatrixWorld();
-			this.object.matrixWorld.decompose(this.worldPosition, this.worldQuaternion, this.worldScale);
-		}
-
-		const camera = this.scene.currentCamera;
-		camera.updateMatrixWorld();
-
-		camera.matrixWorld.decompose(this.cameraPosition, this.cameraQuaternion, _tempVector);
-		if (camera.isPerspectiveCamera) {
-			this.eye.copy(this.cameraPosition).sub(this.worldPosition).normalize();
-		} else if (camera.isOrthographicCamera) {
-			this.eye.copy(this.cameraPosition).normalize();
-		}
 		super.updateHelperMatrix();
 		this.updatePlane();
 	}
@@ -101,9 +87,9 @@ export const TransformControlsMixin = (superclass) => class extends InteractiveM
 			this.positionStart.copy(this.object.position);
 			this.quaternionStart.copy(this.object.quaternion);
 			this.scaleStart.copy(this.object.scale);
-			this.object.matrixWorld.decompose(this.worldPositionStart, this.worldQuaternionStart, this.worldScaleStart);
-			this.pointStart.copy(planeIntersect).sub(this.worldPositionStart);
-			if (space === 'local') this.pointStart.applyQuaternion(this.worldQuaternionStart.clone().inverse());
+			this.object.matrixWorld.decompose(this.positionStart, this.quaternionStart, this.scaleStart);
+			this.pointStart.copy(planeIntersect).sub(this.positionStart);
+			if (space === 'local') this.pointStart.applyQuaternion(this.quaternionStart.clone().inverse());
 			this.active = true;
 		}
 	}
@@ -121,9 +107,9 @@ export const TransformControlsMixin = (superclass) => class extends InteractiveM
 
 		if (!planeIntersect) return;
 
-		this.pointEnd.copy(planeIntersect).sub(this.worldPositionStart);
+		this.pointEnd.copy(planeIntersect).sub(this.positionStart);
 
-		if (space === 'local') this.pointEnd.applyQuaternion(this.worldQuaternionStart.clone().inverse());
+		if (space === 'local') this.pointEnd.applyQuaternion(this.quaternionStart.clone().inverse());
 
 		this.transform();
 
@@ -160,11 +146,11 @@ export const TransformControlsMixin = (superclass) => class extends InteractiveM
 		if (axis === 'XZ') normal.copy(this.worldY);
 		if (axis === 'XYZ' || axis === 'E') camera.getWorldDirection(normal);
 
-		this.plane.setFromNormalAndCoplanarPoint(normal, this.worldPosition);
+		this.plane.setFromNormalAndCoplanarPoint(normal, this.position);
 
 		// this.parent.add(this.planeMesh);
 		// this.planeMesh.position.set(0,0,0);
 		// this.planeMesh.lookAt(this.plane.normal);
-		// this.planeMesh.position.copy(this.worldPosition);
+		// this.planeMesh.position.copy(this.position);
 	}
 };

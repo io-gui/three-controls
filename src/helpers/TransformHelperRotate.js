@@ -69,7 +69,7 @@ export class TransformHelperRotate extends TransformHelper {
 	updateHelperMatrix() {
 		// TODO: simplify rotation handle logic
 		super.updateHelperMatrix();
-		const quaternion = this.space === "local" ? this.worldQuaternion : identityQuaternion;
+		const quaternion = this.space === "local" ? this.quaternion : identityQuaternion;
 		// Align handles to current local or world rotation
 		tempQuaternion.copy(quaternion).inverse();
 		alignVector.copy(this.eye).applyQuaternion(tempQuaternion);

@@ -75,7 +75,7 @@ export class SelectionHelper extends Helper {
 		this.updateHelperMatrix();
 		this.matrixWorldNeedsUpdate = false;
 		this.object.matrixWorld.decompose(_position, _quaternion, _scale);
-		_m1.compose(this.worldPosition, this.worldQuaternion, _one);
+		_m1.compose(this.position, this.quaternion, _one);
 
 		_scale.x = Math.abs(_scale.x);
 		_scale.y = Math.abs(_scale.y);
@@ -85,15 +85,15 @@ export class SelectionHelper extends Helper {
 
 			_position.copy(this.children[i].position).multiply(_scale);
 
-			let __scale = this.worldScale.clone();
+			let __scale = this.scale.clone();
 
-			let dir = this.children[i].position.clone().applyQuaternion(this.worldQuaternion).normalize();
+			let dir = this.children[i].position.clone().applyQuaternion(this.quaternion).normalize();
 
 			this.children[i].material.highlight = Math.min(Math.max(3 - Math.abs(dir.dot(this.eye)) * 4, -0.9), 1.0);
 
-			__scale.x = Math.min(this.worldScale.x, Math.abs(_position.x) / 2);
-			__scale.y = Math.min(this.worldScale.y, Math.abs(_position.y) / 2);
-			__scale.z = Math.min(this.worldScale.z, Math.abs(_position.z) / 2);
+			__scale.x = Math.min(this.scale.x, Math.abs(_position.x) / 2);
+			__scale.y = Math.min(this.scale.y, Math.abs(_position.y) / 2);
+			__scale.z = Math.min(this.scale.z, Math.abs(_position.z) / 2);
 
 			_m2.compose(_position, new Quaternion, __scale);
 
