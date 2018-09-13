@@ -2,7 +2,7 @@ import {Vector3} from "../../lib/three.module.js";
 import {Helper} from "../Helper.js";
 import {HelperMesh} from "./HelperMesh.js";
 import {ConeGeometry, OctahedronGeometry} from "./HelperGeometries.js";
-import {Animation} from "../Animation.js";
+import {Animation} from "../../lib/Animation.js";
 
 const coneGeometry = new ConeGeometry();
 const octahedronGeometry = new OctahedronGeometry();

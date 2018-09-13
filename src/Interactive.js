@@ -5,22 +5,27 @@
 import {PointerEvents} from "../lib/PointerEvents.js";
 import {Helper} from "./Helper.js";
 
-// TODO: documentation
 /*
- * onKeyDown, onKeyUp require domElement to be focused (set tabindex attribute)
+ * Wraps target class with PointerEvent API polyfill for more powerful mouse/touch interactions.
+ * Following callbacks will be invoked on pointer events:
+ * onPointerDown, onPointerHover, onPointerMove, onPointerUp,
+ * onKeyDown, onKeyUp, onWheel, onContextmenu, onFocus, onBlur.
+ *
+ * onKeyDown, onKeyUp require domElement to be focused (set tabindex attribute).
  */
 
-// TODO: implement dom element swap and multiple dom elements
+// TODO: PointerEvents documentation
+
 export const InteractiveMixin = (superclass) => class extends superclass {
-	get isInteractive() { return true; }
 	constructor(props) {
 		super(props);
 
 		this.defineProperties({
 			enabled: true,
-			domElement: props.domElement || null,
-			_pointerEvents: new PointerEvents(props.domElement, {normalized: true})
+			domElement: props.domElement // TODO: implement domElement change / multiple elements
 		});
+
+		this._pointerEvents = new PointerEvents(props.domElement, {normalized: true});
 
 		this.onPointerDown = this.onPointerDown.bind(this);
 		this.onPointerHover = this.onPointerHover.bind(this);
@@ -83,5 +88,9 @@ export const InteractiveMixin = (superclass) => class extends superclass {
 	onFocus() {} // event
 	onBlur() {} // event
 };
+
+/*
+ * Helper class wrapped with PointerEvents API polyfill.
+ */
 
 export class Interactive extends InteractiveMixin(Helper) {}

@@ -246,7 +246,6 @@
 						viewportControls.dispose();
 					}
 					viewportControls = new ControlClass({domElement: canvas, camera: camera});
-					viewportControls.enableDamping = false;
 					viewportControls.addEventListener('change', viewportControlsChanged);
 				}
 				window.setupViewportControls = setupViewportControls;
