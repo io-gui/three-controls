@@ -7,7 +7,8 @@ import {Helper} from "../Helper.js";
 import {HelperMesh} from "./HelperMesh.js";
 import {TransformHelper} from "./TransformHelper.js";
 import {HelperMaterial as Material} from "./HelperMaterial.js";
-import {Corner3Geometry, combineGometries} from "./HelperGeometries.js";
+import {HelperGeometry} from "./HelperGeometry.js";
+import {Corner3Geometry} from "./HelperGeometries.js";
 
 const HPI = Math.PI / 2;
 const PI = Math.PI;
@@ -24,18 +25,20 @@ const _one = new Vector3(1, 1, 1);
 
 const corner3Geometry = new Corner3Geometry();
 
+const handleGeometry = {
+	XYZ: new HelperGeometry(corner3Geometry, {color: [1, 1, 0], rotation: [HPI, 0, PI]}),
+	XYz: new HelperGeometry(corner3Geometry, {color: [1, 1, 0], rotation: [HPI, 0, HPI]}),
+	xyz: new HelperGeometry(corner3Geometry, {color: [1, 1, 0], rotation: [-HPI, 0, -HPI]}),
+	xyZ: new HelperGeometry(corner3Geometry, {color: [1, 1, 0], rotation: [-HPI, 0, 0]}),
+	xYZ: new HelperGeometry(corner3Geometry, {color: [1, 1, 0], rotation: [PI/2, 0, -PI/2]}),
+	xYz: new HelperGeometry(corner3Geometry, {color: [1, 1, 0], rotation: [PI/2, 0, 0]}),
+	Xyz: new HelperGeometry(corner3Geometry, {color: [1, 1, 0], rotation: [0, 0, HPI]}),
+	XyZ: new HelperGeometry(corner3Geometry, {color: [1, 1, 0], rotation: [0, PI, 0]}),
+};
+
 export class SelectionHelper extends Helper {
 	get handlesGroup() {
-		return {
-			XYZ: [{geometry: combineGometries([{geometry: corner3Geometry, color: [1, 1, 0], rotation: [HPI, 0, PI]}])}],
-			XYz: [{geometry: combineGometries([{geometry: corner3Geometry, color: [1, 1, 0], rotation: [HPI, 0, HPI]}])}],
-			xyz: [{geometry: combineGometries([{geometry: corner3Geometry, color: [1, 1, 0], rotation: [-HPI, 0, -HPI]}])}],
-			xyZ: [{geometry: combineGometries([{geometry: corner3Geometry, color: [1, 1, 0], rotation: [-HPI, 0, 0]}])}],
-			xYZ: [{geometry: combineGometries([{geometry: corner3Geometry, color: [1, 1, 0], rotation: [PI/2, 0, -PI/2]}])}],
-			xYz: [{geometry: combineGometries([{geometry: corner3Geometry, color: [1, 1, 0], rotation: [PI/2, 0, 0]}])}],
-			Xyz: [{geometry: combineGometries([{geometry: corner3Geometry, color: [1, 1, 0], rotation: [0, 0, HPI]}])}],
-			XyZ: [{geometry: combineGometries([{geometry: corner3Geometry, color: [1, 1, 0], rotation: [0, PI, 0]}])}],
-		};
+		return handleGeometry;
 	}
 	constructor(props) {
 		super(props);

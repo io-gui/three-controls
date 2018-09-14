@@ -75,18 +75,18 @@ export const InteractiveMixin = (superclass) => class extends superclass {
 	enabledChanged(value) {
 		value ? this._addEvents() : this._removeEvents();
 	}
-	// Control methods. Implement in subclass!
-	onContextmenu() {} // event
-	onPointerHover() {} // pointer
-	onPointerDown() {} // pointer
-	onPointerMove() {} // pointer
-	onPointerUp() {} // pointer
-	onPointerLeave() {} // pointer
-	onKeyDown() {} // event
-	onKeyUp() {} // event
-	onWheel() {} // event
-	onFocus() {} // event
-	onBlur() {} // event
+	// Control methods - implemented in subclass!
+	onContextmenu(/*event*/) {}
+	onPointerHover(/*pointer*/) {}
+	onPointerDown(/*pointer*/) {}
+	onPointerMove(/*pointer*/) {}
+	onPointerUp(/*pointer*/) {}
+	onPointerLeave(/*pointer*/) {}
+	onKeyDown(/*event*/) {}
+	onKeyUp(/*event*/) {}
+	onWheel(/*event*/) {}
+	onFocus(/*event*/) {}
+	onBlur(/*event*/) {}
 };
 
 /*

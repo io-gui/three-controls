@@ -79,13 +79,6 @@
 			import {TrackballControls} from "./src/controls/TrackballControls.js";
 			import {SelectionControls} from "./src/controls/SelectionControls.js";
 
-			import {TransformHelperTranslate} from "./src/helpers/TransformHelperTranslate.js";
-			import {TransformHelperRotate} from "./src/helpers/TransformHelperRotate.js";
-			import {TransformHelperScale} from "./src/helpers/TransformHelperScale.js";
-			import {TransformHelperStretch} from "./src/helpers/TransformHelperStretch.js";
-			import {HelperMesh} from "./src/helpers/HelperMesh.js";
-
-
 			import {WebGLRenderer, PerspectiveCamera, Scene, GridHelper, DirectionalLight,
 				BoxBufferGeometry, MeshLambertMaterial, Mesh, Object3D, TextureLoader, Color,
 				SphereBufferGeometry, Vector3,BufferGeometry, BufferAttribute} from "./lib/three.module.js";
@@ -271,7 +264,7 @@
 					if (viewportControls) viewportControls.enabled = true;
 					transformControls = new ControlClass({domElement: canvas, camera: camera});
 					transformControls.addEventListener('change', transformControlsChanged);
-					transformControls.object = selectionControls && selectionControls.selected.length ? selectionControls : null;
+					transformControls.object = transformControls.object = selectionControls && selectionControls.selected.length ? selectionControls : null;
 					transformControls.space = 'world';
 					helperScene.add(transformControls);
 				}
@@ -388,7 +381,7 @@
 
 			}
 
-			render();
+			animate();
 
 		</script>
 

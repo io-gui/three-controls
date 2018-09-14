@@ -1,4 +1,5 @@
 import {Vector3, Matrix4, Quaternion} from "../../lib/three.module.js";
+import {HelperGeometry} from "./HelperGeometry.js";
 import {TransformHelper} from "./TransformHelper.js";
 import {RotateHandleGeometry, RotatePickerGeometry, RingGeometry, RingPickerGeometry, CircleGeometry, OctahedronGeometry} from "./HelperGeometries.js";
 
@@ -14,36 +15,33 @@ const unitX = new Vector3(1, 0, 0);
 const unitY = new Vector3(0, 1, 0);
 const unitZ = new Vector3(0, 0, 1);
 
-const rotateHandleGeometry = new RotateHandleGeometry();
-const rotatePickerGeometry = new RotatePickerGeometry();
-const ringGeometry = new RingGeometry();
-const ringPickerGeometry = new RingPickerGeometry();
-const circleGeometry = new CircleGeometry();
-const octahedronGeometry = new OctahedronGeometry();
-
 function stringHas(str, char) {return str.search(char) !== -1;}
+
+const handleGeometry = {
+	X: new HelperGeometry(new RotateHandleGeometry(), {color: [1, 0.3, 0.3], rotation: [Math.PI / 2, Math.PI / 2, 0]}),
+	Y: new HelperGeometry(new RotateHandleGeometry(), {color: [0.3, 1, 0.3], rotation: [Math.PI / 2, 0, 0]}),
+	Z: new HelperGeometry(new RotateHandleGeometry(), {color: [0.3, 0.3, 1], rotation: [0, 0, -Math.PI / 2]}),
+	E: new HelperGeometry(new RingGeometry(), {color: [1, 1, 0.5], rotation: [Math.PI / 2, Math.PI / 2, 0], scale: 1.2}),
+	XYZ: new HelperGeometry([
+		[new RingGeometry(), {color: [0.5, 0.5, 0.5], rotation: [Math.PI / 2, Math.PI / 2, 0]}],
+		[new CircleGeometry(), {color: [0.5, 0.5, 0.5, 0.25], rotation: [Math.PI / 2, Math.PI / 2, 0], scale: 0.25}]
+	]),
+};
+
+const pickerGeometry = {
+	X: new HelperGeometry(new RotatePickerGeometry(), {color: [1, 0, 0, 0.5], rotation: [Math.PI / 2, Math.PI / 2, 0]}),
+	Y: new HelperGeometry(new RotatePickerGeometry(), {color: [0, 1, 0, 0.5], rotation: [Math.PI / 2, 0, 0]}),
+	Z: new HelperGeometry(new RotatePickerGeometry(), {color: [0, 0, 1, 0.5], rotation: [0, 0, -Math.PI / 2]}),
+	E: new HelperGeometry(new RingPickerGeometry(), {color: [1, 1, 0.5, 0.5], rotation: [Math.PI / 2, Math.PI / 2, 0], scale: 1.2}),
+	XYZ: new HelperGeometry(new OctahedronGeometry(), {color: [0.5, 0.5, 0.5, 0.15], rotation: [Math.PI / 2, Math.PI / 2, 0], scale: 0.32}),
+};
 
 export class TransformHelperRotate extends TransformHelper {
 	get handlesGroup() {
-		return {
-			X: [{geometry: rotateHandleGeometry, color: [1, 0.3, 0.3], rotation: [Math.PI / 2, Math.PI / 2, 0]}],
-			Y: [{geometry: rotateHandleGeometry, color: [0.3, 1, 0.3], rotation: [Math.PI / 2, 0, 0]}],
-			Z: [{geometry: rotateHandleGeometry, color: [0.3, 0.3, 1], rotation: [0, 0, -Math.PI / 2]}],
-			E: [{geometry: ringGeometry, color: [1, 1, 0.5], rotation: [Math.PI / 2, Math.PI / 2, 0], scale: 1.2}],
-			XYZ: [
-				{geometry: ringGeometry, color: [0.5, 0.5, 0.5], rotation: [Math.PI / 2, Math.PI / 2, 0]},
-				{geometry: circleGeometry, color: [0.5, 0.5, 0.5, 0.25], rotation: [Math.PI / 2, Math.PI / 2, 0], scale: 0.25}
-			],
-		};
+		return handleGeometry;
 	}
 	get pickersGroup() {
-		return {
-			X: [{geometry: rotatePickerGeometry, color: [1, 0, 0, 0.5], rotation: [Math.PI / 2, Math.PI / 2, 0]}],
-			Y: [{geometry: rotatePickerGeometry, color: [0, 1, 0, 0.5], rotation: [Math.PI / 2, 0, 0]}],
-			Z: [{geometry: rotatePickerGeometry, color: [0, 0, 1, 0.5], rotation: [0, 0, -Math.PI / 2]}],
-			E: [{geometry: ringPickerGeometry, color: [1, 1, 0.5, 0.5], rotation: [Math.PI / 2, Math.PI / 2, 0], scale: 1.2}],
-			XYZ: [{geometry: octahedronGeometry, color: [0.5, 0.5, 0.5, 0.15], rotation: [Math.PI / 2, Math.PI / 2, 0], scale: 0.32}],
-		};
+		return pickerGeometry;
 	}
 	updateAxesDirection(axis){
 		axis.quaternion.copy(identityQuaternion);

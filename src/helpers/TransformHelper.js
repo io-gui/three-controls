@@ -12,8 +12,8 @@ function hasAxisAny(str, chars) {
 	return has;
 }
 
-const octahedronGeometry = new OctahedronGeometry();
-const corner3Geometry = new Corner3Geometry();
+// const octahedronGeometry = new OctahedronGeometry();
+// const corner3Geometry = new Corner3Geometry();
 
 // Creates an Object3D with gizmos described in custom hierarchy definition.
 class HelperGroup extends Array {
@@ -27,16 +27,20 @@ class HelperGroup extends Array {
 	}
 }
 
+const handleGeometry = {
+	XYZ: new Corner3Geometry()
+};
+
+const pickerGeometry = {
+	XYZ: new OctahedronGeometry()
+};
+
 export class TransformHelper extends Helper {
 	get handlesGroup() {
-		return {
-			XYZ: [{geometry: new Corner3Geometry()}]
-		};
+		return handleGeometry;
 	}
 	get pickersGroup() {
-		return {
-			XYZ: [{geometry: new OctahedronGeometry()}]
-		};
+		return pickerGeometry;
 	}
 	constructor(props) {
 		super(props);

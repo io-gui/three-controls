@@ -1,52 +1,49 @@
 import {TransformHelper} from "./TransformHelper.js";
+import {HelperGeometry} from "./HelperGeometry.js";
 import {ArrowGeometry, Corner2Geometry, OctahedronGeometry, PickerHandleGeometry, PlaneGeometry} from "./HelperGeometries.js";
 
 const AXIS_HIDE_TRESHOLD = 0.99;
 const PLANE_HIDE_TRESHOLD = 0.2;
 const AXIS_FLIP_TRESHOLD = -0.2;
 
-const arrowGeometry = new ArrowGeometry();
-const corner2Geometry = new Corner2Geometry();
-const octahedronGeometry = new OctahedronGeometry();
-const pickerHandleGeometry = new PickerHandleGeometry();
-const planeGeometry = new PlaneGeometry();
+const handleGeometry = {
+	X: new HelperGeometry(new ArrowGeometry(), {color: [1, 0.3, 0.3], rotation: [0, 0, -Math.PI / 2]}),
+	Y: new HelperGeometry(new ArrowGeometry(), {color: [0.3, 1, 0.3]}),
+	Z: new HelperGeometry(new ArrowGeometry(), {color: [0.3, 0.3, 1], rotation: [Math.PI / 2, 0, 0]}),
+	XYZ: new HelperGeometry(new OctahedronGeometry(), {color: [1, 1, 1, 0.5], scale: 0.1}),
+	XY: new HelperGeometry([
+		[new PlaneGeometry(), {color: [1,1,0,0.125], position: [0.15, 0.15, 0], scale: 0.3}],
+		[new Corner2Geometry(), {color: [1,1,0.3], position: [0.3, 0.3, 0], scale: 0.15, rotation: [Math.PI / 2, 0, Math.PI]}]
+	]),
+	YZ: new HelperGeometry([
+		[new PlaneGeometry(), {color: [0,1,1,0.125], position: [0, 0.15, 0.15], rotation: [0, Math.PI / 2, 0], scale: 0.3}],
+		[new Corner2Geometry(), {color: [0.3,1,1], position: [0, 0.3, 0.3], scale: 0.15, rotation: [0, Math.PI, -Math.PI / 2]}]
+	]),
+	XZ: new HelperGeometry([
+		[new PlaneGeometry(), {color: [1,0,1,0.125], position: [0.15, 0, 0.15], rotation: [-Math.PI / 2, 0, 0], scale: 0.3}],
+		[new Corner2Geometry(), {color: [1,0.3,1], position: [0.3, 0, 0.3], scale: 0.15, rotation: [0, Math.PI, 0]}]
+	])
+};
+
+const pickerGeometry = {
+	X: new HelperGeometry(new PickerHandleGeometry(), {color: [1, 0.3, 0.3, 0.5], rotation: [0, 0, -Math.PI / 2]}),
+	Y: new HelperGeometry(new PickerHandleGeometry(), {color: [0.3, 1, 0.3, 0.5]}),
+	Z: new HelperGeometry(new PickerHandleGeometry(), {color: [0.3, 0.3, 1, 0.5], rotation: [Math.PI / 2, 0, 0]}),
+	XYZ: new HelperGeometry(new OctahedronGeometry(), {color: [0.5, 0.5, 0.5, 0.5], scale: 0.2}),
+	XY: new HelperGeometry(new PlaneGeometry(), {color: [1,1,0,0.5,0.5], position: [0.25, 0.25, 0], scale: 0.5}),
+	YZ: new HelperGeometry(new PlaneGeometry(), {color: [0,1,1,0.5,0.5], position: [0, 0.25, 0.25], rotation: [0, Math.PI / 2, 0], scale: 0.5}),
+	XZ: new HelperGeometry(new PlaneGeometry(), {color: [1,0,1,0.5,0.5], position: [0.25, 0, 0.25], rotation: [-Math.PI / 2, 0, 0], scale: 0.5})
+};
 
 function stringHas(str, char) {return str.search(char) !== -1;}
 
 export class TransformHelperTranslate extends TransformHelper {
 	get isTransformHelperTranslate() { return true; }
 	get handlesGroup() {
-		return {
-			X: [{geometry: arrowGeometry, color: [1, 0.3, 0.3], rotation: [0, 0, -Math.PI / 2]}],
-			Y: [{geometry: arrowGeometry, color: [0.3, 1, 0.3]}],
-			Z: [{geometry: arrowGeometry, color: [0.3, 0.3, 1], rotation: [Math.PI / 2, 0, 0]}],
-			XYZ: [
-				{geometry: octahedronGeometry, color: [1, 1, 1, 0.5], scale: 0.1}
-			],
-			XY: [
-				{geometry: planeGeometry, color: [1,1,0,0.125], position: [0.15, 0.15, 0], scale: 0.3},
-				{geometry: corner2Geometry, color: [1,1,0.3], position: [0.3, 0.3, 0], scale: 0.15, rotation: [Math.PI / 2, 0, Math.PI]}
-			],
-			YZ: [
-				{geometry: planeGeometry, color: [0,1,1,0.125], position: [0, 0.15, 0.15], rotation: [0, Math.PI / 2, 0], scale: 0.3},
-				{geometry: corner2Geometry, color: [0.3,1,1], position: [0, 0.3, 0.3], scale: 0.15, rotation: [0, Math.PI, -Math.PI / 2]}
-			],
-			XZ: [
-				{geometry: planeGeometry, color: [1,0,1,0.125], position: [0.15, 0, 0.15], rotation: [-Math.PI / 2, 0, 0], scale: 0.3},
-				{geometry: corner2Geometry, color: [1,0.3,1], position: [0.3, 0, 0.3], scale: 0.15, rotation: [0, Math.PI, 0]}
-			]
-		};
+		return handleGeometry;
 	}
 	get pickersGroup() {
-		return {
-			X: [{geometry: pickerHandleGeometry, color: [1, 0.3, 0.3, 0.5], rotation: [0, 0, -Math.PI / 2]}],
-			Y: [{geometry: pickerHandleGeometry, color: [0.3, 1, 0.3, 0.5]}],
-			Z: [{geometry: pickerHandleGeometry, color: [0.3, 0.3, 1, 0.5], rotation: [Math.PI / 2, 0, 0]}],
-			XYZ: [{geometry: octahedronGeometry, color: [0.5, 0.5, 0.5, 0.5], scale: 0.2}],
-			XY: [{ geometry: planeGeometry, color: [1,1,0,0.5,0.5], position: [0.25, 0.25, 0], scale: 0.5}],
-			YZ: [{ geometry: planeGeometry, color: [0,1,1,0.5,0.5], position: [0, 0.25, 0.25], rotation: [0, Math.PI / 2, 0], scale: 0.5}],
-			XZ: [{ geometry: planeGeometry, color: [1,0,1,0.5,0.5], position: [0.25, 0, 0.25], rotation: [-Math.PI / 2, 0, 0], scale: 0.5}]
-		};
+		return pickerGeometry;
 	}
 	constructor(props) {
 		super(props);
@@ -107,8 +104,5 @@ export class TransformHelperTranslate extends TransformHelper {
 			this.flipY = yDotE < AXIS_FLIP_TRESHOLD;
 			this.flipZ = zDotE < AXIS_FLIP_TRESHOLD;
 		}
-
-
-
 	}
 }

@@ -1,7 +1,8 @@
 import {Object3D, Line, Vector3, Euler, Quaternion, Matrix4, Box3} from "../../lib/three.module.js";
 import {TransformHelper} from "./TransformHelper.js";
-import {Corner2Geometry, PlaneGeometry, LineGeometry, combineGometries} from "./HelperGeometries.js";
+import {Corner2Geometry, PlaneGeometry, LineGeometry} from "./HelperGeometries.js";
 import {HelperMesh} from "./HelperMesh.js";
+import {HelperGeometry} from "./HelperGeometry.js";
 
 const HPI = Math.PI / 2;
 const PI = Math.PI;
@@ -18,84 +19,88 @@ const _m1 = new Matrix4();
 const _m2 = new Matrix4();
 const _one = new Vector3(1, 1, 1);
 
-const cornerHandle = combineGometries([
-	{geometry: new Corner2Geometry(), rotation: [-HPI, 0, 0]},
-	{geometry: new PlaneGeometry(), color: [1, 1, 1, 0.25], position: [0.5, 0.5, 0]}
+const cornerHandle = new HelperGeometry([
+	[new Corner2Geometry(), {rotation: [-HPI, 0, 0]}],
+	[new PlaneGeometry(), {color: [1, 1, 1, 0.25], position: [0.5, 0.5, 0]}]
 ]);
 
-const edgeHandle = combineGometries([
-	{geometry: new LineGeometry()},
-	{geometry: new PlaneGeometry(), color: [1, 1, 1, 0.25], position: [0.5, 0, 0]},
+const edgeHandle = new HelperGeometry([
+	[new LineGeometry()],
+	[new PlaneGeometry(), {color: [1, 1, 1, 0.25], position: [0.5, 0, 0]}],
 ]);
 
-const cornerPicker = combineGometries([
-	{geometry: new PlaneGeometry(), position: [0.75, 0.75, 0], color: [1, 1, 1, 0.125], scale: [1.5, 1.5, 1]}
+const cornerPicker = new HelperGeometry([
+	[new PlaneGeometry(), {position: [0.75, 0.75, 0], color: [1, 1, 1, 0.125], scale: [1.5, 1.5, 1]}]
 ]);
 
-const edgePicker = combineGometries([
-	{geometry: new PlaneGeometry(), position: [0.75, 0, 0], color: [1, 1, 1, 0.125], scale: [1.5, 1, 1]},
+const edgePicker = new HelperGeometry([
+	[new PlaneGeometry(), {position: [0.75, 0, 0], color: [1, 1, 1, 0.125], scale: [1.5, 1, 1]}],
 ]);
+
+const handleGeometry = {
+	X_yp: new HelperGeometry(edgeHandle, {color: [0.5, 1, 0.5], rotation: [HPI, -HPI, 0]}),
+	X_yn: new HelperGeometry(edgeHandle, {color: [0.5, 1, 0.5], rotation: [HPI, HPI, 0]}),
+	X_zp: new HelperGeometry(edgeHandle, {color: [0.5, 0.5, 1], rotation: [0, HPI, 0]}),
+	X_zn: new HelperGeometry(edgeHandle, {color: [0.5, 0.5, 1], rotation: [0, -HPI, 0]}),
+	X_zp_yp: new HelperGeometry(cornerHandle, {color: [0.5, 1, 1], rotation: [-HPI, HPI, 0]}),
+	X_zn_yn: new HelperGeometry(cornerHandle, {color: [0.5, 1, 1], rotation: [0, -HPI, 0]}),
+	X_zp_yn: new HelperGeometry(cornerHandle, {color: [0.5, 1, 1], rotation: [0, HPI, 0]}),
+	X_zn_yp: new HelperGeometry(cornerHandle, {color: [0.5, 1, 1], rotation: [HPI, -HPI, 0]}),
+
+	Y_zp: new HelperGeometry(edgeHandle, {color: [0.5, 0.5, 1], rotation: [-HPI, 0, HPI]}),
+	Y_zn: new HelperGeometry(edgeHandle, {color: [0.5, 0.5, 1], rotation: [HPI, 0, HPI]}),
+	Y_xp: new HelperGeometry(edgeHandle, {color: [1, 0.5, 0.5], rotation: [HPI, PI, 0]}),
+	Y_xn: new HelperGeometry(edgeHandle, {color: [1, 0.5, 0.5], rotation: [-HPI, 0, 0]}),
+	Y_xp_zp: new HelperGeometry(cornerHandle, {color: [1, 0.5, 1], rotation: [-HPI, 0, HPI]}),
+	Y_xn_zn: new HelperGeometry(cornerHandle, {color: [1, 0.5, 1], rotation: [HPI, 0, 0]}),
+	Y_xp_zn: new HelperGeometry(cornerHandle, {color: [1, 0.5, 1], rotation: [HPI, 0, HPI]}),
+	Y_xn_zp: new HelperGeometry(cornerHandle, {color: [1, 0.5, 1], rotation: [HPI, 0, -HPI]}),
+
+	Z_yp: new HelperGeometry(edgeHandle, {color: [0.5, 1, 0.5], rotation: [0, 0, -HPI]}),
+	Z_yn: new HelperGeometry(edgeHandle, {color: [0.5, 1, 0.5], rotation: [0, 0, HPI]}),
+	Z_xp: new HelperGeometry(edgeHandle, {color: [1, 0.5, 0.5], rotation: [0, PI, 0]}),
+	Z_xn: new HelperGeometry(edgeHandle, {color: [1, 0.5, 0.5], rotation: [0, 0, 0]}),
+	Z_xp_yp: new HelperGeometry(cornerHandle, {color: [1, 1, 0.5], rotation: [PI, 0, HPI]}),
+	Z_xn_yn: new HelperGeometry(cornerHandle, {color: [1, 1, 0.5], rotation: [PI, 0, -HPI]}),
+	Z_xp_yn: new HelperGeometry(cornerHandle, {color: [1, 1, 0.5], rotation: [0, 0, HPI]}),
+	Z_xn_yp: new HelperGeometry(cornerHandle, {color: [1, 1, 0.5], rotation: [PI, 0, 0]}),
+};
+
+const pickerGeometry = {
+	X_yp: new HelperGeometry(edgePicker, {color: [0.5, 1, 0.5], rotation: [HPI, -HPI, 0]}),
+	X_yn: new HelperGeometry(edgePicker, {color: [0.5, 1, 0.5], rotation: [HPI, HPI, 0]}),
+	X_zp: new HelperGeometry(edgePicker, {color: [0.5, 0.5, 1], rotation: [0, HPI, 0]}),
+	X_zn: new HelperGeometry(edgePicker, {color: [0.5, 0.5, 1], rotation: [0, -HPI, 0]}),
+	X_zp_yp: new HelperGeometry(cornerPicker, {color: [0.5, 1, 1], rotation: [-HPI, HPI, 0]}),
+	X_zn_yn: new HelperGeometry(cornerPicker, {color: [0.5, 1, 1], rotation: [0, -HPI, 0]}),
+	X_zp_yn: new HelperGeometry(cornerPicker, {color: [0.5, 1, 1], rotation: [0, HPI, 0]}),
+	X_zn_yp: new HelperGeometry(cornerPicker, {color: [0.5, 1, 1], rotation: [HPI, -HPI, 0]}),
+
+	Y_zp: new HelperGeometry(edgePicker, {color: [0.5, 0.5, 1], rotation: [-HPI, 0, HPI]}),
+	Y_zn: new HelperGeometry(edgePicker, {color: [0.5, 0.5, 1], rotation: [HPI, 0, HPI]}),
+	Y_xp: new HelperGeometry(edgePicker, {color: [1, 0.5, 0.5], rotation: [HPI, PI, 0]}),
+	Y_xn: new HelperGeometry(edgePicker, {color: [1, 0.5, 0.5], rotation: [-HPI, 0, 0]}),
+	Y_xp_zp: new HelperGeometry(cornerPicker, {color: [1, 0.5, 1], rotation: [-HPI, 0, HPI]}),
+	Y_xn_zn: new HelperGeometry(cornerPicker, {color: [1, 0.5, 1], rotation: [HPI, 0, 0]}),
+	Y_xp_zn: new HelperGeometry(cornerPicker, {color: [1, 0.5, 1], rotation: [HPI, 0, HPI]}),
+	Y_xn_zp: new HelperGeometry(cornerPicker, {color: [1, 0.5, 1], rotation: [HPI, 0, -HPI]}),
+
+	Z_yp: new HelperGeometry(edgePicker, {color: [0.5, 1, 0.5], rotation: [0, 0, -HPI]}),
+	Z_yn: new HelperGeometry(edgePicker, {color: [0.5, 1, 0.5], rotation: [0, 0, HPI]}),
+	Z_xp: new HelperGeometry(edgePicker, {color: [1, 0.5, 0.5], rotation: [0, PI, 0]}),
+	Z_xn: new HelperGeometry(edgePicker, {color: [1, 0.5, 0.5], rotation: [0, 0, 0]}),
+	Z_xp_yp: new HelperGeometry(cornerPicker, {color: [1, 1, 0.5], rotation: [PI, 0, HPI]}),
+	Z_xn_yn: new HelperGeometry(cornerPicker, {color: [1, 1, 0.5], rotation: [PI, 0, -HPI]}),
+	Z_xp_yn: new HelperGeometry(cornerPicker, {color: [1, 1, 0.5], rotation: [0, 0, HPI]}),
+	Z_xn_yp: new HelperGeometry(cornerPicker, {color: [1, 1, 0.5], rotation: [PI, 0, 0]}),
+};
 
 export class TransformHelperStretch extends TransformHelper {
 	get handlesGroup() {
-		return {
-			X_yp: [{geometry: edgeHandle, color: [0.5, 1, 0.5], rotation: [HPI, -HPI, 0]}],
-			X_yn: [{geometry: edgeHandle, color: [0.5, 1, 0.5], rotation: [HPI, HPI, 0]}],
-			X_zp: [{geometry: edgeHandle, color: [0.5, 0.5, 1], rotation: [0, HPI, 0]}],
-			X_zn: [{geometry: edgeHandle, color: [0.5, 0.5, 1], rotation: [0, -HPI, 0]}],
-			X_zp_yp: [{geometry: cornerHandle, color: [0.5, 1, 1], rotation: [-HPI, HPI, 0]}],
-			X_zn_yn: [{geometry: cornerHandle, color: [0.5, 1, 1], rotation: [0, -HPI, 0]}],
-			X_zp_yn: [{geometry: cornerHandle, color: [0.5, 1, 1], rotation: [0, HPI, 0]}],
-			X_zn_yp: [{geometry: cornerHandle, color: [0.5, 1, 1], rotation: [HPI, -HPI, 0]}],
-
-			Y_zp: [{geometry: edgeHandle, color: [0.5, 0.5, 1], rotation: [-HPI, 0, HPI]}],
-			Y_zn: [{geometry: edgeHandle, color: [0.5, 0.5, 1], rotation: [HPI, 0, HPI]}],
-			Y_xp: [{geometry: edgeHandle, color: [1, 0.5, 0.5], rotation: [HPI, PI, 0]}],
-			Y_xn: [{geometry: edgeHandle, color: [1, 0.5, 0.5], rotation: [-HPI, 0, 0]}],
-			Y_xp_zp: [{geometry: cornerHandle, color: [1, 0.5, 1], rotation: [-HPI, 0, HPI]}],
-			Y_xn_zn: [{geometry: cornerHandle, color: [1, 0.5, 1], rotation: [HPI, 0, 0]}],
-			Y_xp_zn: [{geometry: cornerHandle, color: [1, 0.5, 1], rotation: [HPI, 0, HPI]}],
-			Y_xn_zp: [{geometry: cornerHandle, color: [1, 0.5, 1], rotation: [HPI, 0, -HPI]}],
-
-			Z_yp: [{geometry: edgeHandle, color: [0.5, 1, 0.5], rotation: [0, 0, -HPI]}],
-			Z_yn: [{geometry: edgeHandle, color: [0.5, 1, 0.5], rotation: [0, 0, HPI]}],
-			Z_xp: [{geometry: edgeHandle, color: [1, 0.5, 0.5], rotation: [0, PI, 0]}],
-			Z_xn: [{geometry: edgeHandle, color: [1, 0.5, 0.5], rotation: [0, 0, 0]}],
-			Z_xp_yp: [{geometry: cornerHandle, color: [1, 1, 0.5], rotation: [PI, 0, HPI]}],
-			Z_xn_yn: [{geometry: cornerHandle, color: [1, 1, 0.5], rotation: [PI, 0, -HPI]}],
-			Z_xp_yn: [{geometry: cornerHandle, color: [1, 1, 0.5], rotation: [0, 0, HPI]}],
-			Z_xn_yp: [{geometry: cornerHandle, color: [1, 1, 0.5], rotation: [PI, 0, 0]}],
-		}
+		return handleGeometry;
 	}
 	get pickersGroup() {
-		return {
-			X_yp: [{geometry: edgePicker, color: [0.5, 1, 0.5], rotation: [HPI, -HPI, 0]}],
-			X_yn: [{geometry: edgePicker, color: [0.5, 1, 0.5], rotation: [HPI, HPI, 0]}],
-			X_zp: [{geometry: edgePicker, color: [0.5, 0.5, 1], rotation: [0, HPI, 0]}],
-			X_zn: [{geometry: edgePicker, color: [0.5, 0.5, 1], rotation: [0, -HPI, 0]}],
-			X_zp_yp: [{geometry: cornerPicker, color: [0.5, 1, 1], rotation: [-HPI, HPI, 0]}],
-			X_zn_yn: [{geometry: cornerPicker, color: [0.5, 1, 1], rotation: [0, -HPI, 0]}],
-			X_zp_yn: [{geometry: cornerPicker, color: [0.5, 1, 1], rotation: [0, HPI, 0]}],
-			X_zn_yp: [{geometry: cornerPicker, color: [0.5, 1, 1], rotation: [HPI, -HPI, 0]}],
-
-			Y_zp: [{geometry: edgePicker, color: [0.5, 0.5, 1], rotation: [-HPI, 0, HPI]}],
-			Y_zn: [{geometry: edgePicker, color: [0.5, 0.5, 1], rotation: [HPI, 0, HPI]}],
-			Y_xp: [{geometry: edgePicker, color: [1, 0.5, 0.5], rotation: [HPI, PI, 0]}],
-			Y_xn: [{geometry: edgePicker, color: [1, 0.5, 0.5], rotation: [-HPI, 0, 0]}],
-			Y_xp_zp: [{geometry: cornerPicker, color: [1, 0.5, 1], rotation: [-HPI, 0, HPI]}],
-			Y_xn_zn: [{geometry: cornerPicker, color: [1, 0.5, 1], rotation: [HPI, 0, 0]}],
-			Y_xp_zn: [{geometry: cornerPicker, color: [1, 0.5, 1], rotation: [HPI, 0, HPI]}],
-			Y_xn_zp: [{geometry: cornerPicker, color: [1, 0.5, 1], rotation: [HPI, 0, -HPI]}],
-
-			Z_yp: [{geometry: edgePicker, color: [0.5, 1, 0.5], rotation: [0, 0, -HPI]}],
-			Z_yn: [{geometry: edgePicker, color: [0.5, 1, 0.5], rotation: [0, 0, HPI]}],
-			Z_xp: [{geometry: edgePicker, color: [1, 0.5, 0.5], rotation: [0, PI, 0]}],
-			Z_xn: [{geometry: edgePicker, color: [1, 0.5, 0.5], rotation: [0, 0, 0]}],
-			Z_xp_yp: [{geometry: cornerPicker, color: [1, 1, 0.5], rotation: [PI, 0, HPI]}],
-			Z_xn_yn: [{geometry: cornerPicker, color: [1, 1, 0.5], rotation: [PI, 0, -HPI]}],
-			Z_xp_yn: [{geometry: cornerPicker, color: [1, 1, 0.5], rotation: [0, 0, HPI]}],
-			Z_xn_yp: [{geometry: cornerPicker, color: [1, 1, 0.5], rotation: [PI, 0, 0]}],
-		};
+		return pickerGeometry;
 	}
 	objectChanged() {
 		super.objectChanged();

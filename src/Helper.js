@@ -59,8 +59,6 @@ export class Helper extends IoLiteMixin(Object3D) {
 	updateMatrixWorld( force ) {
 		this.updateHelperMatrix();
 		this.matrixWorldNeedsUpdate = false;
-		for (let i = this.children.length; i--;) {
-			this.children[i].updateMatrixWorld( force );
-		}
+		for (let i = this.children.length; i--;) this.children[i].updateMatrixWorld( force );
 	}
 }
