@@ -1,6 +1,6 @@
 import {Object3D, Line, Vector3, Euler, Quaternion, Matrix4, Box3} from "../../lib/three.module.js";
 import {TransformHelper} from "./TransformHelper.js";
-import {Corner2Geometry, PlaneGeometry, LineGeometry} from "./HelperGeometries.js";
+import {Corner2Geometry, PlaneGeometry, LineGeometry, combineGometries} from "./HelperGeometries.js";
 import {HelperMesh} from "./HelperMesh.js";
 
 const HPI = Math.PI / 2;
@@ -18,23 +18,23 @@ const _m1 = new Matrix4();
 const _m2 = new Matrix4();
 const _one = new Vector3(1, 1, 1);
 
-const cornerHandle = new HelperMesh([
-	{geometry: new Corner2Geometry(), color: [1, 1, 1], rotation: [-HPI, 0, 0]},
+const cornerHandle = combineGometries([
+	{geometry: new Corner2Geometry(), rotation: [-HPI, 0, 0]},
 	{geometry: new PlaneGeometry(), color: [1, 1, 1, 0.25], position: [0.5, 0.5, 0]}
-]).geometry;
+]);
 
-const edgeHandle = new HelperMesh([
-	{geometry: new LineGeometry(), color: [1, 1, 1], position: [0, 0, 0]},
+const edgeHandle = combineGometries([
+	{geometry: new LineGeometry()},
 	{geometry: new PlaneGeometry(), color: [1, 1, 1, 0.25], position: [0.5, 0, 0]},
-]).geometry;
+]);
 
-const cornerPicker = new HelperMesh([
+const cornerPicker = combineGometries([
 	{geometry: new PlaneGeometry(), position: [0.75, 0.75, 0], color: [1, 1, 1, 0.125], scale: [1.5, 1.5, 1]}
-]).geometry;
+]);
 
-const edgePicker = new HelperMesh([
+const edgePicker = combineGometries([
 	{geometry: new PlaneGeometry(), position: [0.75, 0, 0], color: [1, 1, 1, 0.125], scale: [1.5, 1, 1]},
-]).geometry;
+]);
 
 export class TransformHelperStretch extends TransformHelper {
 	get handlesGroup() {
@@ -172,10 +172,6 @@ export class TransformHelperStretch extends TransformHelper {
 
 		}
 	}
-	// constructor(props) {
-	// 	super(props);
-	// 	this.size = 3;
-	// }
 	updateMatrixWorld( force ) {
 		this.updateHelperMatrix();
 		this.matrixWorldNeedsUpdate = false;

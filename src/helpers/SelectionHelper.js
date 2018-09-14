@@ -7,7 +7,7 @@ import {Helper} from "../Helper.js";
 import {HelperMesh} from "./HelperMesh.js";
 import {TransformHelper} from "./TransformHelper.js";
 import {HelperMaterial as Material} from "./HelperMaterial.js";
-import {Corner3Geometry} from "./HelperGeometries.js";
+import {Corner3Geometry, combineGometries} from "./HelperGeometries.js";
 
 const HPI = Math.PI / 2;
 const PI = Math.PI;
@@ -15,12 +15,9 @@ const PI = Math.PI;
 // TODO: consider supporting objects with skewed transforms.
 
 // Reusable utility variables
-const _vector = new Vector3();
 const _position = new Vector3();
-const _euler = new Euler();
 const _quaternion = new Quaternion();
 const _scale = new Vector3();
-const _m0 = new Matrix4();
 const _m1 = new Matrix4();
 const _m2 = new Matrix4();
 const _one = new Vector3(1, 1, 1);
@@ -30,14 +27,14 @@ const corner3Geometry = new Corner3Geometry();
 export class SelectionHelper extends Helper {
 	get handlesGroup() {
 		return {
-			XYZ: [{geometry: corner3Geometry, color: [1, 1, 0], rotation: [HPI, 0, PI], thickness: 9}],
-			XYz: [{geometry: corner3Geometry, color: [1, 1, 0], rotation: [HPI, 0, HPI], thickness: 9}],
-			xyz: [{geometry: corner3Geometry, color: [1, 1, 0], rotation: [-HPI, 0, -HPI], thickness: 9}],
-			xyZ: [{geometry: corner3Geometry, color: [1, 1, 0], rotation: [-HPI, 0, 0], thickness: 9}],
-			xYZ: [{geometry: corner3Geometry, color: [1, 1, 0], rotation: [PI/2, 0, -PI/2], thickness: 9}],
-			xYz: [{geometry: corner3Geometry, color: [1, 1, 0], rotation: [PI/2, 0, 0], thickness: 9}],
-			Xyz: [{geometry: corner3Geometry, color: [1, 1, 0], rotation: [0, 0, HPI], thickness: 9}],
-			XyZ: [{geometry: corner3Geometry, color: [1, 1, 0], rotation: [0, PI, 0], thickness: 9}],
+			XYZ: [{geometry: combineGometries([{geometry: corner3Geometry, color: [1, 1, 0], rotation: [HPI, 0, PI]}])}],
+			XYz: [{geometry: combineGometries([{geometry: corner3Geometry, color: [1, 1, 0], rotation: [HPI, 0, HPI]}])}],
+			xyz: [{geometry: combineGometries([{geometry: corner3Geometry, color: [1, 1, 0], rotation: [-HPI, 0, -HPI]}])}],
+			xyZ: [{geometry: combineGometries([{geometry: corner3Geometry, color: [1, 1, 0], rotation: [-HPI, 0, 0]}])}],
+			xYZ: [{geometry: combineGometries([{geometry: corner3Geometry, color: [1, 1, 0], rotation: [PI/2, 0, -PI/2]}])}],
+			xYz: [{geometry: combineGometries([{geometry: corner3Geometry, color: [1, 1, 0], rotation: [PI/2, 0, 0]}])}],
+			Xyz: [{geometry: combineGometries([{geometry: corner3Geometry, color: [1, 1, 0], rotation: [0, 0, HPI]}])}],
+			XyZ: [{geometry: combineGometries([{geometry: corner3Geometry, color: [1, 1, 0], rotation: [0, PI, 0]}])}],
 		};
 	}
 	constructor(props) {
@@ -45,9 +42,9 @@ export class SelectionHelper extends Helper {
 		this.size = 0.02;
 		this.combineHelperGroups(this.handlesGroup);
 
-		const axis = new TransformHelper();
-		axis.size = 0;
-		this.add(axis);
+		const axis = new TransformHelper({object: this});
+		axis.size = 0.02;
+		super.add(axis);
 
 		if (this.object && this.object.geometry) {
 			if (!this.object.geometry.boundingBox) this.object.geometry.computeBoundingBox();
@@ -89,7 +86,7 @@ export class SelectionHelper extends Helper {
 
 			let dir = this.children[i].position.clone().applyQuaternion(this.quaternion).normalize();
 
-			this.children[i].material.highlight = Math.min(Math.max(3 - Math.abs(dir.dot(this.eye)) * 4, -0.9), 1.0);
+			this.children[i].material.highlight = Math.min(Math.max(3 - Math.abs(dir.dot(this.eye)) * 4, -1), 1.0);
 
 			__scale.x = Math.min(this.scale.x, Math.abs(_position.x) / 2);
 			__scale.y = Math.min(this.scale.y, Math.abs(_position.y) / 2);

@@ -1,11 +1,8 @@
 import {Vector3, Object3D} from "../../lib/three.module.js";
 import {Helper} from "../Helper.js";
 import {HelperMesh} from "./HelperMesh.js";
-import {ConeGeometry, OctahedronGeometry} from "./HelperGeometries.js";
+import {OctahedronGeometry, Corner3Geometry} from "./HelperGeometries.js";
 import {Animation} from "../../lib/Animation.js";
-
-const coneGeometry = new ConeGeometry();
-const octahedronGeometry = new OctahedronGeometry();
 
 function stringHas(str, char) {return str.search(char) !== -1;}
 
@@ -14,6 +11,9 @@ function hasAxisAny(str, chars) {
 	str.split('').some(a => { if (chars.indexOf(a) === -1) has = false; });
 	return has;
 }
+
+const octahedronGeometry = new OctahedronGeometry();
+const corner3Geometry = new Corner3Geometry();
 
 // Creates an Object3D with gizmos described in custom hierarchy definition.
 class HelperGroup extends Array {
@@ -30,14 +30,12 @@ class HelperGroup extends Array {
 export class TransformHelper extends Helper {
 	get handlesGroup() {
 		return {
-			X: [{geometry: coneGeometry, color: [1,0,0], position: [0.15, 0, 0], rotation: [0, 0, -Math.PI / 2], scale: [0.5,1,0.5]}],
-			Y: [{geometry: coneGeometry, color: [0,1,0], position: [0, 0.15, 0], rotation: [0, 0, 0], scale: [0.5,1,0.5]}],
-			Z: [{geometry: coneGeometry, color: [0,0,1], position: [0, 0, 0.15], rotation: [Math.PI / 2, 0, 0], scale: [0.5,1,0.5]}]
+			XYZ: [{geometry: new Corner3Geometry()}]
 		};
 	}
 	get pickersGroup() {
 		return {
-			XYZ: [{geometry: octahedronGeometry, scale: 0.5}]
+			XYZ: [{geometry: new OctahedronGeometry()}]
 		};
 	}
 	constructor(props) {
@@ -117,7 +115,7 @@ export class TransformHelper extends Helper {
 		);
 		if (this.animation._active) this.traverseAxis(axis => this.updateAxisMaterial(axis));
 	}
-	// TODO: optimize and make less ugly!
+	// TODO: optimize, make less ugly and more framerate independent!
 	updateAxisMaterial(axis) {
 		axis.visible = true;
 		const h = axis.material.highlight || 0;

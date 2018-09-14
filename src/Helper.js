@@ -11,8 +11,7 @@ const _cameraQuaternion = new Quaternion();
 const _cameraScale = new Vector3();
 
 /*
- * Helper is a variant of Object3D which automatically follows its target `object`.
- * On matrix update, it automatically copies transform matrices from its target.
+ * Helper extends Object3D to automatically follow its target `object` by copying transform matrices from it.
  * If `space` property is set to "world", helper wil orient itself in world space.
  * Helpers will auto-scale in view space if `size` property is non-zero.
  */
@@ -20,11 +19,13 @@ const _cameraScale = new Vector3();
 export class Helper extends IoLiteMixin(Object3D) {
 	constructor(props = {}) {
 		super();
+
 		this.defineProperties({
 			object: props.object || null,
 			space: 'local',
 			size: 0
 		});
+
 		this.eye = new Vector3();
 	}
 	updateHelperMatrix() {
@@ -34,7 +35,9 @@ export class Helper extends IoLiteMixin(Object3D) {
 		} else {
 			super.updateMatrixWorld();
 		}
+
 		this.matrixWorld.decompose(this.position, this.quaternion, this.scale);
+
 		const camera = this.scene.currentCamera;
 		if (camera) {
 			let eyeDistance = 1;
@@ -50,6 +53,7 @@ export class Helper extends IoLiteMixin(Object3D) {
 			if (this.size) this.scale.set(1, 1, 1).multiplyScalar(eyeDistance * this.size);
 		}
 		if (this.space === 'world') this.quaternion.set(0, 0, 0, 1);
+
 		this.matrixWorld.compose(this.position, this.quaternion, this.scale);
 	}
 	updateMatrixWorld( force ) {

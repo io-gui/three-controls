@@ -41,7 +41,7 @@ export function mergeGeometryChunks(chunks) {
 		const chunk = chunks[i];
 		let chunkGeo = chunk.geometry.clone();
 
-		const color = chunk.color || [1,1,1,1];
+		const color = chunk.color || [];
 		const position = chunk.position;
 		const rotation = chunk.rotation;
 		let scale = chunk.scale;
@@ -81,9 +81,9 @@ export function mergeGeometryChunks(chunks) {
 
 		const colorArray = chunkGeo.attributes.color.array;
 		for (let j = 0; j < vertCount; j++) {
-			const r = j * 4 + 0; colorArray[r] = color[0];
-			const g = j * 4 + 1; colorArray[g] = color[1];
-			const b = j * 4 + 2; colorArray[b] = color[2];
+			const r = j * 4 + 0; colorArray[r] = color[0] !== undefined ? color[0] : colorArray[r];
+			const g = j * 4 + 1; colorArray[g] = color[1] !== undefined ? color[1] : colorArray[g];
+			const b = j * 4 + 2; colorArray[b] = color[2] !== undefined ? color[2] : colorArray[b];
 			const a = j * 4 + 3; colorArray[a] = color[3] !== undefined ? color[3] : colorArray[a] !== undefined ? colorArray[a] : 1;
 		}
 
