@@ -2,7 +2,7 @@
  * @author arodic / https://github.com/arodic
  */
 
-import {Mesh, Vector3, BufferGeometry} from "../../lib/three.module.js";
+import {Mesh, Vector3} from "../../lib/three.module.js";
 import {HelperGeometry} from "./HelperGeometry.js";
 import {HelperMaterial} from "./HelperMaterial.js";
 

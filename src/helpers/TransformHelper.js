@@ -1,7 +1,7 @@
-import {Vector3, Object3D} from "../../lib/three.module.js";
+import {Vector3, Object3D, OctahedronBufferGeometry} from "../../lib/three.module.js";
 import {Helper} from "../Helper.js";
 import {HelperMesh} from "./HelperMesh.js";
-import {OctahedronGeometry, Corner3Geometry} from "./HelperGeometries.js";
+import {Corner3Geometry} from "./HelperGeometries.js";
 import {Animation} from "../../lib/Animation.js";
 
 function stringHas(str, char) {return str.search(char) !== -1;}
@@ -12,11 +12,7 @@ function hasAxisAny(str, chars) {
 	return has;
 }
 
-// const octahedronGeometry = new OctahedronGeometry();
-// const corner3Geometry = new Corner3Geometry();
-
-// Creates an Object3D with gizmos described in custom hierarchy definition.
-class HelperGroup extends Array {
+class HelperMeshes extends Array {
 	constructor(groupDef) {
 		super();
 		for (let name in groupDef) {
@@ -32,14 +28,14 @@ const handleGeometry = {
 };
 
 const pickerGeometry = {
-	XYZ: new OctahedronGeometry()
+	XYZ: new OctahedronBufferGeometry(1, 0)
 };
 
 export class TransformHelper extends Helper {
-	get handlesGroup() {
+	get handleGeometry() {
 		return handleGeometry;
 	}
-	get pickersGroup() {
+	get pickerGeometry() {
 		return pickerGeometry;
 	}
 	constructor(props) {
@@ -58,8 +54,8 @@ export class TransformHelper extends Helper {
 		this.axisDotEye = new Vector3();
 		this.size = 0.15;
 
-		this.handles = new HelperGroup(this.handlesGroup);
-		this.pickers = new HelperGroup(this.pickersGroup);
+		this.handles = new HelperMeshes(this.handleGeometry);
+		this.pickers = new HelperMeshes(this.pickerGeometry);
 
 		if (this.handles.length) this.add(...this.handles)
 		if (this.pickers.length) this.add(...this.pickers)

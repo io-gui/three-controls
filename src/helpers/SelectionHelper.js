@@ -37,13 +37,13 @@ const handleGeometry = {
 };
 
 export class SelectionHelper extends Helper {
-	get handlesGroup() {
+	get handleGeometry() {
 		return handleGeometry;
 	}
 	constructor(props) {
 		super(props);
 		this.size = 0.02;
-		this.combineHelperGroups(this.handlesGroup);
+		this.combineHelperGroups(this.handleGeometry);
 
 		const axis = new TransformHelper({object: this});
 		axis.size = 0.02;

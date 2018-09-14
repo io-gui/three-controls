@@ -96,10 +96,10 @@ const pickerGeometry = {
 };
 
 export class TransformHelperStretch extends TransformHelper {
-	get handlesGroup() {
+	get handleGeometry() {
 		return handleGeometry;
 	}
-	get pickersGroup() {
+	get pickerGeometry() {
 		return pickerGeometry;
 	}
 	objectChanged() {
