@@ -76,7 +76,7 @@ export class HelperMaterial extends IoLiteMixin(ShaderMaterial) {
 				vec4 pos = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
 				float pixelRatio = uResolution.z;
 
-				nor = (projectionMatrix * vec4(nor, 1.0)).xyz;
+				// nor = (projectionMatrix * vec4(nor, 1.0)).xyz;
 				nor = normalize((nor.xyz) * vec3(1., 1., 0.));
 
 				float extrude = 0.0;

@@ -10,8 +10,9 @@ import {Helper} from "./Helper.js";
  * Following callbacks will be invoked on pointer events:
  * onPointerDown, onPointerHover, onPointerMove, onPointerUp,
  * onKeyDown, onKeyUp, onWheel, onContextmenu, onFocus, onBlur.
- *
  * onKeyDown, onKeyUp require domElement to be focused (set tabindex attribute).
+ *
+ * See PointerEvents.js for more details.
  */
 
 // TODO: PointerEvents documentation

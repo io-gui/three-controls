@@ -297,9 +297,9 @@ export class SelectionControls extends Interactive {
 	}
 	updateMatrixWorld(force, camera) {
 		// Extract tranformations before and after matrix update.
-		this.matrix.decompose(posOld, quatOld, scaleOld);
+		this.matrixWorld.decompose(posOld, quatOld, scaleOld);
 		super.updateMatrixWorld(force, camera);
-		this.matrix.decompose(pos, quat, scale);
+		this.matrixWorld.decompose(pos, quat, scale);
 		// Get transformation offsets from transform deltas.
 		posOffset.copy(pos).sub(posOld);
 		quatOffset.copy(quat).multiply(quatOld.inverse());

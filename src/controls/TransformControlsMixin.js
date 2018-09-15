@@ -2,7 +2,7 @@
  * @author arodic / https://github.com/arodic
  */
 
-import {Raycaster, Vector3, Quaternion, Plane} from "../../lib/three.module.js";
+import {Raycaster, Vector3, Quaternion, Plane, Mesh, PlaneBufferGeometry, MeshBasicMaterial} from "../../lib/three.module.js";
 import {InteractiveMixin} from "../Interactive.js";
 // import {Animation} from "../../lib/Animation.js";
 
@@ -34,7 +34,6 @@ export const TransformControlsMixin = (superclass) => class extends InteractiveM
 		});
 
 		// this.animation = new Animation();
-
 		// this.add(this.planeMesh = new Mesh(new PlaneBufferGeometry(1000, 1000, 10, 10), new MeshBasicMaterial({wireframe: true})));
 	}
 	objectChanged() {
@@ -100,6 +99,7 @@ export const TransformControlsMixin = (superclass) => class extends InteractiveM
 		let axis = this.axis;
 		let object = this.object;
 		let space = (axis === 'E' || axis === 'XYZ') ? 'world' : this.space;
+
 
 		if (object === undefined || axis === null || this.active === false || pointers[0].button !== 0) return;
 

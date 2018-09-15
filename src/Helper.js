@@ -47,9 +47,9 @@ export class Helper extends IoLiteMixin(Object3D) {
 				eyeDistance = this.eye.length();
 				this.eye.normalize();
 			} else if (camera.isOrthographicCamera) {
+				eyeDistance = (camera.top - camera.bottom) / camera.zoom;
 				this.eye.copy(_cameraPosition).normalize();
 			}
-			// TODO: test helper size in orthographic cameras.
 			if (this.size) this.scale.set(1, 1, 1).multiplyScalar(eyeDistance * this.size);
 		}
 		if (this.space === 'world') this.quaternion.set(0, 0, 0, 1);

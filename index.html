@@ -79,7 +79,7 @@
 			import {TrackballControls} from "./src/controls/TrackballControls.js";
 			import {SelectionControls} from "./src/controls/SelectionControls.js";
 
-			import {WebGLRenderer, PerspectiveCamera, Scene, GridHelper, DirectionalLight,
+			import {WebGLRenderer, PerspectiveCamera, OrthographicCamera, Scene, GridHelper, DirectionalLight,
 				BoxBufferGeometry, MeshLambertMaterial, Mesh, Object3D, TextureLoader, Color,
 				SphereBufferGeometry, Vector3,BufferGeometry, BufferAttribute} from "./lib/three.module.js";
 
@@ -118,7 +118,7 @@
 				canvas.height = Math.round(innerHeight * window.devicePixelRatio);
 
 				camera = new PerspectiveCamera(50, innerWidth / innerHeight, 1, 300000);
-				camera.position.set(1000, 500, 1000);
+				camera.position.set(3000, 2000, 3000);
 				camera.lookAt(0, 200, 0);
 
 				var grid = new GridHelper(1000, 10);
@@ -214,7 +214,7 @@
 				});
 
 				setupViewportControls('OrbitControls');
-				setupTransformControls('TransformControlsStretch');
+				setupTransformControls('TransformControlsRotate');
 
 				scene.updateMatrixWorld();
 				selectionControls.replace([
@@ -222,6 +222,8 @@
 					box0.children[2].children[0],
 				]);
 
+
+				// TODO: figure out how to better pass resolution to materials.
 				{
 					let res = new Vector3(Math.round(window.innerWidth / window.scale), Math.round(window.innerHeight / window.scale), window.devicePixelRatio);
 					helperScene.traverse(child => {
