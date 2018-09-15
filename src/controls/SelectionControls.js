@@ -336,7 +336,7 @@ export class SelectionControls extends Interactive {
 					// Rotation
 					dist0.subVectors(itemPos, pos);
 					dist1.subVectors(itemPos, pos).applyQuaternion(quatOffset);
-					dist1.sub(dist0).applyQuaternion(parentQuatInv);
+					dist1.sub(dist0).applyQuaternion(parentQuatInv).divide(parentScale);
 					this.selected[i].position.add(dist1);
 					itemQuatOffset.copy(itemQuatInv).multiply(quatOffset).multiply(itemQuat).normalize();
 					this.selected[i].quaternion.multiply(itemQuatOffset);
