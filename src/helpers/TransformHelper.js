@@ -52,7 +52,7 @@ export class TransformHelper extends Helper {
 		this.worldY = new Vector3();
 		this.worldZ = new Vector3();
 		this.axisDotEye = new Vector3();
-		this.size = 0.15;
+		this.size = 0.05;
 
 		this.handles = new HelperMeshes(this.handleGeometry);
 		this.pickers = new HelperMeshes(this.pickerGeometry);

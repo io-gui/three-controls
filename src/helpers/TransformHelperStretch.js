@@ -202,9 +202,9 @@ export class TransformHelperStretch extends TransformHelper {
 
 			_wScale.copy(this.scale);
 
-			_wScale.x *= 0.125;
-			_wScale.y *= 0.125;
-			_wScale.z *= 0.125;
+			_wScale.x *= 0.1;
+			_wScale.y *= 0.1;
+			_wScale.z *= 0.1;
 
 			let _bx = Math.abs(scaledBoundingBox.min.x) + Math.abs(scaledBoundingBox.max.x);
 			let _by = Math.abs(scaledBoundingBox.min.y) + Math.abs(scaledBoundingBox.max.y);

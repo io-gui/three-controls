@@ -117,7 +117,12 @@
 				canvas.width = Math.round(innerWidth * window.devicePixelRatio);
 				canvas.height = Math.round(innerHeight * window.devicePixelRatio);
 
-				camera = new PerspectiveCamera(50, innerWidth / innerHeight, 1, 300000);
+				camera = new PerspectiveCamera(20, innerWidth / innerHeight, 1, 300000);
+
+				// let a = innerWidth / innerHeight;
+				// let s = 800
+				// camera = new OrthographicCamera(-s * a, s * a, s, -s, 0, 9000);
+
 				camera.position.set(3000, 2000, 3000);
 				camera.lookAt(0, 200, 0);
 
@@ -214,7 +219,7 @@
 				});
 
 				setupViewportControls('OrbitControls');
-				setupTransformControls('TransformControlsRotate');
+				setupTransformControls('TransformControlsStretch');
 
 				scene.updateMatrixWorld();
 				selectionControls.replace([
