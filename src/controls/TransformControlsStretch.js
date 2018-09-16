@@ -40,7 +40,7 @@ export class TransformControlsStretch extends TransformControlsMixin(TransformHe
 		}
 
 		// TODO: test
-		position.applyMatrix4(this.object.matrixWorld);
+		if (this.object) position.applyMatrix4(this.object.matrixWorld);
 
 		this.plane.setFromNormalAndCoplanarPoint(normal, position);
 	}
