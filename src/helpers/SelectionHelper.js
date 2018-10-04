@@ -46,7 +46,7 @@ export class SelectionHelper extends Helper {
 		this.combineHelperGroups(this.handleGeometry);
 
 		const axis = new TransformHelper({object: this});
-		axis.size = 0.02;
+		axis.size = 0.01;
 		super.add(axis);
 
 		if (this.object && this.object.geometry) {
@@ -89,7 +89,7 @@ export class SelectionHelper extends Helper {
 
 			let dir = this.children[i].position.clone().applyQuaternion(this.quaternion).normalize();
 
-			this.children[i].material.highlight = Math.min(Math.max(3 - Math.abs(dir.dot(this.eye)) * 4, -1), 1.0);
+			this.children[i].material.highlight = Math.min(Math.max(3 - Math.abs(dir.dot(this.eye)) * 4, -1), 0.5);
 
 			__scale.x = Math.min(this.scale.x, Math.abs(_position.x) / 2);
 			__scale.y = Math.min(this.scale.y, Math.abs(_position.y) / 2);
