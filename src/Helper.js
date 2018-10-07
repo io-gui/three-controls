@@ -22,6 +22,7 @@ export class Helper extends IoLiteMixin(Object3D) {
 
 		this.defineProperties({
 			object: props.object || null,
+			camera: props.camera || null,
 			space: 'local',
 			size: 0
 		});

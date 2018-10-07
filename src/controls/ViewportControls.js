@@ -34,7 +34,6 @@ export class ViewportControls extends Interactive {
 		super(props);
 
 		this.defineProperties({
-			camera: props.camera || null,
 			target: new Vector3(),
 			active: false,
 			enableOrbit: true,

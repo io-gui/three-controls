@@ -15,6 +15,8 @@ function hasAxisAny(str, chars) {
 	return has;
 }
 
+// TODO: test and fix scale rate at various scales. Fix nefative scale gizmo flicker.
+
 export class TransformControlsScale extends TransformControlsMixin(TransformHelperScale) {
 	transform() {
 		if (hasAxisAny('XYZ', this.axis)) {
