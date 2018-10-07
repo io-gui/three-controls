@@ -5,8 +5,51 @@
 import {Vector3} from "../../lib/three.module.js";
 import {TransformControlsMixin} from "./TransformControlsMixin.js";
 import {TransformHelperStretch} from "../helpers/TransformHelperStretch.js";
+
+// Reusable utility variables
+const tempVector = new Vector3();
+const tempVector2 = new Vector3();
+
+function hasAxisAny(str, chars) {
+	let has = true;
+	str.split('').some(a => { if (chars.indexOf(a) === -1) has = false; });
+	return has;
+}
+
 export class TransformControlsStretch extends TransformControlsMixin(TransformHelperStretch) {
 	transform() {
+		// const space = (this.axis === 'XYZ') ? 'world' : this.space;
+
+		if (!hasAxisAny('x', this.axis)) this.pointEnd.x = this.pointStart.x;
+		if (!hasAxisAny('y', this.axis)) this.pointEnd.y = this.pointStart.y;
+		if (!hasAxisAny('z', this.axis)) this.pointEnd.z = this.pointStart.z;
+
+		// if (space === 'local') {
+			// this.object.position.copy(this.pointEnd).sub(this.pointStart).applyQuaternion(this.quaternionStart);
+		// } else {
+		// 	this.object.position.copy(this.pointEnd).sub(this.pointStart);
+		// }
+		// this.object.position.add(this.positionStart);
+
+		tempVector.copy(this.pointEnd).divide(this.pointStart);
+		if (!hasAxisAny('x', this.axis)) tempVector.x = 1;
+		if (!hasAxisAny('y', this.axis)) tempVector.y = 1;
+		if (!hasAxisAny('z', this.axis)) tempVector.z = 1;
+
+		// Apply scale
+		const scaleOffset = this.scaleStart.clone().multiply(tempVector).sub(this.scaleStart).multiplyScalar(0.5);
+
+		// TODO: test with asymetric bounding boxes!!!
+		if (hasAxisAny('p', this.axis)) {
+			this.object.position.copy(scaleOffset).multiply(this.boundingBox.max.clone().sub(this.boundingBox.min).multiplyScalar(0.5));
+		} else {
+			this.object.position.copy(scaleOffset).multiply(this.boundingBox.min.clone().sub(this.boundingBox.max).multiplyScalar(0.5));
+		}
+		this.object.position.add(this.positionStart);
+
+		this.object.scale.copy(this.scaleStart).add(scaleOffset);
+
+
 	}
 	updatePlane() {
 		const axis = this.axis;

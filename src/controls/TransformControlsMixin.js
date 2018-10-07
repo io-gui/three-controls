@@ -33,7 +33,6 @@ export const TransformControlsMixin = (superclass) => class extends InteractiveM
 			plane: new Plane()
 		});
 
-		// this.animation = new Animation();
 		// this.add(this.planeMesh = new Mesh(new PlaneBufferGeometry(1000, 1000, 10, 10), new MeshBasicMaterial({wireframe: true})));
 	}
 	objectChanged() {
@@ -154,7 +153,7 @@ export const TransformControlsMixin = (superclass) => class extends InteractiveM
 
 		// this.parent.add(this.planeMesh);
 		// this.planeMesh.position.set(0,0,0);
-		// this.planeMesh.lookAt(this.plane.normal);
+		// this.planeMesh.lookAt(normal);
 		// this.planeMesh.position.copy(this.position);
 	}
 };

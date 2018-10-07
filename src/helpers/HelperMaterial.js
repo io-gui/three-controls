@@ -136,6 +136,8 @@ export class HelperMaterial extends IoLiteMixin(ShaderMaterial) {
 
 				gl_FragColor = vec4(color, opacity);
 
+				opacity = opacity - mod(opacity, 0.25) + 0.25;
+
 				vec2 matCoord = ( mod(gl_FragCoord.xy / pixelRatio, 4.0) - vec2(0.5) ) / 4.0;
 				vec4 ditherPattern = texture2D( tDitherMatrix, matCoord.xy );
 				if (opacity < ditherPattern.r) discard;

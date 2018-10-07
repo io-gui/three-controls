@@ -14,7 +14,7 @@ const EPS = 0.000001;
 const pickerHandleGeometry = new HelperGeometry(new CylinderBufferGeometry(0.2, 0, 1, 4, 1, false), {position: [0, 0.5, 0]});
 
 const arrowGeometry = new HelperGeometry([
-	[new CylinderBufferGeometry(0, 0.2, 1, 8, 2), {position: [0, 0.8, 0], scale: 0.2}],
+	[new CylinderBufferGeometry(0, 0.2, 1, 8, 2, true), {position: [0, 0.8, 0], scale: 0.2}],
 	[new SphereBufferGeometry(0.2, 8, 8), {position: [0, 0.7, 0], scale: 0.2}],
 	[new CylinderBufferGeometry(EPS, EPS, 0.6, 5, 2, false), {position: [0, 0.4, 0], thickness: 1}],
 ]);
