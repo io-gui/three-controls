@@ -45,7 +45,7 @@ export class HelperGeometry extends BufferGeometry {
 			const rotation = chunkProp.rotation;
 			let scale = chunkProp.scale;
 
-			let thickness = chunkProp.thickness / 2 || 0;
+			let thickness = (chunkProp.thickness || -0) / 2;
 			let outlineThickness = chunkProp.outlineThickness !== undefined ? chunkProp.outlineThickness : 1;
 
 			if (scale && typeof scale === 'number') scale = [scale, scale, scale];
@@ -91,12 +91,19 @@ export class HelperGeometry extends BufferGeometry {
 			//TODO: enable outline overwrite (needs to know if is outline or not in combined geometry)
 			if (!chunkGeo.attributes.outline) {
 				const outlineArray = [];
-				for (let j = 0; j < vertCount; j++) outlineArray[j] = -thickness || 0;
+				for (let j = 0; j < vertCount; j++) {
+					outlineArray[j] = -thickness;
+				}
+
 				chunkGeo.addAttribute( 'outline', new Float32BufferAttribute(outlineArray, 1));
 				BufferGeometryUtils.mergeBufferGeometries([chunkGeo, chunkGeo], false, chunkGeo);
+
 				if (outlineThickness) {
-					for (let j = 0; j < vertCount; j++) chunkGeo.attributes.outline.array[(vertCount) + j] = outlineThickness + thickness;
+					for (let j = 0; j < vertCount; j++) {
+						chunkGeo.attributes.outline.array[(vertCount + j)] = outlineThickness + thickness;
+					}
 				}
+
 				let array = chunkGeo.index.array;
 				for (let j = array.length / 2; j < array.length; j+=3) {
 					let a = array[j + 1];
@@ -105,6 +112,15 @@ export class HelperGeometry extends BufferGeometry {
 					array[j + 2] = a;
 				}
 			}
+
+			for (let j = 0; j < chunkGeo.attributes.outline.array.length; j++) {
+				if (chunkGeo.attributes.outline.array[j] < 0) {
+					if (chunkProp.thickness !== undefined) chunkGeo.attributes.outline.array[j] = -thickness;
+				} else {
+					if (chunkProp.outlineThickness !== undefined) chunkGeo.attributes.outline.array[j] = outlineThickness + thickness;
+				}
+			}
+
 		}
 
 		BufferGeometryUtils.mergeBufferGeometries(chunkGeometries, false, this);

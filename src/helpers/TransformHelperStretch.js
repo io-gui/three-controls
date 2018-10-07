@@ -20,13 +20,13 @@ const _m2 = new Matrix4();
 const _one = new Vector3(1, 1, 1);
 
 const cornerHandle = new HelperGeometry([
-	[new Corner2Geometry(), {rotation: [-HPI, 0, 0]}],
-	[new PlaneGeometry(), {color: [1, 1, 1, 0.25], position: [0.5, 0.5, 0]}]
+	[new Corner2Geometry(), {rotation: [-HPI, 0, 0], depthBias: 1}],
+	[new PlaneGeometry(), {color: [1, 1, 1, 0.25], position: [0.5, 0.5, 0], outlineThickness: 0}]
 ]);
 
 const edgeHandle = new HelperGeometry([
 	[new LineGeometry()],
-	[new PlaneGeometry(), {color: [1, 1, 1, 0.25], position: [0.5, 0, 0]}],
+	[new PlaneGeometry(), {color: [1, 1, 1, 0.25], position: [0.5, 0, 0], outlineThickness: 0}],
 ]);
 
 const cornerPicker = new HelperGeometry([
@@ -102,23 +102,26 @@ export class TransformHelperStretch extends TransformHelper {
 	get pickerGeometry() {
 		return pickerGeometry;
 	}
+	constructor(props) {
+		super(props);
+		this.depthBias = -1;
+	}
 	objectChanged() {
 		super.objectChanged();
 
 		this.boundingBox = new Box3();
 
 		if (this.object) {
-			if (this.object.geometry) {
+			if (this.object.boundingBox) {
+				this.boundingBox.copy(this.object.boundingBox);
+			} else if (this.object.geometry) {
 				if (!this.object.geometry.boundingBox) this.object.geometry.computeBoundingBox();
 				this.boundingBox.copy(this.object.geometry.boundingBox);
-			} else if (this.object.boundingBox) {
-				this.boundingBox.copy(this.object.boundingBox);
 			}
 		}
 
 		let max = this.boundingBox.max;
 		let min = this.boundingBox.min;
-
 
 		if (max && min) {
 			this.handles['X_yp'].position.set(max.x, max.y, 0);

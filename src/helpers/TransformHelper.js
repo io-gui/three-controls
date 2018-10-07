@@ -57,8 +57,8 @@ export class TransformHelper extends Helper {
 		this.handles = new HelperMeshes(this.handleGeometry);
 		this.pickers = new HelperMeshes(this.pickerGeometry);
 
-		if (this.handles.length) this.add(...this.handles)
-		if (this.pickers.length) this.add(...this.pickers)
+		if (this.handles.length) this.add(...this.handles);
+		if (this.pickers.length) this.add(...this.pickers);
 
 		// Hide pickers
 		for (let i = 0; i < this.pickers.length; i++) this.pickers[i].material.visible = false;

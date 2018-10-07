@@ -98,7 +98,7 @@
 
 			function init() {
 
-				renderer = new WebGLRenderer({ antialias: false });
+				renderer = new WebGLRenderer({ antialias: true });
 				renderer.autoClear = false;
 
 				let innerWidth = window.innerWidth / window.scale;
@@ -117,7 +117,7 @@
 				canvas.width = Math.round(innerWidth * window.devicePixelRatio);
 				canvas.height = Math.round(innerHeight * window.devicePixelRatio);
 
-				camera = new PerspectiveCamera(20, innerWidth / innerHeight, 1, 300000);
+				camera = new PerspectiveCamera(20, innerWidth / innerHeight, 100, 1000000);
 
 				// let a = innerWidth / innerHeight;
 				// let s = 800
@@ -201,8 +201,8 @@
 				// 			const obj3d = new Object3D();
 				// 			obj3d.position.set(i * 200 - 500, k * 200 - 500, j * 200 - 500);
 				// 			helperScene.add(obj3d);
-				// 			const control = new TransformHelperTranslate({domElement: canvas, camera: camera});
-				// 			control.size = 0.1;
+				// 			const control = new TransformControlsTranslate({domElement: canvas, camera: camera});
+				// 			control.size = 0.05;
 				// 			control.addEventListener('change', transformControlsChanged);
 				// 			control.object = obj3d;
 				// 			helperScene.add(control);
@@ -219,7 +219,7 @@
 				});
 
 				setupViewportControls('OrbitControls');
-				setupTransformControls('TransformControlsRotate');
+				setupTransformControls('TransformControlsStretch');
 
 				scene.updateMatrixWorld();
 				selectionControls.replace([

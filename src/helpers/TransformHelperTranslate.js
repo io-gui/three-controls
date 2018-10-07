@@ -25,15 +25,15 @@ const handleGeometry = {
 	Z: new HelperGeometry(arrowGeometry, {color: [0.3, 0.3, 1], rotation: [HPI, 0, 0]}),
 	XYZ: new HelperGeometry(new OctahedronBufferGeometry(1, 0), {color: [1, 1, 1, 0.5], scale: 0.1}),
 	XY: new HelperGeometry([
-		[new PlaneGeometry(), {color: [1,1,0,0.125], position: [0.15, 0.15, 0], scale: 0.3}],
+		[new PlaneGeometry(), {color: [1,1,0,0.125], position: [0.15, 0.15, 0], scale: 0.3, outlineThickness: 0}],
 		[new Corner2Geometry(), {color: [1,1,0.3], position: [0.3, 0.3, 0], scale: 0.15, rotation: [HPI, 0, PI]}]
 	]),
 	YZ: new HelperGeometry([
-		[new PlaneGeometry(), {color: [0,1,1,0.125], position: [0, 0.15, 0.15], rotation: [0, HPI, 0], scale: 0.3}],
+		[new PlaneGeometry(), {color: [0,1,1,0.125], position: [0, 0.15, 0.15], rotation: [0, HPI, 0], scale: 0.3, outlineThickness: 0}],
 		[new Corner2Geometry(), {color: [0.3,1,1], position: [0, 0.3, 0.3], scale: 0.15, rotation: [0, PI, -HPI]}]
 	]),
 	XZ: new HelperGeometry([
-		[new PlaneGeometry(), {color: [1,0,1,0.125], position: [0.15, 0, 0.15], rotation: [-HPI, 0, 0], scale: 0.3}],
+		[new PlaneGeometry(), {color: [1,0,1,0.125], position: [0.15, 0, 0.15], rotation: [-HPI, 0, 0], scale: 0.3, outlineThickness: 0}],
 		[new Corner2Geometry(), {color: [1,0.3,1], position: [0.3, 0, 0.3], scale: 0.15, rotation: [0, PI, 0]}]
 	])
 };
@@ -60,6 +60,7 @@ export class TransformHelperTranslate extends TransformHelper {
 	}
 	constructor(props) {
 		super(props);
+		this.depthBias = 1;
 		this.defineProperties({
 			hideX: { value: false, observer: 'updateAxes' },
 			hideY: { value: false, observer: 'updateAxes' },

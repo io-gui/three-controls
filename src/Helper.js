@@ -23,6 +23,7 @@ export class Helper extends IoLiteMixin(Mesh) {
 		this.defineProperties({
 			object: props.object || null,
 			camera: props.camera || null,
+			depthBias: 0,
 			space: 'local',
 			size: 0
 		});
@@ -35,6 +36,9 @@ export class Helper extends IoLiteMixin(Mesh) {
 	}
 	onBeforeRender(renderer, scene, camera) {
 		this.camera = camera;
+	}
+	depthBiasChanged() {
+		this.traverse(object => {object.material.depthBias = this.depthBias;})
 	}
 	updateHelperMatrix() {
 		if (this.object) {

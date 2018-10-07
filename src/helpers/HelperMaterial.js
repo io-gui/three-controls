@@ -21,19 +21,19 @@ export class HelperMaterial extends IoLiteMixin(ShaderMaterial) {
 		super({
 			depthTest: true,
 			depthWrite: true,
-			transparent: true,
+			// transparent: true,
 			side: FrontSide,
 		});
 
-		// const data = new Float32Array([
-		// 	1.0 / 17.0, 0,0,0, 9.0 / 17.0, 0,0,0, 3.0 / 17.0, 0,0,0, 11.0 / 17.0, 0,0,0,
-		// 	13.0 / 17.0, 0,0,0, 5.0 / 17.0, 0,0,0, 15.0 / 17.0, 0,0,0, 7.0 / 17.0, 0,0,0,
-		// 	4.0 / 17.0, 0,0,0, 12.0 / 17.0, 0,0,0, 2.0 / 17.0, 0,0,0, 10.0 / 17.0, 0,0,0,
-		// 	16.0 / 17.0, 0,0,0, 8.0 / 17.0, 0,0,0, 14.0 / 17.0, 0,0,0, 6.0 / 17.0, 0,0,0,
-		// ]);
-		// const texture = new DataTexture( data, 4, 4, RGBAFormat, FloatType );
-		// texture.magFilter = NearestFilter;
-		// texture.minFilter = NearestFilter;
+		const data = new Float32Array([
+			1.0 / 17.0, 0,0,0, 9.0 / 17.0, 0,0,0, 3.0 / 17.0, 0,0,0, 11.0 / 17.0, 0,0,0,
+			13.0 / 17.0, 0,0,0, 5.0 / 17.0, 0,0,0, 15.0 / 17.0, 0,0,0, 7.0 / 17.0, 0,0,0,
+			4.0 / 17.0, 0,0,0, 12.0 / 17.0, 0,0,0, 2.0 / 17.0, 0,0,0, 10.0 / 17.0, 0,0,0,
+			16.0 / 17.0, 0,0,0, 8.0 / 17.0, 0,0,0, 14.0 / 17.0, 0,0,0, 6.0 / 17.0, 0,0,0,
+		]);
+		const texture = new DataTexture( data, 4, 4, RGBAFormat, FloatType );
+		texture.magFilter = NearestFilter;
+		texture.minFilter = NearestFilter;
 
 		const res = new Vector3(window.innerWidth, window.innerHeight, window.devicePixelRatio);
 		color = color !== undefined ? _colors[color] : _colors['white'];
@@ -42,6 +42,7 @@ export class HelperMaterial extends IoLiteMixin(ShaderMaterial) {
 		this.defineProperties({
 			color: { value: color, observer: 'uniformChanged'},
 			opacity: { value: opacity, observer: 'uniformChanged'},
+			depthBias: { value: 0, observer: 'uniformChanged'},
 			highlight: { value: 0, observer: 'uniformChanged'},
 			resolution: { value: res, observer: 'uniformChanged'},
 		});
@@ -49,13 +50,14 @@ export class HelperMaterial extends IoLiteMixin(ShaderMaterial) {
 		this.uniforms = UniformsUtils.merge([this.uniforms, {
 			"uColor":  {value: this.color},
 			"uOpacity":  {value: this.opacity},
+			"uDepthBias":  {value: this.depthBias},
 			"uHighlight":  {value: this.highlight},
 			"uResolution":  {value: this.resolution},
-			// "tDitherMatrix":  {value: texture},
+			"tDitherMatrix":  {value: texture},
 		}]);
 
-		// this.uniforms.tDitherMatrix.value = texture;
-		// texture.needsUpdate = true;
+		this.uniforms.tDitherMatrix.value = texture;
+		texture.needsUpdate = true;
 
 		this.vertexShader = `
 
@@ -66,6 +68,7 @@ export class HelperMaterial extends IoLiteMixin(ShaderMaterial) {
 			varying float isOutline;
 
 			uniform vec3 uResolution;
+			uniform float uDepthBias;
 
 			void main() {
 				float aspect = projectionMatrix[0][0] / projectionMatrix[1][1];
@@ -85,8 +88,9 @@ export class HelperMaterial extends IoLiteMixin(ShaderMaterial) {
 					extrude = outline;
 					pos.z += 0.01;
 				} else {
-					extrude += outline;
+					extrude -= outline;
 				}
+				pos.z -= uDepthBias * 0.01;
 
 				pos.xy /= pos.w;
 
@@ -106,7 +110,7 @@ export class HelperMaterial extends IoLiteMixin(ShaderMaterial) {
 			uniform float uOpacity;
 			uniform float uHighlight;
 			uniform vec3 uResolution;
-			// uniform sampler2D tDitherMatrix;
+			uniform sampler2D tDitherMatrix;
 
 			varying vec4 vColor;
 			varying float isOutline;
@@ -132,15 +136,16 @@ export class HelperMaterial extends IoLiteMixin(ShaderMaterial) {
 
 				gl_FragColor = vec4(color, opacity);
 
-				// vec2 matCoord = ( mod(gl_FragCoord.xy / pixelRatio, 4.0) - vec2(0.5) ) / 4.0;
-				// vec4 ditherPattern = texture2D( tDitherMatrix, matCoord.xy );
-				// if (opacity < ditherPattern.r) discard;
+				vec2 matCoord = ( mod(gl_FragCoord.xy / pixelRatio, 4.0) - vec2(0.5) ) / 4.0;
+				vec4 ditherPattern = texture2D( tDitherMatrix, matCoord.xy );
+				if (opacity < ditherPattern.r) discard;
 			}
 		`;
 	}
 	uniformChanged() {
 		this.uniforms.uColor.value = this.color;
 		this.uniforms.uOpacity.value = this.opacity;
+		this.uniforms.uDepthBias.value = this.depthBias;
 		this.uniforms.uHighlight.value = this.highlight;
 		this.uniforms.uResolution.value = this.resolution;
 		this.uniformsNeedUpdate = true;

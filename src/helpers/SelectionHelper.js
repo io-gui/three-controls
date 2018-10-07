@@ -42,7 +42,7 @@ export class SelectionHelper extends Helper {
 	}
 	constructor(props) {
 		super(props);
-		this.size = 0.02;
+		this.size = 0.005;
 		this.combineHelperGroups(this.handleGeometry);
 
 		const axis = new TransformHelper({object: this});
