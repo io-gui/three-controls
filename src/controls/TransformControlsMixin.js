@@ -44,6 +44,7 @@ export const TransformControlsMixin = (superclass) => class extends InteractiveM
 			this.active = false;
 			this.axis = null;
 		}
+		this.animation.startAnimation(1.5);
 	}
 	// TODO: better animation trigger
 	// TODO: also trigger on object change
@@ -62,7 +63,7 @@ export const TransformControlsMixin = (superclass) => class extends InteractiveM
 	onPointerHover(pointers) {
 		if (!this.object || this.active === true) return;
 
-		const camera = this.scene.currentCamera;
+		const camera = this.camera;
 		_ray.setFromCamera(pointers[0].position, camera); //TODO: unhack
 
 		const intersect = _ray.intersectObjects(this.pickers, true)[0] || false;
@@ -75,7 +76,7 @@ export const TransformControlsMixin = (superclass) => class extends InteractiveM
 	onPointerDown(pointers) {
 		if (this.axis === null || !this.object || this.active === true || pointers[0].button !== 0) return;
 
-		const camera = this.scene.currentCamera;
+		const camera = this.camera;
 		_ray.setFromCamera(pointers[0].position, camera);
 
 		this.updatePlane();
@@ -103,7 +104,7 @@ export const TransformControlsMixin = (superclass) => class extends InteractiveM
 
 		if (object === undefined || axis === null || this.active === false || pointers[0].button !== 0) return;
 
-		const camera = this.scene.currentCamera;
+		const camera = this.camera;
 		_ray.setFromCamera(pointers[0].position, camera);
 
 		const planeIntersect = _ray.ray.intersectPlane(this.plane, _tempVector);
@@ -139,7 +140,7 @@ export const TransformControlsMixin = (superclass) => class extends InteractiveM
 	updatePlane() {
 		const axis = this.axis;
 		const normal = this.plane.normal;
-		const camera = this.scene.currentCamera;
+		const camera = this.camera;
 
 		if (axis === 'X') normal.copy(this.worldX).cross(_tempVector.copy(this.eye).cross(this.worldX));
 		if (axis === 'Y') normal.copy(this.worldY).cross(_tempVector.copy(this.eye).cross(this.worldY));

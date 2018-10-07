@@ -90,7 +90,7 @@ export class SelectionControls extends Interactive {
 	}
 	select(position, add) {
 
-		const camera = this.scene.currentCamera;
+		const camera = this.camera;
 		raycaster.setFromCamera(position, camera);
 
 		const intersects = raycaster.intersectObjects(this.object_.children, true);
@@ -276,7 +276,7 @@ export class SelectionControls extends Interactive {
 			super.add(_helper);
 		}
 
-		super.updateMatrixWorld(); // TODO: camera?
+		super.updateMatrixWorld();
 
 		// gather selection data and emit selection-changed event
 		let added = [];
@@ -295,10 +295,10 @@ export class SelectionControls extends Interactive {
 		this.dispatchEvent({type: 'change'});
 		this.dispatchEvent({type: 'selected-changed', selected: [...this.selected], added: added, removed: removed});
 	}
-	updateMatrixWorld(force, camera) {
+	updateMatrixWorld(force) {
 		// Extract tranformations before and after matrix update.
 		this.matrixWorld.decompose(posOld, quatOld, scaleOld);
-		super.updateMatrixWorld(force, camera);
+		super.updateMatrixWorld(force);
 		this.matrixWorld.decompose(pos, quat, scale);
 		// Get transformation offsets from transform deltas.
 		posOffset.copy(pos).sub(posOld);

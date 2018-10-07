@@ -98,7 +98,7 @@
 
 			function init() {
 
-				renderer = new WebGLRenderer({ antialias: true });
+				renderer = new WebGLRenderer({ antialias: false });
 				renderer.autoClear = false;
 
 				let innerWidth = window.innerWidth / window.scale;
@@ -219,7 +219,7 @@
 				});
 
 				setupViewportControls('OrbitControls');
-				setupTransformControls('TransformControlsStretch');
+				setupTransformControls('TransformControlsRotate');
 
 				scene.updateMatrixWorld();
 				selectionControls.replace([

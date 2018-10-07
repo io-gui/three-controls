@@ -65,7 +65,7 @@ export class HelperGeometry extends BufferGeometry {
 			// TODO: investigate proper indexing!
 			if (chunkGeo.index === null) {
 				const indices = [];
-				for (let j = 0; j < chunkGeo.attributes.position.count - 2; j++) {
+				for (let j = 0; j < chunkGeo.attributes.position.count - 2; j+=3) {
 					indices.push(j + 0);
 					indices.push(j + 1);
 					indices.push(j + 2);

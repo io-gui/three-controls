@@ -27,7 +27,7 @@ export class TransformControlsRotate extends TransformControlsMixin(TransformHel
 	}
 	transform() {
 
-		const camera = this.scene.currentCamera;
+		const camera = this.camera;
 
 		const axis = this.axis;
 		const space = (axis === 'E' || axis === 'XYZ') ? 'world' : this.space;

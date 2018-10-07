@@ -21,18 +21,19 @@ export class HelperMaterial extends IoLiteMixin(ShaderMaterial) {
 		super({
 			depthTest: true,
 			depthWrite: true,
+			transparent: true,
 			side: FrontSide,
 		});
 
-		const data = new Float32Array([
-			1.0 / 17.0, 0,0,0, 9.0 / 17.0, 0,0,0, 3.0 / 17.0, 0,0,0, 11.0 / 17.0, 0,0,0,
-			13.0 / 17.0, 0,0,0, 5.0 / 17.0, 0,0,0, 15.0 / 17.0, 0,0,0, 7.0 / 17.0, 0,0,0,
-			4.0 / 17.0, 0,0,0, 12.0 / 17.0, 0,0,0, 2.0 / 17.0, 0,0,0, 10.0 / 17.0, 0,0,0,
-			16.0 / 17.0, 0,0,0, 8.0 / 17.0, 0,0,0, 14.0 / 17.0, 0,0,0, 6.0 / 17.0, 0,0,0,
-		]);
-		const texture = new DataTexture( data, 4, 4, RGBAFormat, FloatType );
-		texture.magFilter = NearestFilter;
-		texture.minFilter = NearestFilter;
+		// const data = new Float32Array([
+		// 	1.0 / 17.0, 0,0,0, 9.0 / 17.0, 0,0,0, 3.0 / 17.0, 0,0,0, 11.0 / 17.0, 0,0,0,
+		// 	13.0 / 17.0, 0,0,0, 5.0 / 17.0, 0,0,0, 15.0 / 17.0, 0,0,0, 7.0 / 17.0, 0,0,0,
+		// 	4.0 / 17.0, 0,0,0, 12.0 / 17.0, 0,0,0, 2.0 / 17.0, 0,0,0, 10.0 / 17.0, 0,0,0,
+		// 	16.0 / 17.0, 0,0,0, 8.0 / 17.0, 0,0,0, 14.0 / 17.0, 0,0,0, 6.0 / 17.0, 0,0,0,
+		// ]);
+		// const texture = new DataTexture( data, 4, 4, RGBAFormat, FloatType );
+		// texture.magFilter = NearestFilter;
+		// texture.minFilter = NearestFilter;
 
 		const res = new Vector3(window.innerWidth, window.innerHeight, window.devicePixelRatio);
 		color = color !== undefined ? _colors[color] : _colors['white'];
@@ -50,11 +51,11 @@ export class HelperMaterial extends IoLiteMixin(ShaderMaterial) {
 			"uOpacity":  {value: this.opacity},
 			"uHighlight":  {value: this.highlight},
 			"uResolution":  {value: this.resolution},
-			"tDitherMatrix":  {value: texture},
+			// "tDitherMatrix":  {value: texture},
 		}]);
 
-		this.uniforms.tDitherMatrix.value = texture;
-		texture.needsUpdate = true;
+		// this.uniforms.tDitherMatrix.value = texture;
+		// texture.needsUpdate = true;
 
 		this.vertexShader = `
 
@@ -105,7 +106,7 @@ export class HelperMaterial extends IoLiteMixin(ShaderMaterial) {
 			uniform float uOpacity;
 			uniform float uHighlight;
 			uniform vec3 uResolution;
-			uniform sampler2D tDitherMatrix;
+			// uniform sampler2D tDitherMatrix;
 
 			varying vec4 vColor;
 			varying float isOutline;
@@ -129,11 +130,11 @@ export class HelperMaterial extends IoLiteMixin(ShaderMaterial) {
 
 				color = mix(vec3(0.5), saturate(color), dimming);
 
-				gl_FragColor = vec4(color, 1.0);
+				gl_FragColor = vec4(color, opacity);
 
-				vec2 matCoord = ( mod(gl_FragCoord.xy / pixelRatio, 4.0) - vec2(0.5) ) / 4.0;
-				vec4 ditherPattern = texture2D( tDitherMatrix, matCoord.xy );
-				if (opacity < ditherPattern.r) discard;
+				// vec2 matCoord = ( mod(gl_FragCoord.xy / pixelRatio, 4.0) - vec2(0.5) ) / 4.0;
+				// vec4 ditherPattern = texture2D( tDitherMatrix, matCoord.xy );
+				// if (opacity < ditherPattern.r) discard;
 			}
 		`;
 	}

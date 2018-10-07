@@ -2,7 +2,7 @@
  * @author arodic / https://github.com/arodic
  */
 
-import {Object3D, Vector3, Quaternion} from "../lib/three.module.js";
+import {Mesh, Object3D, Vector3, Quaternion, BoxBufferGeometry} from "../lib/three.module.js";
 import {IoLiteMixin} from "../lib/IoLiteMixin.js";
 
 // Reusable utility variables
@@ -16,7 +16,7 @@ const _cameraScale = new Vector3();
  * Helpers will auto-scale in view space if `size` property is non-zero.
  */
 
-export class Helper extends IoLiteMixin(Object3D) {
+export class Helper extends IoLiteMixin(Mesh) {
 	constructor(props = {}) {
 		super();
 
@@ -27,7 +27,14 @@ export class Helper extends IoLiteMixin(Object3D) {
 			size: 0
 		});
 
+		this.geometry = new BoxBufferGeometry(1,1,1,1,1,1);
+		this.material.colorWrite = false;
+		this.material.depthWrite = false;
+
 		this.eye = new Vector3();
+	}
+	onBeforeRender(renderer, scene, camera) {
+		this.camera = camera;
 	}
 	updateHelperMatrix() {
 		if (this.object) {
@@ -39,7 +46,7 @@ export class Helper extends IoLiteMixin(Object3D) {
 
 		this.matrixWorld.decompose(this.position, this.quaternion, this.scale);
 
-		const camera = this.scene.currentCamera;
+		const camera = this.camera;
 		if (camera) {
 			let eyeDistance = 1;
 			camera.matrixWorld.decompose(_cameraPosition, _cameraQuaternion, _cameraScale);

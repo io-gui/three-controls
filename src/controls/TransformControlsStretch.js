@@ -12,7 +12,6 @@ export class TransformControlsStretch extends TransformControlsMixin(TransformHe
 		const axis = this.axis;
 		const normal = this.plane.normal;
 		const position = new Vector3();
-		const camera = this.scene.currentCamera;
 
 		if (axis && axis[0] === 'X') {
 			normal.copy(this.worldX);
