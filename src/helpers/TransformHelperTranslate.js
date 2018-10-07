@@ -15,13 +15,13 @@ const pickerHandleGeometry = new HelperGeometry(new CylinderBufferGeometry(0.2, 
 
 const arrowGeometry = new HelperGeometry([
 	[new CylinderBufferGeometry(EPS, EPS, 0.5, 5, 2, false), {position: [0, 0.525, 0], thickness: 1}],
-	[new OctahedronBufferGeometry(0.05, 2), {position: [0, 0.8, 0]}],
-	[new CylinderBufferGeometry(0, 0.05, 0.2, 8, 2, true), {position: [0, 0.9, 0]}],
+	[new OctahedronBufferGeometry(0.03, 2), {position: [0, 0.8, 0]}],
+	[new CylinderBufferGeometry(0, 0.03, 0.2, 8, 2, true), {position: [0, 0.9, 0]}],
 ]);
 
 const cornerGeometry = new HelperGeometry([
 	[new PlaneGeometry(), {color: [1,1,1,0.125], position: [-0.1, -0.1, 0], scale: 0.2, outlineThickness: 0}],
-	[new Corner2Geometry(), {color: [1,1,0.25], scale: 0.2, rotation: [HPI, 0, PI]}]
+	[new Corner2Geometry(), {color: [1,1,0.25], scale: 0.2, rotation: [HPI, 0, PI]}],
 ]);
 
 const handleGeometry = {
