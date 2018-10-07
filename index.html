@@ -59,8 +59,9 @@
 			<a href="javascript:toggle('space')">Q space</a> |
 			<a href="javascript:toggle('X')">X</a> |
 			<a href="javascript:toggle('Y')">Y</a> |
-			<a href="javascript:toggle('Z')">Z axis</a> |
-			<span>Click select + Ctrl</span>
+			<a href="javascript:toggle('Z')">Z axis</a><br />
+			<span>click - select |</span>
+			<span>click + Ctrl - multi-select</span>
 			<!-- <a>Shift marquee/add</a> | -->
 			<!-- <a>Alt snap</a> -->
 		</div>
@@ -214,12 +215,14 @@
 				helperScene.add(selectionControls);
 				selectionControls.addEventListener('change', render);
 				selectionControls.addEventListener('selected-changed', event => {
-					transformControls.object = event.selected.length ? selectionControls : null;
+					// transformControls.object = event.selected.length ? selectionControls : null;
+					// TODO: test individual objects
+					transformControls.object = event.selected.length ? event.selected[0] : null;
 					transformControls.objectChanged();
 				});
 
 				setupViewportControls('OrbitControls');
-				setupTransformControls('TransformControlsStretch');
+				setupTransformControls('TransformControlsRotate');
 
 				scene.updateMatrixWorld();
 				selectionControls.replace([
@@ -311,9 +314,9 @@
 						case 84: // T
 							setupTransformControls('TransformControlsStretch');
 							break;
-						case 89: // Y
-							setupTransformControls('DragControls');
-							break;
+						// case 89: // Y
+						// 	setupTransformControls('DragControls');
+						// 	break;
 						case 49: // 1
 							setupViewportControls('OrbitControls');
 							break;

@@ -1,4 +1,4 @@
-import {Vector3, Matrix4, Quaternion, TorusBufferGeometry, SphereBufferGeometry, OctahedronBufferGeometry} from "../../lib/three.module.js";
+import {Vector3, Matrix4, Quaternion, TorusBufferGeometry, SphereBufferGeometry, OctahedronBufferGeometry, CylinderBufferGeometry} from "../../lib/three.module.js";
 import {HelperGeometry} from "./HelperGeometry.js";
 import {TransformHelper} from "./TransformHelper.js";
 
@@ -24,17 +24,25 @@ const circleGeometry = new HelperGeometry(new OctahedronBufferGeometry( 1, 3 ), 
 
 const ringGeometry = new HelperGeometry(new TorusBufferGeometry( 1, EPS, 8, 128 ), {rotation: [HPI, 0, 0], thickness: 1});
 
-const halfRingGeometry = new HelperGeometry(new TorusBufferGeometry( 1, EPS, 8, 64, PI ), {rotation: [HPI, 0, 0]});
+const halfRingGeometry = new HelperGeometry(new TorusBufferGeometry( 1, EPS, 8, 64, PI ), {rotation: [HPI, 0, 0], thickness: 1});
 
 const ringPickerGeometry = new HelperGeometry(new TorusBufferGeometry( 1, 0.1, 3, 12 ), {rotation: [HPI, 0, 0]});
 
+const arrowGeometry = new HelperGeometry([
+	[new OctahedronBufferGeometry(0.03, 2)],
+	[new CylinderBufferGeometry(0, 0.03, 0.2, 8, 2, true), {position: [0, 0.1, 0]}],
+]);
+
 const rotateHandleGeometry = new HelperGeometry([
-	[new TorusBufferGeometry( 1, EPS, 4, 64, PI ), {thickness: 1}],
-	[new SphereBufferGeometry(0.05, 12, 16), {position: [0, 0.992, 0], scale: [3, .5, .5]}],
+	[new TorusBufferGeometry( 1, EPS, 4, 64, HPI/2 ), {thickness: 1, rotation: [0, 0, HPI - HPI/4]}],
+	[arrowGeometry, {position: [0.37, 0.93, 0], rotation: [0, 0, -2.035]}],
+	[arrowGeometry, {position: [-0.37, 0.93, 0], rotation: [0, 0, 2.035]}],
+	[new OctahedronBufferGeometry(0.03, 2), {position: [0, 1, 0]}],
+	[halfRingGeometry, {rotation: [-HPI, 0, 0], scale: 0.25}]
 ]);
 
 const rotatePickerGeometry = new HelperGeometry([
-	[new TorusBufferGeometry( 1, 0.03, 4, 8, PI )],
+	[new TorusBufferGeometry( 1, 0.03, 4, 8, HPI/2 ), {rotation: [0, 0, HPI - HPI/4]}],
 	[new OctahedronBufferGeometry(1, 0), {position: [0, 0.992, 0], scale: 0.2}],
 ]);
 
@@ -42,19 +50,16 @@ const handleGeometry = {
 	X: new HelperGeometry(rotateHandleGeometry, {color: [1, 0.3, 0.3], rotation: [Math.PI / 2, Math.PI / 2, 0]}),
 	Y: new HelperGeometry(rotateHandleGeometry, {color: [0.3, 1, 0.3], rotation: [Math.PI / 2, 0, 0]}),
 	Z: new HelperGeometry(rotateHandleGeometry, {color: [0.3, 0.3, 1], rotation: [0, 0, -Math.PI / 2]}),
-	E: new HelperGeometry(ringGeometry, {color: [1, 1, 0.5], rotation: [Math.PI / 2, Math.PI / 2, 0], scale: 1.2}),
-	XYZ: new HelperGeometry([
-		[ringGeometry, {color: [0.5, 0.5, 0.5], rotation: [Math.PI / 2, Math.PI / 2, 0]}],
-		[circleGeometry, {color: [0.5, 0.5, 0.5, 0.25], rotation: [Math.PI / 2, Math.PI / 2, 0], scale: 0.25}]
-	]),
+	E: new HelperGeometry(ringGeometry, {color: [1, 1, 0.5], rotation: [Math.PI / 2, Math.PI / 2, 0]}),
+	XYZ: new HelperGeometry(ringGeometry, {color: [0.5, 0.5, 0.5], rotation: [Math.PI / 2, Math.PI / 2, 0], scale: 0.25, outlineThickness: 0}),
 };
 
 const pickerGeometry = {
 	X: new HelperGeometry(rotatePickerGeometry, {color: [1, 0, 0, 0.5], rotation: [Math.PI / 2, Math.PI / 2, 0]}),
 	Y: new HelperGeometry(rotatePickerGeometry, {color: [0, 1, 0, 0.5], rotation: [Math.PI / 2, 0, 0]}),
 	Z: new HelperGeometry(rotatePickerGeometry, {color: [0, 0, 1, 0.5], rotation: [0, 0, -Math.PI / 2]}),
-	E: new HelperGeometry(ringPickerGeometry, {color: [1, 1, 0.5, 0.5], rotation: [Math.PI / 2, Math.PI / 2, 0], scale: 1.2}),
-	XYZ: new HelperGeometry(new OctahedronBufferGeometry(1, 0), {color: [0.5, 0.5, 0.5, 0.15], rotation: [Math.PI / 2, Math.PI / 2, 0], scale: 0.32}),
+	E: new HelperGeometry(ringPickerGeometry, {color: [1, 1, 0.5, 0.5], rotation: [Math.PI / 2, Math.PI / 2, 0]}),
+	XYZ: new HelperGeometry(new OctahedronBufferGeometry(1, 1), {color: [0.5, 0.5, 0.5, 0.15], rotation: [Math.PI / 2, Math.PI / 2, 0], scale: 0.32}),
 };
 
 export class TransformHelperRotate extends TransformHelper {
@@ -66,7 +71,10 @@ export class TransformHelperRotate extends TransformHelper {
 	}
 	updateAxesDirection(axis){
 		axis.quaternion.copy(_identityQuaternion);
-		if (stringHas(axis.name, "E") || stringHas(axis.name, "XYZ")) {
+		if (stringHas(axis.name, "XYZ")) {
+			axis.quaternion.setFromRotationMatrix(_lookAtMatrix.lookAt(_alignVector, _zero, _worldY));
+		}
+		if (stringHas(axis.name, "E")) {
 			axis.quaternion.setFromRotationMatrix(_lookAtMatrix.lookAt(_alignVector, _zero, _worldY));
 		}
 		if (axis.name === 'X') {

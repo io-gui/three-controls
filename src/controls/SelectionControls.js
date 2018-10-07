@@ -303,7 +303,7 @@ export class SelectionControls extends Interactive {
 		// Get transformation offsets from transform deltas.
 		posOffset.copy(pos).sub(posOld);
 		quatOffset.copy(quat).multiply(quatOld.inverse());
-		scaleOffset.copy(scale).sub(scaleOld);
+		scaleOffset.copy(scale).divide(scaleOld);
 		quatInv.copy(quat).inverse();
 
 		if (!this.selected.length || !this.transformSelection) return;
@@ -326,7 +326,7 @@ export class SelectionControls extends Interactive {
 					this.selected[i].quaternion.multiply(itemQuatOffset);
 					// Scale
 					if (this._isAncestorOfSelected(this.selected[i])) continue; // lets not go there...
-					this.selected[i].scale.add(scaleOffset);
+					this.selected[i].scale.multiply(scaleOffset);
 			// Transform selected in world space.
 			} else if (this.transformSpace === 'world') {
 					if (this._isAncestorOfSelected(this.selected[i])) continue;
@@ -341,7 +341,7 @@ export class SelectionControls extends Interactive {
 					itemQuatOffset.copy(itemQuatInv).multiply(quatOffset).multiply(itemQuat).normalize();
 					this.selected[i].quaternion.multiply(itemQuatOffset);
 					// Scale
-					this.selected[i].scale.add(scaleOffset);
+					this.selected[i].scale.multiply(scaleOffset);
 				}
 				this.selected[i].updateMatrixWorld();
 		}

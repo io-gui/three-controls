@@ -1,4 +1,4 @@
-import {OctahedronBufferGeometry, CylinderBufferGeometry, SphereBufferGeometry} from "../../lib/three.module.js";
+import {OctahedronBufferGeometry, CylinderBufferGeometry} from "../../lib/three.module.js";
 import {TransformHelper} from "./TransformHelper.js";
 import {HelperGeometry} from "./HelperGeometry.js";
 import {Corner2Geometry, PlaneGeometry} from "./HelperGeometries.js";
@@ -14,28 +14,23 @@ const EPS = 0.000001;
 const pickerHandleGeometry = new HelperGeometry(new CylinderBufferGeometry(0.2, 0, 1, 4, 1, false), {position: [0, 0.5, 0]});
 
 const arrowGeometry = new HelperGeometry([
-	[new CylinderBufferGeometry(0, 0.2, 1, 8, 2, true), {position: [0, 0.8, 0], scale: 0.2}],
-	[new SphereBufferGeometry(0.2, 8, 8), {position: [0, 0.7, 0], scale: 0.2}],
-	[new CylinderBufferGeometry(EPS, EPS, 0.6, 5, 2, false), {position: [0, 0.4, 0], thickness: 1}],
+	[new CylinderBufferGeometry(EPS, EPS, 0.5, 5, 2, false), {position: [0, 0.525, 0], thickness: 1}],
+	[new OctahedronBufferGeometry(0.05, 2), {position: [0, 0.8, 0]}],
+	[new CylinderBufferGeometry(0, 0.05, 0.2, 8, 2, true), {position: [0, 0.9, 0]}],
+]);
+
+const cornerGeometry = new HelperGeometry([
+	[new PlaneGeometry(), {color: [1,1,1,0.125], position: [-0.1, -0.1, 0], scale: 0.2, outlineThickness: 0}],
+	[new Corner2Geometry(), {color: [1,1,0.25], scale: 0.2, rotation: [HPI, 0, PI]}]
 ]);
 
 const handleGeometry = {
 	X: new HelperGeometry(arrowGeometry, {color: [1, 0.3, 0.3], rotation: [0, 0, -HPI]}),
 	Y: new HelperGeometry(arrowGeometry, {color: [0.3, 1, 0.3]}),
 	Z: new HelperGeometry(arrowGeometry, {color: [0.3, 0.3, 1], rotation: [HPI, 0, 0]}),
-	XYZ: new HelperGeometry(new OctahedronBufferGeometry(1, 0), {color: [1, 1, 1, 0.5], scale: 0.1}),
-	XY: new HelperGeometry([
-		[new PlaneGeometry(), {color: [1,1,0,0.125], position: [0.15, 0.15, 0], scale: 0.3, outlineThickness: 0}],
-		[new Corner2Geometry(), {color: [1,1,0.3], position: [0.3, 0.3, 0], scale: 0.15, rotation: [HPI, 0, PI]}]
-	]),
-	YZ: new HelperGeometry([
-		[new PlaneGeometry(), {color: [0,1,1,0.125], position: [0, 0.15, 0.15], rotation: [0, HPI, 0], scale: 0.3, outlineThickness: 0}],
-		[new Corner2Geometry(), {color: [0.3,1,1], position: [0, 0.3, 0.3], scale: 0.15, rotation: [0, PI, -HPI]}]
-	]),
-	XZ: new HelperGeometry([
-		[new PlaneGeometry(), {color: [1,0,1,0.125], position: [0.15, 0, 0.15], rotation: [-HPI, 0, 0], scale: 0.3, outlineThickness: 0}],
-		[new Corner2Geometry(), {color: [1,0.3,1], position: [0.3, 0, 0.3], scale: 0.15, rotation: [0, PI, 0]}]
-	])
+	XY: new HelperGeometry(cornerGeometry, {position: [0.25, 0.25, 0], color: [1,1,0.25]}),
+	YZ: new HelperGeometry(cornerGeometry, {position: [0, 0.25, 0.25], color: [0.25,1,1], rotation: [0, -HPI, 0]}),
+	XZ: new HelperGeometry(cornerGeometry, {position: [0.25, 0, 0.25], color: [1,0.25,1], rotation: [HPI, 0, 0]}),
 };
 
 const pickerGeometry = {

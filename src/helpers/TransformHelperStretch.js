@@ -272,6 +272,9 @@ export class TransformHelperStretch extends TransformHelper {
 			_m2.compose(_boxVector, new Quaternion, _wScale);
 			handle.matrixWorld.copy(_m1).multiply(_m2);
 		}
-
+	}
+	updateHelperMatrix() {
+		this.space = 'local';
+		super.updateHelperMatrix();
 	}
 }

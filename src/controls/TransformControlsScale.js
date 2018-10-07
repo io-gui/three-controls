@@ -30,6 +30,7 @@ export class TransformControlsScale extends TransformControlsMixin(TransformHelp
 			if (!hasAxisAny('Z', this.axis)) tempVector.z = 1;
 		}
 		// Apply scale
+		// TODO: Fix inverse scale
 		this.object.scale.copy(this.scaleStart).multiply(tempVector);
 	}
 }

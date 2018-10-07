@@ -69,6 +69,7 @@ export class HelperMaterial extends IoLiteMixin(ShaderMaterial) {
 
 			uniform vec3 uResolution;
 			uniform float uDepthBias;
+			uniform float uHighlight;
 
 			void main() {
 				float aspect = projectionMatrix[0][0] / projectionMatrix[1][1];
@@ -90,7 +91,7 @@ export class HelperMaterial extends IoLiteMixin(ShaderMaterial) {
 				} else {
 					extrude -= outline;
 				}
-				pos.z -= uDepthBias * 0.01;
+				pos.z -= max(uDepthBias, uHighlight) * 0.01;
 
 				pos.xy /= pos.w;
 
