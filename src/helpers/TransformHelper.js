@@ -42,9 +42,9 @@ export class TransformHelper extends Helper {
 		super(props);
 
 		this.defineProperties({
-			showX: {value: true, observer: 'updateAxes'},
-			showY: {value: true, observer: 'updateAxes'},
-			showZ: {value: true, observer: 'updateAxes'},
+			showX: {value: true, observer: 'paramChanged'},
+			showY: {value: true, observer: 'paramChanged'},
+			showZ: {value: true, observer: 'paramChanged'},
 			axis: null,
 		});
 
@@ -73,28 +73,26 @@ export class TransformHelper extends Helper {
 		for (let i = this.handles.length; i--;) callback(this.handles[i]);
 		for (let i = this.pickers.length; i--;) callback(this.pickers[i]);
 	}
+	spaceChanged() {
+		this.animateScaleUp();
+	}
 	objectChanged() {
-		this.animation.startAnimation(0.5);
+		this.animateScaleUp();
+	}
+	animateScaleUp() {
 		this.traverseAxis(axis => {
 			axis.scale.set(0.0001, 0.0001, 0.0001);
 			axis.scaleTarget.set(1, 1, 1);
 		});
+		this.animation.startAnimation(0.5);
 	}
 	axisChanged() {
-		this.animation.startAnimation(0.5);
 		this.traverseAxis(axis => {
-			axis.highlight = 0;
-			if (this.axis) {
-				if (hasAxisAny(axis.name, this.axis)) {
-					axis.highlight = 1;
-				} else {
-					axis.highlight = -0.75;
-				}
-			}
+			axis.highlight = this.axis ? hasAxisAny(axis.name, this.axis) ? 1 : -0.75 : 0;
 		});
-	}
-	updateAxes() {
 		this.animation.startAnimation(0.5);
+	}
+	paramChanged() {
 		this.traverseAxis(axis => {
 			axis.hidden = false;
 			if (stringHas(axis.name, "X") && !this.showX) axis.hidden = true;
@@ -102,25 +100,21 @@ export class TransformHelper extends Helper {
 			if (stringHas(axis.name, "Z") && !this.showZ) axis.hidden = true;
 			if (stringHas(axis.name, "E") && (!this.showX || !this.showY || !this.showZ)) axis.hidden = true;
 		});
+		this.animation.startAnimation(0.5);
 	}
 	updateHelperMatrix() {
 		super.updateHelperMatrix();
 		this.worldX.set(1, 0, 0).applyQuaternion(this.quaternion);
 		this.worldY.set(0, 1, 0).applyQuaternion(this.quaternion);
 		this.worldZ.set(0, 0, 1).applyQuaternion(this.quaternion);
-		this.axisDotEye.set(
-			this.worldX.dot(this.eye),
-			this.worldY.dot(this.eye),
-			this.worldZ.dot(this.eye)
-		);
-		if (this.animation._active) this.traverseAxis(axis => this.updateAxisMaterial(axis));
+		this.axisDotEye.set(this.worldX.dot(this.eye), this.worldY.dot(this.eye), this.worldZ.dot(this.eye));
+		this.traverseAxis(axis => this.updateAxis(axis));
 	}
-	// TODO: optimize, make less ugly and more framerate independent!
-	updateAxisMaterial(axis) {
+	// TODO: optimize, make less ugly and framerate independent!
+	updateAxis(axis) {
 		axis.visible = true;
-		const h = axis.material.highlight || 0;
 		let highlight = axis.hidden ? -1.5 : axis.highlight || 0;
-		axis.material.highlight = (4 * h + highlight) / 5;
+		axis.material.highlight = (4 * axis.material.highlight + highlight) / 5;
 		if (axis.material.highlight < -1.49) axis.visible = false;
 		axis.scale.multiplyScalar(5).add(axis.scaleTarget).divideScalar(6);
 	}

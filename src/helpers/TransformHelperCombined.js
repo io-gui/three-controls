@@ -92,7 +92,7 @@ const handleGeometry = {
 
 const pickerGeometry = {};
 
-export class TransformHelperRotate extends TransformHelper {
+export class TransformHelperCombined extends TransformHelper {
 	get handleGeometry() {
 		return handleGeometry;
 	}

@@ -57,30 +57,24 @@ export class TransformHelperTranslate extends TransformHelper {
 		super(props);
 		this.depthBias = 1;
 		this.defineProperties({
-			hideX: { value: false, observer: 'updateAxes' },
-			hideY: { value: false, observer: 'updateAxes' },
-			hideZ: { value: false, observer: 'updateAxes' },
-			hideXY: { value: false, observer: 'updateAxes' },
-			hideYZ: { value: false, observer: 'updateAxes' },
-			hideXZ: { value: false, observer: 'updateAxes' },
-			flipX: { value: false, observer: 'updateAxes' },
-			flipY: { value: false, observer: 'updateAxes' },
-			flipZ: { value: false, observer: 'updateAxes' }
+			hideX: { value: false, observer: 'paramChanged' },
+			hideY: { value: false, observer: 'paramChanged' },
+			hideZ: { value: false, observer: 'paramChanged' },
+			hideXY: { value: false, observer: 'paramChanged' },
+			hideYZ: { value: false, observer: 'paramChanged' },
+			hideXZ: { value: false, observer: 'paramChanged' },
+			flipX: { value: false, observer: 'paramChanged' },
+			flipY: { value: false, observer: 'paramChanged' },
+			flipZ: { value: false, observer: 'paramChanged' }
 		});
 	}
 	objectChanged() {
 		super.objectChanged();
-		this.updateAxes();
+		this.paramChanged();
 	}
-	updateAxes() {
-		this.animation.startAnimation(0.5);
-		this.traverse(axis => {
-			if (axis === this) return; // TODO: conside better loop
-			axis.hidden = false;
-			if (stringHas(axis.name, "X") && !this.showX) axis.hidden = true;
-			if (stringHas(axis.name, "Y") && !this.showY) axis.hidden = true;
-			if (stringHas(axis.name, "Z") && !this.showZ) axis.hidden = true;
-			if (stringHas(axis.name, "E") && (!this.showX || !this.showY || !this.showZ)) axis.hidden = true;
+	paramChanged() {
+		super.paramChanged();
+		this.traverseAxis(axis => {
 			// Hide axis facing the camera
 			if ((axis.name == 'X' || axis.name == 'XYZX') && this.hideX) axis.hidden = true;
 			if ((axis.name == 'Y' || axis.name == 'XYZY') && this.hideY) axis.hidden = true;

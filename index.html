@@ -222,7 +222,7 @@
 				});
 
 				setupViewportControls('OrbitControls');
-				setupTransformControls('TransformControlsRotate');
+				setupTransformControls('TransformControlsTranslate');
 
 				scene.updateMatrixWorld();
 				selectionControls.replace([
@@ -275,7 +275,7 @@
 					transformControls = new ControlClass({domElement: canvas, camera: camera});
 					transformControls.addEventListener('change', transformControlsChanged);
 					transformControls.object = transformControls.object = selectionControls && selectionControls.selected.length ? selectionControls : null;
-					transformControls.space = 'world';
+					transformControls.space = 'local';
 					helperScene.add(transformControls);
 				}
 				window.setupTransformControls = setupTransformControls;

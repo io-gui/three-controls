@@ -50,16 +50,15 @@ export class Helper extends IoLiteMixin(Mesh) {
 
 		this.matrixWorld.decompose(this.position, this.quaternion, this.scale);
 
-		const camera = this.camera;
-		if (camera) {
+		if (this.camera) {
 			let eyeDistance = 1;
-			camera.matrixWorld.decompose(_cameraPosition, _cameraQuaternion, _cameraScale);
-			if (camera.isPerspectiveCamera) {
+			this.camera.matrixWorld.decompose(_cameraPosition, _cameraQuaternion, _cameraScale);
+			if (this.camera.isPerspectiveCamera) {
 				this.eye.copy(_cameraPosition).sub(this.position);
 				eyeDistance = this.eye.length();
 				this.eye.normalize();
-			} else if (camera.isOrthographicCamera) {
-				eyeDistance = 3 * (camera.top - camera.bottom) / camera.zoom; // TODO: not sure why 3 works
+			} else if (this.camera.isOrthographicCamera) {
+				eyeDistance = 3 * (this.camera.top - this.camera.bottom) / this.camera.zoom; // TODO: not sure why 3 works
 				this.eye.copy(_cameraPosition).normalize();
 			}
 			if (this.size) this.scale.set(1, 1, 1).multiplyScalar(eyeDistance * this.size);
