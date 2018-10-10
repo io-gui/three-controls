@@ -2,17 +2,15 @@
  * @author arodic / https://github.com/arodic
  */
 
-import {Mesh, Object3D, Vector3, Quaternion, BoxBufferGeometry} from "../lib/three.module.js";
+import {Mesh, Vector3, BoxBufferGeometry} from "../lib/three.module.js";
 import {IoLiteMixin} from "../lib/IoLiteMixin.js";
 
 // Reusable utility variables
 const _cameraPosition = new Vector3();
-const _cameraQuaternion = new Quaternion();
-const _cameraScale = new Vector3();
 
 /*
  * Helper extends Object3D to automatically follow its target `object` by copying transform matrices from it.
- * If `space` property is set to "world", helper wil orient itself in world space.
+ * If `space` property is set to "world", helper will not inherit objects rotation.
  * Helpers will auto-scale in view space if `size` property is non-zero.
  */
 
@@ -28,11 +26,11 @@ export class Helper extends IoLiteMixin(Mesh) {
 			size: 0
 		});
 
+		this.eye = new Vector3();
+
 		this.geometry = new BoxBufferGeometry(1,1,1,1,1,1);
 		this.material.colorWrite = false;
 		this.material.depthWrite = false;
-
-		this.eye = new Vector3();
 	}
 	onBeforeRender(renderer, scene, camera) {
 		this.camera = camera;
@@ -52,13 +50,14 @@ export class Helper extends IoLiteMixin(Mesh) {
 
 		if (this.camera) {
 			let eyeDistance = 1;
-			this.camera.matrixWorld.decompose(_cameraPosition, _cameraQuaternion, _cameraScale);
+			_cameraPosition.set(this.camera.matrixWorld.elements[12], this.camera.matrixWorld.elements[13], this.camera.matrixWorld.elements[14])
 			if (this.camera.isPerspectiveCamera) {
+				// TODO: make scale zoom independent with PerspectiveCamera
 				this.eye.copy(_cameraPosition).sub(this.position);
 				eyeDistance = this.eye.length();
 				this.eye.normalize();
 			} else if (this.camera.isOrthographicCamera) {
-				eyeDistance = 3 * (this.camera.top - this.camera.bottom) / this.camera.zoom; // TODO: not sure why 3 works
+				eyeDistance = 3 * (this.camera.top - this.camera.bottom) / this.camera.zoom; // TODO: Why magic number 3 matches perspective?
 				this.eye.copy(_cameraPosition).normalize();
 			}
 			if (this.size) this.scale.set(1, 1, 1).multiplyScalar(eyeDistance * this.size);

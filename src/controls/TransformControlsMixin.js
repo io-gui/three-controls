@@ -17,33 +17,30 @@ export const TransformControlsMixin = (superclass) => class extends InteractiveM
 	constructor(props) {
 		super(props);
 
-		this.visible = false;
-
 		this.defineProperties({
-			active: false,
-
-			pointStart: new Vector3(),
-			pointEnd: new Vector3(),
-
-			positionStart: new Vector3(),
-			quaternionStart: new Quaternion(),
-			quaternionStartInv: new Quaternion(),
-			scaleStart: new Vector3(),
-
-			parentPositionStart: new Vector3(),
-			parentQuaternionStart: new Quaternion(),
-			parentQuaternionStartInv: new Quaternion(),
-			parentScaleStart: new Vector3(),
-
-			worldPositionStart: new Vector3(),
-			worldQuaternionStart: new Quaternion(),
-			worldQuaternionStartInv: new Quaternion(),
-			worldScaleStart: new Vector3(),
-
-			_plane: new Plane()
+			active: false
 		});
 
-		this.add(this._planeDebugMesh = new Mesh(new PlaneBufferGeometry(1000, 1000, 10, 10), new MeshBasicMaterial({wireframe: true, transparent: true, opacity: 0.2})));
+		this.pointStart = new Vector3();
+		this.pointEnd = new Vector3();
+
+		this.positionStart = new Vector3();
+		this.quaternionStart = new Quaternion();
+		this.scaleStart = new Vector3();
+
+		this.parentPosition = new Vector3();
+		this.parentQuaternion = new Quaternion();
+		this.parentQuaternionInv = new Quaternion();
+		this.parentScale = new Vector3();
+
+		this.worldPosition = new Vector3();
+		this.worldQuaternion = new Quaternion();
+		this.worldQuaternionInv = new Quaternion();
+		this.worldScale = new Vector3();
+
+		this._plane = new Plane();
+
+		// this.add(this._planeDebugMesh = new Mesh(new PlaneBufferGeometry(1000, 1000, 10, 10), new MeshBasicMaterial({wireframe: true, transparent: true, opacity: 0.2})));
 	}
 	objectChanged() {
 		super.objectChanged();
@@ -86,14 +83,13 @@ export const TransformControlsMixin = (superclass) => class extends InteractiveM
 		if (planeIntersect) {
 			this.object.updateMatrixWorld();
 			this.object.matrix.decompose(this.positionStart, this.quaternionStart, this.scaleStart);
-			this.object.parent.matrixWorld.decompose(this.parentPositionStart, this.parentQuaternionStart, this.parentScaleStart);
-			this.object.matrixWorld.decompose(this.worldPositionStart, this.worldQuaternionStart, this.worldScaleStart);
+			this.object.parent.matrixWorld.decompose(this.parentPosition, this.parentQuaternion, this.parentScale);
+			this.object.matrixWorld.decompose(this.worldPosition, this.worldQuaternion, this.worldScale);
 
-			this.quaternionStartInv.copy(this.quaternionStart).inverse();
-			this.parentQuaternionStartInv.copy(this.parentQuaternionStart).inverse();
-			this.worldQuaternionStartInv.copy(this.worldQuaternionStart).inverse();
+			this.parentQuaternionInv.copy(this.parentQuaternion).inverse();
+			this.worldQuaternionInv.copy(this.worldQuaternion).inverse();
 
-			this.pointStart.copy(planeIntersect).sub(this.worldPositionStart);
+			this.pointStart.copy(planeIntersect).sub(this.worldPosition);
 			this.active = true;
 		}
 	}
@@ -104,7 +100,7 @@ export const TransformControlsMixin = (superclass) => class extends InteractiveM
 		const planeIntersect = _ray.ray.intersectPlane(this._plane, _tempVector);
 
 		if (planeIntersect) {
-			this.pointEnd.copy(planeIntersect).sub(this.worldPositionStart);
+			this.pointEnd.copy(planeIntersect).sub(this.worldPosition);
 			this.transform();
 
 			this.dispatchEvent(changeEvent);
@@ -138,9 +134,9 @@ export const TransformControlsMixin = (superclass) => class extends InteractiveM
 
 		this._plane.setFromNormalAndCoplanarPoint(normal, this.position);
 
-		this.parent.add(this._planeDebugMesh);
-		this._planeDebugMesh.position.set(0,0,0);
-		this._planeDebugMesh.lookAt(normal);
-		this._planeDebugMesh.position.copy(this.position);
+		// this.parent.add(this._planeDebugMesh);
+		// this._planeDebugMesh.position.set(0,0,0);
+		// this._planeDebugMesh.lookAt(normal);
+		// this._planeDebugMesh.position.copy(this.position);
 	}
 };

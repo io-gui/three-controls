@@ -113,7 +113,7 @@ export class TransformHelper extends Helper {
 	// TODO: optimize, make less ugly and framerate independent!
 	updateAxis(axis) {
 		axis.visible = true;
-		let highlight = axis.hidden ? -1.5 : axis.highlight || 0;
+		const highlight = axis.hidden ? -1.5 : axis.highlight || 0;
 		axis.material.highlight = (4 * axis.material.highlight + highlight) / 5;
 		if (axis.material.highlight < -1.49) axis.visible = false;
 		axis.scale.multiplyScalar(5).add(axis.scaleTarget).divideScalar(6);

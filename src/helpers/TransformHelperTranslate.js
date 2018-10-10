@@ -37,10 +37,10 @@ const pickerGeometry = {
 	X: new HelperGeometry(pickerHandleGeometry, {color: [1, 0.3, 0.3, 0.5], rotation: [0, 0, -HPI]}),
 	Y: new HelperGeometry(pickerHandleGeometry, {color: [0.3, 1, 0.3, 0.5]}),
 	Z: new HelperGeometry(pickerHandleGeometry, {color: [0.3, 0.3, 1, 0.5], rotation: [HPI, 0, 0]}),
-	XYZ: new HelperGeometry(new OctahedronBufferGeometry(1, 0), {color: [0.5, 0.5, 0.5, 0.5], scale: 0.2}),
 	XY: new HelperGeometry(new PlaneGeometry(), {color: [1,1,0,0.5,0.5], position: [0.25, 0.25, 0], scale: 0.5}),
 	YZ: new HelperGeometry(new PlaneGeometry(), {color: [0,1,1,0.5,0.5], position: [0, 0.25, 0.25], rotation: [0, HPI, 0], scale: 0.5}),
-	XZ: new HelperGeometry(new PlaneGeometry(), {color: [1,0,1,0.5,0.5], position: [0.25, 0, 0.25], rotation: [-HPI, 0, 0], scale: 0.5})
+	XZ: new HelperGeometry(new PlaneGeometry(), {color: [1,0,1,0.5,0.5], position: [0.25, 0, 0.25], rotation: [-HPI, 0, 0], scale: 0.5}),
+	XYZ: new HelperGeometry(new OctahedronBufferGeometry(1, 0), {color: [0.5, 0.5, 0.5, 0.5], scale: 0.2}),
 };
 
 function stringHas(str, char) {return str.search(char) !== -1;}

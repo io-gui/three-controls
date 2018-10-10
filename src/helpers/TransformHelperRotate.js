@@ -37,7 +37,7 @@ const rotateHandleGeometry = new HelperGeometry([
 	[new TorusBufferGeometry( 1, EPS, 4, 64, HPI/2 ), {thickness: 1, rotation: [0, 0, HPI - HPI/4]}],
 	[arrowGeometry, {position: [0.37, 0.93, 0], rotation: [0, 0, -2.035]}],
 	[arrowGeometry, {position: [-0.37, 0.93, 0], rotation: [0, 0, 2.035]}],
-	[new OctahedronBufferGeometry(0.03, 2), {position: [0, 1, 0]}],
+	[new OctahedronBufferGeometry(0.04, 2), {position: [0, 1, 0], scale: [1.5, .5, .5]}],
 	[halfRingGeometry, {rotation: [-HPI, 0, 0], scale: 0.25}]
 ]);
 
