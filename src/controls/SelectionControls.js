@@ -296,6 +296,7 @@ export class SelectionControls extends Interactive {
 		this.dispatchEvent({type: 'selected-changed', selected: [...this.selected], added: added, removed: removed});
 	}
 	updateMatrixWorld(force) {
+		// TODO: fix transform propagation lag
 		// Extract tranformations before and after matrix update.
 		this.matrixWorld.decompose(posOld, quatOld, scaleOld);
 		super.updateMatrixWorld(force);

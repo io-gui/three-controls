@@ -22,23 +22,23 @@ function stringHas(str, char) {return str.search(char) !== -1;}
 
 const circleGeometry = new HelperGeometry(new OctahedronBufferGeometry( 1, 3 ), {scale: [1, 0.01, 1]});
 
-const ringGeometry = new HelperGeometry(new TorusBufferGeometry( 1, EPS, 8, 128 ), {rotation: [HPI, 0, 0], thickness: 1});
+const ringGeometry = new HelperGeometry(new TorusBufferGeometry( 1, EPS, 4, 64 ), {rotation: [HPI, 0, 0], thickness: 1});
 
-const halfRingGeometry = new HelperGeometry(new TorusBufferGeometry( 1, EPS, 8, 64, PI ), {rotation: [HPI, 0, 0], thickness: 1});
+const halfRingGeometry = new HelperGeometry(new TorusBufferGeometry( 1, EPS, 4, 32, PI ), {rotation: [HPI, 0, 0], thickness: 1});
 
 const ringPickerGeometry = new HelperGeometry(new TorusBufferGeometry( 1, 0.1, 3, 12 ), {rotation: [HPI, 0, 0]});
 
 const arrowGeometry = new HelperGeometry([
 	[new OctahedronBufferGeometry(0.03, 2)],
-	[new CylinderBufferGeometry(0, 0.03, 0.2, 8, 2, true), {position: [0, 0.1, 0]}],
+	[new CylinderBufferGeometry(0, 0.03, 0.2, 8, 1, true), {position: [0, 0.1, 0]}],
 ]);
 
 const rotateHandleGeometry = new HelperGeometry([
-	[new TorusBufferGeometry( 1, EPS, 4, 64, HPI/2 ), {thickness: 1, rotation: [0, 0, HPI - HPI/4]}],
+	[new TorusBufferGeometry( 1, EPS, 4, 6, HPI/2 ), {thickness: 1, rotation: [0, 0, HPI - HPI/4]}],
+	[new TorusBufferGeometry( 0.975, 0.025, 2, 2, HPI/2/3 ), {color: [1, 1, 1, 0.25], rotation: [0, 0, HPI - HPI/4/3], scale: [1, 1, 0.01], outlineThickness: 0}],
 	[arrowGeometry, {position: [0.37, 0.93, 0], rotation: [0, 0, -2.035]}],
 	[arrowGeometry, {position: [-0.37, 0.93, 0], rotation: [0, 0, 2.035]}],
-	[new OctahedronBufferGeometry(0.04, 2), {position: [0, 1, 0], scale: [1.5, .5, .5]}],
-	[halfRingGeometry, {rotation: [-HPI, 0, 0], scale: 0.25}]
+	[halfRingGeometry, {rotation: [-HPI, 0, 0], scale: 0.25}],
 ]);
 
 const rotatePickerGeometry = new HelperGeometry([

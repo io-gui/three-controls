@@ -30,22 +30,23 @@ const ringPickerGeometry = new HelperGeometry(new TorusBufferGeometry( 1, 0.1, 3
 
 const arrowGeometry = new HelperGeometry([
 	[new OctahedronBufferGeometry(0.03, 2)],
-	[new CylinderBufferGeometry(0, 0.03, 0.2, 8, 2, true), {position: [0, 0.1, 0]}],
+	[new CylinderBufferGeometry(0, 0.03, 0.2, 8, 1, true), {position: [0, 0.1, 0]}],
 ]);
 
 const translateArrowGeometry = new HelperGeometry([
-	[new CylinderBufferGeometry(EPS, EPS, 0.45, 5, 2, false), {position: [0, 0.5, 0], thickness: 1}],
-	[arrowGeometry, {position: [0, 0.7, 0]}],
+	[new CylinderBufferGeometry(EPS, EPS, 0.35, 5, 1, false), {position: [0, 0.45, 0], thickness: 1}],
+	[arrowGeometry, {position: [0, 0.6, 0]}],
 	[new OctahedronBufferGeometry(0.03, 2), {position: [0, 0.9, 0]}]
 ]);
 
 const cornerGeometry = new HelperGeometry([
+	[new PlaneGeometry(), {color: [1,1,1,0.125], position: [-0.1, -0.1, 0], scale: 0.2, outlineThickness: 0}],
 	[new Corner2Geometry(), {color: [1,1,0.25], scale: 0.2, rotation: [HPI, 0, PI]}],
-	[new CylinderBufferGeometry(EPS, EPS, 0.32, 5, 2, false), {position: [0.11, 0.11, 0], rotation: [0, 0, -HPI/2], thickness: 1}],
 ]);
 
 const rotateHandleGeometry = new HelperGeometry([
-	[new TorusBufferGeometry( 1, EPS, 4, 64, HPI/2 ), {thickness: 1, rotation: [0, 0, HPI - HPI/4]}],
+	[new TorusBufferGeometry( 1, EPS, 4, 6, HPI/2 ), {thickness: 1, rotation: [0, 0, HPI - HPI/4]}],
+	[new TorusBufferGeometry( 0.975, 0.025, 2, 2, HPI/2/3 ), {color: [1, 1, 1, 0.25], rotation: [0, 0, HPI - HPI/4/3], scale: [1, 1, 0.01], outlineThickness: 0}],
 	[arrowGeometry, {position: [0.37, 0.93, 0], rotation: [0, 0, -2.035]}],
 	[arrowGeometry, {position: [-0.37, 0.93, 0], rotation: [0, 0, 2.035]}],
 ]);
@@ -53,6 +54,12 @@ const rotateHandleGeometry = new HelperGeometry([
 const rotatePickerGeometry = new HelperGeometry([
 	[new TorusBufferGeometry( 1, 0.03, 4, 8, HPI/2 ), {rotation: [0, 0, HPI - HPI/4]}],
 	[new OctahedronBufferGeometry(1, 0), {position: [0, 0.992, 0], scale: 0.2}],
+]);
+
+const scale2HandleGeometry = new HelperGeometry([
+	[new OctahedronBufferGeometry(0.03, 2)],
+	[new PlaneGeometry(), {color: [1,1,1,0.125], position: [0, -0.06, 0], scale: [0.06, 0.1, 0.06], outlineThickness: 0}],
+	[new PlaneGeometry(), {color: [1,1,1,0.125], position: [-0.06, 0, 0], scale: [0.1, 0.06, 0.06], outlineThickness: 0}],
 ]);
 
 const handleGeometry = {
@@ -72,22 +79,18 @@ const handleGeometry = {
 	YZ: new HelperGeometry(cornerGeometry, {position: [0, 0.25, 0.25], color: [0.25,1,1], rotation: [0, -HPI, 0]}),
 	XZ: new HelperGeometry(cornerGeometry, {position: [0.25, 0, 0.25], color: [1,0.25,1], rotation: [HPI, 0, 0]}),
 	S_XY: new HelperGeometry([
-		[new OctahedronBufferGeometry(0.03, 2), {color: [1, 1, 0], position: [0.5, 0.5, 0]}]
+		[scale2HandleGeometry, {color: [1, 1, 0], position: [0.9, 0.9, 0]}]
 	]),
 	S_YZ: new HelperGeometry([
-		[new OctahedronBufferGeometry(0.03, 2), {color: [0, 1, 1], position: [0, 0.5, 0.5]}]
+		[scale2HandleGeometry, {color: [0, 1, 1], position: [0, 0.9, 0.9], rotation: [0, -HPI, 0]}]
 	]),
 	S_XZ: new HelperGeometry([
-		[new OctahedronBufferGeometry(0.03, 2), {color: [1, 0, 1], position: [0.5, 0, 0.5]}]
+		[scale2HandleGeometry, {color: [1, 0, 1], position: [0.9, 0, 0.9], rotation: [HPI, 0, 0]}]
 	]),
-	S_XYZX: new HelperGeometry(new OctahedronBufferGeometry(0.03, 2), {color: [0.75, 0.75, 0.75], position: [1, 0, 0]}),
-	S_XYZY: new HelperGeometry(new OctahedronBufferGeometry(0.03, 2), {color: [0.75, 0.75, 0.75], position: [0, 1, 0]}),
-	S_XYZZ: new HelperGeometry(new OctahedronBufferGeometry(0.03, 2), {color: [0.75, 0.75, 0.75], position: [0, 0, 1]}),
-
-	// E: new HelperGeometry(ringGeometry, {color: [1, 1, 0.5], rotation: [PI / 2, PI / 2, 0]}),
-	// XYZ: new HelperGeometry(ringGeometry, {color: [0.5, 0.5, 0.5], rotation: [PI / 2, PI / 2, 0], scale: 0.25, outlineThickness: 0}),
+	S_XYZX: new HelperGeometry(new OctahedronBufferGeometry(0.03, 2), {color: [0.75, 0.75, 0.75], position: [1.025, 0, 0]}),
+	S_XYZY: new HelperGeometry(new OctahedronBufferGeometry(0.03, 2), {color: [0.75, 0.75, 0.75], position: [0, 1.025, 0]}),
+	S_XYZZ: new HelperGeometry(new OctahedronBufferGeometry(0.03, 2), {color: [0.75, 0.75, 0.75], position: [0, 0, 1.025]}),
 };
-
 
 const pickerGeometry = {};
 

@@ -73,6 +73,7 @@
 			import {TransformControlsRotate} from "./src/controls/TransformControlsRotate.js";
 			import {TransformControlsScale} from "./src/controls/TransformControlsScale.js";
 			import {TransformControlsStretch} from "./src/controls/TransformControlsStretch.js";
+			import {TransformControlsCombined} from "./src/controls/TransformControlsCombined.js";
 
 			import {ViewportControls} from "./src/controls/ViewportControls.js";
 			import {EditorControls} from "./src/controls/EditorControls.js";
@@ -215,15 +216,15 @@
 				helperScene.add(selectionControls);
 				selectionControls.addEventListener('change', render);
 				selectionControls.addEventListener('selected-changed', event => {
-					// transformControls.object = event.selected.length ? selectionControls : null;
+					transformControls.object = event.selected.length ? selectionControls : null;
 					// TODO: test individual objects
-					transformControls.object = event.selected.length ? event.selected[0] : null;
+					// transformControls.object = event.selected.length ? event.selected[0] : null;
 					transformControls.objectChanged();
 					transformControls.enabled = true;
 				});
 
 				setupViewportControls('OrbitControls');
-				setupTransformControls('TransformControlsRotate');
+				setupTransformControls('TransformControlsCombined');
 
 				scene.updateMatrixWorld();
 				selectionControls.replace([
@@ -265,6 +266,7 @@
 					if (controlName === 'TransformControlsRotate') ControlClass = TransformControlsRotate;
 					if (controlName === 'TransformControlsScale') ControlClass = TransformControlsScale;
 					if (controlName === 'TransformControlsStretch') ControlClass = TransformControlsStretch;
+					if (controlName === 'TransformControlsCombined') ControlClass = TransformControlsCombined;
 					if (controlName === 'DragControls') ControlClass = DragControls;
 
 					if (transformControls) {
