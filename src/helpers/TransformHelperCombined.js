@@ -5,7 +5,6 @@ import {Corner2Geometry, PlaneGeometry} from "./HelperGeometries.js";
 
 // Reusable utility variables
 const _worldY = new Vector3(0, 0, 0);
-const _alignVector = new Vector3(0, 1, 0);
 const _zero = new Vector3(0, 0, 0);
 const _lookAtMatrix = new Matrix4();
 const _tempQuaternion = new Quaternion();

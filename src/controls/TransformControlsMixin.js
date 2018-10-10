@@ -27,7 +27,18 @@ export const TransformControlsMixin = (superclass) => class extends InteractiveM
 
 			positionStart: new Vector3(),
 			quaternionStart: new Quaternion(),
+			quaternionStartInv: new Quaternion(),
 			scaleStart: new Vector3(),
+
+			parentPositionStart: new Vector3(),
+			parentQuaternionStart: new Quaternion(),
+			parentQuaternionStartInv: new Quaternion(),
+			parentScaleStart: new Vector3(),
+
+			worldPositionStart: new Vector3(),
+			worldQuaternionStart: new Quaternion(),
+			worldQuaternionStartInv: new Quaternion(),
+			worldScaleStart: new Vector3(),
 
 			_plane: new Plane()
 		});
@@ -75,8 +86,14 @@ export const TransformControlsMixin = (superclass) => class extends InteractiveM
 		if (planeIntersect) {
 			this.object.updateMatrixWorld();
 			this.object.matrix.decompose(this.positionStart, this.quaternionStart, this.scaleStart);
+			this.object.parent.matrixWorld.decompose(this.parentPositionStart, this.parentQuaternionStart, this.parentScaleStart);
+			this.object.matrixWorld.decompose(this.worldPositionStart, this.worldQuaternionStart, this.worldScaleStart);
 
-			this.pointStart.copy(planeIntersect).sub(this.positionStart);
+			this.quaternionStartInv.copy(this.quaternionStart).inverse();
+			this.parentQuaternionStartInv.copy(this.parentQuaternionStart).inverse();
+			this.worldQuaternionStartInv.copy(this.worldQuaternionStart).inverse();
+
+			this.pointStart.copy(planeIntersect).sub(this.worldPositionStart);
 			this.active = true;
 		}
 	}
@@ -87,7 +104,7 @@ export const TransformControlsMixin = (superclass) => class extends InteractiveM
 		const planeIntersect = _ray.ray.intersectPlane(this._plane, _tempVector);
 
 		if (planeIntersect) {
-			this.pointEnd.copy(planeIntersect).sub(this.positionStart);
+			this.pointEnd.copy(planeIntersect).sub(this.worldPositionStart);
 			this.transform();
 
 			this.dispatchEvent(changeEvent);

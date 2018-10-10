@@ -219,10 +219,11 @@
 					// TODO: test individual objects
 					transformControls.object = event.selected.length ? event.selected[0] : null;
 					transformControls.objectChanged();
+					console.log(transformControls.object)
 				});
 
 				setupViewportControls('OrbitControls');
-				setupTransformControls('TransformControlsTranslate');
+				setupTransformControls('TransformControlsRotate');
 
 				scene.updateMatrixWorld();
 				selectionControls.replace([

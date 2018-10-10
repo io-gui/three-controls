@@ -26,31 +26,32 @@ const handleGeometry = {
 	Z: new HelperGeometry(arrowGeometry, {color: [0.3, 0.3, 1], rotation: [HPI, 0, 0]}),
 	XY: new HelperGeometry([
 		[cornerGeometry, {position: [0.5, 0.5, 0], color: [1,1,0.3]}],
-		// [new OctahedronBufferGeometry(0.03, 2), {color: [1, 1, 0], position: [0.5, 0.5, 0]}]
 	]),
 	YZ: new HelperGeometry([
 		[cornerGeometry, {position: [0, 0.5, 0.5], color: [0.3,1,1], rotation: [0, -HPI, 0]}],
-		// [new OctahedronBufferGeometry(0.03, 2), {color: [0, 1, 1], position: [0, 0.5, 0.5]}]
 	]),
 	XZ: new HelperGeometry([
 		[cornerGeometry, {position: [0.5, 0, 0.5], color: [1,0.3,1], rotation: [HPI, 0, 0]}],
-		// [new OctahedronBufferGeometry(0.03, 2), {color: [1, 0, 1], position: [0.5, 0, 0.5]}]
 	]),
-	XYZX: new HelperGeometry(new OctahedronBufferGeometry(0.03, 2), {color: [0.75, 0.75, 0.75], position: [1, 0, 0]}),
-	XYZY: new HelperGeometry(new OctahedronBufferGeometry(0.03, 2), {color: [0.75, 0.75, 0.75], position: [0, 1, 0]}),
-	XYZZ: new HelperGeometry(new OctahedronBufferGeometry(0.03, 2), {color: [0.75, 0.75, 0.75], position: [0, 0, 1]}),
+	XYZ: new HelperGeometry([
+		[new OctahedronBufferGeometry(0.03, 2), {color: [0.75, 0.75, 0.75], position: [1, 0, 0]}],
+		[new OctahedronBufferGeometry(0.03, 2), {color: [0.75, 0.75, 0.75], position: [0, 1, 0]}],
+		[new OctahedronBufferGeometry(0.03, 2), {color: [0.75, 0.75, 0.75], position: [0, 0, 1]}],
+	]),
 };
 
 const pickerGeometry = {
 	X: new HelperGeometry(pickerHandleGeometry, {color: [1, 0.3, 0.3, 0.5], rotation: [0, 0, -HPI]}),
 	Y: new HelperGeometry(pickerHandleGeometry, {color: [0.3, 1, 0.3, 0.5]}),
 	Z: new HelperGeometry(pickerHandleGeometry, {color: [0.3, 0.3, 1, 0.5], rotation: [HPI, 0, 0]}),
-	XY: new HelperGeometry(new PlaneGeometry(), {color: [1,1,0,0.5], position: [0.6, 0.6, 0], scale: 0.4}),
-	YZ: new HelperGeometry(new PlaneGeometry(), {color: [0,1,1,0.5], position: [0, 0.6, 0.6], rotation: [0, HPI, 0], scale: 0.4}),
-	XZ: new HelperGeometry(new PlaneGeometry(), {color: [1,0,1,0.5], position: [0.6, 0, 0.6], rotation: [-HPI, 0, 0], scale: 0.4}),
-	XYZX: new HelperGeometry(new OctahedronBufferGeometry(0.1, 1), {color: [0.5, 0.5, 0.5, 0.5], position: [1, 0, 0]}),
-	XYZY: new HelperGeometry(new OctahedronBufferGeometry(0.1, 1), {color: [0.5, 0.5, 0.5, 0.5], position: [0, 1, 0]}),
-	XYZZ: new HelperGeometry(new OctahedronBufferGeometry(0.1, 1), {color: [0.5, 0.5, 0.5, 0.5], position: [0, 0, 1]}),
+	XY: new HelperGeometry(new PlaneGeometry(), {color: [1,1,0,0.5], position: [0.4, 0.4, 0], scale: 0.4}),
+	YZ: new HelperGeometry(new PlaneGeometry(), {color: [0,1,1,0.5], position: [0, 0.4, 0.4], rotation: [0, HPI, 0], scale: 0.4}),
+	XZ: new HelperGeometry(new PlaneGeometry(), {color: [1,0,1,0.5], position: [0.4, 0, 0.4], rotation: [-HPI, 0, 0], scale: 0.4}),
+	XYZ: new HelperGeometry([
+		[new OctahedronBufferGeometry(0.1, 1), {color: [0.5, 0.5, 0.5, 0.5], position: [1, 0, 0]}],
+		[new OctahedronBufferGeometry(0.1, 1), {color: [0.5, 0.5, 0.5, 0.5], position: [0, 1, 0]}],
+		[new OctahedronBufferGeometry(0.1, 1), {color: [0.5, 0.5, 0.5, 0.5], position: [0, 0, 1]}],
+	]),
 };
 
 export class TransformHelperScale extends TransformHelperTranslate {
@@ -63,8 +64,7 @@ export class TransformHelperScale extends TransformHelperTranslate {
 	updateHelperMatrix() {
 		this.space = 'local';
 		super.updateHelperMatrix();
-		// TODO: optimize!
-		for (let i = this.handles.length; i--;) this.updateAxisMaterial(this.handles[i]);
-		for (let i = this.pickers.length; i--;) this.updateAxisMaterial(this.pickers[i]);
+		for (let i = this.handles.length; i--;) this.updateAxis(this.handles[i]);
+		for (let i = this.pickers.length; i--;) this.updateAxis(this.pickers[i]);
 	}
 }
