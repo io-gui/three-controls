@@ -1,6 +1,7 @@
 import {Vector3, Matrix4, Quaternion, TorusBufferGeometry, SphereBufferGeometry, OctahedronBufferGeometry, CylinderBufferGeometry} from "../../lib/three.module.js";
 import {HelperGeometry} from "./HelperGeometry.js";
 import {TransformHelper} from "./TransformHelper.js";
+import {colors} from "./HelperGeometries.js";
 
 // Reusable utility variables
 const _worldY = new Vector3(0, 0, 0);
@@ -20,46 +21,41 @@ const _unitZ = new Vector3(0, 0, 1);
 
 function stringHas(str, char) {return str.search(char) !== -1;}
 
-const circleGeometry = new HelperGeometry(new OctahedronBufferGeometry( 1, 3 ), {scale: [1, 0.01, 1]});
-
 const ringGeometry = new HelperGeometry(new TorusBufferGeometry( 1, EPS, 4, 64 ), {rotation: [HPI, 0, 0], thickness: 1});
 
-const halfRingGeometry = new HelperGeometry(new TorusBufferGeometry( 1, EPS, 4, 32, PI ), {rotation: [HPI, 0, 0], thickness: 1});
+const halfRingGeometry = new HelperGeometry(new TorusBufferGeometry( 1, EPS, 4, 12, PI ), {rotation: [HPI, 0, 0], thickness: 1});
 
-const ringPickerGeometry = new HelperGeometry(new TorusBufferGeometry( 1, 0.1, 3, 12 ), {rotation: [HPI, 0, 0]});
-
-const arrowGeometry = new HelperGeometry([
+const coneGeometry = new HelperGeometry([
 	[new OctahedronBufferGeometry(0.03, 2)],
 	[new CylinderBufferGeometry(0, 0.03, 0.2, 8, 1, true), {position: [0, 0.1, 0]}],
 ]);
 
 const rotateHandleGeometry = new HelperGeometry([
 	[new TorusBufferGeometry( 1, EPS, 4, 6, HPI/2 ), {thickness: 1, rotation: [0, 0, HPI - HPI/4]}],
-	[new TorusBufferGeometry( 0.975, 0.025, 2, 2, HPI/2/3 ), {color: [1, 1, 1, 0.25], rotation: [0, 0, HPI - HPI/4/3], scale: [1, 1, 0.01], outlineThickness: 0}],
-	[arrowGeometry, {position: [0.37, 0.93, 0], rotation: [0, 0, -2.035]}],
-	[arrowGeometry, {position: [-0.37, 0.93, 0], rotation: [0, 0, 2.035]}],
+	[new TorusBufferGeometry( 0.96, 0.04, 2, 2, HPI/2/3 ), {color: colors['whiteTransparent'], rotation: [0, 0, HPI - HPI/4/3], scale: [1, 1, 0.01], outlineThickness: 0}],
+	[coneGeometry, {position: [0.37, 0.93, 0], rotation: [0, 0, -2.035]}],
+	[coneGeometry, {position: [-0.37, 0.93, 0], rotation: [0, 0, 2.035]}],
 	[halfRingGeometry, {rotation: [-HPI, 0, 0], scale: 0.25}],
 ]);
 
-const rotatePickerGeometry = new HelperGeometry([
-	[new TorusBufferGeometry( 1, 0.03, 4, 8, HPI/2 ), {rotation: [0, 0, HPI - HPI/4]}],
-	[new OctahedronBufferGeometry(1, 0), {position: [0, 0.992, 0], scale: 0.2}],
-]);
+const ringPickerGeometry = new HelperGeometry(new TorusBufferGeometry( 1, 0.1, 3, 12 ), {color: colors['whiteTransparent'], rotation: [HPI, 0, 0]});
+
+const rotatePickerGeometry = new HelperGeometry(new TorusBufferGeometry( 1, 0.1, 4, 4, HPI/1.5 ), {color: colors['whiteTransparent'], rotation: [0, 0, HPI - HPI/3]});
 
 const handleGeometry = {
-	X: new HelperGeometry(rotateHandleGeometry, {color: [1, 0.3, 0.3], rotation: [Math.PI / 2, Math.PI / 2, 0]}),
-	Y: new HelperGeometry(rotateHandleGeometry, {color: [0.3, 1, 0.3], rotation: [Math.PI / 2, 0, 0]}),
-	Z: new HelperGeometry(rotateHandleGeometry, {color: [0.3, 0.3, 1], rotation: [0, 0, -Math.PI / 2]}),
-	E: new HelperGeometry(ringGeometry, {color: [1, 1, 0.5], rotation: [Math.PI / 2, Math.PI / 2, 0]}),
-	XYZ: new HelperGeometry(ringGeometry, {color: [0.5, 0.5, 0.5], rotation: [Math.PI / 2, Math.PI / 2, 0], scale: 0.25, outlineThickness: 0}),
+	X: new HelperGeometry(rotateHandleGeometry, {color: colors['red'], rotation: [Math.PI / 2, Math.PI / 2, 0]}),
+	Y: new HelperGeometry(rotateHandleGeometry, {color: colors['green'], rotation: [Math.PI / 2, 0, 0]}),
+	Z: new HelperGeometry(rotateHandleGeometry, {color: colors['blue'], rotation: [0, 0, -Math.PI / 2]}),
+	E: new HelperGeometry(ringGeometry, {color: colors['yellow'], rotation: [Math.PI / 2, Math.PI / 2, 0]}),
+	XYZ: new HelperGeometry(ringGeometry, {color: colors['gray'], rotation: [Math.PI / 2, Math.PI / 2, 0], scale: 0.25, outlineThickness: 0}),
 };
 
 const pickerGeometry = {
-	X: new HelperGeometry(rotatePickerGeometry, {color: [1, 0, 0, 0.5], rotation: [Math.PI / 2, Math.PI / 2, 0]}),
-	Y: new HelperGeometry(rotatePickerGeometry, {color: [0, 1, 0, 0.5], rotation: [Math.PI / 2, 0, 0]}),
-	Z: new HelperGeometry(rotatePickerGeometry, {color: [0, 0, 1, 0.5], rotation: [0, 0, -Math.PI / 2]}),
-	E: new HelperGeometry(ringPickerGeometry, {color: [1, 1, 0.5, 0.5], rotation: [Math.PI / 2, Math.PI / 2, 0]}),
-	XYZ: new HelperGeometry(new OctahedronBufferGeometry(1, 1), {color: [0.5, 0.5, 0.5, 0.15], rotation: [Math.PI / 2, Math.PI / 2, 0], scale: 0.32}),
+	X: new HelperGeometry(rotatePickerGeometry, {color: colors['red'], rotation: [Math.PI / 2, Math.PI / 2, 0]}),
+	Y: new HelperGeometry(rotatePickerGeometry, {color: colors['green'], rotation: [Math.PI / 2, 0, 0]}),
+	Z: new HelperGeometry(rotatePickerGeometry, {color: colors['blue'], rotation: [0, 0, -Math.PI / 2]}),
+	E: new HelperGeometry(ringPickerGeometry, {color: colors['yellow'], rotation: [Math.PI / 2, Math.PI / 2, 0]}),
+	XYZ: new HelperGeometry(new OctahedronBufferGeometry(1, 1), {color: colors['whiteTransparent'], rotation: [Math.PI / 2, Math.PI / 2, 0], scale: 0.32}),
 };
 
 export class TransformHelperRotate extends TransformHelper {

@@ -91,7 +91,9 @@ export class HelperMaterial extends IoLiteMixin(ShaderMaterial) {
 				} else {
 					extrude -= outline;
 				}
-				pos.z -= max(uDepthBias, uHighlight) * 0.01;
+
+				pos.z -= uDepthBias * 0.1;
+				pos.z -= uHighlight;
 
 				pos.xy /= pos.w;
 
@@ -137,7 +139,7 @@ export class HelperMaterial extends IoLiteMixin(ShaderMaterial) {
 
 				gl_FragColor = vec4(color, opacity);
 
-				opacity = opacity - mod(opacity, 0.25) + 0.25;
+				// opacity = opacity - mod(opacity, 0.25) + 0.25;
 
 				vec2 matCoord = ( mod(gl_FragCoord.xy / pixelRatio, 4.0) - vec2(0.5) ) / 4.0;
 				vec4 ditherPattern = texture2D( tDitherMatrix, matCoord.xy );

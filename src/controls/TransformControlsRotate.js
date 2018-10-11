@@ -14,11 +14,9 @@ const unit = {
 	Y: new Vector3(0, 1, 0),
 	Z: new Vector3(0, 0, 1)
 };
-
 const offset = new Vector3();
 const startNorm = new Vector3();
 const endNorm = new Vector3();
-
 const rotationAxis = new Vector3();
 let rotationAngle = 0;
 

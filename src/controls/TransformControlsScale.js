@@ -11,7 +11,6 @@ const scaleFactor = new Vector3();
 
 export class TransformControlsScale extends TransformControlsMixin(TransformHelperScale) {
 	transform() {
-
 		if (this.axis === 'XYZ') {
 
 			let refVector = this.pointStart.clone().normalize();
