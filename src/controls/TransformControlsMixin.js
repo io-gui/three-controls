@@ -123,14 +123,15 @@ export const TransformControlsMixin = (superclass) => class extends InteractiveM
 	}
 	updatePlane() {
 		const normal = this._plane.normal;
+		const axis = this.axis ? this.axis.split('_').pop() : null;
 
-		if (this.axis === 'X') normal.copy(this.worldX).cross(_tempVector.copy(this.eye).cross(this.worldX));
-		if (this.axis === 'Y') normal.copy(this.worldY).cross(_tempVector.copy(this.eye).cross(this.worldY));
-		if (this.axis === 'Z') normal.copy(this.worldZ).cross(_tempVector.copy(this.eye).cross(this.worldZ));
-		if (this.axis === 'XY') normal.copy(this.worldZ);
-		if (this.axis === 'YZ') normal.copy(this.worldX);
-		if (this.axis === 'XZ') normal.copy(this.worldY);
-		if (this.axis === 'XYZ' || this.axis === 'E') this.camera.getWorldDirection(normal);
+		if (axis === 'X') normal.copy(this.worldX).cross(_tempVector.copy(this.eye).cross(this.worldX));
+		if (axis === 'Y') normal.copy(this.worldY).cross(_tempVector.copy(this.eye).cross(this.worldY));
+		if (axis === 'Z') normal.copy(this.worldZ).cross(_tempVector.copy(this.eye).cross(this.worldZ));
+		if (axis === 'XY') normal.copy(this.worldZ);
+		if (axis === 'YZ') normal.copy(this.worldX);
+		if (axis === 'XZ') normal.copy(this.worldY);
+		if (axis === 'XYZ' || axis === 'E') this.camera.getWorldDirection(normal);
 
 		this._plane.setFromNormalAndCoplanarPoint(normal, this.position);
 

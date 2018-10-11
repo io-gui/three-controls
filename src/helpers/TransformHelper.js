@@ -4,8 +4,6 @@ import {HelperMesh} from "./HelperMesh.js";
 import {Corner3Geometry} from "./HelperGeometries.js";
 import {Animation} from "../../lib/Animation.js";
 
-function stringHas(str, char) {return str.search(char) !== -1;}
-
 function hasAxisAny(str, chars) {
 	let has = true;
 	str.split('').some(a => { if (chars.indexOf(a) === -1) has = false; });
@@ -74,9 +72,11 @@ export class TransformHelper extends Helper {
 		for (let i = this.pickers.length; i--;) callback(this.pickers[i]);
 	}
 	spaceChanged() {
+		this.paramChanged();
 		this.animateScaleUp();
 	}
 	objectChanged() {
+		this.paramChanged();
 		this.animateScaleUp();
 	}
 	animateScaleUp() {
@@ -95,10 +95,10 @@ export class TransformHelper extends Helper {
 	paramChanged() {
 		this.traverseAxis(axis => {
 			axis.hidden = false;
-			if (stringHas(axis.name, "X") && !this.showX) axis.hidden = true;
-			if (stringHas(axis.name, "Y") && !this.showY) axis.hidden = true;
-			if (stringHas(axis.name, "Z") && !this.showZ) axis.hidden = true;
-			if (stringHas(axis.name, "E") && (!this.showX || !this.showY || !this.showZ)) axis.hidden = true;
+			if (axis.name.indexOf('X') !== -1 && !this.showX) axis.hidden = true;
+			if (axis.name.indexOf('Y') !== -1 && !this.showY) axis.hidden = true;
+			if (axis.name.indexOf('Z') !== -1 && !this.showZ) axis.hidden = true;
+			if (axis.name.indexOf('E') !== -1 && (!this.showX || !this.showY || !this.showZ)) axis.hidden = true;
 		});
 		this.animation.startAnimation(0.5);
 	}

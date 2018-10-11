@@ -49,8 +49,6 @@ const pickerGeometry = {
 	XYZ: new HelperGeometry(new OctahedronBufferGeometry(1, 0), {color: colors['whiteTransparent'], scale: 0.2}),
 };
 
-function stringHas(str, char) {return str.search(char) !== -1;}
-
 export class TransformHelperTranslate extends TransformHelper {
 	get isTransformHelperTranslate() { return true; }
 	get handleGeometry() {
@@ -74,10 +72,6 @@ export class TransformHelperTranslate extends TransformHelper {
 			flipZ: { value: false, observer: 'paramChanged' }
 		});
 	}
-	objectChanged() {
-		super.objectChanged();
-		this.paramChanged();
-	}
 	paramChanged() {
 		super.paramChanged();
 		this.traverseAxis(axis => {
@@ -89,9 +83,9 @@ export class TransformHelperTranslate extends TransformHelper {
 			if (axis.name == 'YZ' && this.hideYZ) axis.hidden = true;
 			if (axis.name == 'XZ' && this.hideXZ) axis.hidden = true;
 			// Flip axis
-			if (stringHas(axis.name, 'X')) axis.scaleTarget.x = this.flipX ? -1 : 1;
-			if (stringHas(axis.name, 'Y')) axis.scaleTarget.y = this.flipY ? -1 : 1;
-			if (stringHas(axis.name, 'Z')) axis.scaleTarget.z = this.flipZ ? -1 : 1;
+			if (axis.name.indexOf('X') !== -1) axis.scaleTarget.x = this.flipX ? -1 : 1;
+			if (axis.name.indexOf('Y') !== -1) axis.scaleTarget.y = this.flipY ? -1 : 1;
+			if (axis.name.indexOf('Z') !== -1) axis.scaleTarget.z = this.flipZ ? -1 : 1;
 		});
 	}
 	updateHelperMatrix() {

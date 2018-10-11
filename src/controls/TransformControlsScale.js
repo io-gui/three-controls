@@ -8,6 +8,7 @@ import {TransformHelperScale} from "../helpers/TransformHelperScale.js";
 
 // Reusable utility variables
 const scaleFactor = new Vector3();
+const EPS = 0.000001;
 
 export class TransformControlsScale extends TransformControlsMixin(TransformHelperScale) {
 	transform() {
@@ -18,8 +19,6 @@ export class TransformControlsScale extends TransformControlsMixin(TransformHelp
 			scaleFactor.set(factor, factor, factor);
 
 		} else {
-
-			// TODO: fix negative scale jitter
 
 			scaleFactor.set(
 				this.pointEnd.dot(this.worldX) / this.pointStart.dot(this.worldX),
@@ -34,5 +33,10 @@ export class TransformControlsScale extends TransformControlsMixin(TransformHelp
 		}
 
 		this.object.scale.copy(this.scaleStart).multiply(scaleFactor);
+		this.object.scale.set(
+			Math.max(this.object.scale.x, EPS),
+			Math.max(this.object.scale.y, EPS),
+			Math.max(this.object.scale.z, EPS),
+		);
 	}
 }

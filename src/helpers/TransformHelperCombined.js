@@ -18,8 +18,6 @@ const EPS = 0.000001;
 // const _unitY = new Vector3(0, 1, 0);
 // const _unitZ = new Vector3(0, 0, 1);
 
-function stringHas(str, char) {return str.search(char) !== -1;}
-
 const coneGeometry = new HelperGeometry([
 	[new OctahedronBufferGeometry(0.03, 2)],
 	[new CylinderBufferGeometry(0, 0.03, 0.2, 8, 1, true), {position: [0, 0.1, 0]}],
@@ -119,10 +117,14 @@ export class TransformHelperCombined extends TransformHelperTranslate {
 	get pickerGeometry() {
 		return pickerGeometry;
 	}
+	// TODO: disable per-axis scale in local space
 	paramChanged() {
 		super.paramChanged();
 		this.traverseAxis(axis => {
 			// Hide axis facing the camera
+			if ((axis.name == 'S_X' || axis.name == 'S_Y' || axis.name == 'S_Z') && this.space === 'world') axis.hidden = true;
+			if ((axis.name == 'S_XY' || axis.name == 'S_YZ' || axis.name == 'S_XZ') && this.space === 'world') axis.hidden = true;
+
 			if ((axis.name == 'T_X' || axis.name == 'S_X' || axis.name == 'S_XYZ') && this.hideX) axis.hidden = true;
 			if ((axis.name == 'T_Y' || axis.name == 'S_Y' || axis.name == 'S_XYZ') && this.hideY) axis.hidden = true;
 			if ((axis.name == 'T_Z' || axis.name == 'S_Z' || axis.name == 'S_XYZ') && this.hideZ) axis.hidden = true;
@@ -130,9 +132,9 @@ export class TransformHelperCombined extends TransformHelperTranslate {
 			if ((axis.name == 'T_YZ' || axis.name == 'S_YZ' || axis.name == 'R_X') && this.hideYZ) axis.hidden = true;
 			if ((axis.name == 'T_XZ' || axis.name == 'S_XZ' || axis.name == 'R_Y') && this.hideXZ) axis.hidden = true;
 			// Flip axis
-			if (stringHas(axis.name, 'X') || (stringHas(axis.name, 'R'))) axis.scaleTarget.x = this.flipX ? -1 : 1;
-			if (stringHas(axis.name, 'Y') || (stringHas(axis.name, 'R'))) axis.scaleTarget.y = this.flipY ? -1 : 1;
-			if (stringHas(axis.name, 'Z') || (stringHas(axis.name, 'R'))) axis.scaleTarget.z = this.flipZ ? -1 : 1;
+			if (axis.name.indexOf('X') !== -1 || (axis.name.indexOf('R') !== -1)) axis.scaleTarget.x = this.flipX ? -1 : 1;
+			if (axis.name.indexOf('Y') !== -1 || (axis.name.indexOf('R') !== -1)) axis.scaleTarget.y = this.flipY ? -1 : 1;
+			if (axis.name.indexOf('Z') !== -1 || (axis.name.indexOf('R') !== -1)) axis.scaleTarget.z = this.flipZ ? -1 : 1;
 		});
 	}
 }

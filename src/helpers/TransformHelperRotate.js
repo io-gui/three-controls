@@ -19,8 +19,6 @@ const _unitX = new Vector3(1, 0, 0);
 const _unitY = new Vector3(0, 1, 0);
 const _unitZ = new Vector3(0, 0, 1);
 
-function stringHas(str, char) {return str.search(char) !== -1;}
-
 const ringGeometry = new HelperGeometry(new TorusBufferGeometry( 1, EPS, 4, 64 ), {rotation: [HPI, 0, 0], thickness: 1});
 
 const halfRingGeometry = new HelperGeometry(new TorusBufferGeometry( 1, EPS, 4, 12, PI ), {rotation: [HPI, 0, 0], thickness: 1});
@@ -67,10 +65,10 @@ export class TransformHelperRotate extends TransformHelper {
 	}
 	updateAxesDirection(axis){
 		axis.quaternion.copy(_identityQuaternion);
-		if (stringHas(axis.name, "XYZ")) {
+		if (axis.name.indexOf('XYZ') !== -1) {
 			axis.quaternion.setFromRotationMatrix(_lookAtMatrix.lookAt(_alignVector, _zero, _worldY));
 		}
-		if (stringHas(axis.name, "E")) {
+		if (axis.name.indexOf('E') !== -1) {
 			axis.quaternion.setFromRotationMatrix(_lookAtMatrix.lookAt(_alignVector, _zero, _worldY));
 		}
 		if (axis.name === 'X') {

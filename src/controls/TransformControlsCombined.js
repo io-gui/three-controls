@@ -7,6 +7,7 @@ import {TransformHelperCombined} from "../helpers/TransformHelperCombined.js";
 
 const offset = new Vector3();
 const scaleFactor = new Vector3();
+const EPS = 0.000001;
 
 const tempVector = new Vector3();
 const tempQuaternion = new Quaternion();
@@ -71,6 +72,11 @@ export class TransformControlsCombined extends TransformControlsMixin(TransformH
 			}
 
 			this.object.scale.copy(this.scaleStart).multiply(scaleFactor);
+			this.object.scale.set(
+				Math.max(this.object.scale.x, EPS),
+				Math.max(this.object.scale.y, EPS),
+				Math.max(this.object.scale.z, EPS),
+			);
 
 		}
 
@@ -106,31 +112,5 @@ export class TransformControlsCombined extends TransformControlsMixin(TransformH
 			}
 
 		}
-	}
-	// TODO: disable per-axis scale in local space
-	// spaceChanged() {
-	// 	super.spaceChanged();
-	// 	this.traverseAxis(axis => {
-	// 		if (axis.name === "S_X") axis.material.visible = this.space !== "local";
-	// 		if (axis.name === "S_Y") axis.material.visible = this.space !== "local";
-	// 		if (axis.name === "S_Z") axis.material.visible = this.space !== "local";
-	// 		if (axis.name === "S_XY") axis.material.visible = this.space !== "local";
-	// 		if (axis.name === "S_YZ") axis.material.visible = this.space !== "local";
-	// 		if (axis.name === "S_XZ") axis.material.visible = this.space !== "local";
-	// 	});
-	// }
-	updatePlane() {
-		// TODO: better updatePlane string filter in ControlsMixin
-		const normal = this._plane.normal;
-
-		if (this.axis === 'T_X' || this.axis === 'S_X' || this.axis === 'R_X') normal.copy(this.worldX).cross(_tempVector.copy(this.eye).cross(this.worldX));
-		if (this.axis === 'T_Y' || this.axis === 'S_Y' || this.axis === 'R_Y') normal.copy(this.worldY).cross(_tempVector.copy(this.eye).cross(this.worldY));
-		if (this.axis === 'T_Z' || this.axis === 'S_Z' || this.axis === 'R_Z') normal.copy(this.worldZ).cross(_tempVector.copy(this.eye).cross(this.worldZ));
-		if (this.axis === 'T_XY' || this.axis === 'S_XY') normal.copy(this.worldZ);
-		if (this.axis === 'T_YZ' || this.axis === 'S_YZ') normal.copy(this.worldX);
-		if (this.axis === 'T_XZ' || this.axis === 'S_XZ') normal.copy(this.worldY);
-		if (this.axis === 'XYZ' || this.axis === 'E') this.camera.getWorldDirection(normal);
-
-		this._plane.setFromNormalAndCoplanarPoint(normal, this.position);
 	}
 }

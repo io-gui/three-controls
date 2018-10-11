@@ -9,8 +9,7 @@ import {TransformHelperStretch} from "../helpers/TransformHelperStretch.js";
 // Reusable utility variables
 const tempVector = new Vector3();
 const tempVector2 = new Vector3();
-
-function stringHas(str, char) {return str.search(char) !== -1;}
+const EPS = 0.000001;
 
 function hasAxisAny(str, chars) {
 	let has = true;
@@ -20,7 +19,6 @@ function hasAxisAny(str, chars) {
 
 export class TransformControlsStretch extends TransformControlsMixin(TransformHelperStretch) {
 	transform() {
-		// TODO: make working in world space if possible?
 		// TODO: test with asymetric bounding boxes!!!
 
 		if (!hasAxisAny('x', this.axis)) this.pointEnd.x = this.pointStart.x;
@@ -34,22 +32,27 @@ export class TransformControlsStretch extends TransformControlsMixin(TransformHe
 		if (!hasAxisAny('z', this.axis)) tempVector.z = 1;
 
 		const scaleOffset = this.scaleStart.clone().multiply(tempVector).sub(this.scaleStart).multiplyScalar(0.5);
+		scaleOffset.set(
+			Math.max(scaleOffset.x, -this.scaleStart.x + EPS),
+			Math.max(scaleOffset.y, -this.scaleStart.y + EPS),
+			Math.max(scaleOffset.z, -this.scaleStart.z + EPS),
+		);
 
 		// Apply position
 
-		if (stringHas(this.axis, 'xp')) {
+		if (this.axis.indexOf('xp') !== -1) {
 			this.object.position.x = scaleOffset.x * (this.boundingBox.max.x - this.boundingBox.min.x) * 0.5;
 		} else {
 			this.object.position.x = - scaleOffset.x * (this.boundingBox.max.x - this.boundingBox.min.x) * 0.5;
 		}
 
-		if (stringHas(this.axis, 'yp')) {
+		if (this.axis.indexOf('yp') !== -1) {
 			this.object.position.y = scaleOffset.y * (this.boundingBox.max.y - this.boundingBox.min.y) * 0.5;
 		} else {
 			this.object.position.y = - scaleOffset.y * (this.boundingBox.max.y - this.boundingBox.min.y) * 0.5;
 		}
 
-		if (stringHas(this.axis, 'zp')) {
+		if (this.axis.indexOf('zp') !== -1) {
 			this.object.position.z = scaleOffset.z * (this.boundingBox.max.z - this.boundingBox.min.z) * 0.5;
 		} else {
 			this.object.position.z = - scaleOffset.z * (this.boundingBox.max.z - this.boundingBox.min.z) * 0.5;
@@ -68,7 +71,7 @@ export class TransformControlsStretch extends TransformControlsMixin(TransformHe
 	}
 	updatePlane() {
 		const axis = this.axis;
-		const normal = this.plane.normal;
+		const normal = this._plane.normal;
 		const position = new Vector3();
 
 		if (axis && axis[0] === 'X') {
@@ -99,6 +102,6 @@ export class TransformControlsStretch extends TransformControlsMixin(TransformHe
 		// TODO: test
 		if (this.object) position.applyMatrix4(this.object.matrixWorld);
 
-		this.plane.setFromNormalAndCoplanarPoint(normal, position);
+		this._plane.setFromNormalAndCoplanarPoint(normal, position);
 	}
 }
