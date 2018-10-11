@@ -1,6 +1,7 @@
 import {Vector3, Object3D, OctahedronBufferGeometry} from "../../lib/three.module.js";
 import {Helper} from "../Helper.js";
 import {HelperMesh} from "./HelperMesh.js";
+import {HelperGeometry} from "./HelperGeometry.js";
 import {Corner3Geometry} from "./HelperGeometries.js";
 import {Animation} from "../../lib/Animation.js";
 
@@ -26,7 +27,7 @@ const handleGeometry = {
 };
 
 const pickerGeometry = {
-	XYZ: new OctahedronBufferGeometry(1, 0)
+	XYZ: new HelperGeometry(new OctahedronBufferGeometry(0.5, 0), {color: [1, 1, 1, 0.25]})
 };
 
 export class TransformHelper extends Helper {

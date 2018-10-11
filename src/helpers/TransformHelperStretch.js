@@ -4,10 +4,12 @@ import {Corner2Geometry, PlaneGeometry, LineGeometry} from "./HelperGeometries.j
 import {HelperMesh} from "./HelperMesh.js";
 import {HelperGeometry} from "./HelperGeometry.js";
 
-const HPI = Math.PI / 2;
-const PI = Math.PI;
 
 // Reusable utility variables
+const HPI = Math.PI / 2;
+const PI = Math.PI;
+const EPS = 0.000001;
+
 const _vector = new Vector3();
 const _boxVector = new Vector3();
 const _wScale = new Vector3();
@@ -268,6 +270,10 @@ export class TransformHelperStretch extends TransformHelper {
 				_wScale.y = _y;
 				_wScale.x = _x;
 			}
+
+			_wScale.x = Math.max(_wScale.x, EPS);
+			_wScale.y = Math.max(_wScale.y, EPS);
+			_wScale.z = Math.max(_wScale.z, EPS);
 
 			_m2.compose(_boxVector, new Quaternion, _wScale);
 			handle.matrixWorld.copy(_m1).multiply(_m2);

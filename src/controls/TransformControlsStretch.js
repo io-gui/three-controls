@@ -7,7 +7,8 @@ import {TransformControlsMixin} from "./TransformControlsMixin.js";
 import {TransformHelperStretch} from "../helpers/TransformHelperStretch.js";
 
 // Reusable utility variables
-const tempVector = new Vector3();
+const offset = new Vector3();
+const scaleFactor = new Vector3();
 const tempVector2 = new Vector3();
 const EPS = 0.000001;
 
@@ -20,18 +21,25 @@ function hasAxisAny(str, chars) {
 export class TransformControlsStretch extends TransformControlsMixin(TransformHelperStretch) {
 	transform() {
 		// TODO: test with asymetric bounding boxes!!!
+		offset.copy(this.pointEnd).sub(this.pointStart);
 
-		if (!hasAxisAny('x', this.axis)) this.pointEnd.x = this.pointStart.x;
-		if (!hasAxisAny('y', this.axis)) this.pointEnd.y = this.pointStart.y;
-		if (!hasAxisAny('z', this.axis)) this.pointEnd.z = this.pointStart.z;
+		scaleFactor.set(
+			this.pointEnd.dot(this.worldX) / this.pointStart.dot(this.worldX),
+			this.pointEnd.dot(this.worldY) / this.pointStart.dot(this.worldY),
+			this.pointEnd.dot(this.worldZ) / this.pointStart.dot(this.worldZ),
+		);
 
-		tempVector.copy(this.pointEnd).divide(this.pointStart);
+		if (this.axis.indexOf('x') === -1) scaleFactor.x = 1;
+		if (this.axis.indexOf('y') === -1) scaleFactor.y = 1;
+		if (this.axis.indexOf('z') === -1) scaleFactor.z = 1;
 
-		if (!hasAxisAny('x', this.axis)) tempVector.x = 1;
-		if (!hasAxisAny('y', this.axis)) tempVector.y = 1;
-		if (!hasAxisAny('z', this.axis)) tempVector.z = 1;
+		offset.applyQuaternion(this.worldQuaternionInv);
 
-		const scaleOffset = this.scaleStart.clone().multiply(tempVector).sub(this.scaleStart).multiplyScalar(0.5);
+		if (!hasAxisAny('x', this.axis)) offset.x = 0;
+		if (!hasAxisAny('y', this.axis)) offset.y = 0;
+		if (!hasAxisAny('z', this.axis)) offset.z = 0;
+
+		const scaleOffset = this.scaleStart.clone().multiply(scaleFactor).sub(this.scaleStart).multiplyScalar(0.5);
 		scaleOffset.set(
 			Math.max(scaleOffset.x, -this.scaleStart.x + EPS),
 			Math.max(scaleOffset.y, -this.scaleStart.y + EPS),
@@ -58,9 +66,6 @@ export class TransformControlsStretch extends TransformControlsMixin(TransformHe
 			this.object.position.z = - scaleOffset.z * (this.boundingBox.max.z - this.boundingBox.min.z) * 0.5;
 		}
 
-		// TODO: Fix nonuniform scale box
-		// TODO: Fix inverse scale
-
 		this.object.position.applyQuaternion(this.quaternionStart);
 		this.object.position.add(this.positionStart);
 
@@ -70,11 +75,10 @@ export class TransformControlsStretch extends TransformControlsMixin(TransformHe
 
 	}
 	updatePlane() {
-		const axis = this.axis;
 		const normal = this._plane.normal;
 		const position = new Vector3();
 
-		if (axis && axis[0] === 'X') {
+		if (this.axis && this.axis[0] === 'X') {
 			normal.copy(this.worldX);
 			position.set(
 				this.boundingBox.max.x,
@@ -82,7 +86,7 @@ export class TransformControlsStretch extends TransformControlsMixin(TransformHe
 				(this.boundingBox.max.z + this.boundingBox.min.z)
 			);
 		}
-		if (axis && axis[0] === 'Y') {
+		if (this.axis && this.axis[0] === 'Y') {
 			normal.copy(this.worldY);
 			position.set(
 				(this.boundingBox.max.x + this.boundingBox.min.x),
@@ -90,7 +94,7 @@ export class TransformControlsStretch extends TransformControlsMixin(TransformHe
 				(this.boundingBox.max.z + this.boundingBox.min.z)
 			);
 		}
-		if (axis && axis[0] === 'Z') {
+		if (this.axis && this.axis[0] === 'Z') {
 			normal.copy(this.worldZ);
 			position.set(
 				(this.boundingBox.max.x + this.boundingBox.min.x),
@@ -103,5 +107,10 @@ export class TransformControlsStretch extends TransformControlsMixin(TransformHe
 		if (this.object) position.applyMatrix4(this.object.matrixWorld);
 
 		this._plane.setFromNormalAndCoplanarPoint(normal, position);
+
+		// this.parent.add(this._planeDebugMesh);
+		// this._planeDebugMesh.position.set(0,0,0);
+		// this._planeDebugMesh.lookAt(normal);
+		// this._planeDebugMesh.position.copy(position);
 	}
 }

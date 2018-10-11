@@ -10,12 +10,12 @@ import {HelperMaterial as Material} from "./HelperMaterial.js";
 import {HelperGeometry} from "./HelperGeometry.js";
 import {Corner3Geometry} from "./HelperGeometries.js";
 
+// Reusable utility variables
 const HPI = Math.PI / 2;
 const PI = Math.PI;
+const EPS = 0.000001;
 
 // TODO: consider supporting objects with skewed transforms.
-
-// Reusable utility variables
 const _position = new Vector3();
 const _quaternion = new Quaternion();
 const _scale = new Vector3();
@@ -94,6 +94,10 @@ export class SelectionHelper extends Helper {
 			__scale.x = Math.min(this.scale.x, Math.abs(_position.x) / 2);
 			__scale.y = Math.min(this.scale.y, Math.abs(_position.y) / 2);
 			__scale.z = Math.min(this.scale.z, Math.abs(_position.z) / 2);
+
+			__scale.x = Math.max(__scale.x, EPS);
+			__scale.y = Math.max(__scale.y, EPS);
+			__scale.z = Math.max(__scale.z, EPS);
 
 			_m2.compose(_position, new Quaternion, __scale);
 
