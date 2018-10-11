@@ -107,7 +107,20 @@ export class TransformControlsCombined extends TransformControlsMixin(TransformH
 
 		}
 	}
+	// TODO: disable per-axis scale in local space
+	// spaceChanged() {
+	// 	super.spaceChanged();
+	// 	this.traverseAxis(axis => {
+	// 		if (axis.name === "S_X") axis.material.visible = this.space !== "local";
+	// 		if (axis.name === "S_Y") axis.material.visible = this.space !== "local";
+	// 		if (axis.name === "S_Z") axis.material.visible = this.space !== "local";
+	// 		if (axis.name === "S_XY") axis.material.visible = this.space !== "local";
+	// 		if (axis.name === "S_YZ") axis.material.visible = this.space !== "local";
+	// 		if (axis.name === "S_XZ") axis.material.visible = this.space !== "local";
+	// 	});
+	// }
 	updatePlane() {
+		// TODO: better updatePlane string filter in ControlsMixin
 		const normal = this._plane.normal;
 
 		if (this.axis === 'T_X' || this.axis === 'S_X' || this.axis === 'R_X') normal.copy(this.worldX).cross(_tempVector.copy(this.eye).cross(this.worldX));

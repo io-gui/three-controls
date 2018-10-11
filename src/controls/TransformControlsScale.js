@@ -19,6 +19,8 @@ export class TransformControlsScale extends TransformControlsMixin(TransformHelp
 
 		} else {
 
+			// TODO: fix negative scale jitter
+
 			scaleFactor.set(
 				this.pointEnd.dot(this.worldX) / this.pointStart.dot(this.worldX),
 				this.pointEnd.dot(this.worldY) / this.pointStart.dot(this.worldY),
