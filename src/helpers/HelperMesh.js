@@ -3,7 +3,6 @@
  */
 
 import {Mesh, Vector3} from "../../lib/three.module.js";
-import {HelperGeometry} from "./HelperGeometry.js";
 import {HelperMaterial} from "./HelperMaterial.js";
 
 export class HelperMesh extends Mesh {

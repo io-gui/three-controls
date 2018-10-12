@@ -1,4 +1,4 @@
-import { Vector3, Quaternion, Raycaster, Plane } from '../../lib/three.module.js';
+import { Vector3, Raycaster, Quaternion, Plane } from '../../lib/three.module.js';
 
 /**
  * @author arodic / https://github.com/arodic
@@ -440,45 +440,44 @@ class Vector2 {
  *
  * Minimal implementation of io mixin: https://github.com/arodic/io
  * Includes event listener/dispatcher and defineProperties() method.
- * Changed properties trigger "changed" and "[prop]-changed" events as well as
- * execution of [prop]Changed() funciton if defined.
+ * Changed properties trigger "change" and "[prop]-changed" events, and execution of [prop]Changed() callback.
  */
 
 /**
  * @author arodic / https://github.com/arodic
  */
-// TODO: dispose
+
+// Reusable utility variables
+const _cameraPosition = new Vector3();
 
 /**
  * @author arodic / https://github.com/arodic
  */
-// TODO: dispose
 
-/**
- * @author arodic / https://github.com/arodic
- */
-
-// TODO: documentation
 /*
- * onKeyDown, onKeyUp require domElement to be focused (set tabindex attribute)
+ * Wraps target class with PointerEvent API polyfill for more powerful mouse/touch interactions.
+ * Following callbacks will be invoked on pointer events:
+ * onPointerDown, onPointerHover, onPointerMove, onPointerUp,
+ * onKeyDown, onKeyUp, onWheel, onContextmenu, onFocus, onBlur.
+ * onKeyDown, onKeyUp require domElement to be focused (set tabindex attribute).
+ *
+ * See PointerEvents.js for more details.
  */
 
-// TODO: implement dom element swap and multiple dom elements
+// TODO: PointerEvents documentation
+
 const InteractiveMixin = ( superclass ) => class extends superclass {
 
-	get isInteractive() {
-
-		return true;
-
-	}
 	constructor( props ) {
 
 		super( props );
 
 		this.defineProperties( {
 			enabled: true,
-			_pointerEvents: new PointerEvents( props.domElement, { normalized: true } )
+			domElement: props.domElement // TODO: implement domElement change / multiple elements
 		} );
+
+		this._pointerEvents = new PointerEvents( props.domElement, { normalized: true } );
 
 		this.onPointerDown = this.onPointerDown.bind( this );
 		this.onPointerHover = this.onPointerHover.bind( this );
@@ -537,18 +536,18 @@ const InteractiveMixin = ( superclass ) => class extends superclass {
 		value ? this._addEvents() : this._removeEvents();
 
 	}
-	// Control methods. Implement in subclass!
-	onContextmenu() {} // event
-	onPointerHover() {} // pointer
-	onPointerDown() {} // pointer
-	onPointerMove() {} // pointer
-	onPointerUp() {} // pointer
-	onPointerLeave() {} // pointer
-	onKeyDown() {} // event
-	onKeyUp() {} // event
-	onWheel() {} // event
-	onFocus() {} // event
-	onBlur() {} // event
+	// Control methods - implemented in subclass!
+	onContextmenu( /*event*/ ) {}
+	onPointerHover( /*pointer*/ ) {}
+	onPointerDown( /*pointer*/ ) {}
+	onPointerMove( /*pointer*/ ) {}
+	onPointerUp( /*pointer*/ ) {}
+	onPointerLeave( /*pointer*/ ) {}
+	onKeyDown( /*event*/ ) {}
+	onKeyUp( /*event*/ ) {}
+	onWheel( /*event*/ ) {}
+	onFocus( /*event*/ ) {}
+	onBlur( /*event*/ ) {}
 
 };
 
@@ -557,9 +556,9 @@ const InteractiveMixin = ( superclass ) => class extends superclass {
  */
 
 // Reusable utility variables
-const ray = new Raycaster();
-const rayTarget = new Vector3();
-const tempVector = new Vector3();
+const _ray = new Raycaster();
+const _rayTarget = new Vector3();
+const _tempVector = new Vector3();
 
 // events
 const changeEvent = { type: "change" };
@@ -570,22 +569,26 @@ const TransformControlsMixin = ( superclass ) => class extends InteractiveMixin(
 
 		super( props );
 
-		this.visible = false;
+		this.pointStart = new Vector3();
+		this.pointEnd = new Vector3();
 
-		this.defineProperties( {
-			active: false,
-			pointStart: new Vector3(),
-			pointEnd: new Vector3(),
-			worldPositionStart: new Vector3(),
-			worldQuaternionStart: new Quaternion(),
-			worldScaleStart: new Vector3(), // TODO: remove
-			positionStart: new Vector3(),
-			quaternionStart: new Quaternion(),
-			scaleStart: new Vector3(),
-			plane: new Plane()
-		} );
+		this.positionStart = new Vector3();
+		this.quaternionStart = new Quaternion();
+		this.scaleStart = new Vector3();
 
-		// this.add(this.planeMesh = new Mesh(new PlaneBufferGeometry(1000, 1000, 10, 10), new MeshBasicMaterial({wireframe: true})));
+		this.parentPosition = new Vector3();
+		this.parentQuaternion = new Quaternion();
+		this.parentQuaternionInv = new Quaternion();
+		this.parentScale = new Vector3();
+
+		this.worldPosition = new Vector3();
+		this.worldQuaternion = new Quaternion();
+		this.worldQuaternionInv = new Quaternion();
+		this.worldScale = new Vector3();
+
+		this._plane = new Plane();
+
+		// this.add(this._planeDebugMesh = new Mesh(new PlaneBufferGeometry(1000, 1000, 10, 10), new MeshBasicMaterial({wireframe: true, transparent: true, opacity: 0.2})));
 
 	}
 	objectChanged() {
@@ -599,6 +602,7 @@ const TransformControlsMixin = ( superclass ) => class extends InteractiveMixin(
 			this.axis = null;
 
 		}
+		this.animation.startAnimation( 1.5 );
 
 	}
 	// TODO: better animation trigger
@@ -607,75 +611,48 @@ const TransformControlsMixin = ( superclass ) => class extends InteractiveMixin(
 	enabledChanged( value ) {
 
 		super.enabledChanged( value );
-		this.animation.startAnimation( 3 );
+		this.animation.startAnimation( 0.5 );
+
+	}
+	axisChanged() {
+
+		super.axisChanged();
+		this.updatePlane();
 
 	}
 	activeChanged() {
 
-		this.animation.startAnimation( 3 );
-
-	}
-	updateHelperMatrix() {
-
-		if ( this.object ) {
-
-			this.object.updateMatrixWorld();
-			this.object.matrixWorld.decompose( this.worldPosition, this.worldQuaternion, this.worldScale );
-
-		}
-		this.camera.updateMatrixWorld();
-		this.camera.matrixWorld.decompose( this.cameraPosition, this.cameraQuaternion, this.cameraScale );
-		if ( this.camera.isPerspectiveCamera ) {
-
-			this.eye.copy( this.cameraPosition ).sub( this.worldPosition ).normalize();
-
-		} else if ( this.camera.isOrthographicCamera ) {
-
-			this.eye.copy( this.cameraPosition ).normalize();
-
-		}
-		super.updateHelperMatrix();
-		this.updatePlane();
+		this.animation.startAnimation( 0.5 );
 
 	}
 	onPointerHover( pointers ) {
 
 		if ( ! this.object || this.active === true ) return;
-		ray.setFromCamera( pointers[ 0 ].position, this.camera ); //TODO: unhack
 
-		const intersect = ray.intersectObjects( this.pickers, true )[ 0 ] || false;
-		if ( intersect ) {
+		_ray.setFromCamera( pointers[ 0 ].position, this.camera );
+		const intersect = _ray.intersectObjects( this.pickers, true )[ 0 ] || false;
 
-			this.axis = intersect.object.name;
-
-		} else {
-
-			this.axis = null;
-
-		}
+		this.axis = intersect ? intersect.object.name : null;
 
 	}
 	onPointerDown( pointers ) {
 
 		if ( this.axis === null || ! this.object || this.active === true || pointers[ 0 ].button !== 0 ) return;
-		ray.setFromCamera( pointers[ 0 ].position, this.camera );
-		this.updatePlane();
-		const planeIntersect = ray.ray.intersectPlane( this.plane, rayTarget );
-		let space = ( this.axis === 'E' || this.axis === 'XYZ' ) ? 'world' : this.space;
+
+		_ray.setFromCamera( pointers[ 0 ].position, this.camera );
+		const planeIntersect = _ray.ray.intersectPlane( this._plane, _rayTarget );
+
 		if ( planeIntersect ) {
 
 			this.object.updateMatrixWorld();
-			if ( this.object.parent ) {
+			this.object.matrix.decompose( this.positionStart, this.quaternionStart, this.scaleStart );
+			this.object.parent.matrixWorld.decompose( this.parentPosition, this.parentQuaternion, this.parentScale );
+			this.object.matrixWorld.decompose( this.worldPosition, this.worldQuaternion, this.worldScale );
 
-				this.object.parent.updateMatrixWorld();
+			this.parentQuaternionInv.copy( this.parentQuaternion ).inverse();
+			this.worldQuaternionInv.copy( this.worldQuaternion ).inverse();
 
-			}
-			this.positionStart.copy( this.object.position );
-			this.quaternionStart.copy( this.object.quaternion );
-			this.scaleStart.copy( this.object.scale );
-			this.object.matrixWorld.decompose( this.worldPositionStart, this.worldQuaternionStart, this.worldScaleStart );
-			this.pointStart.copy( planeIntersect ).sub( this.worldPositionStart );
-			if ( space === 'local' ) this.pointStart.applyQuaternion( this.worldQuaternionStart.clone().inverse() );
+			this.pointStart.copy( planeIntersect ).sub( this.worldPosition );
 			this.active = true;
 
 		}
@@ -683,72 +660,62 @@ const TransformControlsMixin = ( superclass ) => class extends InteractiveMixin(
 	}
 	onPointerMove( pointers ) {
 
-		let axis = this.axis;
-		let object = this.object;
-		let space = ( axis === 'E' || axis === 'XYZ' ) ? 'world' : this.space;
+		if ( this.object === undefined || this.axis === null || this.active === false || pointers[ 0 ].button !== 0 ) return;
 
-		if ( object === undefined || axis === null || this.active === false || pointers[ 0 ].button !== 0 ) return;
+		_ray.setFromCamera( pointers[ 0 ].position, this.camera );
+		const planeIntersect = _ray.ray.intersectPlane( this._plane, _tempVector );
 
-		ray.setFromCamera( pointers[ 0 ].position, this.camera );
+		if ( planeIntersect ) {
 
-		const planeIntersect = ray.ray.intersectPlane( this.plane, tempVector );
+			this.pointEnd.copy( planeIntersect ).sub( this.worldPosition );
+			this.transform();
 
-		if ( ! planeIntersect ) return;
+			this.dispatchEvent( changeEvent );
 
-		this.pointEnd.copy( planeIntersect ).sub( this.worldPositionStart );
-
-		if ( space === 'local' ) this.pointEnd.applyQuaternion( this.worldQuaternionStart.clone().inverse() );
-
-		this.transform();
-
-		this.object.updateMatrixWorld();
-		this.dispatchEvent( changeEvent );
+		}
 
 	}
 	onPointerUp( pointers ) {
 
 		if ( pointers.length === 0 ) {
 
-			this.active = false;
 			if ( pointers.removed[ 0 ].pointerType === 'touch' ) this.axis = null;
+			this.active = false;
 
-		} else {
+		} else if ( pointers[ 0 ].button === - 1 ) {
 
-			if ( pointers[ 0 ].button === - 1 ) this.axis = null;
+			this.axis = null;
+			this.active = false;
 
 		}
 
 	}
 	transform() {}
-	updateAxisMaterial( axis ) {
+	updateAxis( axis ) {
 
-		super.updateAxisMaterial( axis );
-
-		const mat = axis.material;
-		const h = axis.material.highlight;
-
-		if ( ! this.enabled ) mat.highlight = ( 10 * h - 1.1 ) / 11;
+		super.updateAxis( axis );
+		if ( ! this.enabled ) axis.material.highlight = ( 10 * axis.material.highlight - 2.5 ) / 11;
 
 	}
 	updatePlane() {
 
-		const axis = this.axis;
-		const normal = this.plane.normal;
+		const normal = this._plane.normal;
+		const axis = this.axis ? this.axis.split( '_' ).pop() : null;
 
-		if ( axis === 'X' ) normal.copy( this.worldX ).cross( tempVector.copy( this.eye ).cross( this.worldX ) );
-		if ( axis === 'Y' ) normal.copy( this.worldY ).cross( tempVector.copy( this.eye ).cross( this.worldY ) );
-		if ( axis === 'Z' ) normal.copy( this.worldZ ).cross( tempVector.copy( this.eye ).cross( this.worldZ ) );
+		if ( axis === 'X' ) normal.copy( this.worldX ).cross( _tempVector.copy( this.eye ).cross( this.worldX ) );
+		if ( axis === 'Y' ) normal.copy( this.worldY ).cross( _tempVector.copy( this.eye ).cross( this.worldY ) );
+		if ( axis === 'Z' ) normal.copy( this.worldZ ).cross( _tempVector.copy( this.eye ).cross( this.worldZ ) );
 		if ( axis === 'XY' ) normal.copy( this.worldZ );
 		if ( axis === 'YZ' ) normal.copy( this.worldX );
 		if ( axis === 'XZ' ) normal.copy( this.worldY );
 		if ( axis === 'XYZ' || axis === 'E' ) this.camera.getWorldDirection( normal );
 
-		this.plane.setFromNormalAndCoplanarPoint( normal, this.worldPosition );
+		this._plane.setFromNormalAndCoplanarPoint( normal, this.position );
 
-		// this.parent.add(this.planeMesh);
-		// this.planeMesh.position.set(0,0,0);
-		// this.planeMesh.lookAt(this.plane.normal);
-		// this.planeMesh.position.copy(this.worldPosition);
+		// this.parent.add(this._planeDebugMesh);
+		// this._planeDebugMesh.position.set(0,0,0);
+		// this._planeDebugMesh.lookAt(normal);
+		// this._planeDebugMesh.position.copy(this.position);
 
 	}
 

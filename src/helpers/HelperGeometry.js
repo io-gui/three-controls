@@ -26,10 +26,10 @@ export class HelperGeometry extends BufferGeometry {
 		if (geometry instanceof Array) {
 			chunks = geometry;
 		} else {
-			chunks = [[geometry, props]]
+			chunks = [[geometry, props]];
 		}
 
-		const chunkGeometries = []
+		const chunkGeometries = [];
 
 		for (let i = chunks.length; i--;) {
 

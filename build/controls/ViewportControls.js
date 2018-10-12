@@ -1,4 +1,4 @@
-import { Object3D, Vector3, Quaternion, Vector2, MOUSE } from '../../lib/three.module.js';
+import { Mesh, Vector3, BoxBufferGeometry, Vector2, MOUSE } from '../../lib/three.module.js';
 
 /**
  * @author arodic / https://github.com/arodic
@@ -440,8 +440,7 @@ class Vector2$1 {
  *
  * Minimal implementation of io mixin: https://github.com/arodic/io
  * Includes event listener/dispatcher and defineProperties() method.
- * Changed properties trigger "changed" and "[prop]-changed" events as well as
- * execution of [prop]Changed() funciton if defined.
+ * Changed properties trigger "change" and "[prop]-changed" events, and execution of [prop]Changed() callback.
  */
 
 const IoLiteMixin = ( superclass ) => class extends superclass {
@@ -489,10 +488,8 @@ const IoLiteMixin = ( superclass ) => class extends superclass {
 		} else if ( this.parent && event.bubbles ) ;
 
 	}
-	// Define properties in builk.
 	defineProperties( props ) {
 
-		//Define store for properties.
 		if ( ! this.hasOwnProperty( '_properties' ) ) {
 
 			Object.defineProperty( this, '_properties', {
@@ -512,16 +509,13 @@ const IoLiteMixin = ( superclass ) => class extends superclass {
 
 };
 
-// Defines getter, setter
 const defineProperty = function ( scope, propName, propDef ) {
 
 	let observer = propName + 'Changed';
 	let initValue = propDef;
-
 	if ( propDef && typeof propDef === 'object' && propDef.value !== undefined ) {
 
 		initValue = propDef.value;
-
 		if ( typeof propDef.observer === 'string' ) {
 
 			observer = propDef.observer;
@@ -529,8 +523,6 @@ const defineProperty = function ( scope, propName, propDef ) {
 		}
 
 	}
-
-
 
 	scope._properties[ propName ] = initValue;
 	if ( initValue === undefined ) {
@@ -567,117 +559,46 @@ const defineProperty = function ( scope, propName, propDef ) {
  * @author arodic / https://github.com/arodic
  */
 
+// Reusable utility variables
+const _cameraPosition = new Vector3();
+
 /*
- * Creates a single requestAnimationFrame loop thread.
- * provides methods to control animation and events to hook into animation updates.
+ * Helper extends Object3D to automatically follow its target `object` by copying transform matrices from it.
+ * If `space` property is set to "world", helper will not inherit objects rotation.
+ * Helpers will auto-scale in view space if `size` property is non-zero.
  */
 
-class Animation extends IoLiteMixin( Object ) {
+class Helper extends IoLiteMixin( Mesh ) {
 
-	get isAnimation() {
-
-		return true;
-
-	}
-	constructor( props ) {
-
-		super( props );
-		this.defineProperties( {
-			_active: false,
-			_time: 0,
-			_timeRemainging: 0,
-			_rafID: 0
-		} );
-
-	}
-	startAnimation( duration ) {
-
-		this._timeRemainging = Math.max( this._timeRemainging, duration * 1000 || 0 );
-		if ( ! this._active ) {
-
-			this._active = true;
-			this._time = performance.now();
-			this._rafID = requestAnimationFrame( () => {
-
-				const time = performance.now();
-				const timestep = time - this._time;
-				this.animate( timestep, time );
-				this._time = time;
-				this._timeRemainging = Math.max( this._timeRemainging - timestep, 0 );
-
-			} );
-
-		}
-
-	}
-	animate( timestep, time ) {
-
-		if ( this._active && this._timeRemainging ) {
-
-			this._rafID = requestAnimationFrame( () => {
-
-				const time = performance.now();
-				timestep = time - this._time;
-				this.animate( timestep, time );
-				this._time = time;
-				this._timeRemainging = Math.max( this._timeRemainging - timestep, 0 );
-
-			} );
-
-		} else {
-
-			this.stopAnimation( timestep, time );
-
-		}
-		this.dispatchEvent( { type: 'update', timestep: timestep } );
-
-	}
-	stopAnimation() {
-
-		this._active = false;
-		cancelAnimationFrame( this._rafID );
-
-	}
-
-}
-// TODO: dispose
-
-/**
- * @author arodic / https://github.com/arodic
- */
-/*
- * Helper is a variant of Object3D which automatically follows its target object.
- * On matrix update, it automatically copies transform matrices from its target Object3D.
- */
-
-class Helper extends IoLiteMixin( Object3D ) {
-
-	get isHelper() {
-
-		return true;
-
-	}
 	constructor( props = {} ) {
 
 		super();
+
 		this.defineProperties( {
-			domElement: props.domElement || null,
 			object: props.object || null,
 			camera: props.camera || null,
+			depthBias: 0,
 			space: 'local',
-			size: 0,
-			worldPosition: new Vector3(),
-			worldQuaternion: new Quaternion(),
-			worldScale: new Vector3(),
-			cameraPosition: new Vector3(),
-			cameraQuaternion: new Quaternion(),
-			cameraScale: new Vector3(),
-			eye: new Vector3(),
-			animation: new Animation()
+			size: 0
 		} );
-		this.animation.addEventListener( 'update', () => {
 
-			this.dispatchEvent( { type: 'change' } );
+		this.eye = new Vector3();
+
+		this.geometry = new BoxBufferGeometry( 1, 1, 1, 1, 1, 1 );
+		this.material.colorWrite = false;
+		this.material.depthWrite = false;
+
+	}
+	onBeforeRender( renderer, scene, camera ) {
+
+		this.camera = camera;
+
+	}
+	depthBiasChanged() {
+
+		this.traverse( object => {
+
+			object.material.depthBias = this.depthBias;
 
 		} );
 
@@ -686,89 +607,80 @@ class Helper extends IoLiteMixin( Object3D ) {
 
 		if ( this.object ) {
 
-			this.object.updateMatrixWorld();
 			this.matrix.copy( this.object.matrix );
 			this.matrixWorld.copy( this.object.matrixWorld );
 
 		} else {
 
-			super.updateMatrixWorld(); // TODO: camera?
+			super.updateMatrixWorld();
 
 		}
 
-		this.matrixWorld.decompose( this.worldPosition, this.worldQuaternion, this.worldScale );
+		this.matrixWorld.decompose( this.position, this.quaternion, this.scale );
 
-		let eyeDistance = 1;
 		if ( this.camera ) {
 
-			this.camera.updateMatrixWorld();
-			this.camera.matrixWorld.decompose( this.cameraPosition, this.cameraQuaternion, this.cameraScale );
+			let eyeDistance = 1;
+			_cameraPosition.set( this.camera.matrixWorld.elements[ 12 ], this.camera.matrixWorld.elements[ 13 ], this.camera.matrixWorld.elements[ 14 ] );
 			if ( this.camera.isPerspectiveCamera ) {
 
-				this.eye.copy( this.cameraPosition ).sub( this.worldPosition );
+				// TODO: make scale zoom independent with PerspectiveCamera
+				this.eye.copy( _cameraPosition ).sub( this.position );
 				eyeDistance = this.eye.length();
 				this.eye.normalize();
 
 			} else if ( this.camera.isOrthographicCamera ) {
 
-				this.eye.copy( this.cameraPosition ).normalize();
+				eyeDistance = 3 * ( this.camera.top - this.camera.bottom ) / this.camera.zoom; // TODO: Why magic number 3 matches perspective?
+				this.eye.copy( _cameraPosition ).normalize();
 
 			}
+			if ( this.size ) this.scale.set( 1, 1, 1 ).multiplyScalar( eyeDistance * this.size );
 
 		}
+		if ( this.space === 'world' ) this.quaternion.set( 0, 0, 0, 1 );
 
-		if ( this.size || this.space == 'world' ) {
-
-			if ( this.size ) this.worldScale.set( 1, 1, 1 ).multiplyScalar( eyeDistance * this.size );
-			if ( this.space === 'world' ) this.worldQuaternion.set( 0, 0, 0, 1 );
-			this.matrixWorld.compose( this.worldPosition, this.worldQuaternion, this.worldScale );
-
-		}
+		this.matrixWorld.compose( this.position, this.quaternion, this.scale );
 
 	}
-	updateMatrixWorld( force, camera ) {
+	updateMatrixWorld( force ) {
 
-		if ( camera ) this.camera = camera; // TODO
-
-		this.updateHelperMatrix( camera );
+		this.updateHelperMatrix();
 		this.matrixWorldNeedsUpdate = false;
-		const children = this.children;
-		for ( let i = 0, l = children.length; i < l; i ++ ) {
-
-			children[ i ].updateMatrixWorld( true, camera );
-
-		}
+		for ( let i = this.children.length; i --; ) this.children[ i ].updateMatrixWorld( force );
 
 	}
 
 }
-// TODO: dispose
 
 /**
  * @author arodic / https://github.com/arodic
  */
 
-// TODO: documentation
 /*
- * onKeyDown, onKeyUp require domElement to be focused (set tabindex attribute)
+ * Wraps target class with PointerEvent API polyfill for more powerful mouse/touch interactions.
+ * Following callbacks will be invoked on pointer events:
+ * onPointerDown, onPointerHover, onPointerMove, onPointerUp,
+ * onKeyDown, onKeyUp, onWheel, onContextmenu, onFocus, onBlur.
+ * onKeyDown, onKeyUp require domElement to be focused (set tabindex attribute).
+ *
+ * See PointerEvents.js for more details.
  */
 
-// TODO: implement dom element swap and multiple dom elements
+// TODO: PointerEvents documentation
+
 const InteractiveMixin = ( superclass ) => class extends superclass {
 
-	get isInteractive() {
-
-		return true;
-
-	}
 	constructor( props ) {
 
 		super( props );
 
 		this.defineProperties( {
 			enabled: true,
-			_pointerEvents: new PointerEvents( props.domElement, { normalized: true } )
+			domElement: props.domElement // TODO: implement domElement change / multiple elements
 		} );
+
+		this._pointerEvents = new PointerEvents( props.domElement, { normalized: true } );
 
 		this.onPointerDown = this.onPointerDown.bind( this );
 		this.onPointerHover = this.onPointerHover.bind( this );
@@ -827,22 +739,98 @@ const InteractiveMixin = ( superclass ) => class extends superclass {
 		value ? this._addEvents() : this._removeEvents();
 
 	}
-	// Control methods. Implement in subclass!
-	onContextmenu() {} // event
-	onPointerHover() {} // pointer
-	onPointerDown() {} // pointer
-	onPointerMove() {} // pointer
-	onPointerUp() {} // pointer
-	onPointerLeave() {} // pointer
-	onKeyDown() {} // event
-	onKeyUp() {} // event
-	onWheel() {} // event
-	onFocus() {} // event
-	onBlur() {} // event
+	// Control methods - implemented in subclass!
+	onContextmenu( /*event*/ ) {}
+	onPointerHover( /*pointer*/ ) {}
+	onPointerDown( /*pointer*/ ) {}
+	onPointerMove( /*pointer*/ ) {}
+	onPointerUp( /*pointer*/ ) {}
+	onPointerLeave( /*pointer*/ ) {}
+	onKeyDown( /*event*/ ) {}
+	onKeyUp( /*event*/ ) {}
+	onWheel( /*event*/ ) {}
+	onFocus( /*event*/ ) {}
+	onBlur( /*event*/ ) {}
 
 };
 
+/*
+ * Helper class wrapped with PointerEvents API polyfill.
+ */
+
 class Interactive extends InteractiveMixin( Helper ) {}
+
+/**
+ * @author arodic / https://github.com/arodic
+ */
+
+/*
+ * Creates a single requestAnimationFrame loop.
+ * provides methods to control animation and update event to hook into animation updates.
+ */
+
+class Animation extends IoLiteMixin( Object ) {
+
+	constructor() {
+
+		super();
+		this._active = false;
+		this._time = 0;
+		this._timeRemainging = 0;
+		this._rafID = 0;
+
+	}
+	startAnimation( duration ) {
+
+		this._timeRemainging = Math.max( this._timeRemainging, duration * 1000 || 0 );
+		if ( ! this._active ) {
+
+			this._active = true;
+			this._time = performance.now();
+			this._rafID = requestAnimationFrame( () => {
+
+				const time = performance.now();
+				const timestep = time - this._time;
+				this.animate( timestep, time );
+				this._time = time;
+				this._timeRemainging = Math.max( this._timeRemainging - timestep, 0 );
+
+			} );
+
+		}
+
+	}
+	animate( timestep, time ) {
+
+		if ( this._active && this._timeRemainging ) {
+
+			this._rafID = requestAnimationFrame( () => {
+
+				const time = performance.now();
+				timestep = time - this._time;
+				this.animate( timestep, time );
+				this._time = time;
+				this._timeRemainging = Math.max( this._timeRemainging - timestep, 0 );
+
+			} );
+
+		} else {
+
+			this.stopAnimation( timestep, time );
+
+		}
+		this.dispatchEvent( { type: 'update', timestep: timestep } );
+
+	}
+	stopAnimation() {
+
+		this._active = false;
+		cancelAnimationFrame( this._rafID );
+
+	}
+
+}
+// TODO: dispose
 
 /**
  * @author arodic / http://github.com/arodic
@@ -919,11 +907,16 @@ class ViewportControls extends Interactive {
 			_dollyOffset: 0,
 			_dollyInertia: 0
 		} );
+
+		this.animation = new Animation();
+
 		this.animation.addEventListener( 'update', event => {
 
 			this.update( event.timestep );
+			this.dispatchEvent( { type: 'change' } );
 
 		} );
+
 		this.cameraChanged(); // TODO: ahmm...
 
 	}

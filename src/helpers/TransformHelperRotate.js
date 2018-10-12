@@ -1,4 +1,4 @@
-import {Vector3, Matrix4, Quaternion, TorusBufferGeometry, SphereBufferGeometry, OctahedronBufferGeometry, CylinderBufferGeometry} from "../../lib/three.module.js";
+import {Vector3, Matrix4, Quaternion, TorusBufferGeometry, OctahedronBufferGeometry, CylinderBufferGeometry} from "../../lib/three.module.js";
 import {HelperGeometry} from "./HelperGeometry.js";
 import {TransformHelper} from "./TransformHelper.js";
 import {colors} from "./HelperGeometries.js";

@@ -5,7 +5,6 @@
 import {BufferGeometry, CylinderBufferGeometry, Float32BufferAttribute, Uint16BufferAttribute} from "../../lib/three.module.js";
 import {HelperGeometry} from "./HelperGeometry.js";
 
-const PI = Math.PI;
 const HPI = Math.PI / 2;
 const EPS = 0.000001;
 
@@ -19,7 +18,7 @@ export const colors = {
 	'cyan': [0.2, 1, 1],
 	'magenta': [1, 0.3, 1],
 	'yellow': [1, 1, 0.2],
-}
+};
 
 export class PlaneGeometry extends HelperGeometry {
 	constructor() {

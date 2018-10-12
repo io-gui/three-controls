@@ -2,7 +2,7 @@
  * @author arodic / https://github.com/arodic
  */
 
-import {Vector3, Quaternion} from "../../lib/three.module.js";
+import {Vector3} from "../../lib/three.module.js";
 import {TransformControlsMixin} from "./TransformControlsMixin.js";
 import {TransformHelperScale} from "../helpers/TransformHelperScale.js";
 
@@ -15,7 +15,7 @@ export class TransformControlsScale extends TransformControlsMixin(TransformHelp
 		if (this.axis === 'XYZ') {
 
 			let refVector = this.pointStart.clone().normalize();
-			let factor = this.pointEnd.dot(refVector) / this.pointStart.dot(refVector)
+			let factor = this.pointEnd.dot(refVector) / this.pointStart.dot(refVector);
 			scaleFactor.set(factor, factor, factor);
 
 		} else {

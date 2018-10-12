@@ -6,7 +6,7 @@
 
 import {Raycaster} from "../../lib/three.module.js";
 import {Interactive} from "../Interactive.js";
-import {Vector3, Quaternion, Box3, Matrix4} from "../../lib/three.module.js";
+import {Vector3, Quaternion, Box3} from "../../lib/three.module.js";
 import {SelectionHelper} from "../helpers/SelectionHelper.js";
 
 // Reusable utility variables
@@ -188,7 +188,7 @@ export class SelectionControls extends Interactive {
 					this.quaternion.copy(itemQuat);
 
 					if (item.geometry) {
-						if (!item.geometry.boundingBox) item.geometry.computeBoundingBox()
+						if (!item.geometry.boundingBox) item.geometry.computeBoundingBox();
 						bbox.copy(item.geometry.boundingBox);
 						bbox.min.multiply(itemScale);
 						bbox.max.multiply(itemScale);
@@ -216,7 +216,7 @@ export class SelectionControls extends Interactive {
 					let item = this.selected[i];
 					item.matrixWorld.decompose(itemPos, itemQuat, itemScale);
 					if (item.geometry) {
-						if (!item.geometry.boundingBox) item.geometry.computeBoundingBox()
+						if (!item.geometry.boundingBox) item.geometry.computeBoundingBox();
 						bbox.copy(item.geometry.boundingBox);
 						bbox.min.multiply(itemScale);
 						bbox.max.multiply(itemScale);

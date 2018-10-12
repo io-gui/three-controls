@@ -1,7 +1,6 @@
-import {Object3D, Line, Vector3, Euler, Quaternion, Matrix4, Box3} from "../../lib/three.module.js";
+import {Vector3, Quaternion, Matrix4, Box3} from "../../lib/three.module.js";
 import {TransformHelper} from "./TransformHelper.js";
 import {Corner2Geometry, PlaneGeometry, LineGeometry} from "./HelperGeometries.js";
-import {HelperMesh} from "./HelperMesh.js";
 import {HelperGeometry} from "./HelperGeometry.js";
 
 // Reusable utility variables
@@ -12,10 +11,8 @@ const EPS = 0.000001;
 const _vector = new Vector3();
 const _boxVector = new Vector3();
 const _wScale = new Vector3();
-const _euler = new Euler();
 const _quaternion = new Quaternion();
 const _scale = new Vector3();
-const _m0 = new Matrix4();
 const _m1 = new Matrix4();
 const _m2 = new Matrix4();
 const _one = new Vector3(1, 1, 1);
@@ -181,7 +178,7 @@ export class TransformHelperStretch extends TransformHelper {
 
 		}
 	}
-	updateMatrixWorld( force ) {
+	updateMatrixWorld() {
 		this.updateHelperMatrix();
 		this.matrixWorldNeedsUpdate = false;
 

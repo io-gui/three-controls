@@ -2,11 +2,10 @@
  * @author arodic / https://github.com/arodic
  */
 
-import {Line, Vector3, Euler, Quaternion, Matrix4} from "../../lib/three.module.js";
+import {Vector3, Quaternion, Matrix4} from "../../lib/three.module.js";
 import {Helper} from "../Helper.js";
 import {HelperMesh} from "./HelperMesh.js";
 import {TransformHelper} from "./TransformHelper.js";
-import {HelperMaterial as Material} from "./HelperMaterial.js";
 import {HelperGeometry} from "./HelperGeometry.js";
 import {Corner3Geometry} from "./HelperGeometries.js";
 
@@ -71,7 +70,7 @@ export class SelectionHelper extends Helper {
 			this.add(this.corners[name]);
 		}
 	}
-	updateMatrixWorld( force ) {
+	updateMatrixWorld() {
 		this.updateHelperMatrix();
 		this.matrixWorldNeedsUpdate = false;
 		this.object.matrixWorld.decompose(_position, _quaternion, _scale);

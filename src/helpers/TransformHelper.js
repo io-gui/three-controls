@@ -1,4 +1,4 @@
-import {Vector3, Object3D, OctahedronBufferGeometry} from "../../lib/three.module.js";
+import {Vector3, OctahedronBufferGeometry} from "../../lib/three.module.js";
 import {Helper} from "../Helper.js";
 import {HelperMesh} from "./HelperMesh.js";
 import {HelperGeometry} from "./HelperGeometry.js";

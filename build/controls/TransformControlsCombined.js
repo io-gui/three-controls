@@ -1,4 +1,4 @@
-import { Mesh, Vector3, BoxBufferGeometry, UniformsUtils, Color, FrontSide, ShaderMaterial, DataTexture, RGBAFormat, FloatType, NearestFilter, Vector2, BufferGeometry, BufferAttribute, Euler, Quaternion, Matrix4, Float32BufferAttribute, Uint16BufferAttribute, CylinderBufferGeometry, OctahedronBufferGeometry, Raycaster, Box3 } from '../../lib/three.module.js';
+import { Mesh, Vector3, BoxBufferGeometry, Raycaster, Quaternion, Plane, Vector2, BufferGeometry, BufferAttribute, Euler, Matrix4, Float32BufferAttribute, Uint16BufferAttribute, UniformsUtils, Color, FrontSide, ShaderMaterial, DataTexture, RGBAFormat, FloatType, NearestFilter, CylinderBufferGeometry, OctahedronBufferGeometry, TorusBufferGeometry } from '../../lib/three.module.js';
 
 /**
  * @author arodic / https://github.com/arodic
@@ -754,179 +754,175 @@ const InteractiveMixin = ( superclass ) => class extends superclass {
 
 };
 
-/*
- * Helper class wrapped with PointerEvents API polyfill.
- */
-
-class Interactive extends InteractiveMixin( Helper ) {}
-
-// TODO: pixel-perfect outlines
-class HelperMaterial extends IoLiteMixin( ShaderMaterial ) {
-
-	constructor( color, opacity ) {
-
-		super( {
-			depthTest: true,
-			depthWrite: true,
-			// transparent: true,
-			side: FrontSide,
-		} );
-
-		const data = new Float32Array( [
-			1.0 / 17.0, 0, 0, 0, 9.0 / 17.0, 0, 0, 0, 3.0 / 17.0, 0, 0, 0, 11.0 / 17.0, 0, 0, 0,
-			13.0 / 17.0, 0, 0, 0, 5.0 / 17.0, 0, 0, 0, 15.0 / 17.0, 0, 0, 0, 7.0 / 17.0, 0, 0, 0,
-			4.0 / 17.0, 0, 0, 0, 12.0 / 17.0, 0, 0, 0, 2.0 / 17.0, 0, 0, 0, 10.0 / 17.0, 0, 0, 0,
-			16.0 / 17.0, 0, 0, 0, 8.0 / 17.0, 0, 0, 0, 14.0 / 17.0, 0, 0, 0, 6.0 / 17.0, 0, 0, 0,
-		] );
-		const texture = new DataTexture( data, 4, 4, RGBAFormat, FloatType );
-		texture.magFilter = NearestFilter;
-		texture.minFilter = NearestFilter;
-
-		const res = new Vector3( window.innerWidth, window.innerHeight, window.devicePixelRatio );
-		color = color || new Color( 0xffffff );
-		opacity = opacity !== undefined ? opacity : 1;
-
-		this.defineProperties( {
-			color: { value: color, observer: 'uniformChanged' },
-			opacity: { value: opacity, observer: 'uniformChanged' },
-			depthBias: { value: 0, observer: 'uniformChanged' },
-			highlight: { value: 0, observer: 'uniformChanged' },
-			resolution: { value: res, observer: 'uniformChanged' },
-		} );
-
-		this.uniforms = UniformsUtils.merge( [ this.uniforms, {
-			"uColor": { value: this.color },
-			"uOpacity": { value: this.opacity },
-			"uDepthBias": { value: this.depthBias },
-			"uHighlight": { value: this.highlight },
-			"uResolution": { value: this.resolution },
-			"tDitherMatrix": { value: texture },
-		} ] );
-
-		this.uniforms.tDitherMatrix.value = texture;
-		texture.needsUpdate = true;
-
-		this.vertexShader = `
-
-			attribute vec4 color;
-			attribute float outline;
-
-			varying vec4 vColor;
-			varying float isOutline;
-
-			uniform vec3 uResolution;
-			uniform float uDepthBias;
-			uniform float uHighlight;
-
-			void main() {
-				float aspect = projectionMatrix[0][0] / projectionMatrix[1][1];
-
-				vColor = color;
-				isOutline = outline;
-
-				vec3 nor = normalMatrix * normal;
-				vec4 pos = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
-				float pixelRatio = uResolution.z;
-
-				// nor = (projectionMatrix * vec4(nor, 1.0)).xyz;
-				nor = normalize((nor.xyz) * vec3(1., 1., 0.));
-
-				float extrude = 0.0;
-				if (outline > 0.0) {
-					extrude = outline;
-					pos.z += 0.01;
-				} else {
-					extrude -= outline;
-				}
-
-				pos.z -= uDepthBias * 0.1;
-				pos.z -= uHighlight;
-
-				pos.xy /= pos.w;
-
-				float dx = nor.x * extrude * 2.2;
-				float dy = nor.y * extrude * 2.2;
-
-				pos.x += (dx) * (1.0 / uResolution.x);
-				pos.y += (dy) * (1.0 / uResolution.y);
-
-				pos.xy *= pos.w;
-
-				gl_Position = pos;
-			}
-		`;
-		this.fragmentShader = `
-			uniform vec3 uColor;
-			uniform float uOpacity;
-			uniform float uHighlight;
-			uniform vec3 uResolution;
-			uniform sampler2D tDitherMatrix;
-
-			varying vec4 vColor;
-			varying float isOutline;
-
-			void main() {
-
-				float opacity = 1.0;
-				vec3 color = vec3(1.0);
-				float pixelRatio = 1.0;//uResolution.z;
-
-				if (isOutline > 0.0) {
-					color = mix(color * vec3(0.2), vec3(1.0), max(0.0, uHighlight) );
-					color = mix(color, vec3(0.5), max(0.0, -uHighlight) );
-				} else {
-					color = uColor * vColor.rgb;
-				}
-
-				float dimming = mix(1.0, 0.2, max(0.0, -uHighlight));
-				dimming = mix(dimming, dimming * 1.25, max(0.0, uHighlight));
-				opacity = uOpacity * vColor.a * dimming;
-
-				color = mix(vec3(0.5), saturate(color), dimming);
-
-				gl_FragColor = vec4(color, opacity);
-
-				// opacity = opacity - mod(opacity, 0.25) + 0.25;
-
-				vec2 matCoord = ( mod(gl_FragCoord.xy / pixelRatio, 4.0) - vec2(0.5) ) / 4.0;
-				vec4 ditherPattern = texture2D( tDitherMatrix, matCoord.xy );
-				if (opacity < ditherPattern.r) discard;
-			}
-		`;
-
-	}
-	uniformChanged() {
-
-		this.uniforms.uColor.value = this.color;
-		this.uniforms.uOpacity.value = this.opacity;
-		this.uniforms.uDepthBias.value = this.depthBias;
-		this.uniforms.uHighlight.value = this.highlight;
-		this.uniforms.uResolution.value = this.resolution;
-		this.uniformsNeedUpdate = true;
-
-	}
-
-}
-
 /**
  * @author arodic / https://github.com/arodic
  */
 
-class HelperMesh extends Mesh {
+// Reusable utility variables
+const _ray = new Raycaster();
+const _rayTarget = new Vector3();
+const _tempVector = new Vector3();
 
-	constructor( geometry, props = {} ) {
+// events
+const changeEvent = { type: "change" };
 
-		super();
-		this.geometry = geometry;
-		this.material = new HelperMaterial( props.color, props.opacity || 1 );
-		this.scaleTarget = new Vector3( 1, 1, 1 );
-		this.hidden = false;
-		this.highlight = 0;
-		this.name = props.name;
+const TransformControlsMixin = ( superclass ) => class extends InteractiveMixin( superclass ) {
+
+	constructor( props ) {
+
+		super( props );
+
+		this.pointStart = new Vector3();
+		this.pointEnd = new Vector3();
+
+		this.positionStart = new Vector3();
+		this.quaternionStart = new Quaternion();
+		this.scaleStart = new Vector3();
+
+		this.parentPosition = new Vector3();
+		this.parentQuaternion = new Quaternion();
+		this.parentQuaternionInv = new Quaternion();
+		this.parentScale = new Vector3();
+
+		this.worldPosition = new Vector3();
+		this.worldQuaternion = new Quaternion();
+		this.worldQuaternionInv = new Quaternion();
+		this.worldScale = new Vector3();
+
+		this._plane = new Plane();
+
+		// this.add(this._planeDebugMesh = new Mesh(new PlaneBufferGeometry(1000, 1000, 10, 10), new MeshBasicMaterial({wireframe: true, transparent: true, opacity: 0.2})));
+
+	}
+	objectChanged() {
+
+		super.objectChanged();
+		let hasObject = this.object ? true : false;
+		this.visible = hasObject;
+		if ( ! hasObject ) {
+
+			this.active = false;
+			this.axis = null;
+
+		}
+		this.animation.startAnimation( 1.5 );
+
+	}
+	// TODO: better animation trigger
+	// TODO: also trigger on object change
+	// TODO: Debug stalling animations on hover
+	enabledChanged( value ) {
+
+		super.enabledChanged( value );
+		this.animation.startAnimation( 0.5 );
+
+	}
+	axisChanged() {
+
+		super.axisChanged();
+		this.updatePlane();
+
+	}
+	activeChanged() {
+
+		this.animation.startAnimation( 0.5 );
+
+	}
+	onPointerHover( pointers ) {
+
+		if ( ! this.object || this.active === true ) return;
+
+		_ray.setFromCamera( pointers[ 0 ].position, this.camera );
+		const intersect = _ray.intersectObjects( this.pickers, true )[ 0 ] || false;
+
+		this.axis = intersect ? intersect.object.name : null;
+
+	}
+	onPointerDown( pointers ) {
+
+		if ( this.axis === null || ! this.object || this.active === true || pointers[ 0 ].button !== 0 ) return;
+
+		_ray.setFromCamera( pointers[ 0 ].position, this.camera );
+		const planeIntersect = _ray.ray.intersectPlane( this._plane, _rayTarget );
+
+		if ( planeIntersect ) {
+
+			this.object.updateMatrixWorld();
+			this.object.matrix.decompose( this.positionStart, this.quaternionStart, this.scaleStart );
+			this.object.parent.matrixWorld.decompose( this.parentPosition, this.parentQuaternion, this.parentScale );
+			this.object.matrixWorld.decompose( this.worldPosition, this.worldQuaternion, this.worldScale );
+
+			this.parentQuaternionInv.copy( this.parentQuaternion ).inverse();
+			this.worldQuaternionInv.copy( this.worldQuaternion ).inverse();
+
+			this.pointStart.copy( planeIntersect ).sub( this.worldPosition );
+			this.active = true;
+
+		}
+
+	}
+	onPointerMove( pointers ) {
+
+		if ( this.object === undefined || this.axis === null || this.active === false || pointers[ 0 ].button !== 0 ) return;
+
+		_ray.setFromCamera( pointers[ 0 ].position, this.camera );
+		const planeIntersect = _ray.ray.intersectPlane( this._plane, _tempVector );
+
+		if ( planeIntersect ) {
+
+			this.pointEnd.copy( planeIntersect ).sub( this.worldPosition );
+			this.transform();
+
+			this.dispatchEvent( changeEvent );
+
+		}
+
+	}
+	onPointerUp( pointers ) {
+
+		if ( pointers.length === 0 ) {
+
+			if ( pointers.removed[ 0 ].pointerType === 'touch' ) this.axis = null;
+			this.active = false;
+
+		} else if ( pointers[ 0 ].button === - 1 ) {
+
+			this.axis = null;
+			this.active = false;
+
+		}
+
+	}
+	transform() {}
+	updateAxis( axis ) {
+
+		super.updateAxis( axis );
+		if ( ! this.enabled ) axis.material.highlight = ( 10 * axis.material.highlight - 2.5 ) / 11;
+
+	}
+	updatePlane() {
+
+		const normal = this._plane.normal;
+		const axis = this.axis ? this.axis.split( '_' ).pop() : null;
+
+		if ( axis === 'X' ) normal.copy( this.worldX ).cross( _tempVector.copy( this.eye ).cross( this.worldX ) );
+		if ( axis === 'Y' ) normal.copy( this.worldY ).cross( _tempVector.copy( this.eye ).cross( this.worldY ) );
+		if ( axis === 'Z' ) normal.copy( this.worldZ ).cross( _tempVector.copy( this.eye ).cross( this.worldZ ) );
+		if ( axis === 'XY' ) normal.copy( this.worldZ );
+		if ( axis === 'YZ' ) normal.copy( this.worldX );
+		if ( axis === 'XZ' ) normal.copy( this.worldY );
+		if ( axis === 'XYZ' || axis === 'E' ) this.camera.getWorldDirection( normal );
+
+		this._plane.setFromNormalAndCoplanarPoint( normal, this.position );
+
+		// this.parent.add(this._planeDebugMesh);
+		// this._planeDebugMesh.position.set(0,0,0);
+		// this._planeDebugMesh.lookAt(normal);
+		// this._planeDebugMesh.position.copy(this.position);
 
 	}
 
-}
+};
 
 /**
  * @author mrdoob / http://mrdoob.com/
@@ -1469,12 +1465,238 @@ class HelperGeometry extends BufferGeometry {
 
 }
 
+// TODO: pixel-perfect outlines
+class HelperMaterial extends IoLiteMixin( ShaderMaterial ) {
+
+	constructor( color, opacity ) {
+
+		super( {
+			depthTest: true,
+			depthWrite: true,
+			// transparent: true,
+			side: FrontSide,
+		} );
+
+		const data = new Float32Array( [
+			1.0 / 17.0, 0, 0, 0, 9.0 / 17.0, 0, 0, 0, 3.0 / 17.0, 0, 0, 0, 11.0 / 17.0, 0, 0, 0,
+			13.0 / 17.0, 0, 0, 0, 5.0 / 17.0, 0, 0, 0, 15.0 / 17.0, 0, 0, 0, 7.0 / 17.0, 0, 0, 0,
+			4.0 / 17.0, 0, 0, 0, 12.0 / 17.0, 0, 0, 0, 2.0 / 17.0, 0, 0, 0, 10.0 / 17.0, 0, 0, 0,
+			16.0 / 17.0, 0, 0, 0, 8.0 / 17.0, 0, 0, 0, 14.0 / 17.0, 0, 0, 0, 6.0 / 17.0, 0, 0, 0,
+		] );
+		const texture = new DataTexture( data, 4, 4, RGBAFormat, FloatType );
+		texture.magFilter = NearestFilter;
+		texture.minFilter = NearestFilter;
+
+		const res = new Vector3( window.innerWidth, window.innerHeight, window.devicePixelRatio );
+		color = color || new Color( 0xffffff );
+		opacity = opacity !== undefined ? opacity : 1;
+
+		this.defineProperties( {
+			color: { value: color, observer: 'uniformChanged' },
+			opacity: { value: opacity, observer: 'uniformChanged' },
+			depthBias: { value: 0, observer: 'uniformChanged' },
+			highlight: { value: 0, observer: 'uniformChanged' },
+			resolution: { value: res, observer: 'uniformChanged' },
+		} );
+
+		this.uniforms = UniformsUtils.merge( [ this.uniforms, {
+			"uColor": { value: this.color },
+			"uOpacity": { value: this.opacity },
+			"uDepthBias": { value: this.depthBias },
+			"uHighlight": { value: this.highlight },
+			"uResolution": { value: this.resolution },
+			"tDitherMatrix": { value: texture },
+		} ] );
+
+		this.uniforms.tDitherMatrix.value = texture;
+		texture.needsUpdate = true;
+
+		this.vertexShader = `
+
+			attribute vec4 color;
+			attribute float outline;
+
+			varying vec4 vColor;
+			varying float isOutline;
+
+			uniform vec3 uResolution;
+			uniform float uDepthBias;
+			uniform float uHighlight;
+
+			void main() {
+				float aspect = projectionMatrix[0][0] / projectionMatrix[1][1];
+
+				vColor = color;
+				isOutline = outline;
+
+				vec3 nor = normalMatrix * normal;
+				vec4 pos = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+				float pixelRatio = uResolution.z;
+
+				// nor = (projectionMatrix * vec4(nor, 1.0)).xyz;
+				nor = normalize((nor.xyz) * vec3(1., 1., 0.));
+
+				float extrude = 0.0;
+				if (outline > 0.0) {
+					extrude = outline;
+					pos.z += 0.01;
+				} else {
+					extrude -= outline;
+				}
+
+				pos.z -= uDepthBias * 0.1;
+				pos.z -= uHighlight;
+
+				pos.xy /= pos.w;
+
+				float dx = nor.x * extrude * 2.2;
+				float dy = nor.y * extrude * 2.2;
+
+				pos.x += (dx) * (1.0 / uResolution.x);
+				pos.y += (dy) * (1.0 / uResolution.y);
+
+				pos.xy *= pos.w;
+
+				gl_Position = pos;
+			}
+		`;
+		this.fragmentShader = `
+			uniform vec3 uColor;
+			uniform float uOpacity;
+			uniform float uHighlight;
+			uniform vec3 uResolution;
+			uniform sampler2D tDitherMatrix;
+
+			varying vec4 vColor;
+			varying float isOutline;
+
+			void main() {
+
+				float opacity = 1.0;
+				vec3 color = vec3(1.0);
+				float pixelRatio = 1.0;//uResolution.z;
+
+				if (isOutline > 0.0) {
+					color = mix(color * vec3(0.2), vec3(1.0), max(0.0, uHighlight) );
+					color = mix(color, vec3(0.5), max(0.0, -uHighlight) );
+				} else {
+					color = uColor * vColor.rgb;
+				}
+
+				float dimming = mix(1.0, 0.2, max(0.0, -uHighlight));
+				dimming = mix(dimming, dimming * 1.25, max(0.0, uHighlight));
+				opacity = uOpacity * vColor.a * dimming;
+
+				color = mix(vec3(0.5), saturate(color), dimming);
+
+				gl_FragColor = vec4(color, opacity);
+
+				// opacity = opacity - mod(opacity, 0.25) + 0.25;
+
+				vec2 matCoord = ( mod(gl_FragCoord.xy / pixelRatio, 4.0) - vec2(0.5) ) / 4.0;
+				vec4 ditherPattern = texture2D( tDitherMatrix, matCoord.xy );
+				if (opacity < ditherPattern.r) discard;
+			}
+		`;
+
+	}
+	uniformChanged() {
+
+		this.uniforms.uColor.value = this.color;
+		this.uniforms.uOpacity.value = this.opacity;
+		this.uniforms.uDepthBias.value = this.depthBias;
+		this.uniforms.uHighlight.value = this.highlight;
+		this.uniforms.uResolution.value = this.resolution;
+		this.uniformsNeedUpdate = true;
+
+	}
+
+}
+
+/**
+ * @author arodic / https://github.com/arodic
+ */
+
+class HelperMesh extends Mesh {
+
+	constructor( geometry, props = {} ) {
+
+		super();
+		this.geometry = geometry;
+		this.material = new HelperMaterial( props.color, props.opacity || 1 );
+		this.scaleTarget = new Vector3( 1, 1, 1 );
+		this.hidden = false;
+		this.highlight = 0;
+		this.name = props.name;
+
+	}
+
+}
+
 /**
  * @author arodic / https://github.com/arodic
  */
 
 const HPI = Math.PI / 2;
 const EPS = 0.000001;
+
+const colors = {
+	'white': [ 1, 1, 1 ],
+	'whiteTransparent': [ 1, 1, 1, 0.25 ],
+	'gray': [ 0.75, 0.75, 0.75 ],
+	'red': [ 1, 0.3, 0.2 ],
+	'green': [ 0.2, 1, 0.2 ],
+	'blue': [ 0.2, 0.3, 1 ],
+	'cyan': [ 0.2, 1, 1 ],
+	'magenta': [ 1, 0.3, 1 ],
+	'yellow': [ 1, 1, 0.2 ],
+};
+
+class PlaneGeometry extends HelperGeometry {
+
+	constructor() {
+
+		let geometry = new BufferGeometry();
+
+		let indices = [
+			0, 1, 2, 2, 3, 0, 4, 1, 0, 5, 1, 4, 1, 6, 2, 1, 5, 6,
+			0, 3, 7, 4, 0, 7, 7, 2, 6, 2, 7, 3, 7, 6, 4, 4, 6, 5
+		];
+		geometry.index = new Uint16BufferAttribute( indices, 1 );
+
+		let positions = [];
+		positions[ 0 ] = 1; positions[ 1 ] = 1; positions[ 2 ] = 1;
+		positions[ 3 ] = - 1; positions[ 4 ] = 1; positions[ 5 ] = 1;
+		positions[ 6 ] = - 1; positions[ 7 ] = - 1; positions[ 8 ] = 1;
+		positions[ 9 ] = 1; positions[ 10 ] = - 1; positions[ 11 ] = 1;
+		positions[ 12 ] = 1; positions[ 13 ] = 1; positions[ 14 ] = - 1;
+		positions[ 15 ] = - 1; positions[ 16 ] = 1; positions[ 17 ] = - 1;
+		positions[ 18 ] = - 1; positions[ 19 ] = - 1; positions[ 20 ] = - 1;
+		positions[ 21 ] = 1; positions[ 22 ] = - 1; positions[ 23 ] = - 1;
+
+		geometry.addAttribute( 'position', new Float32BufferAttribute( positions, 3 ) );
+		geometry.addAttribute( 'normal', new Float32BufferAttribute( positions, 3 ) );
+
+		super( [
+			[ geometry, { scale: [ 0.5, 0.5, 0.00001 ] } ]
+		] );
+
+	}
+
+}
+
+class Corner2Geometry extends HelperGeometry {
+
+	constructor() {
+
+		super( [
+			[ new CylinderBufferGeometry( EPS, EPS, 1, 5, 2, false ), { position: [ 0.5, 0, 0 ], rotation: [ 0, 0, HPI ], thickness: 1 } ],
+			[ new CylinderBufferGeometry( EPS, EPS, 1, 5, 2, false ), { position: [ 0, 0, 0.5 ], rotation: [ HPI, 0, 0 ], thickness: 1 } ],
+		] );
+
+	}
+
+}
 
 class Corner3Geometry extends HelperGeometry {
 
@@ -1772,565 +1994,257 @@ class TransformHelper extends Helper {
 
 }
 
-/**
- * @author arodic / https://github.com/arodic
- */
-
 // Reusable utility variables
-const HPI$1 = Math.PI / 2;
 const PI = Math.PI;
+const HPI$1 = Math.PI / 2;
 const EPS$1 = 0.000001;
 
-// TODO: consider supporting objects with skewed transforms.
-const _position$1 = new Vector3();
-const _quaternion$1 = new Quaternion();
-const _scale$1 = new Vector3();
-const _m1 = new Matrix4();
-const _m2 = new Matrix4();
-const _one = new Vector3( 1, 1, 1 );
+const coneGeometry = new HelperGeometry( [
+	[ new OctahedronBufferGeometry( 0.03, 2 ) ],
+	[ new CylinderBufferGeometry( 0, 0.03, 0.2, 8, 1, true ), { position: [ 0, 0.1, 0 ] } ],
+] );
 
-const corner3Geometry = new Corner3Geometry();
+const translateArrowGeometry = new HelperGeometry( [
+	[ coneGeometry, { position: [ 0, 0.7, 0 ] } ],
+	[ new CylinderBufferGeometry( EPS$1, EPS$1, 0.45, 5, 1, true ), { position: [ 0, 0.5, 0 ], thickness: 1 } ],
+] );
+
+const scaleArrowGeometry = new HelperGeometry( [
+	[ new OctahedronBufferGeometry( 0.03, 2 ), { position: [ 0, 0.9, 0 ] } ],
+	[ new CylinderBufferGeometry( EPS$1, EPS$1, 0.65, 5, 1, true ), { position: [ 0, 0.6, 0 ], thickness: 1 } ],
+] );
+
+const scaleUniformArrowGeometry = new HelperGeometry( [
+	[ new CylinderBufferGeometry( EPS$1, EPS$1, 0.2, 5, 1, true ), { position: [ 0, - 0.13, 0 ], thickness: 1 } ],
+	[ new OctahedronBufferGeometry( 0.04, 2 ) ],
+] );
+
+const translateCornerGeometry = new HelperGeometry( [
+	[ new PlaneGeometry(), { color: colors[ 'whiteTransparent' ], position: [ - 0.1, - 0.1, 0 ], scale: 0.2, outlineThickness: 0 } ],
+	[ new Corner2Geometry(), { color: [ 1, 1, 0.25 ], scale: 0.2, rotation: [ HPI$1, 0, PI ] } ],
+] );
+
+const scaleCornerGeometry = new HelperGeometry( [
+	[ new OctahedronBufferGeometry( 0.03, 2 ) ],
+	[ new PlaneGeometry(), { color: colors[ 'whiteTransparent' ], position: [ 0, - 0.06, 0 ], scale: [ 0.06, 0.1, 0.06 ], outlineThickness: 0 } ],
+	[ new PlaneGeometry(), { color: colors[ 'whiteTransparent' ], position: [ - 0.06, 0, 0 ], scale: [ 0.1, 0.06, 0.06 ], outlineThickness: 0 } ],
+] );
+
+const rotateHandleGeometry = new HelperGeometry( [
+	[ new TorusBufferGeometry( 1, EPS$1, 4, 6, HPI$1 / 2 ), { thickness: 1, rotation: [ 0, 0, HPI$1 - HPI$1 / 4 ] } ],
+	[ new TorusBufferGeometry( 0.96, 0.04, 2, 2, HPI$1 / 2 / 3 ), { color: [ 1, 1, 1, 0.25 ], rotation: [ 0, 0, HPI$1 - HPI$1 / 4 / 3 ], scale: [ 1, 1, 0.01 ], outlineThickness: 0 } ],
+	[ coneGeometry, { position: [ 0.37, 0.93, 0 ], rotation: [ 0, 0, - 2.035 ], scale: 0.75 } ],
+	[ coneGeometry, { position: [ - 0.37, 0.93, 0 ], rotation: [ 0, 0, 2.035 ], scale: 0.75 } ],
+] );
+
+const translatePickerGeometry = new HelperGeometry( new CylinderBufferGeometry( 0.15, 0, 0.6, 4, 1, true ), { color: colors[ 'whiteTransparent' ], position: [ 0, 0.5, 0 ] } );
+
+const scalePickerGeometry = new HelperGeometry( new OctahedronBufferGeometry( 0.1, 0 ), { color: colors[ 'whiteTransparent' ] } );
+
+const rotatePickerGeometry = new HelperGeometry( new TorusBufferGeometry( 1, 0.1, 4, 4, HPI$1 / 1.5 ), { color: colors[ 'whiteTransparent' ], rotation: [ 0, 0, HPI$1 - HPI$1 / 3 ] } );
+
+const cornerPickerGeometry = new HelperGeometry( new PlaneGeometry(), { color: colors[ 'whiteTransparent' ], scale: 0.3, outlineThickness: 0 } );
 
 const handleGeometry$1 = {
-	XYZ: new HelperGeometry( corner3Geometry, { color: [ 1, 1, 0 ], rotation: [ HPI$1, 0, PI ] } ),
-	XYz: new HelperGeometry( corner3Geometry, { color: [ 1, 1, 0 ], rotation: [ HPI$1, 0, HPI$1 ] } ),
-	xyz: new HelperGeometry( corner3Geometry, { color: [ 1, 1, 0 ], rotation: [ - HPI$1, 0, - HPI$1 ] } ),
-	xyZ: new HelperGeometry( corner3Geometry, { color: [ 1, 1, 0 ], rotation: [ - HPI$1, 0, 0 ] } ),
-	xYZ: new HelperGeometry( corner3Geometry, { color: [ 1, 1, 0 ], rotation: [ PI / 2, 0, - PI / 2 ] } ),
-	xYz: new HelperGeometry( corner3Geometry, { color: [ 1, 1, 0 ], rotation: [ PI / 2, 0, 0 ] } ),
-	Xyz: new HelperGeometry( corner3Geometry, { color: [ 1, 1, 0 ], rotation: [ 0, 0, HPI$1 ] } ),
-	XyZ: new HelperGeometry( corner3Geometry, { color: [ 1, 1, 0 ], rotation: [ 0, PI, 0 ] } ),
+	T_X: new HelperGeometry( translateArrowGeometry, { color: colors[ 'red' ], rotation: [ 0, 0, - HPI$1 ] } ),
+	T_Y: new HelperGeometry( translateArrowGeometry, { color: colors[ 'green' ] } ),
+	T_Z: new HelperGeometry( translateArrowGeometry, { color: colors[ 'blue' ], rotation: [ HPI$1, 0, 0 ] } ),
+	T_XY: new HelperGeometry( translateCornerGeometry, { color: colors[ 'yellow' ], position: [ 0.25, 0.25, 0 ] } ),
+	T_YZ: new HelperGeometry( translateCornerGeometry, { color: colors[ 'cyan' ], position: [ 0, 0.25, 0.25 ], rotation: [ 0, - HPI$1, 0 ] } ),
+	T_XZ: new HelperGeometry( translateCornerGeometry, { color: colors[ 'magenta' ], position: [ 0.25, 0, 0.25 ], rotation: [ HPI$1, 0, 0 ] } ),
+
+	R_X: new HelperGeometry( rotateHandleGeometry, { color: colors[ 'red' ], rotation: [ HPI$1 / 2, PI / 2, 0 ] } ),
+	R_Y: new HelperGeometry( rotateHandleGeometry, { color: colors[ 'green' ], rotation: [ PI / 2, 0, - HPI$1 / 2 ] } ),
+	R_Z: new HelperGeometry( rotateHandleGeometry, { color: colors[ 'blue' ], rotation: [ 0, 0, - HPI$1 / 2 ] } ),
+
+	S_X: new HelperGeometry( scaleArrowGeometry, { color: colors[ 'red' ], rotation: [ 0, 0, - HPI$1 ] } ),
+	S_Y: new HelperGeometry( scaleArrowGeometry, { color: colors[ 'green' ] } ),
+	S_Z: new HelperGeometry( scaleArrowGeometry, { color: colors[ 'blue' ], rotation: [ HPI$1, 0, 0 ] } ),
+	S_XY: new HelperGeometry( scaleCornerGeometry, { color: colors[ 'yellow' ], position: [ 0.9, 0.9, 0 ] } ),
+	S_YZ: new HelperGeometry( scaleCornerGeometry, { color: colors[ 'cyan' ], position: [ 0, 0.9, 0.9 ], rotation: [ 0, - HPI$1, 0 ] } ),
+	S_XZ: new HelperGeometry( scaleCornerGeometry, { color: colors[ 'magenta' ], position: [ 0.9, 0, 0.9 ], rotation: [ HPI$1, 0, 0 ] } ),
+	S_XYZ: new HelperGeometry( [
+		[ scaleUniformArrowGeometry, { color: colors[ 'gray' ], position: [ 1.1, 0, 0 ], rotation: [ 0, 0, - HPI$1 ] } ],
+		[ scaleUniformArrowGeometry, { color: colors[ 'gray' ], position: [ 0, 1.1, 0 ] } ],
+		[ scaleUniformArrowGeometry, { color: colors[ 'gray' ], position: [ 0, 0, 1.1 ], rotation: [ HPI$1, 0, 0 ] } ],
+	] ),
 };
 
-class SelectionHelper extends Helper {
+const pickerGeometry$1 = {
+	T_X: new HelperGeometry( translatePickerGeometry, { color: colors[ 'red' ], rotation: [ 0, 0, - HPI$1 ] } ),
+	T_Y: new HelperGeometry( translatePickerGeometry, { color: colors[ 'green' ] } ),
+	T_Z: new HelperGeometry( translatePickerGeometry, { color: colors[ 'blue' ], rotation: [ HPI$1, 0, 0 ] } ),
+	T_XY: new HelperGeometry( cornerPickerGeometry, { color: colors[ 'yellow' ], position: [ 0.15, 0.15, 0 ] } ),
+	T_YZ: new HelperGeometry( cornerPickerGeometry, { color: colors[ 'cyan' ], position: [ 0, 0.15, 0.15 ], rotation: [ 0, - HPI$1, 0 ] } ),
+	T_XZ: new HelperGeometry( cornerPickerGeometry, { color: colors[ 'magenta' ], position: [ 0.15, 0, 0.15 ], rotation: [ HPI$1, 0, 0 ] } ),
+	T_XYZ: new HelperGeometry( new OctahedronBufferGeometry( 0.2, 0 ), { color: colors[ 'whiteTransparent' ] } ),
+
+	R_X: new HelperGeometry( rotatePickerGeometry, { color: colors[ 'red' ], rotation: [ HPI$1 / 2, PI / 2, 0 ] } ),
+	R_Y: new HelperGeometry( rotatePickerGeometry, { color: colors[ 'green' ], rotation: [ PI / 2, 0, - HPI$1 / 2 ] } ),
+	R_Z: new HelperGeometry( rotatePickerGeometry, { color: colors[ 'blue' ], rotation: [ 0, 0, - HPI$1 / 2 ] } ),
+
+	S_X: new HelperGeometry( scalePickerGeometry, { color: colors[ 'red' ], position: [ 0.9, 0, 0 ], rotation: [ 0, 0, - HPI$1 ], scale: 1.5 } ),
+	S_Y: new HelperGeometry( scalePickerGeometry, { color: colors[ 'green' ], position: [ 0, 0.9, 0 ], scale: 1.5 } ),
+	S_Z: new HelperGeometry( scalePickerGeometry, { color: colors[ 'blue' ], position: [ 0, 0, 0.9 ], rotation: [ HPI$1, 0, 0 ], scale: 1.5 } ),
+	S_XY: new HelperGeometry( scalePickerGeometry, { color: colors[ 'yellow' ], position: [ 0.9, 0.9, 0 ] } ),
+	S_YZ: new HelperGeometry( scalePickerGeometry, { color: colors[ 'cyan' ], position: [ 0, 0.9, 0.9 ], rotation: [ 0, - HPI$1, 0 ] } ),
+	S_XZ: new HelperGeometry( scalePickerGeometry, { color: colors[ 'magenta' ], position: [ 0.9, 0, 0.9 ], rotation: [ HPI$1, 0, 0 ] } ),
+	S_XYZ: new HelperGeometry( [
+		[ scalePickerGeometry, { color: colors[ 'gray' ], position: [ 1.1, 0, 0 ] } ],
+		[ scalePickerGeometry, { color: colors[ 'gray' ], position: [ 0, 1.1, 0 ] } ],
+		[ scalePickerGeometry, { color: colors[ 'gray' ], position: [ 0, 0, 1.1 ] } ],
+	] ),
+};
+
+class TransformHelperCombined extends TransformHelper {
 
 	get handleGeometry() {
 
 		return handleGeometry$1;
 
 	}
-	constructor( props ) {
+	get pickerGeometry() {
 
-		super( props );
-		this.size = 0.005;
-		this.combineHelperGroups( this.handleGeometry );
-
-		const axis = new TransformHelper( { object: this } );
-		axis.size = 0.01;
-		super.add( axis );
-
-		if ( this.object && this.object.geometry ) {
-
-			if ( ! this.object.geometry.boundingBox ) this.object.geometry.computeBoundingBox();
-			const bbMax = this.object.geometry.boundingBox.max;
-			const bbMin = this.object.geometry.boundingBox.min;
-
-			this.corners[ 'XYZ' ].position.set( bbMax.x, bbMax.y, bbMax.z );
-			this.corners[ 'XYz' ].position.set( bbMax.x, bbMax.y, bbMin.z );
-			this.corners[ 'xyz' ].position.set( bbMin.x, bbMin.y, bbMin.z );
-			this.corners[ 'xyZ' ].position.set( bbMin.x, bbMin.y, bbMax.z );
-			this.corners[ 'xYZ' ].position.set( bbMin.x, bbMax.y, bbMax.z );
-			this.corners[ 'xYz' ].position.set( bbMin.x, bbMax.y, bbMin.z );
-			this.corners[ 'Xyz' ].position.set( bbMax.x, bbMin.y, bbMin.z );
-			this.corners[ 'XyZ' ].position.set( bbMax.x, bbMin.y, bbMax.z );
-
-		}
+		return pickerGeometry$1;
 
 	}
-	combineHelperGroups( groups ) {
+	paramChanged() {
 
-		this.corners = {};
-		for ( let name in groups ) {
+		super.paramChanged();
+		this.traverseAxis( axis => {
 
-			this.corners[ name ] = new HelperMesh( groups[ name ], { name: name } );
-			this.add( this.corners[ name ] );
+			// Hide per-axis scale in world mode
+			if ( ( axis.name == 'S_X' || axis.name == 'S_Y' || axis.name == 'S_Z' ) && this.space === 'world' ) axis.hidden = true;
+			if ( ( axis.name == 'S_XY' || axis.name == 'S_YZ' || axis.name == 'S_XZ' ) && this.space === 'world' ) axis.hidden = true;
 
-		}
-
-	}
-	updateMatrixWorld() {
-
-		this.updateHelperMatrix();
-		this.matrixWorldNeedsUpdate = false;
-		this.object.matrixWorld.decompose( _position$1, _quaternion$1, _scale$1 );
-		_m1.compose( this.position, this.quaternion, _one );
-
-		_scale$1.x = Math.abs( _scale$1.x );
-		_scale$1.y = Math.abs( _scale$1.y );
-		_scale$1.z = Math.abs( _scale$1.z );
-
-		for ( let i = 0; i < 8; i ++ ) {
-
-			_position$1.copy( this.children[ i ].position ).multiply( _scale$1 );
-
-			let __scale = this.scale.clone();
-
-			let dir = this.children[ i ].position.clone().applyQuaternion( this.quaternion ).normalize();
-
-			this.children[ i ].material.highlight = Math.min( Math.max( 3 - Math.abs( dir.dot( this.eye ) ) * 4, - 1 ), 0.5 );
-
-			__scale.x = Math.min( this.scale.x, Math.abs( _position$1.x ) / 2 );
-			__scale.y = Math.min( this.scale.y, Math.abs( _position$1.y ) / 2 );
-			__scale.z = Math.min( this.scale.z, Math.abs( _position$1.z ) / 2 );
-
-			__scale.x = Math.max( __scale.x, EPS$1 );
-			__scale.y = Math.max( __scale.y, EPS$1 );
-			__scale.z = Math.max( __scale.z, EPS$1 );
-
-			_m2.compose( _position$1, new Quaternion(), __scale );
-
-			this.children[ i ].matrixWorld.copy( _m1 ).multiply( _m2 );
-
-		}
-
-		this.children[ 8 ].updateMatrixWorld();
+		} );
 
 	}
 
 }
 
 /**
- * @author arodic / http://github.com/arodic
+ * @author arodic / https://github.com/arodic
  */
 
-// Reusable utility variables
-const pos = new Vector3();
-const quat = new Quaternion();
-const quatInv = new Quaternion();
-const scale = new Vector3();
+const offset = new Vector3();
+const scaleFactor = new Vector3();
+const EPS$2 = 0.000001;
 
-const posOld = new Vector3();
-const quatOld = new Quaternion();
-const scaleOld = new Vector3();
+const tempVector = new Vector3();
+const tempQuaternion = new Quaternion();
+const unit = {
+	X: new Vector3( 1, 0, 0 ),
+	Y: new Vector3( 0, 1, 0 ),
+	Z: new Vector3( 0, 0, 1 )
+};
+const rotationAxis = new Vector3();
+let rotationAngle = 0;
 
-const posOffset = new Vector3();
-const quatOffset = new Quaternion();
-const scaleOffset = new Vector3();
+class TransformControlsCombined extends TransformControlsMixin( TransformHelperCombined ) {
 
-const itemPos = new Vector3();
-const itemPosOffset = new Vector3();
-const itemQuat = new Quaternion();
-const itemQuatInv = new Quaternion();
-const itemQuatOffset = new Quaternion();
-const itemScale = new Vector3();
+	transform() {
 
-const parentPos = new Vector3();
-const parentQuat = new Quaternion();
-const parentQuatInv = new Quaternion();
-const parentScale = new Vector3();
+		if ( this.axis.indexOf( 'T' ) !== - 1 ) {
 
-const dist0 = new Vector3();
-const dist1 = new Vector3();
-const bbox = new Box3();
+			offset.copy( this.pointEnd ).sub( this.pointStart );
 
-const selectedOld = [];
+			if ( this.space === 'local' && this.axis !== 'XYZ' ) {
 
-function filterItems( list, hierarchy, filter ) {
+				offset.applyQuaternion( this.worldQuaternionInv );
 
-	list = list instanceof Array ? list : [ list ];
-	let filtered = [];
-	for ( let i = 0; i < list.length; i ++ ) {
+			}
 
-		if ( ! filter || filter( list[ i ] ) ) filtered.push( list[ i ] );
-		if ( hierarchy ) {
+			if ( this.axis.indexOf( 'X' ) === - 1 ) offset.x = 0;
+			if ( this.axis.indexOf( 'Y' ) === - 1 ) offset.y = 0;
+			if ( this.axis.indexOf( 'Z' ) === - 1 ) offset.z = 0;
 
-			let children = filterItems( list[ i ].children, hierarchy, filter );
-			filtered.push( ...children );
+			if ( this.space === 'local' && this.axis !== 'XYZ' ) {
 
-		}
-
-	}
-	return filtered;
-
-}
-
-// Temp variables
-const raycaster = new Raycaster();
-
-// @event change
-const changeEvent = { type: 'change' };
-
-let time = 0, dtime = 0;
-const CLICK_DIST = 0.01;
-const CLICK_TIME = 250;
-
-/*
- * Selection object stores selection list and implements various methods for selection list manipulation.
- * Selection object transforms all selected objects when moved in either world or local space.
- *
- * @event chang - fired on selection change.
- * @event selected-changed - also fired on selection change (includes selection payload).
- */
-
-class SelectionControls extends Interactive {
-
-	// get isSelection() { return true; } // TODO?
-	get isSelectionControls() {
-
-		return true;
-
-	}
-	constructor( props ) {
-
-		super( props );
-
-		this.defineProperties( {
-			object_: props.object_ || null, // TODO: remove
-			selected: [],
-			transformSelection: true,
-			transformSpace: 'local',
-			boundingBox: new Box3()
-			// translationSnap: null,
-			// rotationSnap: null
-		} );
-
-	}
-	select( position, add ) {
-
-		const camera = this.camera;
-		raycaster.setFromCamera( position, camera );
-
-		const intersects = raycaster.intersectObjects( this.object_.children, true );
-		if ( intersects.length > 0 ) {
-
-			const object = intersects[ 0 ].object;
-			// TODO: handle helper selection
-			if ( add ) {
-
-				this.toggle( object );
+				offset.applyQuaternion( this.quaternionStart ).divide( this.parentScale );
 
 			} else {
 
-				this.replace( object );
+				offset.applyQuaternion( this.parentQuaternionInv ).divide( this.parentScale );
 
 			}
 
-		} else {
-
-			this.clear();
+			this.object.position.copy( offset ).add( this.positionStart );
 
 		}
-		this.dispatchEvent( changeEvent );
 
-	}
-	onPointerDown() {
+		if ( this.axis.indexOf( 'S' ) !== - 1 ) {
 
-		time = Date.now();
+			if ( this.axis === 'S_XYZ' ) {
 
-	}
-	onPointerUp( pointers ) {
+				let refVector = this.pointStart.clone().normalize();
+				let factor = this.pointEnd.dot( refVector ) / this.pointStart.dot( refVector );
+				scaleFactor.set( factor, factor, factor );
 
-		dtime = Date.now() - time;
-		if ( pointers.length === 0 && dtime < CLICK_TIME ) {
+			} else {
 
-			if ( pointers.removed[ 0 ].distance.length() < CLICK_DIST ) {
+				scaleFactor.set(
+					this.pointEnd.dot( this.worldX ) / this.pointStart.dot( this.worldX ),
+					this.pointEnd.dot( this.worldY ) / this.pointStart.dot( this.worldY ),
+					this.pointEnd.dot( this.worldZ ) / this.pointStart.dot( this.worldZ ),
+				);
 
-				this.select( pointers.removed[ 0 ].position, pointers.removed[ 0 ].ctrlKey );
+				if ( this.axis.indexOf( 'X' ) === - 1 ) scaleFactor.x = 1;
+				if ( this.axis.indexOf( 'Y' ) === - 1 ) scaleFactor.y = 1;
+				if ( this.axis.indexOf( 'Z' ) === - 1 ) scaleFactor.z = 1;
 
 			}
 
-		}
-
-	}
-	transformSpaceChanged() {
-
-		this.update();
-
-	}
-	toggle( list, hierarchy, filter ) {
-
-		list = filterItems( list, hierarchy, filter );
-		selectedOld.push( ...this.selected );
-		for ( let i = list.length; i --; ) {
-
-			let index = this.selected.indexOf( list[ i ] );
-			if ( index !== - 1 ) this.selected.splice( index, 1 );
-			else this.selected.push( list[ i ] );
+			this.object.scale.copy( this.scaleStart ).multiply( scaleFactor );
+			this.object.scale.set(
+				Math.max( this.object.scale.x, EPS$2 ),
+				Math.max( this.object.scale.y, EPS$2 ),
+				Math.max( this.object.scale.z, EPS$2 ),
+			);
 
 		}
-		this.update();
 
-	}
-	add( list, hierarchy, filter ) {
+		if ( this.axis.indexOf( 'R' ) !== - 1 ) {
 
-		list = filterItems( list, hierarchy, filter );
-		selectedOld.push( ...this.selected );
-		this.selected.concat( ...list );
-		this.update();
+			offset.copy( this.pointEnd ).sub( this.pointStart );
 
-	}
-	addFirst( list, hierarchy, filter ) {
+			// TODO: test with OrthographicCamera
+			const ROTATION_SPEED = 3 / this.scale.length();
 
-		list = filterItems( list, hierarchy, filter );
-		selectedOld.push( ...this.selected );
-		this.selected.length = 0;
-		this.selected.push( ...list );
-		this.selected.push( ...selectedOld );
-		this.update();
+			if ( this.axis === 'R_X' || this.axis === 'R_Y' || this.axis === 'R_Z' ) {
 
-	}
-	remove( list, hierarchy, filter ) {
+				rotationAxis.copy( unit[ this.axis[ 2 ] ] );
 
-		list = filterItems( list, hierarchy, filter );
-		selectedOld.push( ...this.selected );
-		for ( let i = list.length; i --; ) {
+				tempVector.copy( unit[ this.axis[ 2 ] ] );
 
-			let index = this.selected.indexOf( list[ i ] );
-			if ( index !== - 1 ) this.selected.splice( i, 1 );
+				if ( this.space === 'local' ) {
 
-		}
-		this.update();
-
-	}
-	replace( list, hierarchy, filter ) {
-
-		list = filterItems( list, hierarchy, filter );
-		selectedOld.push( ...this.selected );
-		this.selected.length = 0;
-		this.selected.push( ...list );
-		this.update();
-
-	}
-	clear() {
-
-		selectedOld.push( ...this.selected );
-		this.selected.length = 0;
-		this.update();
-
-	}
-	update() {
-
-		// Reset selection transform.
-		// this.position.set(0,0,0);
-		// this.quaternion.set(0,0,0,1);
-		// this.scale.set(1,1,1);
-
-		// TODO: temp for testing
-		this.boundingBox.makeEmpty();
-
-		if ( this.selected.length && this.transformSelection ) {
-
-			// Set selection transform to last selected item (not ancestor of selected).
-			if ( this.transformSpace === 'local' ) {
-
-				for ( let i = this.selected.length; i --; ) {
-
-					let item = this.selected[ i ];
-					if ( this._isAncestorOfSelected( item ) ) continue;
-					item.updateMatrixWorld();
-					item.matrixWorld.decompose( itemPos, itemQuat, itemScale );
-					this.position.copy( itemPos );
-					this.quaternion.copy( itemQuat );
-
-					if ( item.geometry ) {
-
-						if ( ! item.geometry.boundingBox ) item.geometry.computeBoundingBox();
-						bbox.copy( item.geometry.boundingBox );
-						bbox.min.multiply( itemScale );
-						bbox.max.multiply( itemScale );
-						this.boundingBox.copy( bbox );
-
-					}
-
-					break;
-
-				}
-				// Set selection transform to the average of selected items.
-
-			} else if ( this.transformSpace === 'world' ) {
-
-				// TODO: center should be in the center of combined boundging box.
-				// TODO: Verify with TransformControlsStretch box handles
-				pos.set( 0, 0, 0 );
-				for ( let i = 0; i < this.selected.length; i ++ ) {
-
-					let item = this.selected[ i ];
-					item.updateMatrixWorld();
-					item.matrixWorld.decompose( itemPos, itemQuat, itemScale );
-					pos.add( itemPos );
-
-				}
-				this.position.copy( pos ).divideScalar( this.selected.length );
-
-				// this.updateMatrixWorld();
-
-				for ( let i = 0; i < this.selected.length; i ++ ) {
-
-					let item = this.selected[ i ];
-					item.matrixWorld.decompose( itemPos, itemQuat, itemScale );
-					if ( item.geometry ) {
-
-						if ( ! item.geometry.boundingBox ) item.geometry.computeBoundingBox();
-						bbox.copy( item.geometry.boundingBox );
-						bbox.min.multiply( itemScale );
-						bbox.max.multiply( itemScale );
-
-						bbox.min.add( itemPos.clone().sub( this.position ) );
-						bbox.max.add( itemPos.clone().sub( this.position ) );
-
-						this.boundingBox.expandByPoint( bbox.min );
-						this.boundingBox.expandByPoint( bbox.max );
-
-					} else {
-
-						// TODO: test with non-geometric objects
-						this.boundingBox.expandByPoint( itemPos ); // Doesent make sense
-
-					}
+					tempVector.applyQuaternion( this.worldQuaternion );
 
 				}
 
+				rotationAngle = offset.dot( tempVector.cross( this.eye ).normalize() ) * ROTATION_SPEED;
+
 			}
 
-		}
+			// Apply rotate
+			if ( this.space === 'local' ) {
 
-		// TODO: apply snapping
-		// Apply translation snap
-		// if (this.translationSnap) {
-		// 	if (space === 'local') {
-		// 		object.position.applyQuaternion(_tempQuaternion.copy(this.quaternionStart).inverse());
-		// 		if (axis.hasAxis('X')) object.position.x = Math.round(object.position.x / this.translationSnap) * this.translationSnap;
-		// 		if (axis.hasAxis('Y')) object.position.y = Math.round(object.position.y / this.translationSnap) * this.translationSnap;
-		// 		if (axis.hasAxis('Z')) object.position.z = Math.round(object.position.z / this.translationSnap) * this.translationSnap;
-		// 		object.position.applyQuaternion(this.quaternionStart);
-		// 	}
-		// 	if (space === 'world') {
-		// 		if (object.parent) {
-		// 			object.position.add(_tempVector.setFromMatrixPosition(object.parent.matrixWorld));
-		// 		}
-		// 		if (axis.hasAxis('X')) object.position.x = Math.round(object.position.x / this.translationSnap) * this.translationSnap;
-		// 		if (axis.hasAxis('Y')) object.position.y = Math.round(object.position.y / this.translationSnap) * this.translationSnap;
-		// 		if (axis.hasAxis('Z')) object.position.z = Math.round(object.position.z / this.translationSnap) * this.translationSnap;
-		// 		if (object.parent) {
-		// 			object.position.sub(_tempVector.setFromMatrixPosition(object.parent.matrixWorld));
-		// 		}
-		// 	}
-		// }
-		// Apply rotation snap
-		// if (space === 'local') {
-		// 	const snap = this.rotationSnap;
-		// 	if (this.axis === 'X' && snap) this.object.rotation.x = Math.round(this.object.rotation.x / snap) * snap;
-		// 	if (this.axis === 'Y' && snap) this.object.rotation.y = Math.round(this.object.rotation.y / snap) * snap;
-		// 	if (this.axis === 'Z' && snap) this.object.rotation.z = Math.round(this.object.rotation.z / snap) * snap;
-		// }
-		// if (this.rotationSnap) this.rotationAngle = Math.round(this.rotationAngle / this.rotationSnap) * this.rotationSnap;
+				this.object.quaternion.copy( this.quaternionStart );
+				this.object.quaternion.multiply( tempQuaternion.setFromAxisAngle( rotationAxis, rotationAngle ) ).normalize();
 
-		// Add helpers
-		// TODO: cache helpers per object
-		for ( let i = this.children.length; i --; ) {
+			} else {
 
-			super.remove( this.children[ i ] );
-
-		}
-
-		for ( let i = 0; i < this.selected.length; i ++ ) {
-
-			const _helper = new SelectionHelper( { object: this.selected[ i ] } );
-			super.add( _helper );
-
-		}
-
-		super.updateMatrixWorld();
-
-		// gather selection data and emit selection-changed event
-		let added = [];
-		for ( let i = 0; i < this.selected.length; i ++ ) {
-
-			if ( selectedOld.indexOf( this.selected[ i ] ) === - 1 ) {
-
-				added.push( this.selected[ i ] );
+				rotationAxis.applyQuaternion( this.parentQuaternionInv );
+				this.object.quaternion.copy( tempQuaternion.setFromAxisAngle( rotationAxis, rotationAngle ) );
+				this.object.quaternion.multiply( this.quaternionStart ).normalize();
 
 			}
 
 		}
-		let removed = [];
-		for ( let i = 0; i < selectedOld.length; i ++ ) {
-
-			if ( this.selected.indexOf( selectedOld[ i ] ) === - 1 ) {
-
-				removed.push( selectedOld[ i ] );
-
-			}
-
-		}
-		selectedOld.length = 0;
-		this.dispatchEvent( { type: 'change' } );
-		this.dispatchEvent( { type: 'selected-changed', selected: [ ...this.selected ], added: added, removed: removed } );
-
-	}
-	updateMatrixWorld( force ) {
-
-		// TODO: fix transform propagation lag
-		// Extract tranformations before and after matrix update.
-		this.matrixWorld.decompose( posOld, quatOld, scaleOld );
-		super.updateMatrixWorld( force );
-		this.matrixWorld.decompose( pos, quat, scale );
-		// Get transformation offsets from transform deltas.
-		posOffset.copy( pos ).sub( posOld );
-		quatOffset.copy( quat ).multiply( quatOld.inverse() );
-		scaleOffset.copy( scale ).divide( scaleOld );
-		quatInv.copy( quat ).inverse();
-
-		if ( ! this.selected.length || ! this.transformSelection ) return;
-		// Apply tranformatio offsets to ancestors.
-		for ( let i = 0; i < this.selected.length; i ++ ) {
-
-			// get local transformation variables.
-			this.selected[ i ].updateMatrixWorld();
-			this.selected[ i ].matrixWorld.decompose( itemPos, itemQuat, itemScale );
-			if ( this.selected[ i ].parent ) this.selected[ i ].parent.matrixWorld.decompose( parentPos, parentQuat, parentScale );
-			parentQuatInv.copy( parentQuat ).inverse();
-			itemQuatInv.copy( itemQuat ).inverse();
-			// Transform selected in local space.
-			if ( this.transformSpace === 'local' ) {
-
-				// Position
-				itemPosOffset.copy( posOffset ).applyQuaternion( quatInv ).divide( parentScale );
-				itemPosOffset.applyQuaternion( this.selected[ i ].quaternion );
-				this.selected[ i ].position.add( itemPosOffset );
-				// Rotation
-				itemQuatOffset.copy( quatInv ).multiply( quatOffset ).multiply( quat ).normalize();
-				this.selected[ i ].quaternion.multiply( itemQuatOffset );
-				// Scale
-				if ( this._isAncestorOfSelected( this.selected[ i ] ) ) continue; // lets not go there...
-				this.selected[ i ].scale.multiply( scaleOffset );
-			// Transform selected in world space.
-
-			} else if ( this.transformSpace === 'world' ) {
-
-				if ( this._isAncestorOfSelected( this.selected[ i ] ) ) continue;
-				// Position
-				itemPosOffset.copy( posOffset ).applyQuaternion( parentQuatInv ).divide( parentScale );
-				this.selected[ i ].position.add( itemPosOffset );
-				// Rotation
-				dist0.subVectors( itemPos, pos );
-				dist1.subVectors( itemPos, pos ).applyQuaternion( quatOffset );
-				dist1.sub( dist0 ).applyQuaternion( parentQuatInv ).divide( parentScale );
-				this.selected[ i ].position.add( dist1 );
-				itemQuatOffset.copy( itemQuatInv ).multiply( quatOffset ).multiply( itemQuat ).normalize();
-				this.selected[ i ].quaternion.multiply( itemQuatOffset );
-				// Scale
-				this.selected[ i ].scale.multiply( scaleOffset );
-
-			}
-			this.selected[ i ].updateMatrixWorld();
-
-		}
-
-	}
-	_isAncestorOfSelected( object ) {
-
-		let parent = object.parent;
-		while ( parent ) {
-
-			if ( this.selected.indexOf( parent ) !== - 1 ) return true;
-			object = parent, parent = object.parent;
-
-		}
-		return false;
 
 	}
 
 }
 
-export { SelectionControls };
+export { TransformControlsCombined };

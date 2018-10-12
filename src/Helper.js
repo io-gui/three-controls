@@ -36,7 +36,7 @@ export class Helper extends IoLiteMixin(Mesh) {
 		this.camera = camera;
 	}
 	depthBiasChanged() {
-		this.traverse(object => {object.material.depthBias = this.depthBias;})
+		this.traverse(object => {object.material.depthBias = this.depthBias;});
 	}
 	updateHelperMatrix() {
 		if (this.object) {
@@ -50,7 +50,7 @@ export class Helper extends IoLiteMixin(Mesh) {
 
 		if (this.camera) {
 			let eyeDistance = 1;
-			_cameraPosition.set(this.camera.matrixWorld.elements[12], this.camera.matrixWorld.elements[13], this.camera.matrixWorld.elements[14])
+			_cameraPosition.set(this.camera.matrixWorld.elements[12], this.camera.matrixWorld.elements[13], this.camera.matrixWorld.elements[14]);
 			if (this.camera.isPerspectiveCamera) {
 				// TODO: make scale zoom independent with PerspectiveCamera
 				this.eye.copy(_cameraPosition).sub(this.position);

@@ -1,13 +1,446 @@
-import { Object3D, Vector3, Quaternion, Vector2, BufferGeometry, BufferAttribute, UniformsUtils, Color, FrontSide, ShaderMaterial, DataTexture, RGBAFormat, FloatType, NearestFilter, Mesh, Euler, Matrix4, Uint16BufferAttribute, Float32BufferAttribute, SphereBufferGeometry, CylinderBufferGeometry, OctahedronBufferGeometry } from '../../lib/three.module.js';
-import { TransformControlsMixin } from './TransformControlsMixin.js';
+import { Mesh, Vector3, BoxBufferGeometry, Raycaster, Quaternion, Plane, UniformsUtils, Color, FrontSide, ShaderMaterial, DataTexture, RGBAFormat, FloatType, NearestFilter, Vector2, BufferGeometry, BufferAttribute, Euler, Matrix4, Float32BufferAttribute, Uint16BufferAttribute, CylinderBufferGeometry, OctahedronBufferGeometry } from '../../lib/three.module.js';
+
+/**
+ * @author arodic / https://github.com/arodic
+ *
+ * This class provides events and related interfaces for handling hardware
+ * agnostic pointer input from mouse, touchscreen and keyboard.
+ * It is inspired by PointerEvents https://www.w3.org/TR/pointerevents/
+ *
+ * Please report bugs at https://github.com/arodic/PointerEvents/issues
+ *
+ * @event contextmenu
+ * @event keydown - requires focus
+ * @event keyup - requires focus
+ * @event wheel
+ * @event focus
+ * @event blur
+ * @event pointerdown
+ * @event pointermove
+ * @event pointerhover
+ * @event pointerup
+ */
+
+class PointerEvents {
+
+	constructor( domElement, params = {} ) {
+
+		this.domElement = domElement;
+		this.pointers = new PointerArray( domElement, params.normalized );
+
+		const scope = this;
+		let dragging = false;
+
+		function _onContextmenu( event ) {
+
+			event.preventDefault();
+			scope.dispatchEvent( { type: "contextmenu" } );
+
+		}
+
+		function _onMouseDown( event ) {
+
+			event.preventDefault();
+			if ( ! dragging ) {
+
+				dragging = true;
+				domElement.removeEventListener( "mousemove", _onMouseHover, false );
+				document.addEventListener( "mousemove", _onMouseMove, false );
+				document.addEventListener( "mouseup", _onMouseUp, false );
+				scope.domElement.focus();
+				scope.pointers.update( event, "pointerdown" );
+				scope.dispatchEvent( makePointerEvent( "pointerdown", scope.pointers ) );
+
+			}
+
+		}
+		function _onMouseMove( event ) {
+
+			event.preventDefault();
+			scope.pointers.update( event, "pointermove" );
+			scope.dispatchEvent( makePointerEvent( "pointermove", scope.pointers ) );
+
+		}
+		function _onMouseHover( event ) {
+
+			scope.pointers.update( event, "pointerhover" );
+			// TODO: UNHACK!
+			scope.pointers[ 0 ].start.copy( scope.pointers[ 0 ].position );
+			scope.dispatchEvent( makePointerEvent( "pointerhover", scope.pointers ) );
+
+		}
+		function _onMouseUp( event ) {
+
+			event.preventDefault();
+			if ( event.buttons === 0 ) {
+
+				dragging = false;
+				domElement.addEventListener( "mousemove", _onMouseHover, false );
+				document.removeEventListener( "mousemove", _onMouseMove, false );
+				document.removeEventListener( "mouseup", _onMouseUp, false );
+				scope.pointers.update( event, "pointerup", true );
+				scope.dispatchEvent( makePointerEvent( "pointerup", scope.pointers ) );
+
+			}
+
+		}
+
+		function _onTouchDown( event ) {
+
+			event.preventDefault();
+			scope.domElement.focus();
+			scope.pointers.update( event, "pointerdown" );
+			scope.dispatchEvent( makePointerEvent( "pointerdown", scope.pointers ) );
+
+		}
+		function _onTouchMove( event ) {
+
+			event.preventDefault();
+			scope.pointers.update( event, "pointermove" );
+			scope.dispatchEvent( makePointerEvent( "pointermove", scope.pointers ) );
+
+		}
+		function _onTouchHover( event ) {
+
+			scope.pointers.update( event, "pointerhover" );
+			scope.dispatchEvent( makePointerEvent( "pointerhover", scope.pointers ) );
+
+		}
+		function _onTouchUp( event ) {
+
+			scope.pointers.update( event, "pointerup" );
+			scope.dispatchEvent( makePointerEvent( "pointerup", scope.pointers ) );
+
+		}
+
+		function _onKeyDown( event ) {
+
+			scope.dispatchEvent( { type: "keydown", keyCode: event.keyCode } );
+
+		}
+		function _onKeyUp( event ) {
+
+			scope.dispatchEvent( { type: "keyup", keyCode: event.keyCode } );
+
+		}
+
+		function _onWheel( event ) {
+
+			event.preventDefault();
+			// TODO: test on multiple platforms/browsers
+			// Normalize deltaY due to https://bugzilla.mozilla.org/show_bug.cgi?id=1392460
+			const delta = event.deltaY > 0 ? 1 : - 1;
+			scope.dispatchEvent( { type: "wheel", delta: delta } );
+
+		}
+
+		function _onFocus() {
+
+			domElement.addEventListener( "blur", _onBlur, false );
+			scope.dispatchEvent( { type: "focus" } );
+
+		}
+		function _onBlur() {
+
+			domElement.removeEventListener( "blur", _onBlur, false );
+			scope.dispatchEvent( { type: "blur" } );
+
+		}
+
+		{
+
+			domElement.addEventListener( "contextmenu", _onContextmenu, false );
+			domElement.addEventListener( "mousedown", _onMouseDown, false );
+			domElement.addEventListener( "mousemove", _onMouseHover, false );
+			domElement.addEventListener( "touchstart", _onTouchHover, false );
+			domElement.addEventListener( "touchstart", _onTouchDown, false );
+			domElement.addEventListener( "touchmove", _onTouchMove, false );
+			domElement.addEventListener( "touchend", _onTouchUp, false );
+			domElement.addEventListener( "keydown", _onKeyDown, false );
+			domElement.addEventListener( "keyup", _onKeyUp, false );
+			domElement.addEventListener( "wheel", _onWheel, false );
+			domElement.addEventListener( "focus", _onFocus, false );
+
+		}
+
+		this.dispose = function () {
+
+			domElement.removeEventListener( "contextmenu", _onContextmenu, false );
+			domElement.removeEventListener( "mousedown", _onMouseDown, false );
+			domElement.removeEventListener( "mousemove", _onMouseHover, false );
+			document.removeEventListener( "mousemove", _onMouseMove, false );
+			document.removeEventListener( "mouseup", _onMouseUp, false );
+			domElement.removeEventListener( "touchstart", _onTouchHover, false );
+			domElement.removeEventListener( "touchstart", _onTouchDown, false );
+			domElement.removeEventListener( "touchmove", _onTouchMove, false );
+			domElement.removeEventListener( "touchend", _onTouchUp, false );
+			domElement.removeEventListener( "keydown", _onKeyDown, false );
+			domElement.removeEventListener( "keyup", _onKeyUp, false );
+			domElement.removeEventListener( "wheel", _onWheel, false );
+			domElement.removeEventListener( "focus", _onFocus, false );
+			domElement.removeEventListener( "blur", _onBlur, false );
+			delete this._listeners;
+
+		};
+
+	}
+	addEventListener( type, listener ) {
+
+		this._listeners = this._listeners || {};
+		this._listeners[ type ] = this._listeners[ type ] || [];
+		if ( this._listeners[ type ].indexOf( listener ) === - 1 ) {
+
+			this._listeners[ type ].push( listener );
+
+		}
+
+	}
+	hasEventListener( type, listener ) {
+
+		if ( this._listeners === undefined ) return false;
+		return this._listeners[ type ] !== undefined && this._listeners[ type ].indexOf( listener ) !== - 1;
+
+	}
+	removeEventListener( type, listener ) {
+
+		if ( this._listeners === undefined ) return;
+		if ( this._listeners[ type ] !== undefined ) {
+
+			let index = this._listeners[ type ].indexOf( listener );
+			if ( index !== - 1 ) this._listeners[ type ].splice( index, 1 );
+
+		}
+
+	}
+	dispatchEvent( event ) {
+
+		if ( this._listeners === undefined ) return;
+		if ( this._listeners[ event.type ] !== undefined ) {
+
+			// event.target = this; // TODO: consider adding target!
+			let array = this._listeners[ event.type ].slice( 0 );
+			for ( let i = 0, l = array.length; i < l; i ++ ) {
+
+				array[ i ].call( this, event );
+
+			}
+
+		}
+
+	}
+
+}
+
+class Pointer {
+
+	constructor( pointerID, target, type, pointerType ) {
+
+		this.pointerID = pointerID;
+		this.target = target;
+		this.type = type;
+		this.pointerType = pointerType;
+		this.position = new Vector2$1();
+		this.previous = new Vector2$1();
+		this.start = new Vector2$1();
+		this.movement = new Vector2$1();
+		this.distance = new Vector2$1();
+		this.button = - 1;
+		this.buttons = 0;
+
+	}
+	update( previous ) {
+
+		this.pointerID = previous.pointerID;
+		this.previous.copy( previous.position );
+		this.start.copy( previous.start );
+		this.movement.copy( this.position ).sub( previous.position );
+		this.distance.copy( this.position ).sub( this.start );
+
+	}
+
+}
+
+class PointerArray extends Array {
+
+	constructor( target, normalized ) {
+
+		super();
+		this.normalized = normalized || false;
+		this.target = target;
+		this.previous = [];
+		this.removed = [];
+
+	}
+	update( event, type, remove ) {
+
+		this.previous.length = 0;
+		this.removed.length = 0;
+
+		for ( let i = 0; i < this.length; i ++ ) {
+
+			this.previous.push( this[ i ] );
+
+		}
+		this.length = 0;
+
+		const rect = this.target.getBoundingClientRect();
+
+		let touches = event.touches ? event.touches : [ event ];
+		let pointerType = event.touches ? 'touch' : 'mouse';
+		let buttons = event.buttons || 1;
+
+		let id = 0;
+		if ( ! remove ) for ( let i = 0; i < touches.length; i ++ ) {
+
+			if ( isTouchInTarget( touches[ i ], this.target ) || event.touches === undefined ) {
+
+				let pointer = new Pointer( id, this.target, type, pointerType );
+				pointer.position.x = touches[ i ].clientX - rect.x;
+				pointer.position.y = touches[ i ].clientY - rect.y;
+				if ( this.normalized ) {
+
+					const rect = this.target.getBoundingClientRect();
+					pointer.position.x = ( pointer.position.x - rect.left ) / rect.width * 2.0 - 1.0;
+					pointer.position.y = ( pointer.position.y - rect.top ) / rect.height * - 2.0 + 1.0;
+
+				}
+				pointer.previous.copy( pointer.position );
+				pointer.start.copy( pointer.position );
+				pointer.buttons = buttons;
+				pointer.button = - 1;
+				if ( buttons === 1 || buttons === 3 || buttons === 5 || buttons === 7 ) pointer.button = 0;
+				else if ( buttons === 2 || buttons === 6 ) pointer.button = 1;
+				else if ( buttons === 4 ) pointer.button = 2;
+				pointer.altKey = event.altKey;
+				pointer.ctrlKey = event.ctrlKey;
+				pointer.metaKey = event.metaKey;
+				pointer.shiftKey = event.shiftKey;
+				this.push( pointer );
+				id ++;
+
+			}
+
+		}
+
+		if ( ! remove ) for ( let i = 0; i < this.length; i ++ ) {
+
+			if ( this.previous.length ) {
+
+				let closest = getClosest( this[ i ], this.previous );
+				if ( getClosest( closest, this ) !== this[ i ] ) closest = null;
+				if ( closest ) {
+
+					this[ i ].update( closest );
+					this.previous.splice( this.previous.indexOf( closest ), 1 );
+
+				}
+
+			}
+
+		}
+
+		for ( let i = this.previous.length; i --; ) {
+
+			this.removed.push( this.previous[ i ] );
+			this.previous.splice( i, 1 );
+
+		}
+
+	}
+
+}
+
+function makePointerEvent( type, pointers ) {
+
+	const event = Object.assign( { type: type }, pointers );
+	event.length = pointers.length;
+	return event;
+
+}
+
+function isTouchInTarget( event, target ) {
+
+	let eventTarget = event.target;
+	while ( eventTarget ) {
+
+		if ( eventTarget === target ) return true;
+		eventTarget = eventTarget.parentElement;
+
+	}
+	return false;
+
+}
+
+
+function getClosest( pointer, pointers ) {
+
+	let closestDist = Infinity;
+	let closest;
+	for ( let i = 0; i < pointers.length; i ++ ) {
+
+		let dist = pointer.position.distanceTo( pointers[ i ].position );
+		if ( dist < closestDist ) {
+
+			closest = pointers[ i ];
+			closestDist = dist;
+
+		}
+
+	}
+	return closest;
+
+}
+
+class Vector2$1 {
+
+	constructor( x, y ) {
+
+		this.x = x;
+		this.y = y;
+
+	}
+	copy( v ) {
+
+		this.x = v.x;
+		this.y = v.y;
+		return this;
+
+	}
+	add( v ) {
+
+		this.x += v.x;
+		this.y += v.y;
+		return this;
+
+	}
+	sub( v ) {
+
+		this.x -= v.x;
+		this.y -= v.y;
+		return this;
+
+	}
+	length() {
+
+		return Math.sqrt( this.x * this.x + this.y * this.y );
+
+	}
+	distanceTo( v ) {
+
+		const dx = this.x - v.x;
+		const dy = this.y - v.y;
+		return Math.sqrt( dx * dx + dy * dy );
+
+	}
+
+}
 
 /**
  * @author arodic / https://github.com/arodic
  *
  * Minimal implementation of io mixin: https://github.com/arodic/io
  * Includes event listener/dispatcher and defineProperties() method.
- * Changed properties trigger "changed" and "[prop]-changed" events as well as
- * execution of [prop]Changed() funciton if defined.
+ * Changed properties trigger "change" and "[prop]-changed" events, and execution of [prop]Changed() callback.
  */
 
 const IoLiteMixin = ( superclass ) => class extends superclass {
@@ -55,10 +488,8 @@ const IoLiteMixin = ( superclass ) => class extends superclass {
 		} else if ( this.parent && event.bubbles ) ;
 
 	}
-	// Define properties in builk.
 	defineProperties( props ) {
 
-		//Define store for properties.
 		if ( ! this.hasOwnProperty( '_properties' ) ) {
 
 			Object.defineProperty( this, '_properties', {
@@ -78,16 +509,13 @@ const IoLiteMixin = ( superclass ) => class extends superclass {
 
 };
 
-// Defines getter, setter
 const defineProperty = function ( scope, propName, propDef ) {
 
 	let observer = propName + 'Changed';
 	let initValue = propDef;
-
 	if ( propDef && typeof propDef === 'object' && propDef.value !== undefined ) {
 
 		initValue = propDef.value;
-
 		if ( typeof propDef.observer === 'string' ) {
 
 			observer = propDef.observer;
@@ -95,8 +523,6 @@ const defineProperty = function ( scope, propName, propDef ) {
 		}
 
 	}
-
-
 
 	scope._properties[ propName ] = initValue;
 	if ( initValue === undefined ) {
@@ -133,117 +559,46 @@ const defineProperty = function ( scope, propName, propDef ) {
  * @author arodic / https://github.com/arodic
  */
 
+// Reusable utility variables
+const _cameraPosition = new Vector3();
+
 /*
- * Creates a single requestAnimationFrame loop thread.
- * provides methods to control animation and events to hook into animation updates.
+ * Helper extends Object3D to automatically follow its target `object` by copying transform matrices from it.
+ * If `space` property is set to "world", helper will not inherit objects rotation.
+ * Helpers will auto-scale in view space if `size` property is non-zero.
  */
 
-class Animation extends IoLiteMixin( Object ) {
+class Helper extends IoLiteMixin( Mesh ) {
 
-	get isAnimation() {
-
-		return true;
-
-	}
-	constructor( props ) {
-
-		super( props );
-		this.defineProperties( {
-			_active: false,
-			_time: 0,
-			_timeRemainging: 0,
-			_rafID: 0
-		} );
-
-	}
-	startAnimation( duration ) {
-
-		this._timeRemainging = Math.max( this._timeRemainging, duration * 1000 || 0 );
-		if ( ! this._active ) {
-
-			this._active = true;
-			this._time = performance.now();
-			this._rafID = requestAnimationFrame( () => {
-
-				const time = performance.now();
-				const timestep = time - this._time;
-				this.animate( timestep, time );
-				this._time = time;
-				this._timeRemainging = Math.max( this._timeRemainging - timestep, 0 );
-
-			} );
-
-		}
-
-	}
-	animate( timestep, time ) {
-
-		if ( this._active && this._timeRemainging ) {
-
-			this._rafID = requestAnimationFrame( () => {
-
-				const time = performance.now();
-				timestep = time - this._time;
-				this.animate( timestep, time );
-				this._time = time;
-				this._timeRemainging = Math.max( this._timeRemainging - timestep, 0 );
-
-			} );
-
-		} else {
-
-			this.stopAnimation( timestep, time );
-
-		}
-		this.dispatchEvent( { type: 'update', timestep: timestep } );
-
-	}
-	stopAnimation() {
-
-		this._active = false;
-		cancelAnimationFrame( this._rafID );
-
-	}
-
-}
-// TODO: dispose
-
-/**
- * @author arodic / https://github.com/arodic
- */
-/*
- * Helper is a variant of Object3D which automatically follows its target object.
- * On matrix update, it automatically copies transform matrices from its target Object3D.
- */
-
-class Helper extends IoLiteMixin( Object3D ) {
-
-	get isHelper() {
-
-		return true;
-
-	}
 	constructor( props = {} ) {
 
 		super();
+
 		this.defineProperties( {
-			domElement: props.domElement || null,
 			object: props.object || null,
 			camera: props.camera || null,
+			depthBias: 0,
 			space: 'local',
-			size: 0,
-			worldPosition: new Vector3(),
-			worldQuaternion: new Quaternion(),
-			worldScale: new Vector3(),
-			cameraPosition: new Vector3(),
-			cameraQuaternion: new Quaternion(),
-			cameraScale: new Vector3(),
-			eye: new Vector3(),
-			animation: new Animation()
+			size: 0
 		} );
-		this.animation.addEventListener( 'update', () => {
 
-			this.dispatchEvent( { type: 'change' } );
+		this.eye = new Vector3();
+
+		this.geometry = new BoxBufferGeometry( 1, 1, 1, 1, 1, 1 );
+		this.material.colorWrite = false;
+		this.material.depthWrite = false;
+
+	}
+	onBeforeRender( renderer, scene, camera ) {
+
+		this.camera = camera;
+
+	}
+	depthBiasChanged() {
+
+		this.traverse( object => {
+
+			object.material.depthBias = this.depthBias;
 
 		} );
 
@@ -252,63 +607,490 @@ class Helper extends IoLiteMixin( Object3D ) {
 
 		if ( this.object ) {
 
-			this.object.updateMatrixWorld();
 			this.matrix.copy( this.object.matrix );
 			this.matrixWorld.copy( this.object.matrixWorld );
 
 		} else {
 
-			super.updateMatrixWorld(); // TODO: camera?
+			super.updateMatrixWorld();
 
 		}
 
-		this.matrixWorld.decompose( this.worldPosition, this.worldQuaternion, this.worldScale );
+		this.matrixWorld.decompose( this.position, this.quaternion, this.scale );
 
-		let eyeDistance = 1;
 		if ( this.camera ) {
 
-			this.camera.updateMatrixWorld();
-			this.camera.matrixWorld.decompose( this.cameraPosition, this.cameraQuaternion, this.cameraScale );
+			let eyeDistance = 1;
+			_cameraPosition.set( this.camera.matrixWorld.elements[ 12 ], this.camera.matrixWorld.elements[ 13 ], this.camera.matrixWorld.elements[ 14 ] );
 			if ( this.camera.isPerspectiveCamera ) {
 
-				this.eye.copy( this.cameraPosition ).sub( this.worldPosition );
+				// TODO: make scale zoom independent with PerspectiveCamera
+				this.eye.copy( _cameraPosition ).sub( this.position );
 				eyeDistance = this.eye.length();
 				this.eye.normalize();
 
 			} else if ( this.camera.isOrthographicCamera ) {
 
-				this.eye.copy( this.cameraPosition ).normalize();
+				eyeDistance = 3 * ( this.camera.top - this.camera.bottom ) / this.camera.zoom; // TODO: Why magic number 3 matches perspective?
+				this.eye.copy( _cameraPosition ).normalize();
 
 			}
+			if ( this.size ) this.scale.set( 1, 1, 1 ).multiplyScalar( eyeDistance * this.size );
 
 		}
+		if ( this.space === 'world' ) this.quaternion.set( 0, 0, 0, 1 );
 
-		if ( this.size || this.space == 'world' ) {
-
-			if ( this.size ) this.worldScale.set( 1, 1, 1 ).multiplyScalar( eyeDistance * this.size );
-			if ( this.space === 'world' ) this.worldQuaternion.set( 0, 0, 0, 1 );
-			this.matrixWorld.compose( this.worldPosition, this.worldQuaternion, this.worldScale );
-
-		}
+		this.matrixWorld.compose( this.position, this.quaternion, this.scale );
 
 	}
-	updateMatrixWorld( force, camera ) {
+	updateMatrixWorld( force ) {
 
-		if ( camera ) this.camera = camera; // TODO
-
-		this.updateHelperMatrix( camera );
+		this.updateHelperMatrix();
 		this.matrixWorldNeedsUpdate = false;
-		const children = this.children;
-		for ( let i = 0, l = children.length; i < l; i ++ ) {
-
-			children[ i ].updateMatrixWorld( true, camera );
-
-		}
+		for ( let i = this.children.length; i --; ) this.children[ i ].updateMatrixWorld( force );
 
 	}
 
 }
-// TODO: dispose
+
+/**
+ * @author arodic / https://github.com/arodic
+ */
+
+/*
+ * Wraps target class with PointerEvent API polyfill for more powerful mouse/touch interactions.
+ * Following callbacks will be invoked on pointer events:
+ * onPointerDown, onPointerHover, onPointerMove, onPointerUp,
+ * onKeyDown, onKeyUp, onWheel, onContextmenu, onFocus, onBlur.
+ * onKeyDown, onKeyUp require domElement to be focused (set tabindex attribute).
+ *
+ * See PointerEvents.js for more details.
+ */
+
+// TODO: PointerEvents documentation
+
+const InteractiveMixin = ( superclass ) => class extends superclass {
+
+	constructor( props ) {
+
+		super( props );
+
+		this.defineProperties( {
+			enabled: true,
+			domElement: props.domElement // TODO: implement domElement change / multiple elements
+		} );
+
+		this._pointerEvents = new PointerEvents( props.domElement, { normalized: true } );
+
+		this.onPointerDown = this.onPointerDown.bind( this );
+		this.onPointerHover = this.onPointerHover.bind( this );
+		this.onPointerMove = this.onPointerMove.bind( this );
+		this.onPointerUp = this.onPointerUp.bind( this );
+		this.onKeyDown = this.onKeyDown.bind( this );
+		this.onKeyUp = this.onKeyUp.bind( this );
+		this.onWheel = this.onWheel.bind( this );
+		this.onContextmenu = this.onContextmenu.bind( this );
+		this.onFocus = this.onFocus.bind( this );
+		this.onBlur = this.onBlur.bind( this );
+
+		this._addEvents();
+
+	}
+	dispose() {
+
+		this._removeEvents();
+		this._pointerEvents.dispose();
+
+	}
+	_addEvents() {
+
+		if ( this._listening ) return;
+		this._pointerEvents.addEventListener( 'pointerdown', this.onPointerDown );
+		this._pointerEvents.addEventListener( 'pointerhover', this.onPointerHover );
+		this._pointerEvents.addEventListener( 'pointermove', this.onPointerMove );
+		this._pointerEvents.addEventListener( 'pointerup', this.onPointerUp );
+		this._pointerEvents.addEventListener( 'keydown', this.onKeyDown );
+		this._pointerEvents.addEventListener( 'keyup', this.onKeyUp );
+		this._pointerEvents.addEventListener( 'wheel', this.onWheel );
+		this._pointerEvents.addEventListener( 'contextmenu', this.onContextmenu );
+		this._pointerEvents.addEventListener( 'focus', this.onFocus );
+		this._pointerEvents.addEventListener( 'blur', this.onBlur );
+		this._listening = true;
+
+	}
+	_removeEvents() {
+
+		if ( ! this._listening ) return;
+		this._pointerEvents.removeEventListener( 'pointerdown', this.onPointerDown );
+		this._pointerEvents.removeEventListener( 'pointerhover', this.onPointerHover );
+		this._pointerEvents.removeEventListener( 'pointermove', this.onPointerMove );
+		this._pointerEvents.removeEventListener( 'pointerup', this.onPointerUp );
+		this._pointerEvents.removeEventListener( 'keydown', this.onKeyDown );
+		this._pointerEvents.removeEventListener( 'keyup', this.onKeyUp );
+		this._pointerEvents.removeEventListener( 'wheel', this.onWheel );
+		this._pointerEvents.removeEventListener( 'contextmenu', this.onContextmenu );
+		this._pointerEvents.removeEventListener( 'focus', this.onFocus );
+		this._pointerEvents.removeEventListener( 'blur', this.onBlur );
+		this._listening = false;
+
+	}
+	enabledChanged( value ) {
+
+		value ? this._addEvents() : this._removeEvents();
+
+	}
+	// Control methods - implemented in subclass!
+	onContextmenu( /*event*/ ) {}
+	onPointerHover( /*pointer*/ ) {}
+	onPointerDown( /*pointer*/ ) {}
+	onPointerMove( /*pointer*/ ) {}
+	onPointerUp( /*pointer*/ ) {}
+	onPointerLeave( /*pointer*/ ) {}
+	onKeyDown( /*event*/ ) {}
+	onKeyUp( /*event*/ ) {}
+	onWheel( /*event*/ ) {}
+	onFocus( /*event*/ ) {}
+	onBlur( /*event*/ ) {}
+
+};
+
+/**
+ * @author arodic / https://github.com/arodic
+ */
+
+// Reusable utility variables
+const _ray = new Raycaster();
+const _rayTarget = new Vector3();
+const _tempVector = new Vector3();
+
+// events
+const changeEvent = { type: "change" };
+
+const TransformControlsMixin = ( superclass ) => class extends InteractiveMixin( superclass ) {
+
+	constructor( props ) {
+
+		super( props );
+
+		this.pointStart = new Vector3();
+		this.pointEnd = new Vector3();
+
+		this.positionStart = new Vector3();
+		this.quaternionStart = new Quaternion();
+		this.scaleStart = new Vector3();
+
+		this.parentPosition = new Vector3();
+		this.parentQuaternion = new Quaternion();
+		this.parentQuaternionInv = new Quaternion();
+		this.parentScale = new Vector3();
+
+		this.worldPosition = new Vector3();
+		this.worldQuaternion = new Quaternion();
+		this.worldQuaternionInv = new Quaternion();
+		this.worldScale = new Vector3();
+
+		this._plane = new Plane();
+
+		// this.add(this._planeDebugMesh = new Mesh(new PlaneBufferGeometry(1000, 1000, 10, 10), new MeshBasicMaterial({wireframe: true, transparent: true, opacity: 0.2})));
+
+	}
+	objectChanged() {
+
+		super.objectChanged();
+		let hasObject = this.object ? true : false;
+		this.visible = hasObject;
+		if ( ! hasObject ) {
+
+			this.active = false;
+			this.axis = null;
+
+		}
+		this.animation.startAnimation( 1.5 );
+
+	}
+	// TODO: better animation trigger
+	// TODO: also trigger on object change
+	// TODO: Debug stalling animations on hover
+	enabledChanged( value ) {
+
+		super.enabledChanged( value );
+		this.animation.startAnimation( 0.5 );
+
+	}
+	axisChanged() {
+
+		super.axisChanged();
+		this.updatePlane();
+
+	}
+	activeChanged() {
+
+		this.animation.startAnimation( 0.5 );
+
+	}
+	onPointerHover( pointers ) {
+
+		if ( ! this.object || this.active === true ) return;
+
+		_ray.setFromCamera( pointers[ 0 ].position, this.camera );
+		const intersect = _ray.intersectObjects( this.pickers, true )[ 0 ] || false;
+
+		this.axis = intersect ? intersect.object.name : null;
+
+	}
+	onPointerDown( pointers ) {
+
+		if ( this.axis === null || ! this.object || this.active === true || pointers[ 0 ].button !== 0 ) return;
+
+		_ray.setFromCamera( pointers[ 0 ].position, this.camera );
+		const planeIntersect = _ray.ray.intersectPlane( this._plane, _rayTarget );
+
+		if ( planeIntersect ) {
+
+			this.object.updateMatrixWorld();
+			this.object.matrix.decompose( this.positionStart, this.quaternionStart, this.scaleStart );
+			this.object.parent.matrixWorld.decompose( this.parentPosition, this.parentQuaternion, this.parentScale );
+			this.object.matrixWorld.decompose( this.worldPosition, this.worldQuaternion, this.worldScale );
+
+			this.parentQuaternionInv.copy( this.parentQuaternion ).inverse();
+			this.worldQuaternionInv.copy( this.worldQuaternion ).inverse();
+
+			this.pointStart.copy( planeIntersect ).sub( this.worldPosition );
+			this.active = true;
+
+		}
+
+	}
+	onPointerMove( pointers ) {
+
+		if ( this.object === undefined || this.axis === null || this.active === false || pointers[ 0 ].button !== 0 ) return;
+
+		_ray.setFromCamera( pointers[ 0 ].position, this.camera );
+		const planeIntersect = _ray.ray.intersectPlane( this._plane, _tempVector );
+
+		if ( planeIntersect ) {
+
+			this.pointEnd.copy( planeIntersect ).sub( this.worldPosition );
+			this.transform();
+
+			this.dispatchEvent( changeEvent );
+
+		}
+
+	}
+	onPointerUp( pointers ) {
+
+		if ( pointers.length === 0 ) {
+
+			if ( pointers.removed[ 0 ].pointerType === 'touch' ) this.axis = null;
+			this.active = false;
+
+		} else if ( pointers[ 0 ].button === - 1 ) {
+
+			this.axis = null;
+			this.active = false;
+
+		}
+
+	}
+	transform() {}
+	updateAxis( axis ) {
+
+		super.updateAxis( axis );
+		if ( ! this.enabled ) axis.material.highlight = ( 10 * axis.material.highlight - 2.5 ) / 11;
+
+	}
+	updatePlane() {
+
+		const normal = this._plane.normal;
+		const axis = this.axis ? this.axis.split( '_' ).pop() : null;
+
+		if ( axis === 'X' ) normal.copy( this.worldX ).cross( _tempVector.copy( this.eye ).cross( this.worldX ) );
+		if ( axis === 'Y' ) normal.copy( this.worldY ).cross( _tempVector.copy( this.eye ).cross( this.worldY ) );
+		if ( axis === 'Z' ) normal.copy( this.worldZ ).cross( _tempVector.copy( this.eye ).cross( this.worldZ ) );
+		if ( axis === 'XY' ) normal.copy( this.worldZ );
+		if ( axis === 'YZ' ) normal.copy( this.worldX );
+		if ( axis === 'XZ' ) normal.copy( this.worldY );
+		if ( axis === 'XYZ' || axis === 'E' ) this.camera.getWorldDirection( normal );
+
+		this._plane.setFromNormalAndCoplanarPoint( normal, this.position );
+
+		// this.parent.add(this._planeDebugMesh);
+		// this._planeDebugMesh.position.set(0,0,0);
+		// this._planeDebugMesh.lookAt(normal);
+		// this._planeDebugMesh.position.copy(this.position);
+
+	}
+
+};
+
+// TODO: pixel-perfect outlines
+class HelperMaterial extends IoLiteMixin( ShaderMaterial ) {
+
+	constructor( color, opacity ) {
+
+		super( {
+			depthTest: true,
+			depthWrite: true,
+			// transparent: true,
+			side: FrontSide,
+		} );
+
+		const data = new Float32Array( [
+			1.0 / 17.0, 0, 0, 0, 9.0 / 17.0, 0, 0, 0, 3.0 / 17.0, 0, 0, 0, 11.0 / 17.0, 0, 0, 0,
+			13.0 / 17.0, 0, 0, 0, 5.0 / 17.0, 0, 0, 0, 15.0 / 17.0, 0, 0, 0, 7.0 / 17.0, 0, 0, 0,
+			4.0 / 17.0, 0, 0, 0, 12.0 / 17.0, 0, 0, 0, 2.0 / 17.0, 0, 0, 0, 10.0 / 17.0, 0, 0, 0,
+			16.0 / 17.0, 0, 0, 0, 8.0 / 17.0, 0, 0, 0, 14.0 / 17.0, 0, 0, 0, 6.0 / 17.0, 0, 0, 0,
+		] );
+		const texture = new DataTexture( data, 4, 4, RGBAFormat, FloatType );
+		texture.magFilter = NearestFilter;
+		texture.minFilter = NearestFilter;
+
+		const res = new Vector3( window.innerWidth, window.innerHeight, window.devicePixelRatio );
+		color = color || new Color( 0xffffff );
+		opacity = opacity !== undefined ? opacity : 1;
+
+		this.defineProperties( {
+			color: { value: color, observer: 'uniformChanged' },
+			opacity: { value: opacity, observer: 'uniformChanged' },
+			depthBias: { value: 0, observer: 'uniformChanged' },
+			highlight: { value: 0, observer: 'uniformChanged' },
+			resolution: { value: res, observer: 'uniformChanged' },
+		} );
+
+		this.uniforms = UniformsUtils.merge( [ this.uniforms, {
+			"uColor": { value: this.color },
+			"uOpacity": { value: this.opacity },
+			"uDepthBias": { value: this.depthBias },
+			"uHighlight": { value: this.highlight },
+			"uResolution": { value: this.resolution },
+			"tDitherMatrix": { value: texture },
+		} ] );
+
+		this.uniforms.tDitherMatrix.value = texture;
+		texture.needsUpdate = true;
+
+		this.vertexShader = `
+
+			attribute vec4 color;
+			attribute float outline;
+
+			varying vec4 vColor;
+			varying float isOutline;
+
+			uniform vec3 uResolution;
+			uniform float uDepthBias;
+			uniform float uHighlight;
+
+			void main() {
+				float aspect = projectionMatrix[0][0] / projectionMatrix[1][1];
+
+				vColor = color;
+				isOutline = outline;
+
+				vec3 nor = normalMatrix * normal;
+				vec4 pos = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+				float pixelRatio = uResolution.z;
+
+				// nor = (projectionMatrix * vec4(nor, 1.0)).xyz;
+				nor = normalize((nor.xyz) * vec3(1., 1., 0.));
+
+				float extrude = 0.0;
+				if (outline > 0.0) {
+					extrude = outline;
+					pos.z += 0.01;
+				} else {
+					extrude -= outline;
+				}
+
+				pos.z -= uDepthBias * 0.1;
+				pos.z -= uHighlight;
+
+				pos.xy /= pos.w;
+
+				float dx = nor.x * extrude * 2.2;
+				float dy = nor.y * extrude * 2.2;
+
+				pos.x += (dx) * (1.0 / uResolution.x);
+				pos.y += (dy) * (1.0 / uResolution.y);
+
+				pos.xy *= pos.w;
+
+				gl_Position = pos;
+			}
+		`;
+		this.fragmentShader = `
+			uniform vec3 uColor;
+			uniform float uOpacity;
+			uniform float uHighlight;
+			uniform vec3 uResolution;
+			uniform sampler2D tDitherMatrix;
+
+			varying vec4 vColor;
+			varying float isOutline;
+
+			void main() {
+
+				float opacity = 1.0;
+				vec3 color = vec3(1.0);
+				float pixelRatio = 1.0;//uResolution.z;
+
+				if (isOutline > 0.0) {
+					color = mix(color * vec3(0.2), vec3(1.0), max(0.0, uHighlight) );
+					color = mix(color, vec3(0.5), max(0.0, -uHighlight) );
+				} else {
+					color = uColor * vColor.rgb;
+				}
+
+				float dimming = mix(1.0, 0.2, max(0.0, -uHighlight));
+				dimming = mix(dimming, dimming * 1.25, max(0.0, uHighlight));
+				opacity = uOpacity * vColor.a * dimming;
+
+				color = mix(vec3(0.5), saturate(color), dimming);
+
+				gl_FragColor = vec4(color, opacity);
+
+				// opacity = opacity - mod(opacity, 0.25) + 0.25;
+
+				vec2 matCoord = ( mod(gl_FragCoord.xy / pixelRatio, 4.0) - vec2(0.5) ) / 4.0;
+				vec4 ditherPattern = texture2D( tDitherMatrix, matCoord.xy );
+				if (opacity < ditherPattern.r) discard;
+			}
+		`;
+
+	}
+	uniformChanged() {
+
+		this.uniforms.uColor.value = this.color;
+		this.uniforms.uOpacity.value = this.opacity;
+		this.uniforms.uDepthBias.value = this.depthBias;
+		this.uniforms.uHighlight.value = this.highlight;
+		this.uniforms.uResolution.value = this.resolution;
+		this.uniformsNeedUpdate = true;
+
+	}
+
+}
+
+/**
+ * @author arodic / https://github.com/arodic
+ */
+
+class HelperMesh extends Mesh {
+
+	constructor( geometry, props = {} ) {
+
+		super();
+		this.geometry = geometry;
+		this.material = new HelperMaterial( props.color, props.opacity || 1 );
+		this.scaleTarget = new Vector3( 1, 1, 1 );
+		this.hidden = false;
+		this.highlight = 0;
+		this.name = props.name;
+
+	}
+
+}
 
 /**
  * @author mrdoob / http://mrdoob.com/
@@ -500,7 +1282,7 @@ const BufferGeometryUtils = {
 	* @param  {Array<BufferGeometry>} geometries
 	* @return {BufferGeometry}
 	*/
-	mergeBufferGeometries: function ( geometries, useGroups ) {
+	mergeBufferGeometries: function ( geometries, useGroups, mergedGeometry ) {
 
 		let isIndexed = geometries[ 0 ].index !== null;
 
@@ -510,7 +1292,7 @@ const BufferGeometryUtils = {
 		let attributes = {};
 		let morphAttributes = {};
 
-		let mergedGeometry = new BufferGeometry();
+		// mergedGeometry = mergedGeometry || new BufferGeometry();
 
 		let offset = 0;
 
@@ -696,174 +1478,6 @@ const BufferGeometryUtils = {
 
 };
 
-const _colors = {
-	black: new Color( 0x000000 ),
-	red: new Color( 0xff0000 ),
-	green: new Color( 0x00ff00 ),
-	blue: new Color( 0x0000ff ),
-	white: new Color( 0xffffff ),
-	gray: new Color( 0x787878 ),
-	yellow: new Color( 0xffff00 ),
-	cyan: new Color( 0x00ffff ),
-	magenta: new Color( 0xff00ff ),
-};
-
-// TODO: dithering instead transparency
-// TODO: pixel-perfect outlines
-
-class HelperMaterial extends IoLiteMixin( ShaderMaterial ) {
-
-	constructor( color, opacity ) {
-
-		super( {
-			depthTest: true,
-			depthWrite: true,
-			side: FrontSide,
-		} );
-
-		const data = new Float32Array( [
-			1.0 / 17.0, 0, 0, 0, 9.0 / 17.0, 0, 0, 0, 3.0 / 17.0, 0, 0, 0, 11.0 / 17.0, 0, 0, 0,
-			13.0 / 17.0, 0, 0, 0, 5.0 / 17.0, 0, 0, 0, 15.0 / 17.0, 0, 0, 0, 7.0 / 17.0, 0, 0, 0,
-			4.0 / 17.0, 0, 0, 0, 12.0 / 17.0, 0, 0, 0, 2.0 / 17.0, 0, 0, 0, 10.0 / 17.0, 0, 0, 0,
-			16.0 / 17.0, 0, 0, 0, 8.0 / 17.0, 0, 0, 0, 14.0 / 17.0, 0, 0, 0, 6.0 / 17.0, 0, 0, 0,
-		] );
-		const texture = new DataTexture( data, 4, 4, RGBAFormat, FloatType );
-		texture.magFilter = NearestFilter;
-		texture.minFilter = NearestFilter;
-
-		const res = new Vector3( window.innerWidth, window.innerHeight, window.devicePixelRatio );
-		color = color !== undefined ? _colors[ color ] : _colors[ 'white' ];
-		opacity = opacity !== undefined ? opacity : 1;
-
-		this.defineProperties( {
-			color: { value: color, observer: 'uniformChanged' },
-			opacity: { value: opacity, observer: 'uniformChanged' },
-			highlight: { value: 0, observer: 'uniformChanged' },
-			resolution: { value: res, observer: 'uniformChanged' },
-		} );
-
-		this.uniforms = UniformsUtils.merge( [ this.uniforms, {
-			"uColor": { value: this.color },
-			"uOpacity": { value: this.opacity },
-			"uHighlight": { value: this.highlight },
-			"uResolution": { value: this.resolution },
-			"tDitherMatrix": { value: texture },
-		} ] );
-
-		this.uniforms.tDitherMatrix.value = texture;
-		texture.needsUpdate = true;
-
-		this.vertexShader = `
-
-			attribute vec4 color;
-			attribute float outline;
-
-			varying vec4 vColor;
-			varying float isOutline;
-
-			uniform vec3 uResolution;
-
-			void main() {
-				float aspect = projectionMatrix[0][0] / projectionMatrix[1][1];
-
-				vColor = color;
-				isOutline = outline;
-
-				vec3 nor = normalMatrix * normal;
-				vec4 pos = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
-				float pixelRatio = uResolution.z;
-
-				nor = (projectionMatrix * vec4(nor, 1.0)).xyz;
-				nor = normalize((nor.xyz) * vec3(1., 1., 0.));
-
-				float extrude = 0.0;
-				if (outline > 0.0) {
-					extrude = outline;
-					pos.z += 0.01;
-				} else {
-					extrude += outline;
-				}
-
-				pos.xy /= pos.w;
-
-				float dx = nor.x * extrude * 2.2;
-				float dy = nor.y * extrude * 2.2;
-
-				pos.x += (dx) * (1.0 / uResolution.x);
-				pos.y += (dy) * (1.0 / uResolution.y);
-
-				pos.xy *= pos.w;
-
-				gl_Position = pos;
-			}
-		`;
-		this.fragmentShader = `
-			uniform vec3 uColor;
-			uniform float uOpacity;
-			uniform float uHighlight;
-			uniform vec3 uResolution;
-			uniform sampler2D tDitherMatrix;
-
-			varying vec4 vColor;
-			varying float isOutline;
-
-			void main() {
-
-				float opacity = 1.0;
-				vec3 color = vec3(1.0);
-				float pixelRatio = 1.0;//uResolution.z;
-
-				if (isOutline > 0.0) {
-					color = mix(color * vec3(0.2), vec3(1.0), max(0.0, uHighlight) );
-					color = mix(color, vec3(0.5), max(0.0, -uHighlight) );
-				} else {
-					color = uColor * vColor.rgb;
-				}
-
-				float dimming = mix(1.0, 0.2, max(0.0, -uHighlight));
-				dimming = mix(dimming, dimming * 1.25, max(0.0, uHighlight));
-				opacity = uOpacity * vColor.a * dimming;
-
-				color = mix(vec3(0.5), color, dimming);
-
-				gl_FragColor = vec4(color, 1.0);
-
-				vec2 matCoord = ( mod(gl_FragCoord.xy / pixelRatio, 4.0) - vec2(0.5) ) / 4.0;
-				vec4 ditherPattern = texture2D( tDitherMatrix, matCoord.xy );
-				if (opacity < ditherPattern.r) discard;
-			}
-		`;
-
-	}
-	uniformChanged() {
-
-		this.uniforms.uColor.value = this.color;
-		this.uniforms.uOpacity.value = this.opacity;
-		this.uniforms.uHighlight.value = this.highlight;
-		this.uniforms.uResolution.value = this.resolution;
-		this.uniformsNeedUpdate = true;
-
-	}
-
-}
-
-/**
- * @author arodic / https://github.com/arodic
- */
-
-class HelperMesh extends Mesh {
-
-	constructor( geometry, props = {} ) {
-
-		super();
-		this.geometry = geometry instanceof Array ? mergeGeometryChunks( geometry ) : geometry;
-		this.material = new HelperMaterial( props.color || 'white', props.opacity || 1 );
-		this.name = props.name;
-
-	}
-
-}
-
 // Reusable utility variables
 const _position = new Vector3();
 const _euler = new Euler();
@@ -871,108 +1485,151 @@ const _quaternion = new Quaternion();
 const _scale = new Vector3();
 const _matrix = new Matrix4();
 
-function mergeGeometryChunks( chunks ) {
+class HelperGeometry extends BufferGeometry {
 
-	let geometry = new BufferGeometry();
+	constructor( geometry, props ) {
 
-	geometry.index = new Uint16BufferAttribute( [], 1 );
-	geometry.addAttribute( 'position', new Float32BufferAttribute( [], 3 ) );
-	geometry.addAttribute( 'uv', new Float32BufferAttribute( [], 2 ) );
-	geometry.addAttribute( 'color', new Float32BufferAttribute( [], 4 ) );
-	geometry.addAttribute( 'normal', new Float32BufferAttribute( [], 3 ) );
-	geometry.addAttribute( 'outline', new Float32BufferAttribute( [], 1 ) );
+		super();
 
-	for ( let i = chunks.length; i --; ) {
+		this.index = new Uint16BufferAttribute( [], 1 );
+		this.addAttribute( 'position', new Float32BufferAttribute( [], 3 ) );
+		this.addAttribute( 'uv', new Float32BufferAttribute( [], 2 ) );
+		this.addAttribute( 'color', new Float32BufferAttribute( [], 4 ) );
+		this.addAttribute( 'normal', new Float32BufferAttribute( [], 3 ) );
+		this.addAttribute( 'outline', new Float32BufferAttribute( [], 1 ) );
 
-		const chunk = chunks[ i ];
-		let chunkGeo = chunk.geometry.clone();
+		let chunks;
+		if ( geometry instanceof Array ) {
 
-		const color = chunk.color || [ 1, 1, 1, 1 ];
-		const position = chunk.position;
-		const rotation = chunk.rotation;
-		let scale = chunk.scale;
+			chunks = geometry;
 
-		let thickness = chunk.thickness / 2 || 0;
-		let outlineThickness = chunk.outlineThickness !== undefined ? chunk.outlineThickness : 1;
+		} else {
 
-		if ( scale && typeof scale === 'number' ) scale = [ scale, scale, scale ];
-
-		_position.set( 0, 0, 0 );
-		_quaternion.set( 0, 0, 0, 1 );
-		_scale.set( 1, 1, 1 );
-
-		if ( position ) _position.set( position[ 0 ], position[ 1 ], position[ 2 ] );
-		if ( rotation ) _quaternion.setFromEuler( _euler.set( rotation[ 0 ], rotation[ 1 ], rotation[ 2 ] ) );
-		if ( scale ) _scale.set( scale[ 0 ], scale[ 1 ], scale[ 2 ] );
-
-		_matrix.compose( _position, _quaternion, _scale );
-
-		chunkGeo.applyMatrix( _matrix );
-
-		if ( chunkGeo.index === null ) {
-
-			const indices = [];
-			for ( let j = 0; j < chunkGeo.attributes.position.count - 2; j ++ ) {
-
-				indices.push( j + 0 );
-				indices.push( j + 1 );
-				indices.push( j + 2 );
-
-			}
-			chunkGeo.index = new Uint16BufferAttribute( indices, 1 );
+			chunks = [[ geometry, props ]];
 
 		}
 
-		let vertCount = chunkGeo.attributes.position.count;
+		const chunkGeometries = [];
 
-		if ( ! chunkGeo.attributes.color ) {
+		for ( let i = chunks.length; i --; ) {
 
-			chunkGeo.addAttribute( 'color', new Float32BufferAttribute( new Array( vertCount * 4 ), 4 ) );
+			const chunk = chunks[ i ];
 
-		}
+			let chunkGeo = chunk[ 0 ].clone();
+			chunkGeometries.push( chunkGeo );
 
-		//TODO: enable color overwrite
-		const colorArray = chunkGeo.attributes.color.array;
-		for ( let j = 0; j < vertCount; j ++ ) {
+			let chunkProp = chunk[ 1 ] || {};
 
-			const r = j * 4 + 0; colorArray[ r ] = color[ 0 ];
-			const g = j * 4 + 1; colorArray[ g ] = color[ 1 ];
-			const b = j * 4 + 2; colorArray[ b ] = color[ 2 ];
-			const a = j * 4 + 3; colorArray[ a ] = color[ 3 ] !== undefined ? color[ 3 ] : colorArray[ a ] !== undefined ? colorArray[ a ] : 1;
+			const color = chunkProp.color || [];
+			const position = chunkProp.position;
+			const rotation = chunkProp.rotation;
+			let scale = chunkProp.scale;
 
-		}
+			let thickness = ( chunkProp.thickness || - 0 ) / 2;
+			let outlineThickness = chunkProp.outlineThickness !== undefined ? chunkProp.outlineThickness : 1;
 
-		// Duplicate geometry and add outline attribute
-		//TODO: enable outline overwrite (needs to know if is outline or not in combined geometry)
-		if ( ! chunkGeo.attributes.outline ) {
+			if ( scale && typeof scale === 'number' ) scale = [ scale, scale, scale ];
 
-			const outlineArray = [];
-			for ( let j = 0; j < vertCount; j ++ ) outlineArray[ j ] = - ( thickness ) || 0;
-			chunkGeo.addAttribute( 'outline', new Float32BufferAttribute( outlineArray, 1 ) );
-			chunkGeo = BufferGeometryUtils.mergeBufferGeometries( [ chunkGeo, chunkGeo ] );
-			if ( outlineThickness ) {
+			_position.set( 0, 0, 0 );
+			_quaternion.set( 0, 0, 0, 1 );
+			_scale.set( 1, 1, 1 );
 
-				for ( let j = 0; j < vertCount; j ++ ) chunkGeo.attributes.outline.array[ ( vertCount ) + j ] = outlineThickness + ( thickness );
+			if ( position ) _position.set( position[ 0 ], position[ 1 ], position[ 2 ] );
+			if ( rotation ) _quaternion.setFromEuler( _euler.set( rotation[ 0 ], rotation[ 1 ], rotation[ 2 ] ) );
+			if ( scale ) _scale.set( scale[ 0 ], scale[ 1 ], scale[ 2 ] );
+
+			_matrix.compose( _position, _quaternion, _scale );
+
+			chunkGeo.applyMatrix( _matrix );
+
+			// TODO: investigate proper indexing!
+			if ( chunkGeo.index === null ) {
+
+				const indices = [];
+				for ( let j = 0; j < chunkGeo.attributes.position.count - 2; j += 3 ) {
+
+					indices.push( j + 0 );
+					indices.push( j + 1 );
+					indices.push( j + 2 );
+
+				}
+				chunkGeo.index = new Uint16BufferAttribute( indices, 1 );
 
 			}
 
-			let array = chunkGeo.index.array;
-			for ( let j = array.length / 2; j < array.length; j += 3 ) {
+			let vertCount = chunkGeo.attributes.position.count;
 
-				let a = array[ j + 1 ];
-				let b = array[ j + 2 ];
-				array[ j + 1 ] = b;
-				array[ j + 2 ] = a;
+			if ( ! chunkGeo.attributes.color ) {
+
+				chunkGeo.addAttribute( 'color', new Float32BufferAttribute( new Array( vertCount * 4 ), 4 ) );
+
+			}
+
+			const colorArray = chunkGeo.attributes.color.array;
+			for ( let j = 0; j < vertCount; j ++ ) {
+
+				const r = j * 4 + 0; colorArray[ r ] = color[ 0 ] !== undefined ? color[ 0 ] : colorArray[ r ] || 1;
+				const g = j * 4 + 1; colorArray[ g ] = color[ 1 ] !== undefined ? color[ 1 ] : colorArray[ g ] || 1;
+				const b = j * 4 + 2; colorArray[ b ] = color[ 2 ] !== undefined ? color[ 2 ] : colorArray[ b ] || 1;
+				const a = j * 4 + 3; colorArray[ a ] = color[ 3 ] !== undefined ? color[ 3 ] : colorArray[ a ] || 1;
+
+			}
+
+			// Duplicate geometry and add outline attribute
+			//TODO: enable outline overwrite (needs to know if is outline or not in combined geometry)
+			if ( ! chunkGeo.attributes.outline ) {
+
+				const outlineArray = [];
+				for ( let j = 0; j < vertCount; j ++ ) {
+
+					outlineArray[ j ] = - thickness;
+
+				}
+
+				chunkGeo.addAttribute( 'outline', new Float32BufferAttribute( outlineArray, 1 ) );
+				BufferGeometryUtils.mergeBufferGeometries( [ chunkGeo, chunkGeo ], false, chunkGeo );
+
+				if ( outlineThickness ) {
+
+					for ( let j = 0; j < vertCount; j ++ ) {
+
+						chunkGeo.attributes.outline.array[( vertCount + j )] = outlineThickness + thickness;
+
+					}
+
+				}
+
+				let array = chunkGeo.index.array;
+				for ( let j = array.length / 2; j < array.length; j += 3 ) {
+
+					let a = array[ j + 1 ];
+					let b = array[ j + 2 ];
+					array[ j + 1 ] = b;
+					array[ j + 2 ] = a;
+
+				}
+
+			}
+
+			for ( let j = 0; j < chunkGeo.attributes.outline.array.length; j ++ ) {
+
+				if ( chunkGeo.attributes.outline.array[ j ] < 0 ) {
+
+					if ( chunkProp.thickness !== undefined ) chunkGeo.attributes.outline.array[ j ] = - thickness;
+
+				} else {
+
+					if ( chunkProp.outlineThickness !== undefined ) chunkGeo.attributes.outline.array[ j ] = outlineThickness + thickness;
+
+				}
 
 			}
 
 		}
 
-
-		geometry = BufferGeometryUtils.mergeBufferGeometries( [ geometry, chunkGeo ] );
+		BufferGeometryUtils.mergeBufferGeometries( chunkGeometries, false, this );
 
 	}
-	return geometry;
 
 }
 
@@ -980,25 +1637,22 @@ function mergeGeometryChunks( chunks ) {
  * @author arodic / https://github.com/arodic
  */
 
-const PI = Math.PI;
 const HPI = Math.PI / 2;
 const EPS = 0.000001;
 
-class OctahedronGeometry extends HelperMesh {
+const colors = {
+	'white': [ 1, 1, 1 ],
+	'whiteTransparent': [ 1, 1, 1, 0.25 ],
+	'gray': [ 0.75, 0.75, 0.75 ],
+	'red': [ 1, 0.3, 0.2 ],
+	'green': [ 0.2, 1, 0.2 ],
+	'blue': [ 0.2, 0.3, 1 ],
+	'cyan': [ 0.2, 1, 1 ],
+	'magenta': [ 1, 0.3, 1 ],
+	'yellow': [ 1, 1, 0.2 ],
+};
 
-	constructor() {
-
-		super( [
-			{ geometry: new OctahedronBufferGeometry( 1, 0 ) }
-		] );
-		return this.geometry;
-
-	}
-
-}
-
-
-class PlaneGeometry extends HelperMesh {
+class PlaneGeometry extends HelperGeometry {
 
 	constructor() {
 
@@ -1024,80 +1678,116 @@ class PlaneGeometry extends HelperMesh {
 		geometry.addAttribute( 'normal', new Float32BufferAttribute( positions, 3 ) );
 
 		super( [
-			{ geometry: geometry, scale: [ 0.5, 0.5, 0.00001 ] }
+			[ geometry, { scale: [ 0.5, 0.5, 0.00001 ] } ]
 		] );
-		return this.geometry;
 
 	}
 
 }
 
-class ConeGeometry extends HelperMesh {
+class Corner2Geometry extends HelperGeometry {
 
 	constructor() {
 
 		super( [
-			{ geometry: new CylinderBufferGeometry( 0, 0.2, 1, 8, 2 ), position: [ 0, 0.5, 0 ] },
-			{ geometry: new SphereBufferGeometry( 0.2, 8, 8 ) }
+			[ new CylinderBufferGeometry( EPS, EPS, 1, 5, 2, false ), { position: [ 0.5, 0, 0 ], rotation: [ 0, 0, HPI ], thickness: 1 } ],
+			[ new CylinderBufferGeometry( EPS, EPS, 1, 5, 2, false ), { position: [ 0, 0, 0.5 ], rotation: [ HPI, 0, 0 ], thickness: 1 } ],
 		] );
-		return this.geometry;
 
 	}
 
 }
 
-class ArrowGeometry extends HelperMesh {
+class Corner3Geometry extends HelperGeometry {
 
 	constructor() {
 
 		super( [
-			{ geometry: new ConeGeometry(), position: [ 0, 0.8, 0 ], scale: 0.2 },
-			{ geometry: new CylinderBufferGeometry( EPS, EPS, 0.8, 5, 2, false ), position: [ 0, 0.4, 0 ], thickness: 1 }
+			[ new CylinderBufferGeometry( EPS, EPS, 1, 5, 2, false ), { color: [ 1, 0, 0 ], position: [ 0.5, 0, 0 ], rotation: [ 0, 0, HPI ], thickness: 1 } ],
+			[ new CylinderBufferGeometry( EPS, EPS, 1, 5, 2, false ), { color: [ 0, 1, 0 ], position: [ 0, 0.5, 0 ], rotation: [ 0, HPI, 0 ], thickness: 1 } ],
+			[ new CylinderBufferGeometry( EPS, EPS, 1, 5, 2, false ), { color: [ 0, 0, 1 ], position: [ 0, 0, 0.5 ], rotation: [ HPI, 0, 0 ], thickness: 1 } ],
 		] );
-		return this.geometry;
 
 	}
 
 }
 
-class Corner2Geometry extends HelperMesh {
+/**
+ * @author arodic / https://github.com/arodic
+ */
+
+/*
+ * Creates a single requestAnimationFrame loop.
+ * provides methods to control animation and update event to hook into animation updates.
+ */
+
+class Animation extends IoLiteMixin( Object ) {
 
 	constructor() {
 
-		super( [
-			{ geometry: new CylinderBufferGeometry( EPS, EPS, 1, 5, 2, false ), position: [ 0.5, 0, 0 ], rotation: [ 0, 0, HPI ], thickness: 1 },
-			{ geometry: new CylinderBufferGeometry( EPS, EPS, 1, 5, 2, false ), position: [ 0, 0, 0.5 ], rotation: [ HPI, 0, 0 ], thickness: 1 },
-			{ geometry: new SphereBufferGeometry( EPS, 4, 4 ), position: [ 0, 0, 0 ], thickness: 1 },
-			{ geometry: new SphereBufferGeometry( EPS, 4, 4 ), position: [ 1, 0, 0 ], rotation: [ 0, 0, HPI ], thickness: 1 },
-			{ geometry: new SphereBufferGeometry( EPS, 4, 4 ), position: [ 0, 0, 1 ], rotation: [ HPI, 0, 0 ], thickness: 1 },
-		] );
-		return this.geometry;
+		super();
+		this._active = false;
+		this._time = 0;
+		this._timeRemainging = 0;
+		this._rafID = 0;
+
+	}
+	startAnimation( duration ) {
+
+		this._timeRemainging = Math.max( this._timeRemainging, duration * 1000 || 0 );
+		if ( ! this._active ) {
+
+			this._active = true;
+			this._time = performance.now();
+			this._rafID = requestAnimationFrame( () => {
+
+				const time = performance.now();
+				const timestep = time - this._time;
+				this.animate( timestep, time );
+				this._time = time;
+				this._timeRemainging = Math.max( this._timeRemainging - timestep, 0 );
+
+			} );
+
+		}
+
+	}
+	animate( timestep, time ) {
+
+		if ( this._active && this._timeRemainging ) {
+
+			this._rafID = requestAnimationFrame( () => {
+
+				const time = performance.now();
+				timestep = time - this._time;
+				this.animate( timestep, time );
+				this._time = time;
+				this._timeRemainging = Math.max( this._timeRemainging - timestep, 0 );
+
+			} );
+
+		} else {
+
+			this.stopAnimation( timestep, time );
+
+		}
+		this.dispatchEvent( { type: 'update', timestep: timestep } );
+
+	}
+	stopAnimation() {
+
+		this._active = false;
+		cancelAnimationFrame( this._rafID );
 
 	}
 
 }
+// TODO: dispose
 
-class PickerHandleGeometry extends HelperMesh {
-
-	constructor() {
-
-		super( [
-			{ geometry: new CylinderBufferGeometry( 0.2, 0, 1, 4, 1, false ), position: [ 0, 0.5, 0 ] }
-		] );
-		return this.geometry;
-
-	}
-
-}
-
-const coneGeometry = new ConeGeometry();
-const octahedronGeometry = new OctahedronGeometry();
-
-function stringHas( str, char ) {
-
-	return str.search( char ) !== - 1;
-
-}
+// Reusable utility variables
+const AXIS_HIDE_TRESHOLD = 0.99;
+const PLANE_HIDE_TRESHOLD = 0.1;
+const AXIS_FLIP_TRESHOLD = 0;
 
 function hasAxisAny( str, chars ) {
 
@@ -1111,276 +1801,163 @@ function hasAxisAny( str, chars ) {
 
 }
 
+class HelperMeshes extends Array {
+
+	constructor( groupDef ) {
+
+		super();
+		for ( let name in groupDef ) {
+
+			const mesh = new HelperMesh( groupDef[ name ], { name: name } );
+			this.push( mesh );
+			this[ name ] = mesh;
+
+		}
+
+	}
+
+}
+
+const handleGeometry = {
+	XYZ: new Corner3Geometry()
+};
+
+const pickerGeometry = {
+	XYZ: new HelperGeometry( new OctahedronBufferGeometry( 0.5, 0 ), { color: [ 1, 1, 1, 0.25 ] } )
+};
+
 class TransformHelper extends Helper {
 
+	get handleGeometry() {
+
+		return handleGeometry;
+
+	}
+	get pickerGeometry() {
+
+		return pickerGeometry;
+
+	}
 	constructor( props ) {
 
 		super( props );
 
 		this.defineProperties( {
-			showX: { value: true, observer: 'updateAxis' },
-			showY: { value: true, observer: 'updateAxis' },
-			showZ: { value: true, observer: 'updateAxis' },
+			showX: { value: true, observer: 'paramChanged' },
+			showY: { value: true, observer: 'paramChanged' },
+			showZ: { value: true, observer: 'paramChanged' },
 			axis: null,
-			worldX: new Vector3(),
-			worldY: new Vector3(),
-			worldZ: new Vector3(),
-			axisDotEye: new Vector3()
+			active: false,
+			hideX: { value: false, observer: 'paramChanged' },
+			hideY: { value: false, observer: 'paramChanged' },
+			hideZ: { value: false, observer: 'paramChanged' },
+			hideXY: { value: false, observer: 'paramChanged' },
+			hideYZ: { value: false, observer: 'paramChanged' },
+			hideXZ: { value: false, observer: 'paramChanged' },
+			flipX: { value: false, observer: 'paramChanged' },
+			flipY: { value: false, observer: 'paramChanged' },
+			flipZ: { value: false, observer: 'paramChanged' },
 		} );
-		this.size = 0.15;
 
-		this.handles = this.combineHelperGroups( this.handlesGroup );
-		this.pickers = this.combineHelperGroups( this.pickersGroup );
+		this.worldX = new Vector3();
+		this.worldY = new Vector3();
+		this.worldZ = new Vector3();
+		this.axisDotEye = new Vector3();
+		this.size = 0.05;
+
+		this.handles = new HelperMeshes( this.handleGeometry );
+		this.pickers = new HelperMeshes( this.pickerGeometry );
+
 		if ( this.handles.length ) this.add( ...this.handles );
 		if ( this.pickers.length ) this.add( ...this.pickers );
-
-		this.traverse( axis => {
-
-			axis.renderOrder = 100;
-			axis.scaleTarget = axis.scaleTarget || new Vector3( 1, 1, 1 );
-
-		} );
 
 		// Hide pickers
 		for ( let i = 0; i < this.pickers.length; i ++ ) this.pickers[ i ].material.visible = false;
 
+		this.animation = new Animation();
+
+		this.animation.addEventListener( 'update', () => {
+
+			this.dispatchEvent( { type: 'change' } );
+
+		} );
+
+	}
+	traverseAxis( callback ) {
+
+		for ( let i = this.handles.length; i --; ) callback( this.handles[ i ] );
+		for ( let i = this.pickers.length; i --; ) callback( this.pickers[ i ] );
+
+	}
+	spaceChanged() {
+
+		this.paramChanged();
+		this.animateScaleUp();
+
 	}
 	objectChanged() {
 
-		this.animation.startAnimation( 4 );
-		this.traverse( axis => {
+		this.paramChanged();
+		this.animateScaleUp();
 
-			axis.scale.x = 0.0001;
-			axis.scale.y = 0.0001;
-			axis.scale.z = 0.0001;
-			axis.scaleTarget.x = 1;
-			axis.scaleTarget.y = 1;
-			axis.scaleTarget.z = 1;
+	}
+	animateScaleUp() {
+
+		this.traverseAxis( axis => {
+
+			axis.scale.set( 0.0001, 0.0001, 0.0001 );
+			axis.scaleTarget.set( 1, 1, 1 );
 
 		} );
+		this.animation.startAnimation( 0.5 );
 
 	}
 	axisChanged() {
 
-		this.animation.startAnimation( 4 );
-		this.traverse( axis => {
+		this.traverseAxis( axis => {
 
-			axis.highlight = 0;
-			if ( this.axis ) {
-
-				if ( hasAxisAny( axis.name, this.axis ) ) {
-
-					axis.highlight = 1;
-
-				} else {
-
-					axis.highlight = - 0.75;
-
-				}
-
-			}
+			axis.highlight = this.axis ? hasAxisAny( axis.name, this.axis ) ? 1 : - 0.75 : 0;
 
 		} );
+		this.animation.startAnimation( 0.5 );
 
 	}
-	// Creates an Object3D with gizmos described in custom hierarchy definition.
-	combineHelperGroups( groups ) {
+	paramChanged() {
 
-		const meshes = [];
-		for ( let name in groups ) {
-
-			meshes.push( new HelperMesh( groups[ name ], { name: name } ) );
-
-		}
-		return meshes;
-
-	}
-	get handlesGroup() {
-
-		return {
-			X: [ { geometry: coneGeometry, color: [ 1, 0, 0 ], position: [ 0.15, 0, 0 ], rotation: [ 0, 0, - Math.PI / 2 ], scale: [ 0.5, 1, 0.5 ] } ],
-			Y: [ { geometry: coneGeometry, color: [ 0, 1, 0 ], position: [ 0, 0.15, 0 ], rotation: [ 0, 0, 0 ], scale: [ 0.5, 1, 0.5 ] } ],
-			Z: [ { geometry: coneGeometry, color: [ 0, 0, 1 ], position: [ 0, 0, 0.15 ], rotation: [ Math.PI / 2, 0, 0 ], scale: [ 0.5, 1, 0.5 ] } ]
-		};
-
-	}
-	get pickersGroup() {
-
-		return {
-			XYZ: [ { geometry: octahedronGeometry, scale: 0.5 } ]
-		};
-
-	}
-	updateAxis() {
-
-		this.animation.startAnimation( 4 );
-		this.traverse( axis => {
+		this.traverseAxis( axis => {
 
 			axis.hidden = false;
-			if ( stringHas( axis.name, "X" ) && ! this.showX ) axis.hidden = true;
-			if ( stringHas( axis.name, "Y" ) && ! this.showY ) axis.hidden = true;
-			if ( stringHas( axis.name, "Z" ) && ! this.showZ ) axis.hidden = true;
-			if ( stringHas( axis.name, "E" ) && ( ! this.showX || ! this.showY || ! this.showZ ) ) axis.hidden = true;
+			const name = axis.name.split( '_' ).pop() || null;
+
+			// Hide by show[axis] parameter
+			if ( name.indexOf( 'X' ) !== - 1 && ! this.showX ) axis.hidden = true;
+			if ( name.indexOf( 'Y' ) !== - 1 && ! this.showY ) axis.hidden = true;
+			if ( name.indexOf( 'Z' ) !== - 1 && ! this.showZ ) axis.hidden = true;
+			if ( name.indexOf( 'E' ) !== - 1 && ( ! this.showX || ! this.showY || ! this.showZ ) ) axis.hidden = true;
+
+			// Hide axis facing the camera
+			if ( ( name == 'X' || name == 'XYZ' ) && this.hideX ) axis.hidden = true;
+			if ( ( name == 'Y' || name == 'XYZ' ) && this.hideY ) axis.hidden = true;
+			if ( ( name == 'Z' || name == 'XYZ' ) && this.hideZ ) axis.hidden = true;
+			if ( name == 'XY' && this.hideXY ) axis.hidden = true;
+			if ( name == 'YZ' && this.hideYZ ) axis.hidden = true;
+			if ( name == 'XZ' && this.hideXZ ) axis.hidden = true;
+			// Flip axis
+			if ( name.indexOf( 'X' ) !== - 1 || axis.name.indexOf( 'R' ) !== - 1 ) axis.scaleTarget.x = this.flipX ? - 1 : 1;
+			if ( name.indexOf( 'Y' ) !== - 1 || axis.name.indexOf( 'R' ) !== - 1 ) axis.scaleTarget.y = this.flipY ? - 1 : 1;
+			if ( name.indexOf( 'Z' ) !== - 1 || axis.name.indexOf( 'R' ) !== - 1 ) axis.scaleTarget.z = this.flipZ ? - 1 : 1;
 
 		} );
-
-	}
-	updateMatrixWorld( force, camera ) {
-
-		if ( camera ) this.camera = camera; // TODO
-		this.updateHelperMatrix();
-		this.matrixWorldNeedsUpdate = false;
-		const children = this.children;
-		for ( let i = 0, l = children.length; i < l; i ++ ) {
-
-			children[ i ].updateMatrixWorld( true, camera );
-
-		}
+		this.animation.startAnimation( 0.5 );
 
 	}
 	updateHelperMatrix() {
 
 		super.updateHelperMatrix();
-
-		this.worldX.set( 1, 0, 0 ).applyQuaternion( this.worldQuaternion );
-		this.worldY.set( 0, 1, 0 ).applyQuaternion( this.worldQuaternion );
-		this.worldZ.set( 0, 0, 1 ).applyQuaternion( this.worldQuaternion );
-
-		this.axisDotEye.set(
-			this.worldX.dot( this.eye ),
-			this.worldY.dot( this.eye ),
-			this.worldZ.dot( this.eye )
-		);
-
-		if ( this.animation._active ) {
-
-			for ( let i = this.handles.length; i --; ) this.updateAxisMaterial( this.handles[ i ] );
-			for ( let i = this.pickers.length; i --; ) this.updateAxisMaterial( this.pickers[ i ] );
-
-		}
-
-	}
-	// TODO: optimize!
-	updateAxisMaterial( axis ) {
-
-		axis.visible = true;
-
-		const mat = axis.material;
-		const h = axis.material.highlight || 0;
-
-		let highlight = axis.hidden ? - 1.5 : axis.highlight || 0;
-
-		mat.highlight = ( 4 * h + highlight ) / 5;
-
-		if ( mat.highlight < - 1.49 ) axis.visible = false;
-
-		axis.scale.multiplyScalar( 5 ).add( axis.scaleTarget ).divideScalar( 6 );
-
-	}
-
-}
-
-const AXIS_HIDE_TRESHOLD = 0.99;
-const PLANE_HIDE_TRESHOLD = 0.2;
-const AXIS_FLIP_TRESHOLD = - 0.2;
-
-const arrowGeometry = new ArrowGeometry();
-const corner2Geometry = new Corner2Geometry();
-const octahedronGeometry$1 = new OctahedronGeometry();
-const pickerHandleGeometry = new PickerHandleGeometry();
-const planeGeometry = new PlaneGeometry();
-
-function stringHas$1( str, char ) {
-
-	return str.search( char ) !== - 1;
-
-}
-
-class TransformHelperTranslate extends TransformHelper {
-
-	constructor( props ) {
-
-		super( props );
-		this.defineProperties( {
-			hideX: { value: false, observer: 'updateAxis' },
-			hideY: { value: false, observer: 'updateAxis' },
-			hideZ: { value: false, observer: 'updateAxis' },
-			hideXY: { value: false, observer: 'updateAxis' },
-			hideYZ: { value: false, observer: 'updateAxis' },
-			hideXZ: { value: false, observer: 'updateAxis' },
-			flipX: { value: false, observer: 'updateAxis' },
-			flipY: { value: false, observer: 'updateAxis' },
-			flipZ: { value: false, observer: 'updateAxis' }
-		} );
-
-	}
-	get handlesGroup() {
-
-		return {
-			X: [ { geometry: arrowGeometry, color: [ 1, 0.3, 0.3 ], rotation: [ 0, 0, - Math.PI / 2 ] } ],
-			Y: [ { geometry: arrowGeometry, color: [ 0.3, 1, 0.3 ] } ],
-			Z: [ { geometry: arrowGeometry, color: [ 0.3, 0.3, 1 ], rotation: [ Math.PI / 2, 0, 0 ] } ],
-			XYZ: [
-				{ geometry: octahedronGeometry$1, color: [ 1, 1, 1 ], scale: 0.1 }
-			],
-			XY: [
-				{ geometry: planeGeometry, color: [ 1, 1, 0, 0.5 ], position: [ 0.15, 0.15, 0 ], scale: 0.3 },
-				{ geometry: corner2Geometry, color: [ 1, 1, 0.3 ], position: [ 0.3, 0.3, 0 ], scale: 0.15, rotation: [ Math.PI / 2, 0, Math.PI ] }
-			],
-			YZ: [
-				{ geometry: planeGeometry, color: [ 0, 1, 1, 0.5 ], position: [ 0, 0.15, 0.15 ], rotation: [ 0, Math.PI / 2, 0 ], scale: 0.3 },
-				{ geometry: corner2Geometry, color: [ 0.3, 1, 1 ], position: [ 0, 0.3, 0.3 ], scale: 0.15, rotation: [ 0, Math.PI, - Math.PI / 2 ] }
-			],
-			XZ: [
-				{ geometry: planeGeometry, color: [ 1, 0, 1, 0.5 ], position: [ 0.15, 0, 0.15 ], rotation: [ - Math.PI / 2, 0, 0 ], scale: 0.3 },
-				{ geometry: corner2Geometry, color: [ 1, 0.3, 1 ], position: [ 0.3, 0, 0.3 ], scale: 0.15, rotation: [ 0, Math.PI, 0 ] }
-			]
-		};
-
-	}
-	get pickersGroup() {
-
-		return {
-			X: [ { geometry: pickerHandleGeometry, color: [ 1, 0.3, 0.3, 0.5 ], rotation: [ 0, 0, - Math.PI / 2 ] } ],
-			Y: [ { geometry: pickerHandleGeometry, color: [ 0.3, 1, 0.3, 0.5 ] } ],
-			Z: [ { geometry: pickerHandleGeometry, color: [ 0.3, 0.3, 1, 0.5 ], rotation: [ Math.PI / 2, 0, 0 ] } ],
-			XYZ: [ { geometry: octahedronGeometry$1, color: [ 0.5, 0.5, 0.5, 0.5 ], scale: 0.2 } ],
-			XY: [ { geometry: planeGeometry, color: [ 1, 1, 0, 0.5, 0.5 ], position: [ 0.25, 0.25, 0 ], scale: 0.5 } ],
-			YZ: [ { geometry: planeGeometry, color: [ 0, 1, 1, 0.5, 0.5 ], position: [ 0, 0.25, 0.25 ], rotation: [ 0, Math.PI / 2, 0 ], scale: 0.5 } ],
-			XZ: [ { geometry: planeGeometry, color: [ 1, 0, 1, 0.5, 0.5 ], position: [ 0.25, 0, 0.25 ], rotation: [ - Math.PI / 2, 0, 0 ], scale: 0.5 } ]
-		};
-
-	}
-	updateAxis() {
-
-		this.animation.startAnimation( 4 );
-		this.traverse( axis => {
-
-			if ( axis !== this ) { // TODO: conside better loop
-
-				axis.hidden = false;
-				if ( stringHas$1( axis.name, "X" ) && ! this.showX ) axis.hidden = true;
-				if ( stringHas$1( axis.name, "Y" ) && ! this.showY ) axis.hidden = true;
-				if ( stringHas$1( axis.name, "Z" ) && ! this.showZ ) axis.hidden = true;
-				if ( stringHas$1( axis.name, "E" ) && ( ! this.showX || ! this.showY || ! this.showZ ) ) axis.hidden = true;
-				// Hide axis facing the camera
-				if ( ( axis.name == 'X' || axis.name == 'XYZX' ) && this.hideX ) axis.hidden = true;
-				if ( ( axis.name == 'Y' || axis.name == 'XYZY' ) && this.hideY ) axis.hidden = true;
-				if ( ( axis.name == 'Z' || axis.name == 'XYZZ' ) && this.hideZ ) axis.hidden = true;
-				if ( axis.name == 'XY' && this.hideXY ) axis.hidden = true;
-				if ( axis.name == 'YZ' && this.hideYZ ) axis.hidden = true;
-				if ( axis.name == 'XZ' && this.hideXZ ) axis.hidden = true;
-				// Flip axis
-				if ( stringHas$1( axis.name, 'X' ) ) axis.scaleTarget.x = this.flipX ? - 1 : 1;
-				if ( stringHas$1( axis.name, 'Y' ) ) axis.scaleTarget.y = this.flipY ? - 1 : 1;
-				if ( stringHas$1( axis.name, 'Z' ) ) axis.scaleTarget.z = this.flipZ ? - 1 : 1;
-
-			}
-
-		} );
-
-	}
-	updateHelperMatrix() {
+		this.worldX.set( 1, 0, 0 ).applyQuaternion( this.quaternion );
+		this.worldY.set( 0, 1, 0 ).applyQuaternion( this.quaternion );
+		this.worldZ.set( 0, 0, 1 ).applyQuaternion( this.quaternion );
+		this.axisDotEye.set( this.worldX.dot( this.eye ), this.worldY.dot( this.eye ), this.worldZ.dot( this.eye ) );
 
 		const xDotE = this.axisDotEye.x;
 		const yDotE = this.axisDotEye.y;
@@ -1401,8 +1978,75 @@ class TransformHelperTranslate extends TransformHelper {
 
 		}
 
-		super.updateHelperMatrix();
+		this.traverseAxis( axis => this.updateAxis( axis ) );
 
+	}
+	// TODO: optimize, make less ugly and framerate independent!
+	updateAxis( axis ) {
+
+		axis.visible = true;
+		const highlight = axis.hidden ? - 1.5 : axis.highlight || 0;
+		axis.material.highlight = ( 4 * axis.material.highlight + highlight ) / 5;
+		if ( axis.material.highlight < - 1.49 ) axis.visible = false;
+		axis.scale.multiplyScalar( 5 ).add( axis.scaleTarget ).divideScalar( 6 );
+
+	}
+
+}
+
+// Reusable utility variables
+const PI = Math.PI;
+const HPI$1 = Math.PI / 2;
+const EPS$1 = 0.000001;
+
+const coneGeometry = new HelperGeometry( [
+	[ new OctahedronBufferGeometry( 0.03, 2 ) ],
+	[ new CylinderBufferGeometry( 0, 0.03, 0.2, 8, 1, true ), { position: [ 0, 0.1, 0 ] } ],
+] );
+
+const translateArrowGeometry = new HelperGeometry( [
+	[ coneGeometry, { position: [ 0, 0.8, 0 ] } ],
+	[ new CylinderBufferGeometry( EPS$1, EPS$1, 0.5, 5, 1, true ), { position: [ 0, 0.525, 0 ], thickness: 1 } ],
+] );
+
+const translateCornerGeometry = new HelperGeometry( [
+	[ new PlaneGeometry(), { color: colors[ 'whiteTransparent' ], position: [ - 0.1, - 0.1, 0 ], scale: 0.2, outlineThickness: 0 } ],
+	[ new Corner2Geometry(), { color: [ 1, 1, 0.25 ], scale: 0.2, rotation: [ HPI$1, 0, PI ] } ],
+] );
+
+const translatePickerGeometry = new HelperGeometry( new CylinderBufferGeometry( 0.2, 0, 1, 4, 1, true ), { color: colors[ 'whiteTransparent' ], position: [ 0, 0.5, 0 ] } );
+
+const cornerPickerGeometry = new HelperGeometry( new PlaneGeometry(), { color: colors[ 'whiteTransparent' ], scale: 0.3, outlineThickness: 0 } );
+
+const handleGeometry$1 = {
+	X: new HelperGeometry( translateArrowGeometry, { color: colors[ 'red' ], rotation: [ 0, 0, - HPI$1 ] } ),
+	Y: new HelperGeometry( translateArrowGeometry, { color: colors[ 'green' ] } ),
+	Z: new HelperGeometry( translateArrowGeometry, { color: colors[ 'blue' ], rotation: [ HPI$1, 0, 0 ] } ),
+	XY: new HelperGeometry( translateCornerGeometry, { position: [ 0.25, 0.25, 0 ], color: colors[ 'yellow' ] } ),
+	YZ: new HelperGeometry( translateCornerGeometry, { position: [ 0, 0.25, 0.25 ], color: colors[ 'cyan' ], rotation: [ 0, - HPI$1, 0 ] } ),
+	XZ: new HelperGeometry( translateCornerGeometry, { position: [ 0.25, 0, 0.25 ], color: colors[ 'magenta' ], rotation: [ HPI$1, 0, 0 ] } ),
+};
+
+const pickerGeometry$1 = {
+	X: new HelperGeometry( translatePickerGeometry, { color: colors[ 'red' ], rotation: [ 0, 0, - HPI$1 ] } ),
+	Y: new HelperGeometry( translatePickerGeometry, { color: colors[ 'green' ] } ),
+	Z: new HelperGeometry( translatePickerGeometry, { color: colors[ 'blue' ], rotation: [ HPI$1, 0, 0 ] } ),
+	XY: new HelperGeometry( cornerPickerGeometry, { color: colors[ 'yellow' ], position: [ 0.15, 0.15, 0 ] } ),
+	YZ: new HelperGeometry( cornerPickerGeometry, { color: colors[ 'cyan' ], position: [ 0, 0.15, 0.15 ], rotation: [ 0, - HPI$1, 0 ] } ),
+	XZ: new HelperGeometry( cornerPickerGeometry, { color: colors[ 'magenta' ], position: [ 0.15, 0, 0.15 ], rotation: [ HPI$1, 0, 0 ] } ),
+	XYZ: new HelperGeometry( new OctahedronBufferGeometry( 1, 0 ), { color: colors[ 'whiteTransparent' ], scale: 0.2 } ),
+};
+
+class TransformHelperTranslate extends TransformHelper {
+
+	get handleGeometry() {
+
+		return handleGeometry$1;
+
+	}
+	get pickerGeometry() {
+
+		return pickerGeometry$1;
 
 	}
 
@@ -1412,36 +2056,35 @@ class TransformHelperTranslate extends TransformHelper {
  * @author arodic / https://github.com/arodic
  */
 
-function hasAxisAny$1( str, chars ) {
-
-	let has = true;
-	str.split( '' ).some( a => {
-
-		if ( chars.indexOf( a ) === - 1 ) has = false;
-
-	} );
-	return has;
-
-}
+const offset = new Vector3();
 
 class TransformControlsTranslate extends TransformControlsMixin( TransformHelperTranslate ) {
 
 	transform() {
 
-		const space = ( this.axis === 'XYZ' ) ? 'world' : this.space;
-		if ( ! hasAxisAny$1( 'X', this.axis ) ) this.pointEnd.x = this.pointStart.x;
-		if ( ! hasAxisAny$1( 'Y', this.axis ) ) this.pointEnd.y = this.pointStart.y;
-		if ( ! hasAxisAny$1( 'Z', this.axis ) ) this.pointEnd.z = this.pointStart.z;
-		if ( space === 'local' ) {
+		offset.copy( this.pointEnd ).sub( this.pointStart );
 
-			this.object.position.copy( this.pointEnd ).sub( this.pointStart ).applyQuaternion( this.quaternionStart );
+		if ( this.space === 'local' && this.axis !== 'XYZ' ) {
+
+			offset.applyQuaternion( this.worldQuaternionInv );
+
+		}
+
+		if ( this.axis.indexOf( 'X' ) === - 1 ) offset.x = 0;
+		if ( this.axis.indexOf( 'Y' ) === - 1 ) offset.y = 0;
+		if ( this.axis.indexOf( 'Z' ) === - 1 ) offset.z = 0;
+
+		if ( this.space === 'local' && this.axis !== 'XYZ' ) {
+
+			offset.applyQuaternion( this.quaternionStart ).divide( this.parentScale );
 
 		} else {
 
-			this.object.position.copy( this.pointEnd ).sub( this.pointStart );
+			offset.applyQuaternion( this.parentQuaternionInv ).divide( this.parentScale );
 
 		}
-		this.object.position.add( this.positionStart );
+
+		this.object.position.copy( offset ).add( this.positionStart );
 
 	}
 

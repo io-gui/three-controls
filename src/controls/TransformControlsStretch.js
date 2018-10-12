@@ -9,7 +9,6 @@ import {TransformHelperStretch} from "../helpers/TransformHelperStretch.js";
 // Reusable utility variables
 const offset = new Vector3();
 const scaleFactor = new Vector3();
-const tempVector2 = new Vector3();
 const EPS = 0.000001;
 
 function hasAxisAny(str, chars) {

@@ -16,12 +16,8 @@ const unit = {
 	Y: new Vector3(0, 1, 0),
 	Z: new Vector3(0, 0, 1)
 };
-const startNorm = new Vector3();
-const endNorm = new Vector3();
 const rotationAxis = new Vector3();
 let rotationAngle = 0;
-
-const _tempVector = new Vector3();
 
 export class TransformControlsCombined extends TransformControlsMixin(TransformHelperCombined) {
 	transform() {
@@ -53,7 +49,7 @@ export class TransformControlsCombined extends TransformControlsMixin(TransformH
 			if (this.axis === 'S_XYZ') {
 
 				let refVector = this.pointStart.clone().normalize();
-				let factor = this.pointEnd.dot(refVector) / this.pointStart.dot(refVector)
+				let factor = this.pointEnd.dot(refVector) / this.pointStart.dot(refVector);
 				scaleFactor.set(factor, factor, factor);
 
 			} else {

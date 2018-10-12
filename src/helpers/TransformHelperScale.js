@@ -1,10 +1,9 @@
-import {Vector3, Matrix4, Quaternion, OctahedronBufferGeometry, CylinderBufferGeometry} from "../../lib/three.module.js";
+import {OctahedronBufferGeometry, CylinderBufferGeometry} from "../../lib/three.module.js";
 import {TransformHelper} from "./TransformHelper.js";
 import {HelperGeometry} from "./HelperGeometry.js";
-import {Corner2Geometry, PlaneGeometry, colors} from "./HelperGeometries.js";
+import {PlaneGeometry, colors} from "./HelperGeometries.js";
 
 // Reusable utility variables
-const PI = Math.PI;
 const HPI = Math.PI / 2;
 const EPS = 0.000001;
 
