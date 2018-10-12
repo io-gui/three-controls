@@ -5,7 +5,7 @@ import {Corner2Geometry, PlaneGeometry, colors} from "./HelperGeometries.js";
 
 // Reusable utility variables
 const PI = Math.PI;
-const HPI = Math.PI / 2;
+const HPI = PI / 2;
 const EPS = 0.000001;
 
 const coneGeometry = new HelperGeometry([

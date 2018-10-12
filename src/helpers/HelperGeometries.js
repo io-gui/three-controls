@@ -5,7 +5,8 @@
 import {BufferGeometry, CylinderBufferGeometry, Float32BufferAttribute, Uint16BufferAttribute} from "../../lib/three.module.js";
 import {HelperGeometry} from "./HelperGeometry.js";
 
-const HPI = Math.PI / 2;
+const PI = Math.PI;
+const HPI = PI / 2;
 const EPS = 0.000001;
 
 export const colors = {

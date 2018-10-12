@@ -4,8 +4,8 @@ import {Corner2Geometry, PlaneGeometry, LineGeometry} from "./HelperGeometries.j
 import {HelperGeometry} from "./HelperGeometry.js";
 
 // Reusable utility variables
-const HPI = Math.PI / 2;
 const PI = Math.PI;
+const HPI = PI / 2;
 const EPS = 0.000001;
 
 const _vector = new Vector3();

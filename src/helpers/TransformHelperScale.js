@@ -4,7 +4,8 @@ import {HelperGeometry} from "./HelperGeometry.js";
 import {PlaneGeometry, colors} from "./HelperGeometries.js";
 
 // Reusable utility variables
-const HPI = Math.PI / 2;
+const PI = Math.PI;
+const HPI = PI / 2;
 const EPS = 0.000001;
 
 const scaleArrowGeometry = new HelperGeometry([
@@ -13,8 +14,8 @@ const scaleArrowGeometry = new HelperGeometry([
 ]);
 
 const scaleUniformArrowGeometry = new HelperGeometry([
-	[new CylinderBufferGeometry(EPS, EPS, 0.1, 5, 1, true), {position: [0, -0.1, 0], thickness: 1}],
-	[new OctahedronBufferGeometry(0.05, 2)],
+	[new CylinderBufferGeometry(EPS, EPS, 0.1, 5, 1, true), {position: [0, 0.9, 0], thickness: 1}],
+	[new OctahedronBufferGeometry(0.05, 2), {position: [0, 1, 0]}],
 ]);
 
 const scaleCornerGeometry = new HelperGeometry([
@@ -41,9 +42,9 @@ const handleGeometry = {
 		[scaleCornerGeometry, {position: [0.8, 0, 0.8], color: colors['magenta'], rotation: [HPI, 0, 0]}],
 	]),
 	XYZ: new HelperGeometry([
-		[scaleUniformArrowGeometry, {color: colors['gray'], position: [1, 0, 0], rotation: [0, 0, -HPI]}],
-		[scaleUniformArrowGeometry, {color: colors['gray'], position: [0, 1, 0]}],
-		[scaleUniformArrowGeometry, {color: colors['gray'], position: [0, 0, 1], rotation: [HPI, 0, 0]}],
+		[scaleUniformArrowGeometry, {color: colors['gray'], rotation: [0, 0, -HPI]}],
+		[scaleUniformArrowGeometry, {color: colors['gray']}],
+		[scaleUniformArrowGeometry, {color: colors['gray'], rotation: [HPI, 0, 0]}],
 	]),
 };
 

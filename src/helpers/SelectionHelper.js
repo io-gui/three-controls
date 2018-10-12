@@ -10,8 +10,8 @@ import {HelperGeometry} from "./HelperGeometry.js";
 import {Corner3Geometry} from "./HelperGeometries.js";
 
 // Reusable utility variables
-const HPI = Math.PI / 2;
 const PI = Math.PI;
+const HPI = PI / 2;
 const EPS = 0.000001;
 
 // TODO: consider supporting objects with skewed transforms.

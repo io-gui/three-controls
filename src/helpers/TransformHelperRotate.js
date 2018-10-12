@@ -12,7 +12,7 @@ const _tempQuaternion = new Quaternion();
 const _identityQuaternion = new Quaternion();
 
 const PI = Math.PI;
-const HPI = Math.PI / 2;
+const HPI = PI / 2;
 const EPS = 0.000001;
 
 const _unitX = new Vector3(1, 0, 0);
