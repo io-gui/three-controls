@@ -26,7 +26,6 @@ const _tempVector = new Vector3();
 export class TransformControlsCombined extends TransformControlsMixin(TransformHelperCombined) {
 	transform() {
 
-
 		if (this.axis.indexOf('T') !== -1) {
 
 			offset.copy(this.pointEnd).sub(this.pointStart);

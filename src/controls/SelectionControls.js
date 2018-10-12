@@ -168,14 +168,15 @@ export class SelectionControls extends Interactive {
 	}
 	update() {
 		// Reset selection transform.
-		this.position.set(0,0,0,1);
-		this.quaternion.set(0,0,0,1);
-		this.scale.set(1,1,1);
+		// this.position.set(0,0,0);
+		// this.quaternion.set(0,0,0,1);
+		// this.scale.set(1,1,1);
 
 		// TODO: temp for testing
 		this.boundingBox.makeEmpty();
 
 		if (this.selected.length && this.transformSelection) {
+
 			// Set selection transform to last selected item (not ancestor of selected).
 			if (this.transformSpace === 'local') {
 				for (let i = this.selected.length; i--;) {
@@ -271,6 +272,7 @@ export class SelectionControls extends Interactive {
 		for (let i = this.children.length; i--;) {
 			super.remove(this.children[i]);
 		}
+
 		for (let i = 0; i < this.selected.length; i++) {
 			const _helper = new SelectionHelper({object: this.selected[i]});
 			super.add(_helper);

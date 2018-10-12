@@ -81,6 +81,8 @@
 			import {TrackballControls} from "./src/controls/TrackballControls.js";
 			import {SelectionControls} from "./src/controls/SelectionControls.js";
 
+			import {TransformHelperTranslate} from "./src/helpers/TransformHelperTranslate.js";
+
 			import {WebGLRenderer, PerspectiveCamera, OrthographicCamera, Scene, GridHelper, DirectionalLight,
 				BoxBufferGeometry, MeshLambertMaterial, Mesh, Object3D, TextureLoader, Color,
 				SphereBufferGeometry, Vector3,BufferGeometry, BufferAttribute} from "./lib/three.module.js";
@@ -203,7 +205,8 @@
 				// 			const obj3d = new Object3D();
 				// 			obj3d.position.set(i * 200 - 500, k * 200 - 500, j * 200 - 500);
 				// 			helperScene.add(obj3d);
-				// 			const control = new TransformControlsTranslate({domElement: canvas, camera: camera});
+				// 			// const control = new TransformControlsTranslate({domElement: canvas, camera: camera});
+				// 			const control = new TransformHelperTranslate();
 				// 			control.size = 0.05;
 				// 			control.addEventListener('change', transformControlsChanged);
 				// 			control.object = obj3d;
@@ -216,15 +219,15 @@
 				helperScene.add(selectionControls);
 				selectionControls.addEventListener('change', render);
 				selectionControls.addEventListener('selected-changed', event => {
-					transformControls.object = event.selected.length ? selectionControls : null;
+					// transformControls.object = event.selected.length ? selectionControls : null;
 					// TODO: test individual objects
-					// transformControls.object = event.selected.length ? event.selected[0] : null;
+					transformControls.object = event.selected.length ? event.selected[0] : null;
 					transformControls.objectChanged();
 					transformControls.enabled = true;
 				});
 
-				setupViewportControls('OrbitControls');
-				setupTransformControls('TransformControlsStretch');
+				setupViewportControls('ViewportControls');
+				setupTransformControls('TransformControlsCombined');
 
 				scene.updateMatrixWorld();
 				selectionControls.replace([
@@ -278,7 +281,7 @@
 					transformControls = new ControlClass({domElement: canvas, camera: camera});
 					transformControls.addEventListener('change', transformControlsChanged);
 					transformControls.object = transformControls.object = selectionControls && selectionControls.selected.length ? selectionControls : null;
-					transformControls.space = 'local';
+					transformControls.space = 'world';
 					helperScene.add(transformControls);
 				}
 				window.setupTransformControls = setupTransformControls;
@@ -376,7 +379,7 @@
 
 				requestAnimationFrame(animate);
 
-				render();
+				rendered = false;
 
 			}
 
@@ -390,11 +393,10 @@
 				renderer.clearDepth();
 				renderer.render(helperScene, camera);
 
-				requestAnimationFrame(() => { rendered = false; })
-
 			}
 
 			render();
+			animate();
 
 		</script>
 

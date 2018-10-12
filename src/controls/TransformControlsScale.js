@@ -29,7 +29,6 @@ export class TransformControlsScale extends TransformControlsMixin(TransformHelp
 			if (this.axis.indexOf('X') === -1) scaleFactor.x = 1;
 			if (this.axis.indexOf('Y') === -1) scaleFactor.y = 1;
 			if (this.axis.indexOf('Z') === -1) scaleFactor.z = 1;
-
 		}
 
 		this.object.scale.copy(this.scaleStart).multiply(scaleFactor);

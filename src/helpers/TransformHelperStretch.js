@@ -4,7 +4,6 @@ import {Corner2Geometry, PlaneGeometry, LineGeometry} from "./HelperGeometries.j
 import {HelperMesh} from "./HelperMesh.js";
 import {HelperGeometry} from "./HelperGeometry.js";
 
-
 // Reusable utility variables
 const HPI = Math.PI / 2;
 const PI = Math.PI;

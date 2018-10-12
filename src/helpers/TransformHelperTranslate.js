@@ -3,10 +3,7 @@ import {TransformHelper} from "./TransformHelper.js";
 import {HelperGeometry} from "./HelperGeometry.js";
 import {Corner2Geometry, PlaneGeometry, colors} from "./HelperGeometries.js";
 
-const AXIS_HIDE_TRESHOLD = 0.99;
-const PLANE_HIDE_TRESHOLD = 0.1;
-const AXIS_FLIP_TRESHOLD = 0;
-
+// Reusable utility variables
 const PI = Math.PI;
 const HPI = Math.PI / 2;
 const EPS = 0.000001;
@@ -50,62 +47,10 @@ const pickerGeometry = {
 };
 
 export class TransformHelperTranslate extends TransformHelper {
-	get isTransformHelperTranslate() { return true; }
 	get handleGeometry() {
 		return handleGeometry;
 	}
 	get pickerGeometry() {
 		return pickerGeometry;
-	}
-	constructor(props) {
-		super(props);
-		this.depthBias = 1;
-		this.defineProperties({
-			hideX: { value: false, observer: 'paramChanged' },
-			hideY: { value: false, observer: 'paramChanged' },
-			hideZ: { value: false, observer: 'paramChanged' },
-			hideXY: { value: false, observer: 'paramChanged' },
-			hideYZ: { value: false, observer: 'paramChanged' },
-			hideXZ: { value: false, observer: 'paramChanged' },
-			flipX: { value: false, observer: 'paramChanged' },
-			flipY: { value: false, observer: 'paramChanged' },
-			flipZ: { value: false, observer: 'paramChanged' }
-		});
-	}
-	paramChanged() {
-		super.paramChanged();
-		this.traverseAxis(axis => {
-			// Hide axis facing the camera
-			if ((axis.name == 'X' || axis.name == 'XYZ') && this.hideX) axis.hidden = true;
-			if ((axis.name == 'Y' || axis.name == 'XYZ') && this.hideY) axis.hidden = true;
-			if ((axis.name == 'Z' || axis.name == 'XYZ') && this.hideZ) axis.hidden = true;
-			if (axis.name == 'XY' && this.hideXY) axis.hidden = true;
-			if (axis.name == 'YZ' && this.hideYZ) axis.hidden = true;
-			if (axis.name == 'XZ' && this.hideXZ) axis.hidden = true;
-			// Flip axis
-			if (axis.name.indexOf('X') !== -1) axis.scaleTarget.x = this.flipX ? -1 : 1;
-			if (axis.name.indexOf('Y') !== -1) axis.scaleTarget.y = this.flipY ? -1 : 1;
-			if (axis.name.indexOf('Z') !== -1) axis.scaleTarget.z = this.flipZ ? -1 : 1;
-		});
-	}
-	updateHelperMatrix() {
-		super.updateHelperMatrix();
-
-		const xDotE = this.axisDotEye.x;
-		const yDotE = this.axisDotEye.y;
-		const zDotE = this.axisDotEye.z;
-
-		// Hide axis facing the camera
-		if (!this.active) { // skip while controls are active
-			this.hideX = Math.abs(xDotE) > AXIS_HIDE_TRESHOLD;
-			this.hideY = Math.abs(yDotE) > AXIS_HIDE_TRESHOLD;
-			this.hideZ = Math.abs(zDotE) > AXIS_HIDE_TRESHOLD;
-			this.hideXY = Math.abs(zDotE) < PLANE_HIDE_TRESHOLD;
-			this.hideYZ = Math.abs(xDotE) < PLANE_HIDE_TRESHOLD;
-			this.hideXZ = Math.abs(yDotE) < PLANE_HIDE_TRESHOLD;
-			this.flipX = xDotE < AXIS_FLIP_TRESHOLD;
-			this.flipY = yDotE < AXIS_FLIP_TRESHOLD;
-			this.flipZ = zDotE < AXIS_FLIP_TRESHOLD;
-		}
 	}
 }

@@ -2,20 +2,7 @@ import {IoLiteMixin} from "../../lib/IoLiteMixin.js";
 import {UniformsUtils, Vector3, Color, FrontSide, ShaderMaterial,
 	DataTexture, RGBAFormat, FloatType, NearestFilter} from "../../lib/three.module.js";
 
-const _colors = {
-	black: new Color(0x000000),
-	red: new Color(0xff0000),
-	green: new Color(0x00ff00),
-	blue: new Color(0x0000ff),
-	white: new Color(0xffffff),
-	gray: new Color(0x787878),
-	yellow: new Color(0xffff00),
-	cyan: new Color(0x00ffff),
-	magenta: new Color(0xff00ff),
-};
-
 // TODO: pixel-perfect outlines
-
 export class HelperMaterial extends IoLiteMixin(ShaderMaterial) {
 	constructor(color, opacity) {
 		super({
@@ -36,7 +23,7 @@ export class HelperMaterial extends IoLiteMixin(ShaderMaterial) {
 		texture.minFilter = NearestFilter;
 
 		const res = new Vector3(window.innerWidth, window.innerHeight, window.devicePixelRatio);
-		color = color !== undefined ? _colors[color] : _colors['white'];
+		color = color || new Color(0xffffff);
 		opacity = opacity !== undefined ? opacity : 1;
 
 		this.defineProperties({

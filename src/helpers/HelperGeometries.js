@@ -23,7 +23,6 @@ export const colors = {
 
 export class PlaneGeometry extends HelperGeometry {
 	constructor() {
-
 		let geometry = new BufferGeometry();
 
 		let indices = [

@@ -1,5 +1,5 @@
 import {Vector3, Matrix4, Quaternion, OctahedronBufferGeometry, CylinderBufferGeometry} from "../../lib/three.module.js";
-import {TransformHelperTranslate} from "./TransformHelperTranslate.js";
+import {TransformHelper} from "./TransformHelper.js";
 import {HelperGeometry} from "./HelperGeometry.js";
 import {Corner2Geometry, PlaneGeometry, colors} from "./HelperGeometries.js";
 
@@ -11,6 +11,11 @@ const EPS = 0.000001;
 const scaleArrowGeometry = new HelperGeometry([
 	[new CylinderBufferGeometry(EPS, EPS, 0.5, 5, 1, true), {position: [0, 0.5, 0], thickness: 1}],
 	[new OctahedronBufferGeometry(0.05, 2), {position: [0, 0.8, 0]}],
+]);
+
+const scaleUniformArrowGeometry = new HelperGeometry([
+	[new CylinderBufferGeometry(EPS, EPS, 0.1, 5, 1, true), {position: [0, -0.1, 0], thickness: 1}],
+	[new OctahedronBufferGeometry(0.05, 2)],
 ]);
 
 const scaleCornerGeometry = new HelperGeometry([
@@ -37,9 +42,9 @@ const handleGeometry = {
 		[scaleCornerGeometry, {position: [0.8, 0, 0.8], color: colors['magenta'], rotation: [HPI, 0, 0]}],
 	]),
 	XYZ: new HelperGeometry([
-		[new OctahedronBufferGeometry(0.05, 2), {color: colors['gray'], position: [1, 0, 0]}],
-		[new OctahedronBufferGeometry(0.05, 2), {color: colors['gray'], position: [0, 1, 0]}],
-		[new OctahedronBufferGeometry(0.05, 2), {color: colors['gray'], position: [0, 0, 1]}],
+		[scaleUniformArrowGeometry, {color: colors['gray'], position: [1, 0, 0], rotation: [0, 0, -HPI]}],
+		[scaleUniformArrowGeometry, {color: colors['gray'], position: [0, 1, 0]}],
+		[scaleUniformArrowGeometry, {color: colors['gray'], position: [0, 0, 1], rotation: [HPI, 0, 0]}],
 	]),
 };
 
@@ -57,17 +62,19 @@ const pickerGeometry = {
 	]),
 };
 
-export class TransformHelperScale extends TransformHelperTranslate {
+export class TransformHelperScale extends TransformHelper {
 	get handleGeometry() {
 		return handleGeometry;
 	}
 	get pickerGeometry() {
 		return pickerGeometry;
 	}
-	updateHelperMatrix() {
-		this.space = 'local';
-		super.updateHelperMatrix();
-		for (let i = this.handles.length; i--;) this.updateAxis(this.handles[i]);
-		for (let i = this.pickers.length; i--;) this.updateAxis(this.pickers[i]);
+	paramChanged() {
+		super.paramChanged();
+		this.traverseAxis(axis => {
+			// Hide per-axis scale in world mode
+			if ((axis.name == 'X' || axis.name == 'Y' || axis.name == 'Z') && this.space === 'world') axis.hidden = true;
+			if ((axis.name == 'XY' || axis.name == 'YZ' || axis.name == 'XZ') && this.space === 'world') axis.hidden = true;
+		});
 	}
 }

@@ -18,6 +18,8 @@ function hasAxisAny(str, chars) {
 	return has;
 }
 
+// TODO: fix toggle space>freescale
+
 export class TransformControlsStretch extends TransformControlsMixin(TransformHelperStretch) {
 	transform() {
 		// TODO: test with asymetric bounding boxes!!!

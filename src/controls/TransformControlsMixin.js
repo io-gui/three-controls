@@ -17,10 +17,6 @@ export const TransformControlsMixin = (superclass) => class extends InteractiveM
 	constructor(props) {
 		super(props);
 
-		this.defineProperties({
-			active: false
-		});
-
 		this.pointStart = new Vector3();
 		this.pointEnd = new Vector3();
 
