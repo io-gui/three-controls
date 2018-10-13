@@ -47,19 +47,19 @@
 			<a href="javascript:setupTransformControls('TransformControlsTranslate')">W translate</a> |
 			<a href="javascript:setupTransformControls('TransformControlsRotate')">E rotate</a> |
 			<a href="javascript:setupTransformControls('TransformControlsScale')">R scale</a> |
-			<a href="javascript:setupTransformControls('TransformControlsStretch')">T freeScale (n/a) </a> |
-			<a href="javascript:setupTransformControls('DragControls')">Y drag</a><br />
-			<span>Viewport:</span>
+			<a href="javascript:setupTransformControls('TransformControlsStretch')">T combined </a> |
+			<a href="javascript:setupTransformControls('TransformControlsStretch')">Y stretch (wip) </a><br />
+			<span>Viewport controls:</span>
 			<a href="javascript:setupViewportControls('OrbitControls')">1 orbit</a> |
 			<a href="javascript:setupViewportControls('EditorControls')">2 editor</a> |
 			<a href="javascript:setupViewportControls('TrackballControls')">3 trackball</a><br />
 			<!-- <a href="javascript:setupViewportControls('FirstPersonControls')">4 first person</a> | -->
 			<!-- <a href="javascript:setupViewportControls('FlyControls')">3 fly</a><br /> -->
 			<span>Toggle:</span>
-			<a href="javascript:toggle('space')">Q space</a> |
+			<a href="javascript:toggle('space')">Q world/local space</a> |
 			<a href="javascript:toggle('X')">X</a> |
 			<a href="javascript:toggle('Y')">Y</a> |
-			<a href="javascript:toggle('Z')">Z axis</a><br />
+			<a href="javascript:toggle('Z')">Z toggle axis</a><br />
 			<span>click - select |</span>
 			<span>click + Ctrl - multi-select</span>
 			<!-- <a>Shift marquee/add</a> | -->
@@ -83,9 +83,11 @@
 
 			import {TransformHelperTranslate} from "./src/helpers/TransformHelperTranslate.js";
 
-			import {WebGLRenderer, PerspectiveCamera, OrthographicCamera, Scene, GridHelper, DirectionalLight,
+			import {WebGLRenderer, PerspectiveCamera, OrthographicCamera, Scene, GridHelper, HemisphereLight,
 				BoxBufferGeometry, MeshLambertMaterial, Mesh, Object3D, TextureLoader, Color,
 				SphereBufferGeometry, Vector3,BufferGeometry, BufferAttribute} from "./lib/three.module.js";
+
+			import {GLTFLoader} from "./examples/GLTFLoader.js";
 
 			let rendered = false;
 			let renderer, camera, scene, helperScene;
@@ -93,6 +95,21 @@
 
 			scene = new Scene();
 			helperScene = new Scene();
+
+			var loader = new GLTFLoader();
+			loader.load( 'examples/cubes.gltf', function ( gltf ) {
+
+				gltf.scene.scale.multiplyScalar(1000);
+
+				scene.add( gltf.scene );
+
+				render();
+
+			}, undefined, function ( e ) {
+
+				console.error( e );
+
+			} );
 
 			window.scale = 1;
 			window.Vector3 = Vector3;
@@ -104,6 +121,7 @@
 
 				renderer = new WebGLRenderer({ antialias: true });
 				renderer.autoClear = false;
+				renderer.gammaOutput = true;
 
 				let innerWidth = window.innerWidth / window.scale;
 				let innerHeight = window.innerHeight / window.scale;
@@ -124,80 +142,17 @@
 				camera = new PerspectiveCamera(20, innerWidth / innerHeight, 100, 1000000);
 
 				// let a = innerWidth / innerHeight;
-				// let s = 800
-				// camera = new OrthographicCamera(-s * a, s * a, s, -s, 0, 9000);
+				// let s = 1800
+				// camera = new OrthographicCamera(-s * a, s * a, s, -s, 0, 55000);
 
-				camera.position.set(3000, 2000, 3000);
-				camera.lookAt(0, 200, 0);
+				camera.position.set(4000, 2000, 4000);
+				camera.lookAt(0, 500, 0);
 
 				var grid = new GridHelper(1000, 10);
 				scene.add(grid);
 
-				var light = new DirectionalLight(0x99ffff, 2);
-				light.position.set(1, 0.5, 0.5);
+				var light = new HemisphereLight(0x333333, 0xffffff, 3);
 				scene.add(light);
-
-				var light = new DirectionalLight(0xff9999, 2);
-				light.position.set(-0.5, 1, 0.2);
-				scene.add(light);
-
-				var light = new DirectionalLight(0x9999ff, 2);
-				light.position.set(0.1, -0.3, -1);
-				scene.add(light);
-
-				let sphere = new Mesh(
-					new SphereBufferGeometry(100, 24, 12),
-					new MeshLambertMaterial({color: new Color(0.7,0.7,0.7), map: new TextureLoader().load( 'examples/textures/moon_1024.jpg', render )})
-				);
-				sphere.position.set(200, 300, -200);
-				scene.add(sphere);
-
-				sphere = new Mesh(
-					new SphereBufferGeometry(10, 24, 12),
-					new MeshLambertMaterial({color: new Color(0.7,0.7,0.7), map: new TextureLoader().load( 'examples/textures/moon_1024.jpg', render )})
-				);
-				sphere.position.set(-200, 300, 200);
-				scene.add(sphere);
-
-				var geometry = new BoxBufferGeometry(200, 200, 200);
-				var material = new MeshLambertMaterial({map: new TextureLoader().load( 'examples/textures/crate.gif', render )});
-				let box0 = new Mesh(geometry, material);
-				box0.position.set(0,100,0);
-				scene.add(box0);
-
-				let box;
-				let parent = box0;
-				for (let i = 0; i < 2; i++) {
-					box = new Mesh(geometry, material);
-					box.position.set(0, 200, 0);
-					box.rotation.set(0, -(i+1)/3, 0);
-					parent.add(box);
-					parent = box;
-				}
-
-				geometry = new BoxBufferGeometry(400, 400, 400);
-
-				parent = box0;
-				for (let i = 0; i < 2; i++) {
-					box = new Mesh(geometry, material);
-					if (i == 0) box.scale.set(0.5, 0.5, 0.5);
-					box.position.set(0, 0, -200 / parent.scale.x);
-					box.rotation.set(0, -Math.PI * (i + 1) / 2, 0);
-					parent.add(box);
-					parent = box;
-				}
-				parent = box0;
-
-				geometry = new BoxBufferGeometry(100, 100, 100);
-
-				for (let i = 0; i < 2; i++) {
-					box = new Mesh(geometry, material);
-					if (i == 0) box.scale.set(2, 2, 2);
-					box.position.set(-200 / parent.scale.x, 0, 0);
-					box.rotation.set(0, Math.PI * (i + 1) / 2, 0);
-					parent.add(box);
-					parent = box;
-				}
 
 				// for (var i = 0; i < 6; i++) {
 				// 	for (var j = 0; j < 6; j++) {
@@ -219,9 +174,9 @@
 				helperScene.add(selectionControls);
 				selectionControls.addEventListener('change', render);
 				selectionControls.addEventListener('selected-changed', event => {
-					// transformControls.object = event.selected.length ? selectionControls : null;
+					transformControls.object = event.selected.length ? selectionControls : null;
 					// TODO: test individual objects
-					transformControls.object = event.selected.length ? event.selected[0] : null;
+					// transformControls.object = event.selected.length ? event.selected[0] : null;
 					transformControls.objectChanged();
 					transformControls.enabled = true;
 				});
@@ -230,11 +185,6 @@
 				setupTransformControls('TransformControlsCombined');
 
 				scene.updateMatrixWorld();
-				selectionControls.replace([
-					box0.children[1].children[0],
-					box0.children[2].children[0],
-				]);
-
 
 				// TODO: figure out how to better pass resolution to materials.
 				{
@@ -250,10 +200,13 @@
 					if (controlName === 'EditorControls') ControlClass = EditorControls;
 					if (controlName === 'TrackballControls') ControlClass = TrackballControls;
 
+
 					if (viewportControls) {
 						viewportControls.dispose();
 					}
 					viewportControls = new ControlClass({domElement: canvas, camera: camera});
+					viewportControls.target.set(0, 500, 0);
+					// viewportControls.autoOrbit.set(0.002, 0);
 					viewportControls.addEventListener('change', viewportControlsChanged);
 				}
 				window.setupViewportControls = setupViewportControls;
@@ -272,7 +225,10 @@
 					if (controlName === 'TransformControlsCombined') ControlClass = TransformControlsCombined;
 					if (controlName === 'DragControls') ControlClass = DragControls;
 
+					let space = 'local';
+
 					if (transformControls) {
+						space = transformControls.space;
 						transformControls.dispose();
 						helperScene.remove(transformControls);
 					}
@@ -281,7 +237,7 @@
 					transformControls = new ControlClass({domElement: canvas, camera: camera});
 					transformControls.addEventListener('change', transformControlsChanged);
 					transformControls.object = transformControls.object = selectionControls && selectionControls.selected.length ? selectionControls : null;
-					transformControls.space = 'world';
+					transformControls.space = space;
 					helperScene.add(transformControls);
 				}
 				window.setupTransformControls = setupTransformControls;
@@ -318,11 +274,11 @@
 							setupTransformControls('TransformControlsScale');
 							break;
 						case 84: // T
-							setupTransformControls('TransformControlsStretch');
+							setupTransformControls('TransformControlsCombined');
 							break;
-						// case 89: // Y
-						// 	setupTransformControls('DragControls');
-						// 	break;
+						case 89: // Y
+						setupTransformControls('TransformControlsStretch');
+							break;
 						case 49: // 1
 							setupViewportControls('OrbitControls');
 							break;

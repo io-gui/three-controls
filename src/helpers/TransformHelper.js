@@ -88,11 +88,21 @@ export class TransformHelper extends Helper {
 		for (let i = this.pickers.length; i--;) callback(this.pickers[i]);
 	}
 	spaceChanged() {
+		super.spaceChanged();
 		this.paramChanged();
 		this.animateScaleUp();
 	}
 	objectChanged() {
-		this.paramChanged();
+		super.objectChanged();
+		this.hideX = false;
+		this.hideY = false;
+		this.hideZ = false;
+		this.hideXY = false;
+		this.hideYZ = false;
+		this.hideXZ = false;
+		this.flipX = false;
+		this.flipY = false;
+		this.flipZ = false;
 		this.animateScaleUp();
 	}
 	animateScaleUp() {
@@ -145,7 +155,7 @@ export class TransformHelper extends Helper {
 		const zDotE = this.axisDotEye.z;
 
 		// Hide axis facing the camera
-		if (!this.active) { // skip while controls are active
+		if (!this.active) {
 			this.hideX = Math.abs(xDotE) > AXIS_HIDE_TRESHOLD;
 			this.hideY = Math.abs(yDotE) > AXIS_HIDE_TRESHOLD;
 			this.hideZ = Math.abs(zDotE) > AXIS_HIDE_TRESHOLD;

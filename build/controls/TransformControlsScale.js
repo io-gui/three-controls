@@ -603,6 +603,11 @@ class Helper extends IoLiteMixin( Mesh ) {
 		} );
 
 	}
+	spaceChanged() {
+
+		this.updateHelperMatrix();
+
+	}
 	updateHelperMatrix() {
 
 		if ( this.object ) {
@@ -790,6 +795,7 @@ const TransformControlsMixin = ( superclass ) => class extends InteractiveMixin(
 		this.worldScale = new Vector3();
 
 		this._plane = new Plane();
+		this.objectChanged();
 
 		// this.add(this._planeDebugMesh = new Mesh(new PlaneBufferGeometry(1000, 1000, 10, 10), new MeshBasicMaterial({wireframe: true, transparent: true, opacity: 0.2})));
 
@@ -799,6 +805,7 @@ const TransformControlsMixin = ( superclass ) => class extends InteractiveMixin(
 		super.objectChanged();
 		let hasObject = this.object ? true : false;
 		this.visible = hasObject;
+		this.enabled = hasObject;
 		if ( ! hasObject ) {
 
 			this.active = false;
@@ -995,16 +1002,18 @@ class HelperMaterial extends IoLiteMixin( ShaderMaterial ) {
 				// nor = (projectionMatrix * vec4(nor, 1.0)).xyz;
 				nor = normalize((nor.xyz) * vec3(1., 1., 0.));
 
+				pos.z -= uDepthBias * 0.1;
+				pos.z -= uHighlight;
+
 				float extrude = 0.0;
 				if (outline > 0.0) {
 					extrude = outline;
 					pos.z += 0.01;
+					pos.z = max(-0.99, pos.z);
 				} else {
 					extrude -= outline;
+					pos.z = max(-1.0, pos.z);
 				}
-
-				pos.z -= uDepthBias * 0.1;
-				pos.z -= uHighlight;
 
 				pos.xy /= pos.w;
 
@@ -1637,7 +1646,8 @@ class HelperGeometry extends BufferGeometry {
  * @author arodic / https://github.com/arodic
  */
 
-const HPI = Math.PI / 2;
+const PI = Math.PI;
+const HPI = PI / 2;
 const EPS = 0.000001;
 
 const colors = {
@@ -1878,6 +1888,7 @@ class TransformHelper extends Helper {
 	}
 	spaceChanged() {
 
+		super.spaceChanged();
 		this.paramChanged();
 		this.animateScaleUp();
 
@@ -1953,6 +1964,7 @@ class TransformHelper extends Helper {
 		// Hide axis facing the camera
 		if ( ! this.active ) { // skip while controls are active
 
+			// TODO: fix incorrect flip on space shange
 			this.hideX = Math.abs( xDotE ) > AXIS_HIDE_TRESHOLD;
 			this.hideY = Math.abs( yDotE ) > AXIS_HIDE_TRESHOLD;
 			this.hideZ = Math.abs( zDotE ) > AXIS_HIDE_TRESHOLD;
@@ -1982,7 +1994,8 @@ class TransformHelper extends Helper {
 }
 
 // Reusable utility variables
-const HPI$1 = Math.PI / 2;
+const PI$1 = Math.PI;
+const HPI$1 = PI$1 / 2;
 const EPS$1 = 0.000001;
 
 const scaleArrowGeometry = new HelperGeometry( [
@@ -1991,8 +2004,8 @@ const scaleArrowGeometry = new HelperGeometry( [
 ] );
 
 const scaleUniformArrowGeometry = new HelperGeometry( [
-	[ new CylinderBufferGeometry( EPS$1, EPS$1, 0.1, 5, 1, true ), { position: [ 0, - 0.1, 0 ], thickness: 1 } ],
-	[ new OctahedronBufferGeometry( 0.05, 2 ) ],
+	[ new CylinderBufferGeometry( EPS$1, EPS$1, 0.1, 5, 1, true ), { position: [ 0, 0.9, 0 ], thickness: 1 } ],
+	[ new OctahedronBufferGeometry( 0.05, 2 ), { position: [ 0, 1, 0 ] } ],
 ] );
 
 const scaleCornerGeometry = new HelperGeometry( [
@@ -2019,9 +2032,9 @@ const handleGeometry$1 = {
 		[ scaleCornerGeometry, { position: [ 0.8, 0, 0.8 ], color: colors[ 'magenta' ], rotation: [ HPI$1, 0, 0 ] } ],
 	] ),
 	XYZ: new HelperGeometry( [
-		[ scaleUniformArrowGeometry, { color: colors[ 'gray' ], position: [ 1, 0, 0 ], rotation: [ 0, 0, - HPI$1 ] } ],
-		[ scaleUniformArrowGeometry, { color: colors[ 'gray' ], position: [ 0, 1, 0 ] } ],
-		[ scaleUniformArrowGeometry, { color: colors[ 'gray' ], position: [ 0, 0, 1 ], rotation: [ HPI$1, 0, 0 ] } ],
+		[ scaleUniformArrowGeometry, { color: colors[ 'gray' ], rotation: [ 0, 0, - HPI$1 ] } ],
+		[ scaleUniformArrowGeometry, { color: colors[ 'gray' ] } ],
+		[ scaleUniformArrowGeometry, { color: colors[ 'gray' ], rotation: [ HPI$1, 0, 0 ] } ],
 	] ),
 };
 

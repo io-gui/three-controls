@@ -71,16 +71,18 @@ export class HelperMaterial extends IoLiteMixin(ShaderMaterial) {
 				// nor = (projectionMatrix * vec4(nor, 1.0)).xyz;
 				nor = normalize((nor.xyz) * vec3(1., 1., 0.));
 
+				pos.z -= uDepthBias * 0.1;
+				pos.z -= uHighlight;
+
 				float extrude = 0.0;
 				if (outline > 0.0) {
 					extrude = outline;
 					pos.z += 0.01;
+					pos.z = max(-0.99, pos.z);
 				} else {
 					extrude -= outline;
+					pos.z = max(-1.0, pos.z);
 				}
-
-				pos.z -= uDepthBias * 0.1;
-				pos.z -= uHighlight;
 
 				pos.xy /= pos.w;
 

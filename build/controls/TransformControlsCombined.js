@@ -603,6 +603,11 @@ class Helper extends IoLiteMixin( Mesh ) {
 		} );
 
 	}
+	spaceChanged() {
+
+		this.updateHelperMatrix();
+
+	}
 	updateHelperMatrix() {
 
 		if ( this.object ) {
@@ -790,6 +795,7 @@ const TransformControlsMixin = ( superclass ) => class extends InteractiveMixin(
 		this.worldScale = new Vector3();
 
 		this._plane = new Plane();
+		this.objectChanged();
 
 		// this.add(this._planeDebugMesh = new Mesh(new PlaneBufferGeometry(1000, 1000, 10, 10), new MeshBasicMaterial({wireframe: true, transparent: true, opacity: 0.2})));
 
@@ -799,6 +805,7 @@ const TransformControlsMixin = ( superclass ) => class extends InteractiveMixin(
 		super.objectChanged();
 		let hasObject = this.object ? true : false;
 		this.visible = hasObject;
+		this.enabled = hasObject;
 		if ( ! hasObject ) {
 
 			this.active = false;
@@ -1536,16 +1543,18 @@ class HelperMaterial extends IoLiteMixin( ShaderMaterial ) {
 				// nor = (projectionMatrix * vec4(nor, 1.0)).xyz;
 				nor = normalize((nor.xyz) * vec3(1., 1., 0.));
 
+				pos.z -= uDepthBias * 0.1;
+				pos.z -= uHighlight;
+
 				float extrude = 0.0;
 				if (outline > 0.0) {
 					extrude = outline;
 					pos.z += 0.01;
+					pos.z = max(-0.99, pos.z);
 				} else {
 					extrude -= outline;
+					pos.z = max(-1.0, pos.z);
 				}
-
-				pos.z -= uDepthBias * 0.1;
-				pos.z -= uHighlight;
 
 				pos.xy /= pos.w;
 
@@ -1637,7 +1646,8 @@ class HelperMesh extends Mesh {
  * @author arodic / https://github.com/arodic
  */
 
-const HPI = Math.PI / 2;
+const PI = Math.PI;
+const HPI = PI / 2;
 const EPS = 0.000001;
 
 const colors = {
@@ -1891,6 +1901,7 @@ class TransformHelper extends Helper {
 	}
 	spaceChanged() {
 
+		super.spaceChanged();
 		this.paramChanged();
 		this.animateScaleUp();
 
@@ -1966,6 +1977,7 @@ class TransformHelper extends Helper {
 		// Hide axis facing the camera
 		if ( ! this.active ) { // skip while controls are active
 
+			// TODO: fix incorrect flip on space shange
 			this.hideX = Math.abs( xDotE ) > AXIS_HIDE_TRESHOLD;
 			this.hideY = Math.abs( yDotE ) > AXIS_HIDE_TRESHOLD;
 			this.hideZ = Math.abs( zDotE ) > AXIS_HIDE_TRESHOLD;
@@ -1995,8 +2007,8 @@ class TransformHelper extends Helper {
 }
 
 // Reusable utility variables
-const PI = Math.PI;
-const HPI$1 = Math.PI / 2;
+const PI$1 = Math.PI;
+const HPI$1 = PI$1 / 2;
 const EPS$1 = 0.000001;
 
 const coneGeometry = new HelperGeometry( [
@@ -2021,7 +2033,7 @@ const scaleUniformArrowGeometry = new HelperGeometry( [
 
 const translateCornerGeometry = new HelperGeometry( [
 	[ new PlaneGeometry(), { color: colors[ 'whiteTransparent' ], position: [ - 0.1, - 0.1, 0 ], scale: 0.2, outlineThickness: 0 } ],
-	[ new Corner2Geometry(), { color: [ 1, 1, 0.25 ], scale: 0.2, rotation: [ HPI$1, 0, PI ] } ],
+	[ new Corner2Geometry(), { color: [ 1, 1, 0.25 ], scale: 0.2, rotation: [ HPI$1, 0, PI$1 ] } ],
 ] );
 
 const scaleCornerGeometry = new HelperGeometry( [
@@ -2053,8 +2065,8 @@ const handleGeometry$1 = {
 	T_YZ: new HelperGeometry( translateCornerGeometry, { color: colors[ 'cyan' ], position: [ 0, 0.25, 0.25 ], rotation: [ 0, - HPI$1, 0 ] } ),
 	T_XZ: new HelperGeometry( translateCornerGeometry, { color: colors[ 'magenta' ], position: [ 0.25, 0, 0.25 ], rotation: [ HPI$1, 0, 0 ] } ),
 
-	R_X: new HelperGeometry( rotateHandleGeometry, { color: colors[ 'red' ], rotation: [ HPI$1 / 2, PI / 2, 0 ] } ),
-	R_Y: new HelperGeometry( rotateHandleGeometry, { color: colors[ 'green' ], rotation: [ PI / 2, 0, - HPI$1 / 2 ] } ),
+	R_X: new HelperGeometry( rotateHandleGeometry, { color: colors[ 'red' ], rotation: [ HPI$1 / 2, PI$1 / 2, 0 ] } ),
+	R_Y: new HelperGeometry( rotateHandleGeometry, { color: colors[ 'green' ], rotation: [ PI$1 / 2, 0, - HPI$1 / 2 ] } ),
 	R_Z: new HelperGeometry( rotateHandleGeometry, { color: colors[ 'blue' ], rotation: [ 0, 0, - HPI$1 / 2 ] } ),
 
 	S_X: new HelperGeometry( scaleArrowGeometry, { color: colors[ 'red' ], rotation: [ 0, 0, - HPI$1 ] } ),
@@ -2079,8 +2091,8 @@ const pickerGeometry$1 = {
 	T_XZ: new HelperGeometry( cornerPickerGeometry, { color: colors[ 'magenta' ], position: [ 0.15, 0, 0.15 ], rotation: [ HPI$1, 0, 0 ] } ),
 	T_XYZ: new HelperGeometry( new OctahedronBufferGeometry( 0.2, 0 ), { color: colors[ 'whiteTransparent' ] } ),
 
-	R_X: new HelperGeometry( rotatePickerGeometry, { color: colors[ 'red' ], rotation: [ HPI$1 / 2, PI / 2, 0 ] } ),
-	R_Y: new HelperGeometry( rotatePickerGeometry, { color: colors[ 'green' ], rotation: [ PI / 2, 0, - HPI$1 / 2 ] } ),
+	R_X: new HelperGeometry( rotatePickerGeometry, { color: colors[ 'red' ], rotation: [ HPI$1 / 2, PI$1 / 2, 0 ] } ),
+	R_Y: new HelperGeometry( rotatePickerGeometry, { color: colors[ 'green' ], rotation: [ PI$1 / 2, 0, - HPI$1 / 2 ] } ),
 	R_Z: new HelperGeometry( rotatePickerGeometry, { color: colors[ 'blue' ], rotation: [ 0, 0, - HPI$1 / 2 ] } ),
 
 	S_X: new HelperGeometry( scalePickerGeometry, { color: colors[ 'red' ], position: [ 0.9, 0, 0 ], rotation: [ 0, 0, - HPI$1 ], scale: 1.5 } ),

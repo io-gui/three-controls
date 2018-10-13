@@ -603,6 +603,11 @@ class Helper extends IoLiteMixin( Mesh ) {
 		} );
 
 	}
+	spaceChanged() {
+
+		this.updateHelperMatrix();
+
+	}
 	updateHelperMatrix() {
 
 		if ( this.object ) {
@@ -790,6 +795,7 @@ const TransformControlsMixin = ( superclass ) => class extends InteractiveMixin(
 		this.worldScale = new Vector3();
 
 		this._plane = new Plane();
+		this.objectChanged();
 
 		// this.add(this._planeDebugMesh = new Mesh(new PlaneBufferGeometry(1000, 1000, 10, 10), new MeshBasicMaterial({wireframe: true, transparent: true, opacity: 0.2})));
 
@@ -799,6 +805,7 @@ const TransformControlsMixin = ( superclass ) => class extends InteractiveMixin(
 		super.objectChanged();
 		let hasObject = this.object ? true : false;
 		this.visible = hasObject;
+		this.enabled = hasObject;
 		if ( ! hasObject ) {
 
 			this.active = false;
@@ -995,16 +1002,18 @@ class HelperMaterial extends IoLiteMixin( ShaderMaterial ) {
 				// nor = (projectionMatrix * vec4(nor, 1.0)).xyz;
 				nor = normalize((nor.xyz) * vec3(1., 1., 0.));
 
+				pos.z -= uDepthBias * 0.1;
+				pos.z -= uHighlight;
+
 				float extrude = 0.0;
 				if (outline > 0.0) {
 					extrude = outline;
 					pos.z += 0.01;
+					pos.z = max(-0.99, pos.z);
 				} else {
 					extrude -= outline;
+					pos.z = max(-1.0, pos.z);
 				}
-
-				pos.z -= uDepthBias * 0.1;
-				pos.z -= uHighlight;
 
 				pos.xy /= pos.w;
 
@@ -1637,7 +1646,8 @@ class HelperGeometry extends BufferGeometry {
  * @author arodic / https://github.com/arodic
  */
 
-const HPI = Math.PI / 2;
+const PI = Math.PI;
+const HPI = PI / 2;
 const EPS = 0.000001;
 
 class PlaneGeometry extends HelperGeometry {
@@ -1889,6 +1899,7 @@ class TransformHelper extends Helper {
 	}
 	spaceChanged() {
 
+		super.spaceChanged();
 		this.paramChanged();
 		this.animateScaleUp();
 
@@ -1964,6 +1975,7 @@ class TransformHelper extends Helper {
 		// Hide axis facing the camera
 		if ( ! this.active ) { // skip while controls are active
 
+			// TODO: fix incorrect flip on space shange
 			this.hideX = Math.abs( xDotE ) > AXIS_HIDE_TRESHOLD;
 			this.hideY = Math.abs( yDotE ) > AXIS_HIDE_TRESHOLD;
 			this.hideZ = Math.abs( zDotE ) > AXIS_HIDE_TRESHOLD;
@@ -1993,8 +2005,8 @@ class TransformHelper extends Helper {
 }
 
 // Reusable utility variables
-const HPI$1 = Math.PI / 2;
-const PI = Math.PI;
+const PI$1 = Math.PI;
+const HPI$1 = PI$1 / 2;
 const EPS$1 = 0.000001;
 
 const _vector = new Vector3();
@@ -2036,7 +2048,7 @@ const handleGeometry$1 = {
 
 	Y_zp: new HelperGeometry( edgeHandle, { color: [ 0.5, 0.5, 1 ], rotation: [ - HPI$1, 0, HPI$1 ] } ),
 	Y_zn: new HelperGeometry( edgeHandle, { color: [ 0.5, 0.5, 1 ], rotation: [ HPI$1, 0, HPI$1 ] } ),
-	Y_xp: new HelperGeometry( edgeHandle, { color: [ 1, 0.5, 0.5 ], rotation: [ HPI$1, PI, 0 ] } ),
+	Y_xp: new HelperGeometry( edgeHandle, { color: [ 1, 0.5, 0.5 ], rotation: [ HPI$1, PI$1, 0 ] } ),
 	Y_xn: new HelperGeometry( edgeHandle, { color: [ 1, 0.5, 0.5 ], rotation: [ - HPI$1, 0, 0 ] } ),
 	Y_xp_zp: new HelperGeometry( cornerHandle, { color: [ 1, 0.5, 1 ], rotation: [ - HPI$1, 0, HPI$1 ] } ),
 	Y_xn_zn: new HelperGeometry( cornerHandle, { color: [ 1, 0.5, 1 ], rotation: [ HPI$1, 0, 0 ] } ),
@@ -2045,12 +2057,12 @@ const handleGeometry$1 = {
 
 	Z_yp: new HelperGeometry( edgeHandle, { color: [ 0.5, 1, 0.5 ], rotation: [ 0, 0, - HPI$1 ] } ),
 	Z_yn: new HelperGeometry( edgeHandle, { color: [ 0.5, 1, 0.5 ], rotation: [ 0, 0, HPI$1 ] } ),
-	Z_xp: new HelperGeometry( edgeHandle, { color: [ 1, 0.5, 0.5 ], rotation: [ 0, PI, 0 ] } ),
+	Z_xp: new HelperGeometry( edgeHandle, { color: [ 1, 0.5, 0.5 ], rotation: [ 0, PI$1, 0 ] } ),
 	Z_xn: new HelperGeometry( edgeHandle, { color: [ 1, 0.5, 0.5 ], rotation: [ 0, 0, 0 ] } ),
-	Z_xp_yp: new HelperGeometry( cornerHandle, { color: [ 1, 1, 0.5 ], rotation: [ PI, 0, HPI$1 ] } ),
-	Z_xn_yn: new HelperGeometry( cornerHandle, { color: [ 1, 1, 0.5 ], rotation: [ PI, 0, - HPI$1 ] } ),
+	Z_xp_yp: new HelperGeometry( cornerHandle, { color: [ 1, 1, 0.5 ], rotation: [ PI$1, 0, HPI$1 ] } ),
+	Z_xn_yn: new HelperGeometry( cornerHandle, { color: [ 1, 1, 0.5 ], rotation: [ PI$1, 0, - HPI$1 ] } ),
 	Z_xp_yn: new HelperGeometry( cornerHandle, { color: [ 1, 1, 0.5 ], rotation: [ 0, 0, HPI$1 ] } ),
-	Z_xn_yp: new HelperGeometry( cornerHandle, { color: [ 1, 1, 0.5 ], rotation: [ PI, 0, 0 ] } ),
+	Z_xn_yp: new HelperGeometry( cornerHandle, { color: [ 1, 1, 0.5 ], rotation: [ PI$1, 0, 0 ] } ),
 };
 
 const pickerGeometry$1 = {
@@ -2065,7 +2077,7 @@ const pickerGeometry$1 = {
 
 	Y_zp: new HelperGeometry( edgePicker, { color: [ 0.5, 0.5, 1 ], rotation: [ - HPI$1, 0, HPI$1 ] } ),
 	Y_zn: new HelperGeometry( edgePicker, { color: [ 0.5, 0.5, 1 ], rotation: [ HPI$1, 0, HPI$1 ] } ),
-	Y_xp: new HelperGeometry( edgePicker, { color: [ 1, 0.5, 0.5 ], rotation: [ HPI$1, PI, 0 ] } ),
+	Y_xp: new HelperGeometry( edgePicker, { color: [ 1, 0.5, 0.5 ], rotation: [ HPI$1, PI$1, 0 ] } ),
 	Y_xn: new HelperGeometry( edgePicker, { color: [ 1, 0.5, 0.5 ], rotation: [ - HPI$1, 0, 0 ] } ),
 	Y_xp_zp: new HelperGeometry( cornerPicker, { color: [ 1, 0.5, 1 ], rotation: [ - HPI$1, 0, HPI$1 ] } ),
 	Y_xn_zn: new HelperGeometry( cornerPicker, { color: [ 1, 0.5, 1 ], rotation: [ HPI$1, 0, 0 ] } ),
@@ -2074,12 +2086,12 @@ const pickerGeometry$1 = {
 
 	Z_yp: new HelperGeometry( edgePicker, { color: [ 0.5, 1, 0.5 ], rotation: [ 0, 0, - HPI$1 ] } ),
 	Z_yn: new HelperGeometry( edgePicker, { color: [ 0.5, 1, 0.5 ], rotation: [ 0, 0, HPI$1 ] } ),
-	Z_xp: new HelperGeometry( edgePicker, { color: [ 1, 0.5, 0.5 ], rotation: [ 0, PI, 0 ] } ),
+	Z_xp: new HelperGeometry( edgePicker, { color: [ 1, 0.5, 0.5 ], rotation: [ 0, PI$1, 0 ] } ),
 	Z_xn: new HelperGeometry( edgePicker, { color: [ 1, 0.5, 0.5 ], rotation: [ 0, 0, 0 ] } ),
-	Z_xp_yp: new HelperGeometry( cornerPicker, { color: [ 1, 1, 0.5 ], rotation: [ PI, 0, HPI$1 ] } ),
-	Z_xn_yn: new HelperGeometry( cornerPicker, { color: [ 1, 1, 0.5 ], rotation: [ PI, 0, - HPI$1 ] } ),
+	Z_xp_yp: new HelperGeometry( cornerPicker, { color: [ 1, 1, 0.5 ], rotation: [ PI$1, 0, HPI$1 ] } ),
+	Z_xn_yn: new HelperGeometry( cornerPicker, { color: [ 1, 1, 0.5 ], rotation: [ PI$1, 0, - HPI$1 ] } ),
 	Z_xp_yn: new HelperGeometry( cornerPicker, { color: [ 1, 1, 0.5 ], rotation: [ 0, 0, HPI$1 ] } ),
-	Z_xn_yp: new HelperGeometry( cornerPicker, { color: [ 1, 1, 0.5 ], rotation: [ PI, 0, 0 ] } ),
+	Z_xn_yp: new HelperGeometry( cornerPicker, { color: [ 1, 1, 0.5 ], rotation: [ PI$1, 0, 0 ] } ),
 };
 
 class TransformHelperStretch extends TransformHelper {

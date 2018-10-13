@@ -19,6 +19,13 @@ function external( list ) {
 
 export default [
   {
+    input: 'examples/GLTFLoader.js',
+    output: output( 'build/GLTFLoader.js' ),
+    external: external( [
+      './lib/three.module.js'
+    ] )
+  },
+  {
     input: 'src/controls/DragControls.js',
     output: output( 'build/controls/DragControls.js' ),
     external: external( [

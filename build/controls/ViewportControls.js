@@ -603,6 +603,11 @@ class Helper extends IoLiteMixin( Mesh ) {
 		} );
 
 	}
+	spaceChanged() {
+
+		this.updateHelperMatrix();
+
+	}
 	updateHelperMatrix() {
 
 		if ( this.object ) {

@@ -38,6 +38,15 @@ export class Helper extends IoLiteMixin(Mesh) {
 	depthBiasChanged() {
 		this.traverse(object => {object.material.depthBias = this.depthBias;});
 	}
+	objectChanged() {
+		this.updateHelperMatrix();
+	}
+	cameraChanged() {
+		this.updateHelperMatrix();
+	}
+	spaceChanged() {
+		this.updateHelperMatrix();
+	}
 	updateHelperMatrix() {
 		if (this.object) {
 			this.matrix.copy(this.object.matrix);

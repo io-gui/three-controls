@@ -603,6 +603,11 @@ class Helper extends IoLiteMixin( Mesh ) {
 		} );
 
 	}
+	spaceChanged() {
+
+		this.updateHelperMatrix();
+
+	}
 	updateHelperMatrix() {
 
 		if ( this.object ) {
@@ -790,6 +795,7 @@ const TransformControlsMixin = ( superclass ) => class extends InteractiveMixin(
 		this.worldScale = new Vector3();
 
 		this._plane = new Plane();
+		this.objectChanged();
 
 		// this.add(this._planeDebugMesh = new Mesh(new PlaneBufferGeometry(1000, 1000, 10, 10), new MeshBasicMaterial({wireframe: true, transparent: true, opacity: 0.2})));
 
@@ -799,6 +805,7 @@ const TransformControlsMixin = ( superclass ) => class extends InteractiveMixin(
 		super.objectChanged();
 		let hasObject = this.object ? true : false;
 		this.visible = hasObject;
+		this.enabled = hasObject;
 		if ( ! hasObject ) {
 
 			this.active = false;
@@ -1536,16 +1543,18 @@ class HelperMaterial extends IoLiteMixin( ShaderMaterial ) {
 				// nor = (projectionMatrix * vec4(nor, 1.0)).xyz;
 				nor = normalize((nor.xyz) * vec3(1., 1., 0.));
 
+				pos.z -= uDepthBias * 0.1;
+				pos.z -= uHighlight;
+
 				float extrude = 0.0;
 				if (outline > 0.0) {
 					extrude = outline;
 					pos.z += 0.01;
+					pos.z = max(-0.99, pos.z);
 				} else {
 					extrude -= outline;
+					pos.z = max(-1.0, pos.z);
 				}
-
-				pos.z -= uDepthBias * 0.1;
-				pos.z -= uHighlight;
 
 				pos.xy /= pos.w;
 
@@ -1637,7 +1646,8 @@ class HelperMesh extends Mesh {
  * @author arodic / https://github.com/arodic
  */
 
-const HPI = Math.PI / 2;
+const PI = Math.PI;
+const HPI = PI / 2;
 const EPS = 0.000001;
 
 const colors = {
@@ -1845,6 +1855,7 @@ class TransformHelper extends Helper {
 	}
 	spaceChanged() {
 
+		super.spaceChanged();
 		this.paramChanged();
 		this.animateScaleUp();
 
@@ -1920,6 +1931,7 @@ class TransformHelper extends Helper {
 		// Hide axis facing the camera
 		if ( ! this.active ) { // skip while controls are active
 
+			// TODO: fix incorrect flip on space shange
 			this.hideX = Math.abs( xDotE ) > AXIS_HIDE_TRESHOLD;
 			this.hideY = Math.abs( yDotE ) > AXIS_HIDE_TRESHOLD;
 			this.hideZ = Math.abs( zDotE ) > AXIS_HIDE_TRESHOLD;
@@ -1956,8 +1968,8 @@ const _lookAtMatrix = new Matrix4();
 const _tempQuaternion = new Quaternion();
 const _identityQuaternion = new Quaternion();
 
-const PI = Math.PI;
-const HPI$1 = Math.PI / 2;
+const PI$1 = Math.PI;
+const HPI$1 = PI$1 / 2;
 const EPS$1 = 0.000001;
 
 const _unitX = new Vector3( 1, 0, 0 );
@@ -1966,7 +1978,7 @@ const _unitZ = new Vector3( 0, 0, 1 );
 
 const ringGeometry = new HelperGeometry( new TorusBufferGeometry( 1, EPS$1, 4, 64 ), { rotation: [ HPI$1, 0, 0 ], thickness: 1 } );
 
-const halfRingGeometry = new HelperGeometry( new TorusBufferGeometry( 1, EPS$1, 4, 12, PI ), { rotation: [ HPI$1, 0, 0 ], thickness: 1 } );
+const halfRingGeometry = new HelperGeometry( new TorusBufferGeometry( 1, EPS$1, 4, 12, PI$1 ), { rotation: [ HPI$1, 0, 0 ], thickness: 1 } );
 
 const coneGeometry = new HelperGeometry( [
 	[ new OctahedronBufferGeometry( 0.03, 2 ) ],

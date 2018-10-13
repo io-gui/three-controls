@@ -35,6 +35,7 @@ export const TransformControlsMixin = (superclass) => class extends InteractiveM
 		this.worldScale = new Vector3();
 
 		this._plane = new Plane();
+		this.objectChanged();
 
 		// this.add(this._planeDebugMesh = new Mesh(new PlaneBufferGeometry(1000, 1000, 10, 10), new MeshBasicMaterial({wireframe: true, transparent: true, opacity: 0.2})));
 	}
@@ -42,6 +43,7 @@ export const TransformControlsMixin = (superclass) => class extends InteractiveM
 		super.objectChanged();
 		let hasObject = this.object ? true : false;
 		this.visible = hasObject;
+		this.enabled = hasObject;
 		if (!hasObject) {
 			this.active = false;
 			this.axis = null;
@@ -98,7 +100,7 @@ export const TransformControlsMixin = (superclass) => class extends InteractiveM
 		if (planeIntersect) {
 			this.pointEnd.copy(planeIntersect).sub(this.worldPosition);
 			this.transform();
-
+			this.object.updateMatrixWorld();
 			this.dispatchEvent(changeEvent);
 		}
 
