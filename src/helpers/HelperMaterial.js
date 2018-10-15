@@ -110,25 +110,23 @@ export class HelperMaterial extends IoLiteMixin(ShaderMaterial) {
 			void main() {
 
 				float opacity = 1.0;
-				vec3 color = vec3(1.0);
+				vec3 color = vColor.rgb;
 				float pixelRatio = 1.0;//uResolution.z;
 
 				if (isOutline > 0.0) {
-					color = mix(color * vec3(0.2), vec3(1.0), max(0.0, uHighlight) );
-					color = mix(color, vec3(0.5), max(0.0, -uHighlight) );
-				} else {
-					color = uColor * vColor.rgb;
+					color = mix(color * vec3(0.25), vec3(1.0), max(0.0, uHighlight) );
+					color = mix(color, vColor.rgb, max(0.0, -uHighlight) );
 				}
 
-				float dimming = mix(1.0, 0.2, max(0.0, -uHighlight));
-				dimming = mix(dimming, dimming * 1.25, max(0.0, uHighlight));
+				float dimming = mix(1.0, 0.0, max(0.0, -uHighlight));
+				dimming = mix(dimming, 2.0, max(0.0, uHighlight));
 				opacity = uOpacity * vColor.a * dimming;
 
 				color = mix(vec3(0.5), saturate(color), dimming);
 
 				gl_FragColor = vec4(color, opacity);
 
-				// opacity = opacity - mod(opacity, 0.25) + 0.25;
+				opacity = opacity - mod(opacity, 0.125) + 0.125;
 
 				vec2 matCoord = ( mod(gl_FragCoord.xy / pixelRatio, 4.0) - vec2(0.5) ) / 4.0;
 				vec4 ditherPattern = texture2D( tDitherMatrix, matCoord.xy );
