@@ -25,7 +25,7 @@ export class TransformControlsRotate extends TransformControlsMixin(TransformHel
 		offset.copy(this.pointEnd).sub(this.pointStart);
 
 		// TODO: test with OrthographicCamera
-		const ROTATION_SPEED = 3 / this.scale.length();
+		const ROTATION_SPEED = 5 / this.scale.length();
 
 		if (this.axis === 'E') {
 
