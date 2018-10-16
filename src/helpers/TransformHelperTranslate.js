@@ -1,7 +1,7 @@
 import {OctahedronBufferGeometry, CylinderBufferGeometry} from "../../lib/three.module.js";
 import {TransformHelper} from "./TransformHelper.js";
 import {HelperGeometry} from "./HelperGeometry.js";
-import {Corner2Geometry, PlaneGeometry, colors} from "./HelperGeometries.js";
+import {Corner2Geometry, Corner3Geometry, PlaneGeometry, colors} from "./HelperGeometries.js";
 
 // Reusable utility variables
 const PI = Math.PI;
@@ -27,6 +27,10 @@ const translatePickerGeometry = new HelperGeometry(new CylinderBufferGeometry(0.
 
 const cornerPickerGeometry = new HelperGeometry(new PlaneGeometry(), {color: colors['whiteTransparent'], scale: 0.3, outlineThickness: 0});
 
+const translateGuideGeometry = new HelperGeometry([
+	[new CylinderBufferGeometry(EPS, EPS, 10.45, 5, 1, true), {thickness: 1, outlineThickness: 0}],
+]);
+
 const handleGeometry = {
 	X: new HelperGeometry(translateArrowGeometry, {color: colors['red'], rotation: [0, 0, -HPI]}),
 	Y: new HelperGeometry(translateArrowGeometry, {color: colors['green']}),
@@ -46,11 +50,20 @@ const pickerGeometry = {
 	XYZ: new HelperGeometry(new OctahedronBufferGeometry(1, 0), {color: colors['whiteTransparent'], scale: 0.2}),
 };
 
+const guideGeometry = {
+	X: new HelperGeometry(translateGuideGeometry, {color: colors['red'], opacity: 0.25, rotation: [0, 0, -HPI], depthBias: -5}),
+	Y: new HelperGeometry(translateGuideGeometry, {color: colors['green'], opacity: 0.25, depthBias: -5}),
+	Z: new HelperGeometry(translateGuideGeometry, {color: colors['blue'], opacity: 0.25, rotation: [HPI, 0, 0], depthBias: -5}),
+};
+
 export class TransformHelperTranslate extends TransformHelper {
 	get handleGeometry() {
 		return handleGeometry;
 	}
 	get pickerGeometry() {
 		return pickerGeometry;
+	}
+	get guideGeometry() {
+		return guideGeometry;
 	}
 }

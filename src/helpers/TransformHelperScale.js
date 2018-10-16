@@ -28,6 +28,10 @@ const scalePickerGeometry = new HelperGeometry(new CylinderBufferGeometry(0.15, 
 
 const scaleCornerPickerGeometry = new HelperGeometry(new OctahedronBufferGeometry(0.2, 0), {color: colors['whiteTransparent']});
 
+const scaleGuideGeometry = new HelperGeometry([
+	[new CylinderBufferGeometry(EPS, EPS, 10.45, 5, 1, true), {thickness: 1, outlineThickness: 0}],
+]);
+
 const handleGeometry = {
 	X: new HelperGeometry(scaleArrowGeometry, {color: colors['red'], rotation: [0, 0, -HPI]}),
 	Y: new HelperGeometry(scaleArrowGeometry, {color: colors['green']}),
@@ -62,12 +66,21 @@ const pickerGeometry = {
 	]),
 };
 
+const guideGeometry = {
+	X: new HelperGeometry(scaleGuideGeometry, {color: colors['red'], opacity: 0.25, rotation: [0, 0, -HPI]}),
+	Y: new HelperGeometry(scaleGuideGeometry, {color: colors['green'], opacity: 0.25}),
+	Z: new HelperGeometry(scaleGuideGeometry, {color: colors['blue'], opacity: 0.25, rotation: [HPI, 0, 0]}),
+};
+
 export class TransformHelperScale extends TransformHelper {
 	get handleGeometry() {
 		return handleGeometry;
 	}
 	get pickerGeometry() {
 		return pickerGeometry;
+	}
+	get guideGeometry() {
+		return guideGeometry;
 	}
 	paramChanged() {
 		super.paramChanged();

@@ -6,6 +6,7 @@ import {Corner2Geometry, PlaneGeometry, colors} from "./HelperGeometries.js";
 // Reusable utility variables
 const PI = Math.PI;
 const HPI = PI / 2;
+const QPI = HPI / 2;
 const EPS = 0.000001;
 
 const coneGeometry = new HelperGeometry([
@@ -46,6 +47,10 @@ const rotateHandleGeometry = new HelperGeometry([
 	[coneGeometry, {position: [-0.37, 0.93, 0], rotation: [0, 0, 2.035], scale: 0.75}],
 ]);
 
+const rotateLinearHandleGeometry = new HelperGeometry([
+	[new TorusBufferGeometry( 1, 0.001, 4, 2, HPI/2/3 ), {color: [1, 1, 1, 0.25], rotation: [0, 0, HPI - HPI/4/3], scale: [1, 1, 50], outlineThickness: 0}],
+]);
+
 const translatePickerGeometry = new HelperGeometry(new CylinderBufferGeometry(0.15, 0, 0.6, 4, 1, true), {color: colors['whiteTransparent'], position: [0, 0.5, 0]});
 
 const scalePickerGeometry = new HelperGeometry(new OctahedronBufferGeometry(0.1, 0), {color: colors['whiteTransparent']});
@@ -53,6 +58,15 @@ const scalePickerGeometry = new HelperGeometry(new OctahedronBufferGeometry(0.1,
 const rotatePickerGeometry = new HelperGeometry(new TorusBufferGeometry( 1, 0.1, 4, 4, HPI/1.5 ), {color: colors['whiteTransparent'], rotation: [0, 0, HPI - HPI/3]});
 
 const cornerPickerGeometry = new HelperGeometry(new PlaneGeometry(), {color: colors['whiteTransparent'], scale: 0.3, outlineThickness: 0});
+
+const translateGuideGeometry = new HelperGeometry([
+	[new CylinderBufferGeometry(EPS, EPS, 25, 5, 1, true), {thickness: 1, outlineThickness: 0}],
+]);
+
+const rotateGuideGeometry = new HelperGeometry([
+	[new TorusBufferGeometry( 1, EPS, 4, 64 ), {thickness: 1, outlineThickness: 0}],
+	[new CylinderBufferGeometry(EPS, EPS, 10, 5, 1, true), {position: [0, 1, 0], rotation: [0, 0, HPI], thickness: 1, outlineThickness: 0}],
+]);
 
 const handleGeometry = {
 	T_X: new HelperGeometry(translateArrowGeometry, {color: colors['red'], rotation: [0, 0, -HPI]}),
@@ -62,9 +76,9 @@ const handleGeometry = {
 	T_YZ: new HelperGeometry(translateCornerGeometry, {color: colors['cyan'], position: [0, 0.25, 0.25], rotation: [0, -HPI, 0]}),
 	T_XZ: new HelperGeometry(translateCornerGeometry, {color: colors['magenta'], position: [0.25, 0, 0.25], rotation: [HPI, 0, 0]}),
 
-	R_X: new HelperGeometry(rotateHandleGeometry, {color: colors['red'], rotation: [HPI / 2, PI / 2, 0]}),
-	R_Y: new HelperGeometry(rotateHandleGeometry, {color: colors['green'], rotation: [PI / 2, 0, -HPI/2]}),
-	R_Z: new HelperGeometry(rotateHandleGeometry, {color: colors['blue'], rotation: [0, 0, -HPI / 2]}),
+	R_X: new HelperGeometry(rotateHandleGeometry, {color: colors['red'], rotation: [QPI, HPI, 0]}),
+	R_Y: new HelperGeometry(rotateHandleGeometry, {color: colors['green'], rotation: [HPI, 0, -HPI/2]}),
+	R_Z: new HelperGeometry(rotateHandleGeometry, {color: colors['blue'], rotation: [0, 0, -QPI]}),
 
 	S_X: new HelperGeometry(scaleArrowGeometry, {color: colors['red'], rotation: [0, 0, -HPI]}),
 	S_Y: new HelperGeometry(scaleArrowGeometry, {color: colors['green']}),
@@ -88,9 +102,9 @@ const pickerGeometry = {
 	T_XZ: new HelperGeometry(cornerPickerGeometry, {color: colors['magenta'], position: [0.15, 0, 0.15], rotation: [HPI, 0, 0]}),
 	T_XYZ: new HelperGeometry(new OctahedronBufferGeometry(0.2, 0), {color: colors['whiteTransparent']}),
 
-	R_X: new HelperGeometry(rotatePickerGeometry, {color: colors['red'], rotation: [HPI / 2, PI / 2, 0]}),
-	R_Y: new HelperGeometry(rotatePickerGeometry, {color: colors['green'], rotation: [PI / 2, 0, -HPI/2]}),
-	R_Z: new HelperGeometry(rotatePickerGeometry, {color: colors['blue'], rotation: [0, 0, -HPI / 2]}),
+	R_X: new HelperGeometry(rotatePickerGeometry, {color: colors['red'], rotation: [QPI, HPI, 0]}),
+	R_Y: new HelperGeometry(rotatePickerGeometry, {color: colors['green'], rotation: [HPI, 0, -HPI/2]}),
+	R_Z: new HelperGeometry(rotatePickerGeometry, {color: colors['blue'], rotation: [0, 0, -QPI]}),
 
 	S_X: new HelperGeometry(scalePickerGeometry, {color: colors['red'], position: [0.9, 0, 0], rotation: [0, 0, -HPI], scale: 1.5}),
 	S_Y: new HelperGeometry(scalePickerGeometry, {color: colors['green'], position: [0, 0.9, 0], scale: 1.5}),
@@ -105,12 +119,29 @@ const pickerGeometry = {
 	]),
 };
 
+const guideGeometry = {
+	T_X: new HelperGeometry(translateGuideGeometry, {color: colors['red'], opacity: 0.25, rotation: [0, 0, -HPI]}),
+	T_Y: new HelperGeometry(translateGuideGeometry, {color: colors['green'], opacity: 0.25}),
+	T_Z: new HelperGeometry(translateGuideGeometry, {color: colors['blue'], opacity: 0.25, rotation: [HPI, 0, 0]}),
+
+	R_X: new HelperGeometry(rotateGuideGeometry, {color: colors['red'], opacity: 0.25, rotation: [QPI, HPI, 0]}),
+	R_Y: new HelperGeometry(rotateGuideGeometry, {color: colors['green'], opacity: 0.25, rotation: [HPI, 0, -HPI/2]}),
+	R_Z: new HelperGeometry(rotateGuideGeometry, {color: colors['blue'], opacity: 0.25, rotation: [0, 0, -QPI]}),
+
+	S_X: new HelperGeometry(translateGuideGeometry, {color: colors['red'], opacity: 0.25, rotation: [0, 0, -HPI]}),
+	S_Y: new HelperGeometry(translateGuideGeometry, {color: colors['green'], opacity: 0.25}),
+	S_Z: new HelperGeometry(translateGuideGeometry, {color: colors['blue'], opacity: 0.25, rotation: [HPI, 0, 0]}),
+};
+
 export class TransformHelperCombined extends TransformHelper {
 	get handleGeometry() {
 		return handleGeometry;
 	}
 	get pickerGeometry() {
 		return pickerGeometry;
+	}
+	get guideGeometry() {
+		return guideGeometry;
 	}
 	paramChanged() {
 		super.paramChanged();

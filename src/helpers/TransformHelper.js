@@ -1,4 +1,4 @@
-import {Vector3, OctahedronBufferGeometry} from "../../lib/three.module.js";
+import {Vector3} from "../../lib/three.module.js";
 import {Helper} from "../Helper.js";
 import {HelperMesh} from "./HelperMesh.js";
 import {HelperGeometry} from "./HelperGeometry.js";
@@ -20,7 +20,8 @@ class HelperMeshes extends Array {
 	constructor(groupDef) {
 		super();
 		for (let name in groupDef) {
-			const mesh = new HelperMesh(groupDef[name], {name: name});
+			const mesh = new HelperMesh(groupDef[name]);
+			mesh.name = name;
 			this.push(mesh);
 			this[name] = mesh;
 		}
@@ -31,16 +32,15 @@ const handleGeometry = {
 	XYZ: new Corner3Geometry()
 };
 
-const pickerGeometry = {
-	XYZ: new HelperGeometry(new OctahedronBufferGeometry(0.5, 0), {color: [1, 1, 1, 0.25]})
-};
-
 export class TransformHelper extends Helper {
 	get handleGeometry() {
 		return handleGeometry;
 	}
 	get pickerGeometry() {
-		return pickerGeometry;
+		return {};
+	}
+	get guideGeometry() {
+		return {};
 	}
 	constructor(props) {
 		super(props);
@@ -51,6 +51,8 @@ export class TransformHelper extends Helper {
 			showZ: {value: true, observer: 'paramChanged'},
 			axis: null,
 			active: false,
+			doHide: true,
+			doFlip: true,
 			hideX: { value: false, observer: 'paramChanged' },
 			hideY: { value: false, observer: 'paramChanged' },
 			hideZ: { value: false, observer: 'paramChanged' },
@@ -70,12 +72,20 @@ export class TransformHelper extends Helper {
 
 		this.handles = new HelperMeshes(this.handleGeometry);
 		this.pickers = new HelperMeshes(this.pickerGeometry);
+		this.guides = new HelperMeshes(this.guideGeometry);
 
 		if (this.handles.length) this.add(...this.handles);
 		if (this.pickers.length) this.add(...this.pickers);
+		if (this.guides.length) this.add(...this.guides);
 
 		// Hide pickers
 		for (let i = 0; i < this.pickers.length; i++) this.pickers[i].material.visible = false;
+		// for (let i = 0; i < this.guides.length; i++) this.guides[i].material.visible = false;
+
+		// TODO: unhack
+		for (let i = 0; i < this.guides.length; i++) {
+			this.guides[i].isGuide = true; this.guides[i].highlight = -2;
+		}
 
 		this.animation = new Animation();
 
@@ -86,6 +96,7 @@ export class TransformHelper extends Helper {
 	traverseAxis(callback) {
 		for (let i = this.handles.length; i--;) callback(this.handles[i]);
 		for (let i = this.pickers.length; i--;) callback(this.pickers[i]);
+		for (let i = this.guides.length; i--;) callback(this.guides[i]);
 	}
 	spaceChanged() {
 		super.spaceChanged();
@@ -114,7 +125,15 @@ export class TransformHelper extends Helper {
 	}
 	axisChanged() {
 		this.traverseAxis(axis => {
-			axis.highlight = this.axis ? hasAxisAny(axis.name, this.axis) ? 1 : -0.75 : 0;
+			// Hide guides when not active axis
+			axis.highlight = axis.isGuide ? -2 : 0;
+			if (this.axis) {
+				if (axis.isGuide) {
+					axis.highlight = hasAxisAny(axis.name, this.axis) ? 0 : -2;
+				} else {
+					axis.highlight = hasAxisAny(axis.name, this.axis) ? 1 : -0.75;
+				}
+			}
 		});
 		this.animation.startAnimation(0.5);
 	}
@@ -124,22 +143,25 @@ export class TransformHelper extends Helper {
 			const name = axis.name.split('_').pop() || null;
 
 			// Hide by show[axis] parameter
-			if (name.indexOf('X') !== -1 && !this.showX) axis.hidden = true;
-			if (name.indexOf('Y') !== -1 && !this.showY) axis.hidden = true;
-			if (name.indexOf('Z') !== -1 && !this.showZ) axis.hidden = true;
-			if (name.indexOf('E') !== -1 && (!this.showX || !this.showY || !this.showZ)) axis.hidden = true;
-
-			// Hide axis facing the camera
-			if ((name == 'X' || name == 'XYZ') && this.hideX) axis.hidden = true;
-			if ((name == 'Y' || name == 'XYZ') && this.hideY) axis.hidden = true;
-			if ((name == 'Z' || name == 'XYZ') && this.hideZ) axis.hidden = true;
-			if (name == 'XY' && this.hideXY) axis.hidden = true;
-			if (name == 'YZ' && this.hideYZ) axis.hidden = true;
-			if (name == 'XZ' && this.hideXZ) axis.hidden = true;
+			if (this.doHide) {
+				if (name.indexOf('X') !== -1 && !this.showX) axis.hidden = true;
+				if (name.indexOf('Y') !== -1 && !this.showY) axis.hidden = true;
+				if (name.indexOf('Z') !== -1 && !this.showZ) axis.hidden = true;
+				if (name.indexOf('E') !== -1 && (!this.showX || !this.showY || !this.showZ)) axis.hidden = true;
+				// Hide axis facing the camera
+				if ((name == 'X' || name == 'XYZ') && this.hideX) axis.hidden = true;
+				if ((name == 'Y' || name == 'XYZ') && this.hideY) axis.hidden = true;
+				if ((name == 'Z' || name == 'XYZ') && this.hideZ) axis.hidden = true;
+				if (name == 'XY' && this.hideXY) axis.hidden = true;
+				if (name == 'YZ' && this.hideYZ) axis.hidden = true;
+				if (name == 'XZ' && this.hideXZ) axis.hidden = true;
+			}
 			// Flip axis
-			if (name.indexOf('X') !== -1 || axis.name.indexOf('R') !== -1) axis.scaleTarget.x = this.flipX ? -1 : 1;
-			if (name.indexOf('Y') !== -1 || axis.name.indexOf('R') !== -1) axis.scaleTarget.y = this.flipY ? -1 : 1;
-			if (name.indexOf('Z') !== -1 || axis.name.indexOf('R') !== -1) axis.scaleTarget.z = this.flipZ ? -1 : 1;
+			if (this.doFlip) {
+				if (name.indexOf('X') !== -1 || axis.name.indexOf('R') !== -1) axis.scaleTarget.x = this.flipX ? -1 : 1;
+				if (name.indexOf('Y') !== -1 || axis.name.indexOf('R') !== -1) axis.scaleTarget.y = this.flipY ? -1 : 1;
+				if (name.indexOf('Z') !== -1 || axis.name.indexOf('R') !== -1) axis.scaleTarget.z = this.flipZ ? -1 : 1;
+			}
 		});
 		this.animation.startAnimation(0.5);
 	}
@@ -172,9 +194,9 @@ export class TransformHelper extends Helper {
 	// TODO: optimize, make less ugly and framerate independent!
 	updateAxis(axis) {
 		axis.visible = true;
-		const highlight = axis.hidden ? -1.5 : axis.highlight || 0;
+		const highlight = axis.hidden ? -2 : axis.highlight || 0;
 		axis.material.highlight = (4 * axis.material.highlight + highlight) / 5;
-		if (axis.material.highlight < -1.49) axis.visible = false;
+		if (axis.material.highlight < -1.99) axis.visible = false;
 		axis.scale.multiplyScalar(5).add(axis.scaleTarget).divideScalar(6);
 	}
 }
