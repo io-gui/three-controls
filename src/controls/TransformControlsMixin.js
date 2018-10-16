@@ -115,7 +115,20 @@ export const TransformControlsMixin = (superclass) => class extends InteractiveM
 		}
 	}
 	transform() {}
+	updateGuide(axis) {
+		if (this.active === true) {
+			let offset = new Vector3().copy(this.positionStart).sub(this.object.position).divide(this.scale);
+			axis.position.copy(offset).applyQuaternion(this.worldQuaternionInv);
+
+			let quatOffset = new Quaternion().copy(this.quaternionStart.clone().inverse()).multiply(this.object.quaternion);
+			axis.quaternion.copy(quatOffset.clone().inverse());//.multiply(quatOffset);
+		} else {
+			axis.position.set(0, 0, 0);
+			axis.quaternion.set(0, 0, 0, 1);
+		}
+	}
 	updateAxis(axis) {
+		if (axis.isGuide) this.updateGuide(axis);
 		super.updateAxis(axis);
 		if (!this.enabled) axis.material.highlight = (10 * axis.material.highlight - 2.5) / 11;
 	}
