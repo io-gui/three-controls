@@ -15,6 +15,8 @@ export class HelperGeometry extends BufferGeometry {
 	constructor(geometry, props) {
 		super();
 
+		this.props = props;
+
 		this.index = new Uint16BufferAttribute([], 1);
 		this.addAttribute('position', new Float32BufferAttribute([], 3));
 		this.addAttribute('uv', new Float32BufferAttribute([], 2));
@@ -81,9 +83,9 @@ export class HelperGeometry extends BufferGeometry {
 
 			const colorArray = chunkGeo.attributes.color.array;
 			for (let j = 0; j < vertCount; j++) {
-				const r = j * 4 + 0; colorArray[r] = color[0] !== undefined ? color[0] : colorArray[r] || 1;
-				const g = j * 4 + 1; colorArray[g] = color[1] !== undefined ? color[1] : colorArray[g] || 1;
-				const b = j * 4 + 2; colorArray[b] = color[2] !== undefined ? color[2] : colorArray[b] || 1;
+				const r = j * 4 + 0; colorArray[r] = color[0] !== undefined ? color[0] : colorArray[r];
+				const g = j * 4 + 1; colorArray[g] = color[1] !== undefined ? color[1] : colorArray[g];
+				const b = j * 4 + 2; colorArray[b] = color[2] !== undefined ? color[2] : colorArray[b];
 				const a = j * 4 + 3; colorArray[a] = color[3] !== undefined ? color[3] : colorArray[a] || 1;
 			}
 
