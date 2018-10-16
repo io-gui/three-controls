@@ -1,14 +1,14 @@
 import {IoLiteMixin} from "../../lib/IoLiteMixin.js";
-import {UniformsUtils, Vector3, Color, FrontSide, ShaderMaterial,
+import {UniformsUtils, Vector3, Vector4, Color, FrontSide, ShaderMaterial,
 	DataTexture, RGBAFormat, FloatType, NearestFilter} from "../../lib/three.module.js";
 
 // TODO: pixel-perfect outlines
 export class HelperMaterial extends IoLiteMixin(ShaderMaterial) {
-	constructor(color, opacity) {
+	constructor(props = {}) {
 		super({
 			depthTest: true,
 			depthWrite: true,
-			// transparent: true,
+			transparent: !!props.opacity,
 			side: FrontSide,
 		});
 
@@ -22,15 +22,17 @@ export class HelperMaterial extends IoLiteMixin(ShaderMaterial) {
 		texture.magFilter = NearestFilter;
 		texture.minFilter = NearestFilter;
 
+		let color = props.color || new Color(0xffffff);
+		let opacity = props.opacity !== undefined ? props.opacity : 1;
+
 		const res = new Vector3(window.innerWidth, window.innerHeight, window.devicePixelRatio);
-		color = color || new Color(0xffffff);
-		opacity = opacity !== undefined ? opacity : 1;
+
 
 		this.defineProperties({
 			color: { value: color, observer: 'uniformChanged'},
 			opacity: { value: opacity, observer: 'uniformChanged'},
-			depthBias: { value: 0, observer: 'uniformChanged'},
-			highlight: { value: 0, observer: 'uniformChanged'},
+			depthBias: { value: props.depthBias || 0, observer: 'uniformChanged'},
+			highlight: { value: props.highlight || 0, observer: 'uniformChanged'},
 			resolution: { value: res, observer: 'uniformChanged'},
 		});
 
@@ -53,6 +55,7 @@ export class HelperMaterial extends IoLiteMixin(ShaderMaterial) {
 
 			varying vec4 vColor;
 			varying float isOutline;
+			varying vec2 vUv;
 
 			uniform vec3 uResolution;
 			uniform float uDepthBias;
@@ -66,7 +69,6 @@ export class HelperMaterial extends IoLiteMixin(ShaderMaterial) {
 
 				vec3 nor = normalMatrix * normal;
 				vec4 pos = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
-				float pixelRatio = uResolution.z;
 
 				// nor = (projectionMatrix * vec4(nor, 1.0)).xyz;
 				nor = normalize((nor.xyz) * vec3(1., 1., 0.));
@@ -92,6 +94,8 @@ export class HelperMaterial extends IoLiteMixin(ShaderMaterial) {
 				pos.x += (dx) * (1.0 / uResolution.x);
 				pos.y += (dy) * (1.0 / uResolution.y);
 
+				vUv = uv;
+
 				pos.xy *= pos.w;
 
 				gl_Position = pos;
@@ -106,12 +110,12 @@ export class HelperMaterial extends IoLiteMixin(ShaderMaterial) {
 
 			varying vec4 vColor;
 			varying float isOutline;
+			varying vec2 vUv;
 
 			void main() {
 
 				float opacity = 1.0;
 				vec3 color = vColor.rgb;
-				float pixelRatio = 1.0;//uResolution.z;
 
 				if (isOutline > 0.0) {
 					color = mix(color * vec3(0.25), vec3(1.0), max(0.0, uHighlight) );
@@ -120,15 +124,15 @@ export class HelperMaterial extends IoLiteMixin(ShaderMaterial) {
 
 				float dimming = mix(1.0, 0.0, max(0.0, -uHighlight));
 				dimming = mix(dimming, 2.0, max(0.0, uHighlight));
-				opacity = uOpacity * vColor.a * dimming;
+				opacity = vColor.a * dimming;
 
 				color = mix(vec3(0.5), saturate(color), dimming);
 
-				gl_FragColor = vec4(color, opacity);
+				gl_FragColor = vec4(color, uOpacity);
 
-				opacity = opacity - mod(opacity, 0.125) + 0.125;
+				opacity = opacity - mod(opacity, 0.25) + 0.25;
 
-				vec2 matCoord = ( mod(gl_FragCoord.xy / pixelRatio, 4.0) - vec2(0.5) ) / 4.0;
+				vec2 matCoord = ( mod(gl_FragCoord.xy, 4.0) - vec2(0.5) ) / 4.0;
 				vec4 ditherPattern = texture2D( tDitherMatrix, matCoord.xy );
 				if (opacity < ditherPattern.r) discard;
 			}
