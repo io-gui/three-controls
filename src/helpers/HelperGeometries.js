@@ -41,8 +41,19 @@ export class PlaneGeometry extends HelperGeometry {
 		positions[ 18 ] = -1; positions[ 19 ] = -1; positions[ 20 ] = -1;
 		positions[ 21 ] = 1; positions[ 22 ] = -1; positions[ 23 ] = -1;
 
+		let uv = [];
+		uv[ 0 ] = 1; uv[ 1 ] = 1;
+		uv[ 2 ] = 0; uv[ 3 ] = 1;
+		uv[ 4 ] = 0; uv[ 5 ] = 0;
+		uv[ 6 ] = 1; uv[ 7 ] = 0;
+		uv[ 8 ] = 1; uv[ 9 ] = 1;
+		uv[ 10 ] = 0; uv[ 11 ] = 1;
+		uv[ 12 ] = 0; uv[ 13 ] = 0;
+		uv[ 14 ] = 1; uv[ 15 ] = 0;
+
 		geometry.addAttribute('position', new Float32BufferAttribute(positions, 3));
 		geometry.addAttribute('normal', new Float32BufferAttribute(positions, 3));
+		geometry.addAttribute('uv', new Float32BufferAttribute(uv, 2));
 
 		super([
 			[geometry, {scale: [0.5, 0.5, 0.00001]}]
