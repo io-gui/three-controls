@@ -46,6 +46,8 @@ export class SelectionHelper extends Helper {
 
 		const axis = new TransformHelper({object: this});
 		axis.size = 0.01;
+		axis.doFlip = false;
+		axis.doHide = false;
 		super.add(axis);
 
 		if (this.object && this.object.geometry) {
@@ -73,7 +75,9 @@ export class SelectionHelper extends Helper {
 	updateMatrixWorld() {
 		this.updateHelperMatrix();
 		this.matrixWorldNeedsUpdate = false;
+
 		this.object.matrixWorld.decompose(_position, _quaternion, _scale);
+
 		_m1.compose(this.position, this.quaternion, _one);
 
 		_scale.x = Math.abs(_scale.x);
@@ -102,7 +106,6 @@ export class SelectionHelper extends Helper {
 
 			this.children[i].matrixWorld.copy(_m1).multiply(_m2);
 		}
-
 		this.children[8].updateMatrixWorld();
 	}
 }
