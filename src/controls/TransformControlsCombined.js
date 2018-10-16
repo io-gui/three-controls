@@ -80,7 +80,7 @@ export class TransformControlsCombined extends TransformControlsMixin(TransformH
 			offset.copy(this.pointEnd).sub(this.pointStart);
 
 			// TODO: test with OrthographicCamera
-			const ROTATION_SPEED = 3 / this.scale.length();
+			const ROTATION_SPEED = 5 / this.scale.length();
 
 			if (this.axis === 'R_X' || this.axis === 'R_Y' || this.axis === 'R_Z') {
 
