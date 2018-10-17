@@ -1,7 +1,6 @@
 import {Vector3, Matrix4, Quaternion, TorusBufferGeometry, OctahedronBufferGeometry, CylinderBufferGeometry} from "../../lib/three.module.js";
-import {HelperGeometry} from "./HelperGeometry.js";
+import {HelperGeometry, colors} from "./HelperGeometry.js";
 import {TransformHelper} from "./TransformHelper.js";
-import {colors} from "./HelperGeometries.js";
 
 // Reusable utility variables
 const _worldY = new Vector3(0, 0, 0);

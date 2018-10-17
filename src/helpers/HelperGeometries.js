@@ -9,18 +9,6 @@ const PI = Math.PI;
 const HPI = PI / 2;
 const EPS = 0.000001;
 
-export const colors = {
-	'white': [1, 1, 1],
-	'whiteTransparent': [1, 1, 1, 0.25],
-	'gray': [0.75, 0.75, 0.75],
-	'red': [1, 0.3, 0.2],
-	'green': [0.2, 1, 0.2],
-	'blue': [0.2, 0.3, 1],
-	'cyan': [0.2, 1, 1],
-	'magenta': [1, 0.3, 1],
-	'yellow': [1, 1, 0.2],
-};
-
 export class PlaneGeometry extends HelperGeometry {
 	constructor() {
 		let geometry = new BufferGeometry();

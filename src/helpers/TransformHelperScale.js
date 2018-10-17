@@ -1,7 +1,7 @@
 import {OctahedronBufferGeometry, CylinderBufferGeometry} from "../../lib/three.module.js";
 import {TransformHelper} from "./TransformHelper.js";
-import {HelperGeometry} from "./HelperGeometry.js";
-import {PlaneGeometry, colors} from "./HelperGeometries.js";
+import {HelperGeometry, colors} from "./HelperGeometry.js";
+import {PlaneGeometry} from "./HelperGeometries.js";
 
 // Reusable utility variables
 const PI = Math.PI;

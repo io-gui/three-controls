@@ -11,6 +11,18 @@ const _quaternion = new Quaternion();
 const _scale = new Vector3();
 const _matrix = new Matrix4();
 
+export const colors = {
+	'white': [1, 1, 1],
+	'whiteTransparent': [1, 1, 1, 0.25],
+	'gray': [0.75, 0.75, 0.75],
+	'red': [1, 0.3, 0.2],
+	'green': [0.2, 1, 0.2],
+	'blue': [0.2, 0.3, 1],
+	'cyan': [0.2, 1, 1],
+	'magenta': [1, 0.3, 1],
+	'yellow': [1, 1, 0.2],
+};
+
 export class HelperGeometry extends BufferGeometry {
 	constructor(geometry, props) {
 		super();
