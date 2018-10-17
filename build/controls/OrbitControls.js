@@ -12,7 +12,7 @@ import { CameraControls } from './CameraControls.js';
 
 /*
  * This set of controls performs orbiting, dollying, and panning.
- * Unlike TrackballControls, it maintains the "up" direction camera.up (+Y by default).
+ * Unlike TrackballCameraControls, it maintains the "up" direction camera.up (+Y by default).
  *
  *  Orbit - left mouse / touch: one-finger move
  *  Dolly - middle mouse, or mousewheel / touch: two-finger spread or squish
@@ -27,7 +27,7 @@ const unitY = new Vector3( 0, 1, 0 );
 const tempQuat = new Quaternion();
 const tempQuatInverse = tempQuat.clone().inverse();
 
-class OrbitControls extends CameraControls {
+class OrbitCameraControls extends CameraControls {
 
 	constructor( props ) {
 
@@ -151,4 +151,4 @@ class OrbitControls extends CameraControls {
 
 }
 
-export { OrbitControls };
+export { OrbitCameraControls };

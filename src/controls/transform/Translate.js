@@ -2,12 +2,12 @@
  * @author arodic / https://github.com/arodic
  */
 import {Vector3} from "../../../lib/three.module.js";
-import {TransformControlsMixin} from "./TransformControlsMixin.js";
-import {TransformHelperTranslate} from "../../helpers/transform/TransformHelperTranslate.js";
+import {TransformControlsMixin} from "../Transform.js";
+import {TransformHelperTranslate} from "../../helpers/transform/Translate.js";
 
 const offset = new Vector3();
 
-export class TransformControlsTranslate extends TransformControlsMixin(TransformHelperTranslate) {
+export class TranslateTransformControls extends TransformControlsMixin(TransformHelperTranslate) {
 	transform() {
 		offset.copy(this.pointEnd).sub(this.pointStart);
 

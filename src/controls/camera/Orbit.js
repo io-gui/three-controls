@@ -8,11 +8,11 @@
  */
 
 import * as THREE from "../../../lib/three.module.js";
-import {CameraControls} from "./CameraControls.js";
+import {CameraControls} from "../Camera.js";
 
 /*
  * This set of controls performs orbiting, dollying, and panning.
- * Unlike TrackballControls, it maintains the "up" direction camera.up (+Y by default).
+ * Unlike TrackballCameraControls, it maintains the "up" direction camera.up (+Y by default).
  *
  *  Orbit - left mouse / touch: one-finger move
  *  Dolly - middle mouse, or mousewheel / touch: two-finger spread or squish
@@ -27,7 +27,7 @@ const unitY = new THREE.Vector3(0, 1, 0);
 const tempQuat = new THREE.Quaternion();
 const tempQuatInverse = tempQuat.clone().inverse();
 
-export class OrbitControls extends CameraControls {
+export class OrbitCameraControls extends CameraControls {
 	constructor(props) {
 		super(props);
 

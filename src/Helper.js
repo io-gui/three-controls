@@ -4,6 +4,8 @@
 
 import {Mesh, Vector3, BoxBufferGeometry} from "../lib/three.module.js";
 import {IoLiteMixin} from "../lib/IoLiteMixin.js";
+import {HelperMaterial} from "./HelperMaterial.js";
+
 
 // Reusable utility variables
 const _cameraPosition = new Vector3();
@@ -78,5 +80,14 @@ export class Helper extends IoLiteMixin(Mesh) {
 		this.updateHelperMatrix();
 		this.matrixWorldNeedsUpdate = false;
 		for (let i = this.children.length; i--;) this.children[i].updateMatrixWorld( force );
+	}
+	// TODO: refactor. Consider movinf to utils.
+	makeMesh(geometry) {
+		const props = geometry.props || {};
+		const material = new HelperMaterial(props);
+		const mesh = new Mesh(geometry, material);
+		mesh.hidden = false;
+		mesh.highlight = props.highlight || 0;
+		return mesh;
 	}
 }

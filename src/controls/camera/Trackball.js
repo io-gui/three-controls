@@ -7,7 +7,7 @@
  */
 
 import {Vector3, Quaternion} from "../../../lib/three.module.js";
-import {CameraControls} from "./CameraControls.js";
+import {CameraControls} from "../Camera.js";
 
 /*
  * This set of controls performs orbiting, dollying, and panning.
@@ -27,7 +27,7 @@ const upDirection = new Vector3();
 const sideDirection = new Vector3();
 const moveDirection = new Vector3();
 
-export class TrackballControls extends CameraControls {
+export class TrackballCameraControls extends CameraControls {
 	constructor(props) {
 		super(props);
 		this.defineProperties({

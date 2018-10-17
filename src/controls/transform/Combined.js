@@ -2,8 +2,8 @@
  * @author arodic / https://github.com/arodic
  */
 import {Vector3, Quaternion} from "../../../lib/three.module.js";
-import {TransformControlsMixin} from "./TransformControlsMixin.js";
-import {TransformHelperCombined} from "../../helpers/transform/TransformHelperCombined.js";
+import {TransformControlsMixin} from "../Transform.js";
+import {TransformHelperCombined} from "../../helpers/transform/Combined.js";
 
 const offset = new Vector3();
 const scaleFactor = new Vector3();
@@ -19,7 +19,7 @@ const unit = {
 const rotationAxis = new Vector3();
 let rotationAngle = 0;
 
-export class TransformControlsCombined extends TransformControlsMixin(TransformHelperCombined) {
+export class CombinedTransformControls extends TransformControlsMixin(TransformHelperCombined) {
 	transform() {
 
 		if (this.axis.indexOf('T') !== -1) {

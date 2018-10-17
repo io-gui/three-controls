@@ -7,7 +7,7 @@
  */
 
 import * as THREE from "../../../lib/three.module.js";
-import {CameraControls} from "./CameraControls.js";
+import {CameraControls} from "../Camera.js";
 
 // Reusable utility variables
 const center = new THREE.Vector3();
@@ -17,7 +17,7 @@ const normalMatrix = new THREE.Matrix3();
 const spherical = new THREE.Spherical();
 const sphere = new THREE.Sphere();
 
-export class EditorControls extends CameraControls {
+export class EditorCameraControls extends CameraControls {
 	orbit(orbit) {
 		delta.copy(this.camera.position).sub(this.target);
 		spherical.setFromVector3(delta);

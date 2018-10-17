@@ -27,7 +27,7 @@ const upDirection = new Vector3();
 const sideDirection = new Vector3();
 const moveDirection = new Vector3();
 
-class TrackballControls extends CameraControls {
+class TrackballCameraControls extends CameraControls {
 
 	constructor( props ) {
 
@@ -72,4 +72,4 @@ class TrackballControls extends CameraControls {
 
 }
 
-export { TrackballControls };
+export { TrackballCameraControls };

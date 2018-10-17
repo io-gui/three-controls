@@ -17,7 +17,7 @@ const normalMatrix = new Matrix3();
 const spherical = new Spherical();
 const sphere = new Sphere();
 
-class EditorControls extends CameraControls {
+class EditorCameraControls extends CameraControls {
 
 	orbit( orbit ) {
 
@@ -80,4 +80,4 @@ class EditorControls extends CameraControls {
 
 }
 
-export { EditorControls };
+export { EditorCameraControls };

@@ -4,7 +4,7 @@
 
 import {IoLiteMixin} from "../../lib/IoLiteMixin.js";
 import {Sprite, Vector3, Quaternion, Matrix4, SpriteMaterial, Texture, LinearFilter} from "../../lib/three.module.js";
-import {HelperMaterial} from "./HelperMaterial.js";
+import {HelperMaterial} from "../HelperMaterial.js";
 
 // Reusable utility variables
 const parentPosition = new Vector3();
@@ -12,7 +12,7 @@ const parentQuaternion = new Quaternion();
 const parentScale = new Vector3();
 const scaleMatrix = new Matrix4();
 
-export class HelperText extends IoLiteMixin(Sprite) {
+export class TextHelper extends IoLiteMixin(Sprite) {
 	constructor(props = {}) {
 		super();
 

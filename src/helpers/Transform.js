@@ -1,9 +1,8 @@
-import {Vector3, CylinderBufferGeometry} from "../../../lib/three.module.js";
-import {Helper} from "../../Helper.js";
-import {HelperMesh} from "../HelperMesh.js";
-import {HelperText} from "../HelperText.js";
+import {Vector3, CylinderBufferGeometry} from "../../lib/three.module.js";
+import {Helper} from "../Helper.js";
+import {TextHelper} from "./Text.js";
 import {HelperGeometry} from "../HelperGeometry.js";
-import {Animation} from "../../../lib/Animation.js";
+import {Animation} from "../../lib/Animation.js";
 
 // Reusable utility variables
 const PI = Math.PI;
@@ -90,7 +89,7 @@ export class TransformHelper extends Helper {
 	initAxes(axesDef) {
 		const axes = [];
 		for (let name in axesDef) {
-			const mesh = new HelperMesh(axesDef[name]);
+			const mesh = this.makeMesh(axesDef[name]);
 			mesh.name = name;
 			mesh.scaleTarget = new Vector3(1, 1, 1);
 			axes.push(mesh);
@@ -102,7 +101,7 @@ export class TransformHelper extends Helper {
 	initPickers(pickersDef) {
 		const axes = [];
 		for (let name in pickersDef) {
-			const mesh = new HelperMesh(pickersDef[name]);
+			const mesh = this.makeMesh(pickersDef[name]);
 			mesh.name = name;
 			mesh.scaleTarget = new Vector3(1, 1, 1);
 			mesh.material.visible = false;
@@ -115,7 +114,7 @@ export class TransformHelper extends Helper {
 	initGuides(guidesDef) {
 		const axes = [];
 		for (let name in guidesDef) {
-			const mesh = new HelperMesh(guidesDef[name]);
+			const mesh = this.makeMesh(guidesDef[name]);
 			mesh.name = name;
 			mesh.scaleTarget = new Vector3(1, 1, 1);
 			mesh.isGuide = true;
@@ -129,7 +128,7 @@ export class TransformHelper extends Helper {
 	initInfoMeshes(infosDef) {
 		const infos = [];
 		for (let name in infosDef) {
-			const mesh = new HelperText(infosDef[name]);
+			const mesh = new TextHelper(infosDef[name]);
 			mesh.name = name;
 			mesh.positionTarget = mesh.position.clone();
 			mesh.material.opacity = 0;

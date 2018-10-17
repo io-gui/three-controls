@@ -33,16 +33,16 @@ export default [
     ] )
   },
   {
-    input: 'src/controls/EditorControls.js',
-    output: output( 'build/controls/EditorControls.js' ),
+    input: 'src/controls/EditorCameraControls.js',
+    output: output( 'build/controls/EditorCameraControls.js' ),
     external: external( [
       'src/controls/CameraControls.js',
       './lib/three.module.js'
     ] )
   },
   {
-    input: 'src/controls/OrbitControls.js',
-    output: output( 'build/controls/OrbitControls.js' ),
+    input: 'src/controls/OrbitCameraControls.js',
+    output: output( 'build/controls/OrbitCameraControls.js' ),
     external: external( [
       'src/controls/CameraControls.js',
       './lib/three.module.js'
@@ -57,44 +57,44 @@ export default [
     ] )
   },
   {
-    input: 'src/controls/TrackballControls.js',
-    output: output( 'build/controls/TrackballControls.js' ),
+    input: 'src/controls/TrackballCameraControls.js',
+    output: output( 'build/controls/TrackballCameraControls.js' ),
     external: external( [
       'src/controls/CameraControls.js',
       './lib/three.module.js'
     ] )
   },
   {
-    input: 'src/controls/TransformControlsCombined.js',
-    output: output( 'build/controls/TransformControlsCombined.js' ),
+    input: 'src/controls/CombinedTransformControls.js',
+    output: output( 'build/controls/CombinedTransformControls.js' ),
     external: external( [
       './lib/three.module.js'
     ] )
   },
   {
-    input: 'src/controls/TransformControlsRotate.js',
-    output: output( 'build/controls/TransformControlsRotate.js' ),
+    input: 'src/controls/RotateTransformControls.js',
+    output: output( 'build/controls/RotateTransformControls.js' ),
     external: external( [
       './lib/three.module.js'
     ] )
   },
   {
-    input: 'src/controls/TransformControlsScale.js',
-    output: output( 'build/controls/TransformControlsScale.js' ),
+    input: 'src/controls/ScaleTransformControls.js',
+    output: output( 'build/controls/ScaleTransformControls.js' ),
     external: external( [
       './lib/three.module.js'
     ] )
   },
   {
-    input: 'src/controls/TransformControlsStretch.js',
-    output: output( 'build/controls/TransformControlsStretch.js' ),
+    input: 'src/controls/StretchTransformControls.js',
+    output: output( 'build/controls/StretchTransformControls.js' ),
     external: external( [
       './lib/three.module.js'
     ] )
   },
   {
-    input: 'src/controls/TransformControlsTranslate.js',
-    output: output( 'build/controls/TransformControlsTranslate.js' ),
+    input: 'src/controls/TranslateTransformControls.js',
+    output: output( 'build/controls/TranslateTransformControls.js' ),
     external: external( [
       './lib/three.module.js'
     ] )

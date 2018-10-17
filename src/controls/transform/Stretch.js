@@ -3,8 +3,8 @@
  */
 
 import {Vector3} from "../../../lib/three.module.js";
-import {TransformControlsMixin} from "./TransformControlsMixin.js";
-import {TransformHelperStretch} from "../../helpers/transform/TransformHelperStretch.js";
+import {TransformControlsMixin} from "../Transform.js";
+import {TransformHelperStretch} from "../../helpers/transform/Stretch.js";
 
 // Reusable utility variables
 const offset = new Vector3();
@@ -19,7 +19,7 @@ function hasAxisAny(str, chars) {
 
 // TODO: fix toggle space>freescale
 
-export class TransformControlsStretch extends TransformControlsMixin(TransformHelperStretch) {
+export class StretchTransformControls extends TransformControlsMixin(TransformHelperStretch) {
 	transform() {
 		// TODO: test with asymetric bounding boxes!!!
 		offset.copy(this.pointEnd).sub(this.pointStart);

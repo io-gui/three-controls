@@ -44,15 +44,15 @@
 
 		<div id="info">
 			<span>Transform:</span>
-			<a href="javascript:setupTransformControls('TransformControlsTranslate')">W translate</a> |
-			<a href="javascript:setupTransformControls('TransformControlsRotate')">E rotate</a> |
-			<a href="javascript:setupTransformControls('TransformControlsScale')">R scale</a> |
-			<a href="javascript:setupTransformControls('TransformControlsStretch')">T combined </a> |
-			<a href="javascript:setupTransformControls('TransformControlsStretch')">Y stretch (wip) </a><br />
+			<a href="javascript:setupTransformControls('TranslateTransformControls')">W translate</a> |
+			<a href="javascript:setupTransformControls('RotateTransformControls')">E rotate</a> |
+			<a href="javascript:setupTransformControls('ScaleTransformControls')">R scale</a> |
+			<a href="javascript:setupTransformControls('StretchTransformControls')">T combined </a> |
+			<a href="javascript:setupTransformControls('StretchTransformControls')">Y stretch (wip) </a><br />
 			<span>Viewport controls:</span>
-			<a href="javascript:setupCameraControls('OrbitControls')">1 orbit</a> |
-			<a href="javascript:setupCameraControls('EditorControls')">2 editor</a> |
-			<a href="javascript:setupCameraControls('TrackballControls')">3 trackball</a><br />
+			<a href="javascript:setupCameraControls('OrbitCameraControls')">1 orbit</a> |
+			<a href="javascript:setupCameraControls('EditorCameraControls')">2 editor</a> |
+			<a href="javascript:setupCameraControls('TrackballCameraControls')">3 trackball</a><br />
 			<!-- <a href="javascript:setupCameraControls('FirstPersonControls')">4 first person</a> | -->
 			<!-- <a href="javascript:setupCameraControls('FlyControls')">3 fly</a><br /> -->
 			<span>Toggle:</span>
@@ -68,21 +68,21 @@
 
 		<script type="module">
 
-			import {TransformControlsDrag} from "./src/controls/transform/TransformControlsDrag.js";
-			import {TransformControlsTranslate} from "./src/controls/transform/TransformControlsTranslate.js";
-			import {TransformControlsRotate} from "./src/controls/transform/TransformControlsRotate.js";
-			import {TransformControlsScale} from "./src/controls/transform/TransformControlsScale.js";
-			import {TransformControlsStretch} from "./src/controls/transform/TransformControlsStretch.js";
-			import {TransformControlsCombined} from "./src/controls/transform/TransformControlsCombined.js";
+			import {DragTransformControls} from "./src/controls/transform/Drag.js";
+			import {TranslateTransformControls} from "./src/controls/transform/Translate.js";
+			import {RotateTransformControls} from "./src/controls/transform/Rotate.js";
+			import {ScaleTransformControls} from "./src/controls/transform/Scale.js";
+			import {StretchTransformControls} from "./src/controls/transform/Stretch.js";
+			import {CombinedTransformControls} from "./src/controls/transform/Combined.js";
 
-			import {CameraControls} from "./src/controls/camera/CameraControls.js";
-			import {EditorControls} from "./src/controls/camera/EditorControls.js";
-			import {OrbitControls} from "./src/controls/camera/OrbitControls.js";
-			import {TrackballControls} from "./src/controls/camera/TrackballControls.js";
+			import {CameraControls} from "./src/controls/Camera.js";
+			import {EditorCameraControls} from "./src/controls/camera/Editor.js";
+			import {OrbitCameraControls} from "./src/controls/camera/Orbit.js";
+			import {TrackballCameraControls} from "./src/controls/camera/Trackball.js";
 
-			import {SelectionControls} from "./src/controls/SelectionControls.js";
+			import {SelectionControls} from "./src/controls/Selection.js";
 
-			import {TransformHelperTranslate} from "./src/helpers/transform/TransformHelperTranslate.js";
+			import {TransformHelperTranslate} from "./src/helpers/transform/Translate.js";
 
 			import {WebGLRenderer, PerspectiveCamera, OrthographicCamera, Scene, GridHelper, HemisphereLight,
 				BoxBufferGeometry, MeshLambertMaterial, Mesh, Object3D, TextureLoader, Color,
@@ -161,7 +161,7 @@
 				// 			const obj3d = new Object3D();
 				// 			obj3d.position.set(i * 200 - 500, k * 200 - 500, j * 200 - 500);
 				// 			helperScene.add(obj3d);
-				// 			// const control = new TransformControlsTranslate({domElement: canvas, camera: camera});
+				// 			// const control = new TranslateTransformControls({domElement: canvas, camera: camera});
 				// 			const control = new TransformHelperTranslate();
 				// 			control.size = 0.05;
 				// 			control.addEventListener('change', transformControlsChanged);
@@ -183,7 +183,7 @@
 				});
 
 				setupCameraControls('CameraControls');
-				setupTransformControls('TransformControlsRotate');
+				setupTransformControls('RotateTransformControls');
 
 				scene.updateMatrixWorld();
 
@@ -196,10 +196,10 @@
 				}
 
 				function setupCameraControls(controlName) {
-					let ControlClass = EditorControls;
-					if (controlName === 'OrbitControls') ControlClass = OrbitControls;
-					if (controlName === 'EditorControls') ControlClass = EditorControls;
-					if (controlName === 'TrackballControls') ControlClass = TrackballControls;
+					let ControlClass = EditorCameraControls;
+					if (controlName === 'OrbitCameraControls') ControlClass = OrbitCameraControls;
+					if (controlName === 'EditorCameraControls') ControlClass = EditorCameraControls;
+					if (controlName === 'TrackballCameraControls') ControlClass = TrackballCameraControls;
 
 
 					if (viewportControls) {
@@ -218,13 +218,13 @@
 				}
 
 				function setupTransformControls(controlName) {
-					let ControlClass = TransformControlsTranslate;
-					if (controlName === 'TransformControlsTranslate') ControlClass = TransformControlsTranslate;
-					if (controlName === 'TransformControlsRotate') ControlClass = TransformControlsRotate;
-					if (controlName === 'TransformControlsScale') ControlClass = TransformControlsScale;
-					if (controlName === 'TransformControlsStretch') ControlClass = TransformControlsStretch;
-					if (controlName === 'TransformControlsCombined') ControlClass = TransformControlsCombined;
-					if (controlName === 'TransformControlsDrag') ControlClass = TransformControlsDrag;
+					let ControlClass = TranslateTransformControls;
+					if (controlName === 'TranslateTransformControls') ControlClass = TranslateTransformControls;
+					if (controlName === 'RotateTransformControls') ControlClass = RotateTransformControls;
+					if (controlName === 'ScaleTransformControls') ControlClass = ScaleTransformControls;
+					if (controlName === 'StretchTransformControls') ControlClass = StretchTransformControls;
+					if (controlName === 'CombinedTransformControls') ControlClass = CombinedTransformControls;
+					if (controlName === 'DragTransformControls') ControlClass = DragTransformControls;
 
 					let space = 'local';
 
@@ -266,28 +266,28 @@
 				window.addEventListener( 'keydown', function ( event ) {
 					switch ( event.keyCode ) {
 						case 87: // W
-							setupTransformControls('TransformControlsTranslate');
+							setupTransformControls('TranslateTransformControls');
 							break;
 						case 69: // E
-							setupTransformControls('TransformControlsRotate');
+							setupTransformControls('RotateTransformControls');
 							break;
 						case 82: // R
-							setupTransformControls('TransformControlsScale');
+							setupTransformControls('ScaleTransformControls');
 							break;
 						case 84: // T
-							setupTransformControls('TransformControlsCombined');
+							setupTransformControls('CombinedTransformControls');
 							break;
 						case 89: // Y
-						setupTransformControls('TransformControlsStretch');
+						setupTransformControls('StretchTransformControls');
 							break;
 						case 49: // 1
-							setupCameraControls('OrbitControls');
+							setupCameraControls('OrbitCameraControls');
 							break;
 						case 50: // 2
-							setupCameraControls('EditorControls');
+							setupCameraControls('EditorCameraControls');
 							break;
 						case 51: // 3
-							setupCameraControls('TrackballControls');
+							setupCameraControls('TrackballCameraControls');
 							break;
 						case 52: // 4
 							// setupCameraControls(FirstPersonControls);

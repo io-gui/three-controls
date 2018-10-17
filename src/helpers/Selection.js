@@ -4,9 +4,8 @@
 
 import {Vector3, Quaternion, Matrix4, CylinderBufferGeometry} from "../../lib/three.module.js";
 import {Helper} from "../Helper.js";
-import {HelperMesh} from "./HelperMesh.js";
-import {TransformHelper} from "./transform/TransformHelper.js";
-import {HelperGeometry} from "./HelperGeometry.js";
+import {TransformHelper} from "./Transform.js";
+import {HelperGeometry} from "../HelperGeometry.js";
 
 // Reusable utility variables
 const PI = Math.PI;
@@ -71,7 +70,8 @@ export class SelectionHelper extends Helper {
 	combineHelperGroups(groups) {
 		this.corners = {};
 		for (let name in groups) {
-			this.corners[name] = new HelperMesh(groups[name], {name: name});
+			this.corners[name] = this.makeMesh(groups[name], {name: name});
+			// TODO: name?
 			this.add(this.corners[name]);
 		}
 	}

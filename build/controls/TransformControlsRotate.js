@@ -2096,7 +2096,7 @@ const endNorm = new Vector3();
 const rotationAxis = new Vector3();
 let rotationAngle = 0;
 
-class TransformControlsRotate extends TransformControlsMixin( TransformHelperRotate ) {
+class RotateTransformControls extends TransformControlsMixin( TransformHelperRotate ) {
 
 	transform() {
 
@@ -2154,4 +2154,4 @@ class TransformControlsRotate extends TransformControlsMixin( TransformHelperRot
 
 }
 
-export { TransformControlsRotate };
+export { RotateTransformControls };

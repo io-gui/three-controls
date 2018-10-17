@@ -2150,7 +2150,7 @@ class SelectionControls extends Interactive {
 			} else if ( this.transformSpace === 'world' ) {
 
 				// TODO: center should be in the center of combined boundging box.
-				// TODO: Verify with TransformControlsStretch box handles
+				// TODO: Verify with StretchTransformControls box handles
 				pos.set( 0, 0, 0 );
 				for ( let i = 0; i < this.selected.length; i ++ ) {
 

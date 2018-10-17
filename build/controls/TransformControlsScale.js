@@ -2087,7 +2087,7 @@ class TransformHelperScale extends TransformHelper {
 const scaleFactor = new Vector3();
 const EPS$2 = 0.000001;
 
-class TransformControlsScale extends TransformControlsMixin( TransformHelperScale ) {
+class ScaleTransformControls extends TransformControlsMixin( TransformHelperScale ) {
 
 	transform() {
 
@@ -2122,4 +2122,4 @@ class TransformControlsScale extends TransformControlsMixin( TransformHelperScal
 
 }
 
-export { TransformControlsScale };
+export { ScaleTransformControls };

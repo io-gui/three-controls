@@ -2070,7 +2070,7 @@ class TransformHelperTranslate extends TransformHelper {
 
 const offset = new Vector3();
 
-class TransformControlsTranslate extends TransformControlsMixin( TransformHelperTranslate ) {
+class TranslateTransformControls extends TransformControlsMixin( TransformHelperTranslate ) {
 
 	transform() {
 
@@ -2102,4 +2102,4 @@ class TransformControlsTranslate extends TransformControlsMixin( TransformHelper
 
 }
 
-export { TransformControlsTranslate };
+export { TranslateTransformControls };

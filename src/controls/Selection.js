@@ -5,9 +5,9 @@
 // TODO: marquee selection
 
 import {Raycaster} from "../../lib/three.module.js";
-import {Interactive} from "../Interactive.js";
+import {Interactive} from "./Interactive.js";
 import {Vector3, Quaternion, Box3} from "../../lib/three.module.js";
-import {SelectionHelper} from "../helpers/SelectionHelper.js";
+import {SelectionHelper} from "../helpers/Selection.js";
 
 // Reusable utility variables
 const pos = new Vector3();
@@ -73,8 +73,6 @@ const CLICK_TIME = 250;
  */
 
 export class SelectionControls extends Interactive {
-	// get isSelection() { return true; } // TODO?
-	get isSelectionControls() { return true; }
 	constructor(props) {
 		super(props);
 
@@ -200,7 +198,7 @@ export class SelectionControls extends Interactive {
 				// Set selection transform to the average of selected items.
 			} else if (this.transformSpace === 'world') {
 				// TODO: center should be in the center of combined boundging box.
-				// TODO: Verify with TransformControlsStretch box handles
+				// TODO: Verify with StretchTransformControls box handles
 				pos.set(0,0,0);
 				for (let i = 0; i < this.selected.length; i++) {
 					let item = this.selected[i];

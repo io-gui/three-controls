@@ -2,11 +2,11 @@
  * @author arodic / https://github.com/arodic
  */
 
-import {TransformControlsMixin} from "./TransformControlsMixin.js";
-import {TransformHelper} from "../../helpers/transform/TransformHelper.js";
+import {TransformControlsMixin} from "../Transform.js";
+import {TransformHelper} from "../../helpers/Transform.js";
 
 // TODO: Drag Controls should use object as picker and no handle.
-export class TransformControlsDrag extends TransformControlsMixin(TransformHelper) {
+export class DragTransformControls extends TransformControlsMixin(TransformHelper) {
 	constructor(props) {
 		super(props);
 		this.size = 0.02;

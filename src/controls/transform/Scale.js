@@ -3,14 +3,14 @@
  */
 
 import {Vector3} from "../../../lib/three.module.js";
-import {TransformControlsMixin} from "./TransformControlsMixin.js";
-import {TransformHelperScale} from "../../helpers/transform/TransformHelperScale.js";
+import {TransformControlsMixin} from "../Transform.js";
+import {TransformHelperScale} from "../../helpers/transform/Scale.js";
 
 // Reusable utility variables
 const scaleFactor = new Vector3();
 const EPS = 0.000001;
 
-export class TransformControlsScale extends TransformControlsMixin(TransformHelperScale) {
+export class ScaleTransformControls extends TransformControlsMixin(TransformHelperScale) {
 	transform() {
 		if (this.axis === 'XYZ') {
 

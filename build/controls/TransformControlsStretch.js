@@ -2352,7 +2352,7 @@ function hasAxisAny$1( str, chars ) {
 
 // TODO: fix toggle space>freescale
 
-class TransformControlsStretch extends TransformControlsMixin( TransformHelperStretch ) {
+class StretchTransformControls extends TransformControlsMixin( TransformHelperStretch ) {
 
 	transform() {
 
@@ -2472,4 +2472,4 @@ class TransformControlsStretch extends TransformControlsMixin( TransformHelperSt
 
 }
 
-export { TransformControlsStretch };
+export { StretchTransformControls };

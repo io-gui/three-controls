@@ -1,6 +1,6 @@
 import {Vector3, Quaternion, Matrix4, Box3, PlaneBufferGeometry, CylinderBufferGeometry} from "../../../lib/three.module.js";
-import {HelperGeometry} from "../HelperGeometry.js";
-import {TransformHelper} from "./TransformHelper.js";
+import {HelperGeometry} from "../../HelperGeometry.js";
+import {TransformHelper} from "../Transform.js";
 
 // Reusable utility variables
 const PI = Math.PI;

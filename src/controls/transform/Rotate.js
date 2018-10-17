@@ -3,8 +3,8 @@
  */
 
 import {Vector3, Quaternion} from "../../../lib/three.module.js";
-import {TransformControlsMixin} from "./TransformControlsMixin.js";
-import {TransformHelperRotate} from "../../helpers/transform/TransformHelperRotate.js";
+import {TransformControlsMixin} from "../Transform.js";
+import {TransformHelperRotate} from "../../helpers/transform/Rotate.js";
 
 // Reusable utility variables
 const tempVector = new Vector3();
@@ -20,7 +20,7 @@ const endNorm = new Vector3();
 const rotationAxis = new Vector3();
 let rotationAngle = 0;
 
-export class TransformControlsRotate extends TransformControlsMixin(TransformHelperRotate) {
+export class RotateTransformControls extends TransformControlsMixin(TransformHelperRotate) {
 	transform() {
 		offset.copy(this.pointEnd).sub(this.pointStart);
 

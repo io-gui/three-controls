@@ -2153,7 +2153,7 @@ const unit = {
 const rotationAxis = new Vector3();
 let rotationAngle = 0;
 
-class TransformControlsCombined extends TransformControlsMixin( TransformHelperCombined ) {
+class CombinedTransformControls extends TransformControlsMixin( TransformHelperCombined ) {
 
 	transform() {
 
@@ -2259,4 +2259,4 @@ class TransformControlsCombined extends TransformControlsMixin( TransformHelperC
 
 }
 
-export { TransformControlsCombined };
+export { CombinedTransformControls };
