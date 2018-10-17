@@ -51,9 +51,9 @@ const pickerGeometry = {
 };
 
 const guideGeometry = {
-	X: new HelperGeometry(translateGuideGeometry, {color: colors['red'], opacity: 0.25, rotation: [0, 0, -HPI], depthBias: -5}),
-	Y: new HelperGeometry(translateGuideGeometry, {color: colors['green'], opacity: 0.25, depthBias: -5}),
-	Z: new HelperGeometry(translateGuideGeometry, {color: colors['blue'], opacity: 0.25, rotation: [HPI, 0, 0], depthBias: -5}),
+	X: new HelperGeometry(translateGuideGeometry, {color: colors['red'], opacity: 0.5, rotation: [0, 0, -HPI], depthBias: -5}),
+	Y: new HelperGeometry(translateGuideGeometry, {color: colors['green'], opacity: 0.5, depthBias: -5}),
+	Z: new HelperGeometry(translateGuideGeometry, {color: colors['blue'], opacity: 0.5, rotation: [HPI, 0, 0], depthBias: -5}),
 };
 
 export class TransformHelperTranslate extends TransformHelper {

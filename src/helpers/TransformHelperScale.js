@@ -67,9 +67,9 @@ const pickerGeometry = {
 };
 
 const guideGeometry = {
-	X: new HelperGeometry(scaleGuideGeometry, {color: colors['red'], opacity: 0.25, rotation: [0, 0, -HPI]}),
-	Y: new HelperGeometry(scaleGuideGeometry, {color: colors['green'], opacity: 0.25}),
-	Z: new HelperGeometry(scaleGuideGeometry, {color: colors['blue'], opacity: 0.25, rotation: [HPI, 0, 0]}),
+	X: new HelperGeometry(scaleGuideGeometry, {color: colors['red'], opacity: 0.5, rotation: [0, 0, -HPI]}),
+	Y: new HelperGeometry(scaleGuideGeometry, {color: colors['green'], opacity: 0.5}),
+	Z: new HelperGeometry(scaleGuideGeometry, {color: colors['blue'], opacity: 0.5, rotation: [HPI, 0, 0]}),
 };
 
 export class TransformHelperScale extends TransformHelper {

@@ -63,9 +63,9 @@ const pickerGeometry = {
 };
 
 const guideGeometry = {
-	X: new HelperGeometry(rotateGuideGeometry, {color: colors['red'], opacity: 0.25, rotation: [HPI, HPI, 0]}),
-	Y: new HelperGeometry(rotateGuideGeometry, {color: colors['green'], opacity: 0.25, rotation: [HPI, 0, 0]}),
-	Z: new HelperGeometry(rotateGuideGeometry, {color: colors['blue'], opacity: 0.25, rotation: [0, 0, -HPI]}),
+	X: new HelperGeometry(rotateGuideGeometry, {color: colors['red'], opacity: 0.5, rotation: [HPI, HPI, 0]}),
+	Y: new HelperGeometry(rotateGuideGeometry, {color: colors['green'], opacity: 0.5, rotation: [HPI, 0, 0]}),
+	Z: new HelperGeometry(rotateGuideGeometry, {color: colors['blue'], opacity: 0.5, rotation: [0, 0, -HPI]}),
 };
 
 export class TransformHelperRotate extends TransformHelper {

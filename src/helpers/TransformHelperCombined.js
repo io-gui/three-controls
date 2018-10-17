@@ -120,17 +120,17 @@ const pickerGeometry = {
 };
 
 const guideGeometry = {
-	T_X: new HelperGeometry(translateGuideGeometry, {color: colors['red'], opacity: 0.25, rotation: [0, 0, -HPI]}),
-	T_Y: new HelperGeometry(translateGuideGeometry, {color: colors['green'], opacity: 0.25}),
-	T_Z: new HelperGeometry(translateGuideGeometry, {color: colors['blue'], opacity: 0.25, rotation: [HPI, 0, 0]}),
+	T_X: new HelperGeometry(translateGuideGeometry, {color: colors['red'], opacity: 0.5, rotation: [0, 0, -HPI]}),
+	T_Y: new HelperGeometry(translateGuideGeometry, {color: colors['green'], opacity: 0.5}),
+	T_Z: new HelperGeometry(translateGuideGeometry, {color: colors['blue'], opacity: 0.5, rotation: [HPI, 0, 0]}),
 
-	R_X: new HelperGeometry(rotateGuideGeometry, {color: colors['red'], opacity: 0.25, rotation: [QPI, HPI, 0]}),
-	R_Y: new HelperGeometry(rotateGuideGeometry, {color: colors['green'], opacity: 0.25, rotation: [HPI, 0, -HPI/2]}),
-	R_Z: new HelperGeometry(rotateGuideGeometry, {color: colors['blue'], opacity: 0.25, rotation: [0, 0, -QPI]}),
+	R_X: new HelperGeometry(rotateGuideGeometry, {color: colors['red'], opacity: 0.5, rotation: [QPI, HPI, 0]}),
+	R_Y: new HelperGeometry(rotateGuideGeometry, {color: colors['green'], opacity: 0.5, rotation: [HPI, 0, -HPI/2]}),
+	R_Z: new HelperGeometry(rotateGuideGeometry, {color: colors['blue'], opacity: 0.5, rotation: [0, 0, -QPI]}),
 
-	S_X: new HelperGeometry(translateGuideGeometry, {color: colors['red'], opacity: 0.25, rotation: [0, 0, -HPI]}),
-	S_Y: new HelperGeometry(translateGuideGeometry, {color: colors['green'], opacity: 0.25}),
-	S_Z: new HelperGeometry(translateGuideGeometry, {color: colors['blue'], opacity: 0.25, rotation: [HPI, 0, 0]}),
+	S_X: new HelperGeometry(translateGuideGeometry, {color: colors['red'], opacity: 0.5, rotation: [0, 0, -HPI]}),
+	S_Y: new HelperGeometry(translateGuideGeometry, {color: colors['green'], opacity: 0.5}),
+	S_Z: new HelperGeometry(translateGuideGeometry, {color: colors['blue'], opacity: 0.5, rotation: [HPI, 0, 0]}),
 };
 
 export class TransformHelperCombined extends TransformHelper {
