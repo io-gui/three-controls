@@ -1,4 +1,4 @@
-import { UniformsUtils, Vector3, Color, FrontSide, ShaderMaterial, DataTexture, RGBAFormat, FloatType, NearestFilter, Mesh, BoxBufferGeometry, Sprite, Texture, Vector2, BufferGeometry, BufferAttribute, Euler, Quaternion, Matrix4, Float32BufferAttribute, Uint16BufferAttribute, CylinderBufferGeometry, Raycaster, Box3 } from '../../lib/three.module.js';
+import { UniformsUtils, Vector3, Color, FrontSide, ShaderMaterial, DataTexture, RGBAFormat, FloatType, NearestFilter, Mesh, BoxBufferGeometry, Raycaster, Quaternion, Plane, Vector2, BufferGeometry, BufferAttribute, Euler, Matrix4, Float32BufferAttribute, Uint16BufferAttribute, Sprite, Texture, CylinderBufferGeometry, Box3, PlaneBufferGeometry } from '../lib/three.module.js';
 
 /**
  * @author arodic / https://github.com/arodic
@@ -931,75 +931,200 @@ const InteractiveMixin = ( superclass ) => class extends superclass {
 
 };
 
-/*
- * Helper class wrapped with PointerEvents API polyfill.
- */
-
-class Interactive extends InteractiveMixin( Helper ) {}
-
 /**
  * @author arodic / https://github.com/arodic
  */
 
-class TextHelper extends IoLiteMixin( Sprite ) {
+// Reusable utility variables
+const _ray = new Raycaster();
+const _rayTarget = new Vector3();
+const _tempVector = new Vector3();
 
-	constructor( props = {} ) {
+// events
+const changeEvent = { type: "change" };
 
-		super();
+const TransformControlsMixin = ( superclass ) => class extends InteractiveMixin( superclass ) {
 
-		this.defineProperties( {
-			text: '',
-			color: props.color || 'black',
-			size: 0.33,
-		} );
+	constructor( props ) {
 
-		this.scaleTarget = new Vector3( 1, 1, 1 );
+		super( props );
 
-		this.canvas = document.createElement( 'canvas' );
-		this.ctx = this.canvas.getContext( '2d' );
-		this.texture = new Texture( this.canvas );
+		this.pointStart = new Vector3();
+		this.pointEnd = new Vector3();
 
-		this.material.map = this.texture;
+		this.positionStart = new Vector3();
+		this.quaternionStart = new Quaternion();
+		this.scaleStart = new Vector3();
 
-		this.canvas.width = 256;
-		this.canvas.height = 64;
+		this.parentPosition = new Vector3();
+		this.parentQuaternion = new Quaternion();
+		this.parentQuaternionInv = new Quaternion();
+		this.parentScale = new Vector3();
 
-		this.scale.set( 1, 0.25, 1 );
-		this.scale.multiplyScalar( this.size );
+		this.worldPosition = new Vector3();
+		this.worldQuaternion = new Quaternion();
+		this.worldQuaternionInv = new Quaternion();
+		this.worldScale = new Vector3();
 
-		this.position.set( props.position[ 0 ], props.position[ 1 ], props.position[ 2 ] );
+		this._plane = new Plane();
+		this.objectChanged();
 
-		this.text = '-+0.4';
-
-	}
-	textChanged() {
-
-		const ctx = this.ctx;
-		const canvas = this.canvas;
-
-		ctx.clearRect( 0, 0, canvas.width, canvas.height );
-
-		ctx.font = 'bold ' + canvas.height * 0.9 + 'px monospace';
-
-		ctx.fillStyle = this.color;
-		ctx.textAlign = "center";
-		ctx.textBaseline = "middle";
-
-		ctx.strokeStyle = 'black';
-		ctx.lineWidth = canvas.height / 8;
-
-		ctx.strokeText( this.text, canvas.width / 2, canvas.height / 2 );
-		ctx.fillText( this.text, canvas.width / 2, canvas.height / 2 );
-
-		ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
-
-		ctx.fillText( this.text, canvas.width / 2, canvas.height / 2 );
-
-		this.texture.needsUpdate = true;
+		// this.add(this._planeDebugMesh = new Mesh(new PlaneBufferGeometry(1000, 1000, 10, 10), new MeshBasicMaterial({wireframe: true, transparent: true, opacity: 0.2})));
 
 	}
+	objectChanged() {
 
-}
+		super.objectChanged();
+		let hasObject = this.object ? true : false;
+		this.visible = hasObject;
+		this.enabled = hasObject;
+		if ( ! hasObject ) {
+
+			this.active = false;
+			this.axis = null;
+
+		}
+		this.animation.startAnimation( 1.5 );
+
+	}
+	// TODO: better animation trigger
+	// TODO: also trigger on object change
+	// TODO: Debug stalling animations on hover
+	enabledChanged( value ) {
+
+		super.enabledChanged( value );
+		this.animation.startAnimation( 0.5 );
+
+	}
+	axisChanged() {
+
+		super.axisChanged();
+		this.updatePlane();
+
+	}
+	activeChanged() {
+
+		this.animation.startAnimation( 0.5 );
+
+	}
+	onPointerHover( pointers ) {
+
+		if ( ! this.object || this.active === true ) return;
+
+		_ray.setFromCamera( pointers[ 0 ].position, this.camera );
+		const intersect = _ray.intersectObjects( this.pickers, true )[ 0 ] || false;
+
+		this.axis = intersect ? intersect.object.name : null;
+
+	}
+	onPointerDown( pointers ) {
+
+		if ( this.axis === null || ! this.object || this.active === true || pointers[ 0 ].button !== 0 ) return;
+
+		_ray.setFromCamera( pointers[ 0 ].position, this.camera );
+		const planeIntersect = _ray.ray.intersectPlane( this._plane, _rayTarget );
+
+		if ( planeIntersect ) {
+
+			this.object.updateMatrixWorld();
+			this.object.matrix.decompose( this.positionStart, this.quaternionStart, this.scaleStart );
+			this.object.parent.matrixWorld.decompose( this.parentPosition, this.parentQuaternion, this.parentScale );
+			this.object.matrixWorld.decompose( this.worldPosition, this.worldQuaternion, this.worldScale );
+
+			this.parentQuaternionInv.copy( this.parentQuaternion ).inverse();
+			this.worldQuaternionInv.copy( this.worldQuaternion ).inverse();
+
+			this.pointStart.copy( planeIntersect ).sub( this.worldPosition );
+			this.active = true;
+
+		}
+
+	}
+	onPointerMove( pointers ) {
+
+		if ( this.object === undefined || this.axis === null || this.active === false || pointers[ 0 ].button !== 0 ) return;
+
+		_ray.setFromCamera( pointers[ 0 ].position, this.camera );
+		const planeIntersect = _ray.ray.intersectPlane( this._plane, _tempVector );
+
+		if ( planeIntersect ) {
+
+			this.pointEnd.copy( planeIntersect ).sub( this.worldPosition );
+			this.transform();
+			this.object.updateMatrixWorld();
+			this.dispatchEvent( changeEvent );
+
+		}
+
+	}
+	onPointerUp( pointers ) {
+
+		if ( pointers.length === 0 ) {
+
+			if ( pointers.removed[ 0 ].pointerType === 'touch' ) this.axis = null;
+			this.active = false;
+
+		} else if ( pointers[ 0 ].button === - 1 ) {
+
+			this.axis = null;
+			this.active = false;
+
+		}
+
+	}
+	transform() {}
+	updateAxis( axis ) {
+
+		super.updateAxis( axis );
+		if ( ! this.enabled ) axis.material.highlight = ( 10 * axis.material.highlight - 2.5 ) / 11;
+
+	}
+	updateGuide( axis ) {
+
+		super.updateGuide( axis );
+		if ( this.active === true ) {
+
+			let offset = new Vector3().copy( this.positionStart ).sub( this.object.position ).divide( this.scale );
+			axis.position.copy( offset );
+			if ( this.space === 'local' ) {
+
+				axis.position.applyQuaternion( this.worldQuaternionInv );
+				let quatOffset = new Quaternion().copy( this.quaternionStart.clone().inverse() ).multiply( this.object.quaternion );
+				axis.quaternion.copy( quatOffset.clone().inverse() );
+
+			}
+
+		} else {
+
+			axis.position.set( 0, 0, 0 );
+			axis.quaternion.set( 0, 0, 0, 1 );
+
+		}
+
+	}
+	updatePlane() {
+
+		const normal = this._plane.normal;
+		const axis = this.axis ? this.axis.split( '_' ).pop() : null;
+
+		if ( axis === 'X' ) normal.copy( this.worldX ).cross( _tempVector.copy( this.eye ).cross( this.worldX ) );
+		if ( axis === 'Y' ) normal.copy( this.worldY ).cross( _tempVector.copy( this.eye ).cross( this.worldY ) );
+		if ( axis === 'Z' ) normal.copy( this.worldZ ).cross( _tempVector.copy( this.eye ).cross( this.worldZ ) );
+		if ( axis === 'XY' ) normal.copy( this.worldZ );
+		if ( axis === 'YZ' ) normal.copy( this.worldX );
+		if ( axis === 'XZ' ) normal.copy( this.worldY );
+		if ( axis === 'XYZ' || axis === 'E' ) this.camera.getWorldDirection( normal );
+
+		this._plane.setFromNormalAndCoplanarPoint( normal, this.position );
+
+		// this.parent.add(this._planeDebugMesh);
+		// this._planeDebugMesh.position.set(0,0,0);
+		// this._planeDebugMesh.lookAt(normal);
+		// this._planeDebugMesh.position.copy(this.position);
+
+	}
+
+};
 
 /**
  * @author mrdoob / http://mrdoob.com/
@@ -1548,6 +1673,70 @@ class HelperGeometry extends BufferGeometry {
  * @author arodic / https://github.com/arodic
  */
 
+class TextHelper extends IoLiteMixin( Sprite ) {
+
+	constructor( props = {} ) {
+
+		super();
+
+		this.defineProperties( {
+			text: '',
+			color: props.color || 'black',
+			size: 0.33,
+		} );
+
+		this.scaleTarget = new Vector3( 1, 1, 1 );
+
+		this.canvas = document.createElement( 'canvas' );
+		this.ctx = this.canvas.getContext( '2d' );
+		this.texture = new Texture( this.canvas );
+
+		this.material.map = this.texture;
+
+		this.canvas.width = 256;
+		this.canvas.height = 64;
+
+		this.scale.set( 1, 0.25, 1 );
+		this.scale.multiplyScalar( this.size );
+
+		this.position.set( props.position[ 0 ], props.position[ 1 ], props.position[ 2 ] );
+
+		this.text = '-+0.4';
+
+	}
+	textChanged() {
+
+		const ctx = this.ctx;
+		const canvas = this.canvas;
+
+		ctx.clearRect( 0, 0, canvas.width, canvas.height );
+
+		ctx.font = 'bold ' + canvas.height * 0.9 + 'px monospace';
+
+		ctx.fillStyle = this.color;
+		ctx.textAlign = "center";
+		ctx.textBaseline = "middle";
+
+		ctx.strokeStyle = 'black';
+		ctx.lineWidth = canvas.height / 8;
+
+		ctx.strokeText( this.text, canvas.width / 2, canvas.height / 2 );
+		ctx.fillText( this.text, canvas.width / 2, canvas.height / 2 );
+
+		ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
+
+		ctx.fillText( this.text, canvas.width / 2, canvas.height / 2 );
+
+		this.texture.needsUpdate = true;
+
+	}
+
+}
+
+/**
+ * @author arodic / https://github.com/arodic
+ */
+
 /*
  * Creates a single requestAnimationFrame loop.
  * provides methods to control animation and update event to hook into animation updates.
@@ -1976,85 +2165,198 @@ class TransformHelper extends Helper {
 
 }
 
-/**
- * @author arodic / https://github.com/arodic
- */
-
 // Reusable utility variables
 const PI$1 = Math.PI;
 const HPI$1 = PI$1 / 2;
 const EPS$1 = 0.000001;
 
-// TODO: consider supporting objects with skewed transforms.
-const _position$1 = new Vector3();
+const _vector = new Vector3();
+const _boxVector = new Vector3();
+const _wScale = new Vector3();
 const _quaternion$1 = new Quaternion();
 const _scale$1 = new Vector3();
 const _m1 = new Matrix4();
 const _m2 = new Matrix4();
 const _one = new Vector3( 1, 1, 1 );
 
-const corner3Geometry = new HelperGeometry( [
-	[ new CylinderBufferGeometry( EPS$1, EPS$1, 1, 4, 2, true ), { color: [ 1, 0, 0 ], position: [ 0.5, 0, 0 ], rotation: [ 0, 0, HPI$1 ], thickness: 1 } ],
-	[ new CylinderBufferGeometry( EPS$1, EPS$1, 1, 4, 2, true ), { color: [ 0, 1, 0 ], position: [ 0, 0.5, 0 ], rotation: [ 0, HPI$1, 0 ], thickness: 1 } ],
-	[ new CylinderBufferGeometry( EPS$1, EPS$1, 1, 4, 2, true ), { color: [ 0, 0, 1 ], position: [ 0, 0, 0.5 ], rotation: [ HPI$1, 0, 0 ], thickness: 1 } ],
+const planeGeometry = new PlaneBufferGeometry( 1, 1, 1, 1 );
+
+const lineGeometry = new CylinderBufferGeometry( EPS$1, EPS$1, 1, 16, 2, false );
+
+const cornerHandle = new HelperGeometry( [
+	[ planeGeometry, { color: [ 1, 1, 1, 0.25 ], position: [ 0.5, 0.5, 0 ], outlineThickness: 0 } ],
+	[ new CylinderBufferGeometry( EPS$1, EPS$1, 1, 4, 2, true ), { position: [ 0, 0.5, 0 ], rotation: [ 0, 0, 0 ], thickness: 1 } ],
+	[ new CylinderBufferGeometry( EPS$1, EPS$1, 1, 4, 2, true ), { position: [ 0.5, 0, 0 ], rotation: [ 0, 0, HPI$1 ], thickness: 1 } ],
+] );
+
+const edgeHandle = new HelperGeometry( [
+	[ lineGeometry, { thickness: 1 } ],
+	[ planeGeometry, { color: [ 1, 1, 1, 0.25 ], position: [ 0.5, 0, 0 ], outlineThickness: 0 } ],
+] );
+
+const cornerPicker = new HelperGeometry( [
+	[ planeGeometry, { position: [ 0.75, 0.75, 0 ], color: [ 1, 1, 1, 0.125 ], scale: [ 1.5, 1.5, 1 ] } ]
+] );
+
+const edgePicker = new HelperGeometry( [
+	[ planeGeometry, { position: [ 0.75, 0, 0 ], color: [ 1, 1, 1, 0.125 ], scale: [ 1.5, 1, 1 ] } ],
 ] );
 
 const handleGeometry$1 = {
-	XYZ: new HelperGeometry( corner3Geometry, { color: [ 1, 1, 0 ], rotation: [ HPI$1, 0, PI$1 ] } ),
-	XYz: new HelperGeometry( corner3Geometry, { color: [ 1, 1, 0 ], rotation: [ HPI$1, 0, HPI$1 ] } ),
-	xyz: new HelperGeometry( corner3Geometry, { color: [ 1, 1, 0 ], rotation: [ - HPI$1, 0, - HPI$1 ] } ),
-	xyZ: new HelperGeometry( corner3Geometry, { color: [ 1, 1, 0 ], rotation: [ - HPI$1, 0, 0 ] } ),
-	xYZ: new HelperGeometry( corner3Geometry, { color: [ 1, 1, 0 ], rotation: [ PI$1 / 2, 0, - PI$1 / 2 ] } ),
-	xYz: new HelperGeometry( corner3Geometry, { color: [ 1, 1, 0 ], rotation: [ PI$1 / 2, 0, 0 ] } ),
-	Xyz: new HelperGeometry( corner3Geometry, { color: [ 1, 1, 0 ], rotation: [ 0, 0, HPI$1 ] } ),
-	XyZ: new HelperGeometry( corner3Geometry, { color: [ 1, 1, 0 ], rotation: [ 0, PI$1, 0 ] } ),
+	X_yp: new HelperGeometry( edgeHandle, { color: [ 0.5, 1, 0.5 ], rotation: [ HPI$1, - HPI$1, 0 ] } ),
+	X_yn: new HelperGeometry( edgeHandle, { color: [ 0.5, 1, 0.5 ], rotation: [ HPI$1, HPI$1, 0 ] } ),
+	X_zp: new HelperGeometry( edgeHandle, { color: [ 0.5, 0.5, 1 ], rotation: [ 0, HPI$1, 0 ] } ),
+	X_zn: new HelperGeometry( edgeHandle, { color: [ 0.5, 0.5, 1 ], rotation: [ 0, - HPI$1, 0 ] } ),
+	X_zp_yp: new HelperGeometry( cornerHandle, { color: [ 0.5, 1, 1 ], rotation: [ - HPI$1, HPI$1, 0 ] } ),
+	X_zn_yn: new HelperGeometry( cornerHandle, { color: [ 0.5, 1, 1 ], rotation: [ 0, - HPI$1, 0 ] } ),
+	X_zp_yn: new HelperGeometry( cornerHandle, { color: [ 0.5, 1, 1 ], rotation: [ 0, HPI$1, 0 ] } ),
+	X_zn_yp: new HelperGeometry( cornerHandle, { color: [ 0.5, 1, 1 ], rotation: [ HPI$1, - HPI$1, 0 ] } ),
+
+	Y_zp: new HelperGeometry( edgeHandle, { color: [ 0.5, 0.5, 1 ], rotation: [ - HPI$1, 0, HPI$1 ] } ),
+	Y_zn: new HelperGeometry( edgeHandle, { color: [ 0.5, 0.5, 1 ], rotation: [ HPI$1, 0, HPI$1 ] } ),
+	Y_xp: new HelperGeometry( edgeHandle, { color: [ 1, 0.5, 0.5 ], rotation: [ HPI$1, PI$1, 0 ] } ),
+	Y_xn: new HelperGeometry( edgeHandle, { color: [ 1, 0.5, 0.5 ], rotation: [ - HPI$1, 0, 0 ] } ),
+	Y_xp_zp: new HelperGeometry( cornerHandle, { color: [ 1, 0.5, 1 ], rotation: [ - HPI$1, 0, HPI$1 ] } ),
+	Y_xn_zn: new HelperGeometry( cornerHandle, { color: [ 1, 0.5, 1 ], rotation: [ HPI$1, 0, 0 ] } ),
+	Y_xp_zn: new HelperGeometry( cornerHandle, { color: [ 1, 0.5, 1 ], rotation: [ HPI$1, 0, HPI$1 ] } ),
+	Y_xn_zp: new HelperGeometry( cornerHandle, { color: [ 1, 0.5, 1 ], rotation: [ HPI$1, 0, - HPI$1 ] } ),
+
+	Z_yp: new HelperGeometry( edgeHandle, { color: [ 0.5, 1, 0.5 ], rotation: [ 0, 0, - HPI$1 ] } ),
+	Z_yn: new HelperGeometry( edgeHandle, { color: [ 0.5, 1, 0.5 ], rotation: [ 0, 0, HPI$1 ] } ),
+	Z_xp: new HelperGeometry( edgeHandle, { color: [ 1, 0.5, 0.5 ], rotation: [ 0, PI$1, 0 ] } ),
+	Z_xn: new HelperGeometry( edgeHandle, { color: [ 1, 0.5, 0.5 ], rotation: [ 0, 0, 0 ] } ),
+	Z_xp_yp: new HelperGeometry( cornerHandle, { color: [ 1, 1, 0.5 ], rotation: [ PI$1, 0, HPI$1 ] } ),
+	Z_xn_yn: new HelperGeometry( cornerHandle, { color: [ 1, 1, 0.5 ], rotation: [ PI$1, 0, - HPI$1 ] } ),
+	Z_xp_yn: new HelperGeometry( cornerHandle, { color: [ 1, 1, 0.5 ], rotation: [ 0, 0, HPI$1 ] } ),
+	Z_xn_yp: new HelperGeometry( cornerHandle, { color: [ 1, 1, 0.5 ], rotation: [ PI$1, 0, 0 ] } ),
 };
 
-class SelectionHelper extends Helper {
+const pickerGeometry = {
+	X_yp: new HelperGeometry( edgePicker, { color: [ 0.5, 1, 0.5 ], rotation: [ HPI$1, - HPI$1, 0 ] } ),
+	X_yn: new HelperGeometry( edgePicker, { color: [ 0.5, 1, 0.5 ], rotation: [ HPI$1, HPI$1, 0 ] } ),
+	X_zp: new HelperGeometry( edgePicker, { color: [ 0.5, 0.5, 1 ], rotation: [ 0, HPI$1, 0 ] } ),
+	X_zn: new HelperGeometry( edgePicker, { color: [ 0.5, 0.5, 1 ], rotation: [ 0, - HPI$1, 0 ] } ),
+	X_zp_yp: new HelperGeometry( cornerPicker, { color: [ 0.5, 1, 1 ], rotation: [ - HPI$1, HPI$1, 0 ] } ),
+	X_zn_yn: new HelperGeometry( cornerPicker, { color: [ 0.5, 1, 1 ], rotation: [ 0, - HPI$1, 0 ] } ),
+	X_zp_yn: new HelperGeometry( cornerPicker, { color: [ 0.5, 1, 1 ], rotation: [ 0, HPI$1, 0 ] } ),
+	X_zn_yp: new HelperGeometry( cornerPicker, { color: [ 0.5, 1, 1 ], rotation: [ HPI$1, - HPI$1, 0 ] } ),
+
+	Y_zp: new HelperGeometry( edgePicker, { color: [ 0.5, 0.5, 1 ], rotation: [ - HPI$1, 0, HPI$1 ] } ),
+	Y_zn: new HelperGeometry( edgePicker, { color: [ 0.5, 0.5, 1 ], rotation: [ HPI$1, 0, HPI$1 ] } ),
+	Y_xp: new HelperGeometry( edgePicker, { color: [ 1, 0.5, 0.5 ], rotation: [ HPI$1, PI$1, 0 ] } ),
+	Y_xn: new HelperGeometry( edgePicker, { color: [ 1, 0.5, 0.5 ], rotation: [ - HPI$1, 0, 0 ] } ),
+	Y_xp_zp: new HelperGeometry( cornerPicker, { color: [ 1, 0.5, 1 ], rotation: [ - HPI$1, 0, HPI$1 ] } ),
+	Y_xn_zn: new HelperGeometry( cornerPicker, { color: [ 1, 0.5, 1 ], rotation: [ HPI$1, 0, 0 ] } ),
+	Y_xp_zn: new HelperGeometry( cornerPicker, { color: [ 1, 0.5, 1 ], rotation: [ HPI$1, 0, HPI$1 ] } ),
+	Y_xn_zp: new HelperGeometry( cornerPicker, { color: [ 1, 0.5, 1 ], rotation: [ HPI$1, 0, - HPI$1 ] } ),
+
+	Z_yp: new HelperGeometry( edgePicker, { color: [ 0.5, 1, 0.5 ], rotation: [ 0, 0, - HPI$1 ] } ),
+	Z_yn: new HelperGeometry( edgePicker, { color: [ 0.5, 1, 0.5 ], rotation: [ 0, 0, HPI$1 ] } ),
+	Z_xp: new HelperGeometry( edgePicker, { color: [ 1, 0.5, 0.5 ], rotation: [ 0, PI$1, 0 ] } ),
+	Z_xn: new HelperGeometry( edgePicker, { color: [ 1, 0.5, 0.5 ], rotation: [ 0, 0, 0 ] } ),
+	Z_xp_yp: new HelperGeometry( cornerPicker, { color: [ 1, 1, 0.5 ], rotation: [ PI$1, 0, HPI$1 ] } ),
+	Z_xn_yn: new HelperGeometry( cornerPicker, { color: [ 1, 1, 0.5 ], rotation: [ PI$1, 0, - HPI$1 ] } ),
+	Z_xp_yn: new HelperGeometry( cornerPicker, { color: [ 1, 1, 0.5 ], rotation: [ 0, 0, HPI$1 ] } ),
+	Z_xn_yp: new HelperGeometry( cornerPicker, { color: [ 1, 1, 0.5 ], rotation: [ PI$1, 0, 0 ] } ),
+};
+
+class TransformHelperStretch extends TransformHelper {
 
 	get handleGeometry() {
 
 		return handleGeometry$1;
 
 	}
+	get pickerGeometry() {
+
+		return pickerGeometry;
+
+	}
 	constructor( props ) {
 
 		super( props );
-		this.size = 0.005;
-		this.combineHelperGroups( this.handleGeometry );
+		this.depthBias = - 1;
 
-		const axis = new TransformHelper( { object: this } );
-		axis.size = 0.01;
-		axis.doFlip = false;
-		axis.doHide = false;
-		super.add( axis );
+	}
+	objectChanged() {
 
-		if ( this.object && this.object.geometry ) {
+		super.objectChanged();
 
-			if ( ! this.object.geometry.boundingBox ) this.object.geometry.computeBoundingBox();
-			const bbMax = this.object.geometry.boundingBox.max;
-			const bbMin = this.object.geometry.boundingBox.min;
+		this.boundingBox = new Box3();
 
-			this.corners[ 'XYZ' ].position.set( bbMax.x, bbMax.y, bbMax.z );
-			this.corners[ 'XYz' ].position.set( bbMax.x, bbMax.y, bbMin.z );
-			this.corners[ 'xyz' ].position.set( bbMin.x, bbMin.y, bbMin.z );
-			this.corners[ 'xyZ' ].position.set( bbMin.x, bbMin.y, bbMax.z );
-			this.corners[ 'xYZ' ].position.set( bbMin.x, bbMax.y, bbMax.z );
-			this.corners[ 'xYz' ].position.set( bbMin.x, bbMax.y, bbMin.z );
-			this.corners[ 'Xyz' ].position.set( bbMax.x, bbMin.y, bbMin.z );
-			this.corners[ 'XyZ' ].position.set( bbMax.x, bbMin.y, bbMax.z );
+		if ( this.object ) {
+
+			if ( this.object.boundingBox ) {
+
+				this.boundingBox.copy( this.object.boundingBox );
+
+			} else if ( this.object.geometry ) {
+
+				if ( ! this.object.geometry.boundingBox ) this.object.geometry.computeBoundingBox();
+				this.boundingBox.copy( this.object.geometry.boundingBox );
+
+			}
 
 		}
 
-	}
-	combineHelperGroups( groups ) {
+		let max = this.boundingBox.max;
+		let min = this.boundingBox.min;
 
-		this.corners = {};
-		for ( let name in groups ) {
+		if ( max && min ) {
 
-			this.corners[ name ] = this.makeMesh( groups[ name ], { name: name } );
-			// TODO: name?
-			this.add( this.corners[ name ] );
+			this.handles[ 'X_yp' ].position.set( max.x, max.y, 0 );
+			this.handles[ 'X_yn' ].position.set( max.x, min.y, 0 );
+			this.handles[ 'X_zp' ].position.set( max.x, 0, max.z );
+			this.handles[ 'X_zn' ].position.set( max.x, 0, min.z );
+			this.handles[ 'X_zp_yp' ].position.set( max.x, max.y, max.z );
+			this.handles[ 'X_zn_yn' ].position.set( max.x, min.y, min.z );
+			this.handles[ 'X_zp_yn' ].position.set( max.x, min.y, max.z );
+			this.handles[ 'X_zn_yp' ].position.set( max.x, max.y, min.z );
+
+			this.handles[ 'Y_zp' ].position.set( 0, max.y, max.z );
+			this.handles[ 'Y_zn' ].position.set( 0, max.y, min.z );
+			this.handles[ 'Y_xp' ].position.set( max.x, max.y, 0 );
+			this.handles[ 'Y_xn' ].position.set( min.x, max.y, 0 );
+			this.handles[ 'Y_xp_zp' ].position.set( max.x, max.y, max.z );
+			this.handles[ 'Y_xn_zn' ].position.set( min.x, max.y, min.z );
+			this.handles[ 'Y_xp_zn' ].position.set( max.x, max.y, min.z );
+			this.handles[ 'Y_xn_zp' ].position.set( min.x, max.y, max.z );
+
+			this.handles[ 'Z_yp' ].position.set( 0, max.y, max.z );
+			this.handles[ 'Z_yn' ].position.set( 0, min.y, max.z );
+			this.handles[ 'Z_xp' ].position.set( max.x, 0, max.z );
+			this.handles[ 'Z_xn' ].position.set( min.x, 0, max.z );
+			this.handles[ 'Z_xp_yp' ].position.set( max.x, max.y, max.z );
+			this.handles[ 'Z_xn_yn' ].position.set( min.x, min.y, max.z );
+			this.handles[ 'Z_xp_yn' ].position.set( max.x, min.y, max.z );
+			this.handles[ 'Z_xn_yp' ].position.set( min.x, max.y, max.z );
+
+			this.pickers[ 'X_yp' ].position.set( max.x, max.y, 0 );
+			this.pickers[ 'X_yn' ].position.set( max.x, min.y, 0 );
+			this.pickers[ 'X_zp' ].position.set( max.x, 0, max.z );
+			this.pickers[ 'X_zn' ].position.set( max.x, 0, min.z );
+			this.pickers[ 'X_zp_yp' ].position.set( max.x, max.y, max.z );
+			this.pickers[ 'X_zn_yn' ].position.set( max.x, min.y, min.z );
+			this.pickers[ 'X_zp_yn' ].position.set( max.x, min.y, max.z );
+			this.pickers[ 'X_zn_yp' ].position.set( max.x, max.y, min.z );
+
+			this.pickers[ 'Y_zp' ].position.set( 0, max.y, max.z );
+			this.pickers[ 'Y_zn' ].position.set( 0, max.y, min.z );
+			this.pickers[ 'Y_xp' ].position.set( max.x, max.y, 0 );
+			this.pickers[ 'Y_xn' ].position.set( min.x, max.y, 0 );
+			this.pickers[ 'Y_xp_zp' ].position.set( max.x, max.y, max.z );
+			this.pickers[ 'Y_xn_zn' ].position.set( min.x, max.y, min.z );
+			this.pickers[ 'Y_xp_zn' ].position.set( max.x, max.y, min.z );
+			this.pickers[ 'Y_xn_zp' ].position.set( min.x, max.y, max.z );
+
+			this.pickers[ 'Z_yp' ].position.set( 0, max.y, max.z );
+			this.pickers[ 'Z_yn' ].position.set( 0, min.y, max.z );
+			this.pickers[ 'Z_xp' ].position.set( max.x, 0, max.z );
+			this.pickers[ 'Z_xn' ].position.set( min.x, 0, max.z );
+			this.pickers[ 'Z_xp_yp' ].position.set( max.x, max.y, max.z );
+			this.pickers[ 'Z_xn_yn' ].position.set( min.x, min.y, max.z );
+			this.pickers[ 'Z_xp_yn' ].position.set( max.x, min.y, max.z );
+			this.pickers[ 'Z_xn_yp' ].position.set( min.x, max.y, max.z );
 
 		}
 
@@ -2064,479 +2366,276 @@ class SelectionHelper extends Helper {
 		this.updateHelperMatrix();
 		this.matrixWorldNeedsUpdate = false;
 
-		this.object.matrixWorld.decompose( _position$1, _quaternion$1, _scale$1 );
+		if ( ! this.object ) return;
 
+		this.object.matrixWorld.decompose( _vector, _quaternion$1, _scale$1 );
 		_m1.compose( this.position, this.quaternion, _one );
+
+		let scaledBoundingBox = this.boundingBox.clone();
+		scaledBoundingBox.min.multiply( _scale$1 );
+		scaledBoundingBox.max.multiply( _scale$1 );
 
 		_scale$1.x = Math.abs( _scale$1.x );
 		_scale$1.y = Math.abs( _scale$1.y );
 		_scale$1.z = Math.abs( _scale$1.z );
 
-		for ( let i = 0; i < 8; i ++ ) {
+		for ( let i = 0; i < this.children.length; i ++ ) {
 
-			_position$1.copy( this.children[ i ].position ).multiply( _scale$1 );
+			let handle = this.children[ i ];
+			let name = this.children[ i ].name;
 
-			let __scale = this.scale.clone();
+			_boxVector.copy( handle.position ).multiply( _scale$1 );
 
-			let dir = this.children[ i ].position.clone().applyQuaternion( this.quaternion ).normalize();
+			_wScale.copy( this.scale );
 
-			this.children[ i ].material.highlight = Math.min( Math.max( 3 - Math.abs( dir.dot( this.eye ) ) * 4, - 1 ), 0.5 );
+			_wScale.x *= 0.1;
+			_wScale.y *= 0.1;
+			_wScale.z *= 0.1;
 
-			__scale.x = Math.min( this.scale.x, Math.abs( _position$1.x ) / 2 );
-			__scale.y = Math.min( this.scale.y, Math.abs( _position$1.y ) / 2 );
-			__scale.z = Math.min( this.scale.z, Math.abs( _position$1.z ) / 2 );
+			let _bx = Math.abs( scaledBoundingBox.min.x ) + Math.abs( scaledBoundingBox.max.x );
+			let _by = Math.abs( scaledBoundingBox.min.y ) + Math.abs( scaledBoundingBox.max.y );
+			let _bz = Math.abs( scaledBoundingBox.min.z ) + Math.abs( scaledBoundingBox.max.z );
 
-			__scale.x = Math.max( __scale.x, EPS$1 );
-			__scale.y = Math.max( __scale.y, EPS$1 );
-			__scale.z = Math.max( __scale.z, EPS$1 );
+			let _x = Math.min( _wScale.x, _bx / 4 );
+			let _y = Math.min( _wScale.y, _by / 4 );
+			let _z = Math.min( _wScale.z, _bz / 4 );
 
-			_m2.compose( _position$1, new Quaternion(), __scale );
+			if ( name == 'X_yp' || name == 'X_yn' ) {
 
-			this.children[ i ].matrixWorld.copy( _m1 ).multiply( _m2 );
+				_wScale.y = _y;
+				_wScale.z = _bz - _z * 3;
+
+			}
+
+			if ( name == 'X_zp' || name == 'X_zn' ) {
+
+				_wScale.z = _z;
+				_wScale.y = _by - _y * 3;
+
+			}
+			if ( name == 'X_zp_yp' || name == 'X_zn_yn' ) {
+
+				_wScale.y = _y;
+				_wScale.z = _z;
+
+			}
+			if ( name == 'X_zp_yn' || name == 'X_zn_yp' ) {
+
+				_wScale.y = _y;
+				_wScale.z = _z;
+
+			}
+
+			if ( name == 'Y_zp' || name == 'Y_zn' ) {
+
+				_wScale.z = _z;
+				_wScale.x = _bx - _x * 3;
+
+			}
+			if ( name == 'Y_xp' || name == 'Y_xn' ) {
+
+				_wScale.x = _x;
+				_wScale.z = _bz - _z * 3;
+
+			}
+			if ( name == 'Y_xp_zp' || name == 'Y_xn_zn' ) {
+
+				_wScale.x = _x;
+				_wScale.z = _z;
+
+			}
+			if ( name == 'Y_xp_zn' || name == 'Y_xn_zp' ) {
+
+				_wScale.x = _x;
+				_wScale.z = _z;
+
+			}
+
+			if ( name == 'Z_yp' || name == 'Z_yn' ) {
+
+				_wScale.y = _y;
+				_wScale.x = _bx - _x * 3;
+
+			}
+			if ( name == 'Z_xp' || name == 'Z_xn' ) {
+
+				_wScale.x = _x;
+				_wScale.y = _by - _y * 3;
+
+			}
+			if ( name == 'Z_xp_yp' || name == 'Z_xn_yn' ) {
+
+				_wScale.y = _y;
+				_wScale.x = _x;
+
+			}
+			if ( name == 'Z_xp_yn' || name == 'Z_xn_yp' ) {
+
+				_wScale.y = _y;
+				_wScale.x = _x;
+
+			}
+
+			_wScale.x = Math.max( _wScale.x, EPS$1 );
+			_wScale.y = Math.max( _wScale.y, EPS$1 );
+			_wScale.z = Math.max( _wScale.z, EPS$1 );
+
+			_m2.compose( _boxVector, new Quaternion(), _wScale );
+			handle.matrixWorld.copy( _m1 ).multiply( _m2 );
 
 		}
-		this.children[ 8 ].updateMatrixWorld();
+
+	}
+	updateHelperMatrix() {
+
+		this.space = 'local';
+		super.updateHelperMatrix();
 
 	}
 
 }
 
 /**
- * @author arodic / http://github.com/arodic
+ * @author arodic / https://github.com/arodic
  */
 
 // Reusable utility variables
-const pos = new Vector3();
-const quat = new Quaternion();
-const quatInv = new Quaternion();
-const scale = new Vector3();
+const offset = new Vector3();
+const scaleFactor = new Vector3();
+const EPS$2 = 0.000001;
 
-const posOld = new Vector3();
-const quatOld = new Quaternion();
-const scaleOld = new Vector3();
+function hasAxisAny$1( str, chars ) {
 
-const posOffset = new Vector3();
-const quatOffset = new Quaternion();
-const scaleOffset = new Vector3();
+	let has = true;
+	str.split( '' ).some( a => {
 
-const itemPos = new Vector3();
-const itemPosOffset = new Vector3();
-const itemQuat = new Quaternion();
-const itemQuatInv = new Quaternion();
-const itemQuatOffset = new Quaternion();
-const itemScale = new Vector3();
+		if ( chars.indexOf( a ) === - 1 ) has = false;
 
-const parentPos = new Vector3();
-const parentQuat = new Quaternion();
-const parentQuatInv = new Quaternion();
-const parentScale = new Vector3();
-
-const dist0 = new Vector3();
-const dist1 = new Vector3();
-const bbox = new Box3();
-
-const selectedOld = [];
-
-function filterItems( list, hierarchy, filter ) {
-
-	list = list instanceof Array ? list : [ list ];
-	let filtered = [];
-	for ( let i = 0; i < list.length; i ++ ) {
-
-		if ( ! filter || filter( list[ i ] ) ) filtered.push( list[ i ] );
-		if ( hierarchy ) {
-
-			let children = filterItems( list[ i ].children, hierarchy, filter );
-			filtered.push( ...children );
-
-		}
-
-	}
-	return filtered;
+	} );
+	return has;
 
 }
 
-// Temp variables
-const raycaster = new Raycaster();
+// TODO: fix toggle space>freescale
 
-// @event change
-const changeEvent = { type: 'change' };
+class StretchTransformControls extends TransformControlsMixin( TransformHelperStretch ) {
 
-let time = 0, dtime = 0;
-const CLICK_DIST = 0.01;
-const CLICK_TIME = 250;
+	transform() {
 
-/*
- * Selection object stores selection list and implements various methods for selection list manipulation.
- * Selection object transforms all selected objects when moved in either world or local space.
- *
- * @event chang - fired on selection change.
- * @event selected-changed - also fired on selection change (includes selection payload).
- */
+		// TODO: test with asymetric bounding boxes!!!
+		offset.copy( this.pointEnd ).sub( this.pointStart );
 
-class SelectionControls extends Interactive {
+		scaleFactor.set(
+			this.pointEnd.dot( this.worldX ) / this.pointStart.dot( this.worldX ),
+			this.pointEnd.dot( this.worldY ) / this.pointStart.dot( this.worldY ),
+			this.pointEnd.dot( this.worldZ ) / this.pointStart.dot( this.worldZ ),
+		);
 
-	constructor( props ) {
+		if ( this.axis.indexOf( 'x' ) === - 1 ) scaleFactor.x = 1;
+		if ( this.axis.indexOf( 'y' ) === - 1 ) scaleFactor.y = 1;
+		if ( this.axis.indexOf( 'z' ) === - 1 ) scaleFactor.z = 1;
 
-		super( props );
+		offset.applyQuaternion( this.worldQuaternionInv );
 
-		this.defineProperties( {
-			object_: props.object_ || null, // TODO: remove
-			selected: [],
-			transformSelection: true,
-			transformSpace: 'local',
-			boundingBox: new Box3()
-			// translationSnap: null,
-			// rotationSnap: null
-		} );
+		if ( ! hasAxisAny$1( 'x', this.axis ) ) offset.x = 0;
+		if ( ! hasAxisAny$1( 'y', this.axis ) ) offset.y = 0;
+		if ( ! hasAxisAny$1( 'z', this.axis ) ) offset.z = 0;
 
-	}
-	select( position, add ) {
+		const scaleOffset = this.scaleStart.clone().multiply( scaleFactor ).sub( this.scaleStart ).multiplyScalar( 0.5 );
+		scaleOffset.set(
+			Math.max( scaleOffset.x, - this.scaleStart.x + EPS$2 ),
+			Math.max( scaleOffset.y, - this.scaleStart.y + EPS$2 ),
+			Math.max( scaleOffset.z, - this.scaleStart.z + EPS$2 ),
+		);
 
-		const camera = this.camera;
-		raycaster.setFromCamera( position, camera );
+		// Apply position
 
-		const intersects = raycaster.intersectObjects( this.object_.children, true );
-		if ( intersects.length > 0 ) {
+		if ( this.axis.indexOf( 'xp' ) !== - 1 ) {
 
-			const object = intersects[ 0 ].object;
-			// TODO: handle helper selection
-			if ( add ) {
-
-				this.toggle( object );
-
-			} else {
-
-				this.replace( object );
-
-			}
+			this.object.position.x = scaleOffset.x * ( this.boundingBox.max.x - this.boundingBox.min.x ) * 0.5;
 
 		} else {
 
-			this.clear();
-
-		}
-		this.dispatchEvent( changeEvent );
-
-	}
-	onPointerDown() {
-
-		time = Date.now();
-
-	}
-	onPointerUp( pointers ) {
-
-		dtime = Date.now() - time;
-		if ( pointers.length === 0 && dtime < CLICK_TIME ) {
-
-			if ( pointers.removed[ 0 ].distance.length() < CLICK_DIST ) {
-
-				this.select( pointers.removed[ 0 ].position, pointers.removed[ 0 ].ctrlKey );
-
-			}
+			this.object.position.x = - scaleOffset.x * ( this.boundingBox.max.x - this.boundingBox.min.x ) * 0.5;
 
 		}
 
-	}
-	transformSpaceChanged() {
+		if ( this.axis.indexOf( 'yp' ) !== - 1 ) {
 
-		this.update();
+			this.object.position.y = scaleOffset.y * ( this.boundingBox.max.y - this.boundingBox.min.y ) * 0.5;
 
-	}
-	toggle( list, hierarchy, filter ) {
+		} else {
 
-		list = filterItems( list, hierarchy, filter );
-		selectedOld.push( ...this.selected );
-		for ( let i = list.length; i --; ) {
-
-			let index = this.selected.indexOf( list[ i ] );
-			if ( index !== - 1 ) this.selected.splice( index, 1 );
-			else this.selected.push( list[ i ] );
-
-		}
-		this.update();
-
-	}
-	add( list, hierarchy, filter ) {
-
-		list = filterItems( list, hierarchy, filter );
-		selectedOld.push( ...this.selected );
-		this.selected.concat( ...list );
-		this.update();
-
-	}
-	addFirst( list, hierarchy, filter ) {
-
-		list = filterItems( list, hierarchy, filter );
-		selectedOld.push( ...this.selected );
-		this.selected.length = 0;
-		this.selected.push( ...list );
-		this.selected.push( ...selectedOld );
-		this.update();
-
-	}
-	remove( list, hierarchy, filter ) {
-
-		list = filterItems( list, hierarchy, filter );
-		selectedOld.push( ...this.selected );
-		for ( let i = list.length; i --; ) {
-
-			let index = this.selected.indexOf( list[ i ] );
-			if ( index !== - 1 ) this.selected.splice( i, 1 );
-
-		}
-		this.update();
-
-	}
-	replace( list, hierarchy, filter ) {
-
-		list = filterItems( list, hierarchy, filter );
-		selectedOld.push( ...this.selected );
-		this.selected.length = 0;
-		this.selected.push( ...list );
-		this.update();
-
-	}
-	clear() {
-
-		selectedOld.push( ...this.selected );
-		this.selected.length = 0;
-		this.update();
-
-	}
-	update() {
-
-		// Reset selection transform.
-		this.position.set( 0, 0, 0 );
-		this.quaternion.set( 0, 0, 0, 1 );
-		this.scale.set( 1, 1, 1 );
-
-		// TODO: temp for testing
-		this.boundingBox.makeEmpty();
-
-		if ( this.selected.length && this.transformSelection ) {
-
-			// Set selection transform to last selected item (not ancestor of selected).
-			if ( this.transformSpace === 'local' ) {
-
-				for ( let i = this.selected.length; i --; ) {
-
-					let item = this.selected[ i ];
-					if ( this._isAncestorOfSelected( item ) ) continue;
-					item.updateMatrixWorld();
-					item.matrixWorld.decompose( itemPos, itemQuat, itemScale );
-					this.position.copy( itemPos );
-					this.quaternion.copy( itemQuat );
-
-					if ( item.geometry ) {
-
-						if ( ! item.geometry.boundingBox ) item.geometry.computeBoundingBox();
-						bbox.copy( item.geometry.boundingBox );
-						bbox.min.multiply( itemScale );
-						bbox.max.multiply( itemScale );
-						this.boundingBox.copy( bbox );
-
-					}
-
-					break;
-
-				}
-				// Set selection transform to the average of selected items.
-
-			} else if ( this.transformSpace === 'world' ) {
-
-				// TODO: center should be in the center of combined boundging box.
-				// TODO: Verify with StretchTransformControls box handles
-				pos.set( 0, 0, 0 );
-				for ( let i = 0; i < this.selected.length; i ++ ) {
-
-					let item = this.selected[ i ];
-					item.updateMatrixWorld();
-					item.matrixWorld.decompose( itemPos, itemQuat, itemScale );
-					pos.add( itemPos );
-
-				}
-				this.position.copy( pos ).divideScalar( this.selected.length );
-
-				// this.updateMatrixWorld();
-
-				for ( let i = 0; i < this.selected.length; i ++ ) {
-
-					let item = this.selected[ i ];
-					item.matrixWorld.decompose( itemPos, itemQuat, itemScale );
-					if ( item.geometry ) {
-
-						if ( ! item.geometry.boundingBox ) item.geometry.computeBoundingBox();
-						bbox.copy( item.geometry.boundingBox );
-						bbox.min.multiply( itemScale );
-						bbox.max.multiply( itemScale );
-
-						bbox.min.add( itemPos.clone().sub( this.position ) );
-						bbox.max.add( itemPos.clone().sub( this.position ) );
-
-						this.boundingBox.expandByPoint( bbox.min );
-						this.boundingBox.expandByPoint( bbox.max );
-
-					} else {
-
-						// TODO: test with non-geometric objects
-						this.boundingBox.expandByPoint( itemPos ); // Doesent make sense
-
-					}
-
-				}
-
-			}
+			this.object.position.y = - scaleOffset.y * ( this.boundingBox.max.y - this.boundingBox.min.y ) * 0.5;
 
 		}
 
-		// TODO: apply snapping
-		// Apply translation snap
-		// if (this.translationSnap) {
-		// 	if (space === 'local') {
-		// 		object.position.applyQuaternion(_tempQuaternion.copy(this.quaternionStart).inverse());
-		// 		if (axis.hasAxis('X')) object.position.x = Math.round(object.position.x / this.translationSnap) * this.translationSnap;
-		// 		if (axis.hasAxis('Y')) object.position.y = Math.round(object.position.y / this.translationSnap) * this.translationSnap;
-		// 		if (axis.hasAxis('Z')) object.position.z = Math.round(object.position.z / this.translationSnap) * this.translationSnap;
-		// 		object.position.applyQuaternion(this.quaternionStart);
-		// 	}
-		// 	if (space === 'world') {
-		// 		if (object.parent) {
-		// 			object.position.add(_tempVector.setFromMatrixPosition(object.parent.matrixWorld));
-		// 		}
-		// 		if (axis.hasAxis('X')) object.position.x = Math.round(object.position.x / this.translationSnap) * this.translationSnap;
-		// 		if (axis.hasAxis('Y')) object.position.y = Math.round(object.position.y / this.translationSnap) * this.translationSnap;
-		// 		if (axis.hasAxis('Z')) object.position.z = Math.round(object.position.z / this.translationSnap) * this.translationSnap;
-		// 		if (object.parent) {
-		// 			object.position.sub(_tempVector.setFromMatrixPosition(object.parent.matrixWorld));
-		// 		}
-		// 	}
-		// }
-		// Apply rotation snap
-		// if (space === 'local') {
-		// 	const snap = this.rotationSnap;
-		// 	if (this.axis === 'X' && snap) this.object.rotation.x = Math.round(this.object.rotation.x / snap) * snap;
-		// 	if (this.axis === 'Y' && snap) this.object.rotation.y = Math.round(this.object.rotation.y / snap) * snap;
-		// 	if (this.axis === 'Z' && snap) this.object.rotation.z = Math.round(this.object.rotation.z / snap) * snap;
-		// }
-		// if (this.rotationSnap) this.rotationAngle = Math.round(this.rotationAngle / this.rotationSnap) * this.rotationSnap;
+		if ( this.axis.indexOf( 'zp' ) !== - 1 ) {
 
-		// Add helpers
-		// TODO: cache helpers per object
-		for ( let i = this.children.length; i --; ) {
+			this.object.position.z = scaleOffset.z * ( this.boundingBox.max.z - this.boundingBox.min.z ) * 0.5;
 
-			super.remove( this.children[ i ] );
+		} else {
+
+			this.object.position.z = - scaleOffset.z * ( this.boundingBox.max.z - this.boundingBox.min.z ) * 0.5;
 
 		}
 
-		for ( let i = 0; i < this.selected.length; i ++ ) {
+		this.object.position.applyQuaternion( this.quaternionStart );
+		this.object.position.add( this.positionStart );
 
-			const _helper = new SelectionHelper( { object: this.selected[ i ] } );
-			super.add( _helper );
+		// Apply scale
+		this.object.scale.copy( this.scaleStart ).add( scaleOffset );
 
-		}
-
-		super.updateMatrixWorld();
-
-		// gather selection data and emit selection-changed event
-		let added = [];
-		for ( let i = 0; i < this.selected.length; i ++ ) {
-
-			if ( selectedOld.indexOf( this.selected[ i ] ) === - 1 ) {
-
-				added.push( this.selected[ i ] );
-
-			}
-
-		}
-		let removed = [];
-		for ( let i = 0; i < selectedOld.length; i ++ ) {
-
-			if ( this.selected.indexOf( selectedOld[ i ] ) === - 1 ) {
-
-				removed.push( selectedOld[ i ] );
-
-			}
-
-		}
-		selectedOld.length = 0;
-		this.dispatchEvent( { type: 'change' } );
-		this.dispatchEvent( { type: 'selected-changed', selected: [ ...this.selected ], added: added, removed: removed } );
 
 	}
-	updateMatrixWorld( force ) {
+	updatePlane() {
 
-		// Extract tranformations before and after matrix update.
-		this.matrixWorld.decompose( posOld, quatOld, scaleOld );
-		super.updateMatrixWorld( force );
-		this.matrixWorld.decompose( pos, quat, scale );
+		const normal = this._plane.normal;
+		const position = new Vector3();
 
-		// Get transformation offsets from transform deltas.
-		posOffset.copy( pos ).sub( posOld );
-		quatOffset.copy( quat ).multiply( quatOld.inverse() );
-		scaleOffset.copy( scale ).divide( scaleOld );
-		quatInv.copy( quat ).inverse();
+		if ( this.axis && this.axis[ 0 ] === 'X' ) {
 
-		if ( ! this.selected.length || ! this.transformSelection ) return;
-		// Apply tranformatio offsets to ancestors.
-		for ( let i = 0; i < this.selected.length; i ++ ) {
+			normal.copy( this.worldX );
+			position.set(
+				this.boundingBox.max.x,
+				( this.boundingBox.max.y + this.boundingBox.min.y ),
+				( this.boundingBox.max.z + this.boundingBox.min.z )
+			);
 
-			// get local transformation variables.
-			this.selected[ i ].updateMatrixWorld();
-			this.selected[ i ].matrixWorld.decompose( itemPos, itemQuat, itemScale );
-			this.selected[ i ].parent.matrixWorld.decompose( parentPos, parentQuat, parentScale );
-			parentQuatInv.copy( parentQuat ).inverse();
-			itemQuatInv.copy( itemQuat ).inverse();
-			// Transform selected in local space.
-			if ( this.transformSpace === 'local' ) {
+		}
+		if ( this.axis && this.axis[ 0 ] === 'Y' ) {
 
-				// Position
-				itemPosOffset.copy( posOffset ).applyQuaternion( quatInv ).divide( parentScale );
-				itemPosOffset.applyQuaternion( this.selected[ i ].quaternion );
-				this.selected[ i ].position.add( itemPosOffset );
-				// Rotation
-				itemQuatOffset.copy( quatInv ).multiply( quatOffset ).multiply( quat ).normalize();
-				this.selected[ i ].quaternion.multiply( itemQuatOffset );
-				// Scale
-				if ( this._isAncestorOfSelected( this.selected[ i ] ) ) continue; // lets not go there...
-				this.selected[ i ].scale.multiply( scaleOffset );
-			// Transform selected in world space.
+			normal.copy( this.worldY );
+			position.set(
+				( this.boundingBox.max.x + this.boundingBox.min.x ),
+				this.boundingBox.max.y,
+				( this.boundingBox.max.z + this.boundingBox.min.z )
+			);
 
-			} else if ( this.transformSpace === 'world' ) {
+		}
+		if ( this.axis && this.axis[ 0 ] === 'Z' ) {
 
-				if ( this._isAncestorOfSelected( this.selected[ i ] ) ) continue;
-				// Position
-				itemPosOffset.copy( posOffset ).applyQuaternion( parentQuatInv ).divide( parentScale );
-				this.selected[ i ].position.add( itemPosOffset );
-				// Rotation
-				dist0.subVectors( itemPos, pos );
-				dist1.subVectors( itemPos, pos ).applyQuaternion( quatOffset );
-				dist1.sub( dist0 ).applyQuaternion( parentQuatInv ).divide( parentScale );
-				this.selected[ i ].position.add( dist1 );
-				itemQuatOffset.copy( itemQuatInv ).multiply( quatOffset ).multiply( itemQuat ).normalize();
-				this.selected[ i ].quaternion.multiply( itemQuatOffset );
-				// Scale
-				this.selected[ i ].scale.multiply( scaleOffset );
-
-			}
-			this.selected[ i ].updateMatrixWorld();
+			normal.copy( this.worldZ );
+			position.set(
+				( this.boundingBox.max.x + this.boundingBox.min.x ),
+				( this.boundingBox.max.y + this.boundingBox.min.y ),
+				this.boundingBox.max.z
+			);
 
 		}
 
-	}
-	_isAncestorOfSelected( object ) {
+		// TODO: test
+		if ( this.object ) position.applyMatrix4( this.object.matrixWorld );
 
-		let parent = object.parent;
-		while ( parent ) {
+		this._plane.setFromNormalAndCoplanarPoint( normal, position );
 
-			if ( this.selected.indexOf( parent ) !== - 1 ) return true;
-			object = parent, parent = object.parent;
-
-		}
-		return false;
+		// this.parent.add(this._planeDebugMesh);
+		// this._planeDebugMesh.position.set(0,0,0);
+		// this._planeDebugMesh.lookAt(normal);
+		// this._planeDebugMesh.position.copy(position);
 
 	}
 
 }
 
-export { SelectionControls };
+export { StretchTransformControls };

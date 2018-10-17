@@ -1,4 +1,4 @@
-import { UniformsUtils, Vector3, Color, FrontSide, ShaderMaterial, DataTexture, RGBAFormat, FloatType, NearestFilter, Mesh, BoxBufferGeometry, Vector2, MOUSE, Quaternion } from '../../../lib/three.module.js';
+import { UniformsUtils, Vector3, Color, FrontSide, ShaderMaterial, DataTexture, RGBAFormat, FloatType, NearestFilter, Mesh, BoxBufferGeometry, Vector2, MOUSE, Quaternion } from '../lib/three.module.js';
 
 /**
  * @author arodic / https://github.com/arodic

@@ -1,4 +1,4 @@
-import { UniformsUtils, Vector3, Color, FrontSide, ShaderMaterial, DataTexture, RGBAFormat, FloatType, NearestFilter, Mesh, BoxBufferGeometry, Raycaster, Quaternion, Plane, Vector2, BufferGeometry, BufferAttribute, Euler, Matrix4, Float32BufferAttribute, Uint16BufferAttribute, Sprite, Texture, CylinderBufferGeometry, TorusBufferGeometry, OctahedronBufferGeometry, PlaneBufferGeometry } from '../../../lib/three.module.js';
+import { UniformsUtils, Vector3, Color, FrontSide, ShaderMaterial, DataTexture, RGBAFormat, FloatType, NearestFilter, Mesh, BoxBufferGeometry, Raycaster, Quaternion, Plane, Vector2, BufferGeometry, BufferAttribute, Euler, Matrix4, Float32BufferAttribute, Uint16BufferAttribute, Sprite, Texture, CylinderBufferGeometry, TorusBufferGeometry, OctahedronBufferGeometry, PlaneBufferGeometry } from '../lib/three.module.js';
 
 /**
  * @author arodic / https://github.com/arodic

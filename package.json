@@ -20,9 +20,6 @@
   "eslintConfig": {
     "extends": "eslint:recommended"
   },
-  "publishConfig": {
-    "access": "public"
-  },
   "scripts": {
     "lint": "eslint src --fix",
     "build": "eslint src && rollup -c && eslint build --fix"
@@ -42,6 +39,8 @@
     "eslint": "^4.1.1",
     "eslint-config-mdcs": "^4.2.3",
     "rollup": "^0.59.4",
+    "rollup-plugin-post-replace": "^1.0.0",
+    "rollup-plugin-replace": "^2.1.0",
     "uglify-es": "^3.3.9"
   }
 }

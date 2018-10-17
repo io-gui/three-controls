@@ -1,4 +1,4 @@
-import { UniformsUtils, Vector3, Color, FrontSide, ShaderMaterial, DataTexture, RGBAFormat, FloatType, NearestFilter, Mesh, BoxBufferGeometry, Raycaster, Quaternion, Plane, Vector2, BufferGeometry, BufferAttribute, Euler, Matrix4, Float32BufferAttribute, Uint16BufferAttribute, Sprite, Texture, CylinderBufferGeometry, TorusBufferGeometry, OctahedronBufferGeometry } from '../../../lib/three.module.js';
+import { UniformsUtils, Vector3, Color, FrontSide, ShaderMaterial, DataTexture, RGBAFormat, FloatType, NearestFilter, Mesh, BoxBufferGeometry, Sprite, Texture, Vector2, BufferGeometry, BufferAttribute, Euler, Quaternion, Matrix4, Float32BufferAttribute, Uint16BufferAttribute, CylinderBufferGeometry, Raycaster, Box3 } from '../lib/three.module.js';
 
 /**
  * @author arodic / https://github.com/arodic
@@ -931,200 +931,75 @@ const InteractiveMixin = ( superclass ) => class extends superclass {
 
 };
 
+/*
+ * Helper class wrapped with PointerEvents API polyfill.
+ */
+
+class Interactive extends InteractiveMixin( Helper ) {}
+
 /**
  * @author arodic / https://github.com/arodic
  */
 
-// Reusable utility variables
-const _ray = new Raycaster();
-const _rayTarget = new Vector3();
-const _tempVector = new Vector3();
+class TextHelper extends IoLiteMixin( Sprite ) {
 
-// events
-const changeEvent = { type: "change" };
+	constructor( props = {} ) {
 
-const TransformControlsMixin = ( superclass ) => class extends InteractiveMixin( superclass ) {
+		super();
 
-	constructor( props ) {
+		this.defineProperties( {
+			text: '',
+			color: props.color || 'black',
+			size: 0.33,
+		} );
 
-		super( props );
+		this.scaleTarget = new Vector3( 1, 1, 1 );
 
-		this.pointStart = new Vector3();
-		this.pointEnd = new Vector3();
+		this.canvas = document.createElement( 'canvas' );
+		this.ctx = this.canvas.getContext( '2d' );
+		this.texture = new Texture( this.canvas );
 
-		this.positionStart = new Vector3();
-		this.quaternionStart = new Quaternion();
-		this.scaleStart = new Vector3();
+		this.material.map = this.texture;
 
-		this.parentPosition = new Vector3();
-		this.parentQuaternion = new Quaternion();
-		this.parentQuaternionInv = new Quaternion();
-		this.parentScale = new Vector3();
+		this.canvas.width = 256;
+		this.canvas.height = 64;
 
-		this.worldPosition = new Vector3();
-		this.worldQuaternion = new Quaternion();
-		this.worldQuaternionInv = new Quaternion();
-		this.worldScale = new Vector3();
+		this.scale.set( 1, 0.25, 1 );
+		this.scale.multiplyScalar( this.size );
 
-		this._plane = new Plane();
-		this.objectChanged();
+		this.position.set( props.position[ 0 ], props.position[ 1 ], props.position[ 2 ] );
 
-		// this.add(this._planeDebugMesh = new Mesh(new PlaneBufferGeometry(1000, 1000, 10, 10), new MeshBasicMaterial({wireframe: true, transparent: true, opacity: 0.2})));
+		this.text = '-+0.4';
 
 	}
-	objectChanged() {
+	textChanged() {
 
-		super.objectChanged();
-		let hasObject = this.object ? true : false;
-		this.visible = hasObject;
-		this.enabled = hasObject;
-		if ( ! hasObject ) {
+		const ctx = this.ctx;
+		const canvas = this.canvas;
 
-			this.active = false;
-			this.axis = null;
+		ctx.clearRect( 0, 0, canvas.width, canvas.height );
 
-		}
-		this.animation.startAnimation( 1.5 );
+		ctx.font = 'bold ' + canvas.height * 0.9 + 'px monospace';
 
-	}
-	// TODO: better animation trigger
-	// TODO: also trigger on object change
-	// TODO: Debug stalling animations on hover
-	enabledChanged( value ) {
+		ctx.fillStyle = this.color;
+		ctx.textAlign = "center";
+		ctx.textBaseline = "middle";
 
-		super.enabledChanged( value );
-		this.animation.startAnimation( 0.5 );
+		ctx.strokeStyle = 'black';
+		ctx.lineWidth = canvas.height / 8;
 
-	}
-	axisChanged() {
+		ctx.strokeText( this.text, canvas.width / 2, canvas.height / 2 );
+		ctx.fillText( this.text, canvas.width / 2, canvas.height / 2 );
 
-		super.axisChanged();
-		this.updatePlane();
+		ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
 
-	}
-	activeChanged() {
+		ctx.fillText( this.text, canvas.width / 2, canvas.height / 2 );
 
-		this.animation.startAnimation( 0.5 );
-
-	}
-	onPointerHover( pointers ) {
-
-		if ( ! this.object || this.active === true ) return;
-
-		_ray.setFromCamera( pointers[ 0 ].position, this.camera );
-		const intersect = _ray.intersectObjects( this.pickers, true )[ 0 ] || false;
-
-		this.axis = intersect ? intersect.object.name : null;
-
-	}
-	onPointerDown( pointers ) {
-
-		if ( this.axis === null || ! this.object || this.active === true || pointers[ 0 ].button !== 0 ) return;
-
-		_ray.setFromCamera( pointers[ 0 ].position, this.camera );
-		const planeIntersect = _ray.ray.intersectPlane( this._plane, _rayTarget );
-
-		if ( planeIntersect ) {
-
-			this.object.updateMatrixWorld();
-			this.object.matrix.decompose( this.positionStart, this.quaternionStart, this.scaleStart );
-			this.object.parent.matrixWorld.decompose( this.parentPosition, this.parentQuaternion, this.parentScale );
-			this.object.matrixWorld.decompose( this.worldPosition, this.worldQuaternion, this.worldScale );
-
-			this.parentQuaternionInv.copy( this.parentQuaternion ).inverse();
-			this.worldQuaternionInv.copy( this.worldQuaternion ).inverse();
-
-			this.pointStart.copy( planeIntersect ).sub( this.worldPosition );
-			this.active = true;
-
-		}
-
-	}
-	onPointerMove( pointers ) {
-
-		if ( this.object === undefined || this.axis === null || this.active === false || pointers[ 0 ].button !== 0 ) return;
-
-		_ray.setFromCamera( pointers[ 0 ].position, this.camera );
-		const planeIntersect = _ray.ray.intersectPlane( this._plane, _tempVector );
-
-		if ( planeIntersect ) {
-
-			this.pointEnd.copy( planeIntersect ).sub( this.worldPosition );
-			this.transform();
-			this.object.updateMatrixWorld();
-			this.dispatchEvent( changeEvent );
-
-		}
-
-	}
-	onPointerUp( pointers ) {
-
-		if ( pointers.length === 0 ) {
-
-			if ( pointers.removed[ 0 ].pointerType === 'touch' ) this.axis = null;
-			this.active = false;
-
-		} else if ( pointers[ 0 ].button === - 1 ) {
-
-			this.axis = null;
-			this.active = false;
-
-		}
-
-	}
-	transform() {}
-	updateAxis( axis ) {
-
-		super.updateAxis( axis );
-		if ( ! this.enabled ) axis.material.highlight = ( 10 * axis.material.highlight - 2.5 ) / 11;
-
-	}
-	updateGuide( axis ) {
-
-		super.updateGuide( axis );
-		if ( this.active === true ) {
-
-			let offset = new Vector3().copy( this.positionStart ).sub( this.object.position ).divide( this.scale );
-			axis.position.copy( offset );
-			if ( this.space === 'local' ) {
-
-				axis.position.applyQuaternion( this.worldQuaternionInv );
-				let quatOffset = new Quaternion().copy( this.quaternionStart.clone().inverse() ).multiply( this.object.quaternion );
-				axis.quaternion.copy( quatOffset.clone().inverse() );
-
-			}
-
-		} else {
-
-			axis.position.set( 0, 0, 0 );
-			axis.quaternion.set( 0, 0, 0, 1 );
-
-		}
-
-	}
-	updatePlane() {
-
-		const normal = this._plane.normal;
-		const axis = this.axis ? this.axis.split( '_' ).pop() : null;
-
-		if ( axis === 'X' ) normal.copy( this.worldX ).cross( _tempVector.copy( this.eye ).cross( this.worldX ) );
-		if ( axis === 'Y' ) normal.copy( this.worldY ).cross( _tempVector.copy( this.eye ).cross( this.worldY ) );
-		if ( axis === 'Z' ) normal.copy( this.worldZ ).cross( _tempVector.copy( this.eye ).cross( this.worldZ ) );
-		if ( axis === 'XY' ) normal.copy( this.worldZ );
-		if ( axis === 'YZ' ) normal.copy( this.worldX );
-		if ( axis === 'XZ' ) normal.copy( this.worldY );
-		if ( axis === 'XYZ' || axis === 'E' ) this.camera.getWorldDirection( normal );
-
-		this._plane.setFromNormalAndCoplanarPoint( normal, this.position );
-
-		// this.parent.add(this._planeDebugMesh);
-		// this._planeDebugMesh.position.set(0,0,0);
-		// this._planeDebugMesh.lookAt(normal);
-		// this._planeDebugMesh.position.copy(this.position);
+		this.texture.needsUpdate = true;
 
 	}
 
-};
+}
 
 /**
  * @author mrdoob / http://mrdoob.com/
@@ -1519,18 +1394,6 @@ const _quaternion = new Quaternion();
 const _scale = new Vector3();
 const _matrix = new Matrix4();
 
-const colors = {
-	'white': [ 1, 1, 1 ],
-	'whiteTransparent': [ 1, 1, 1, 0.25 ],
-	'gray': [ 0.75, 0.75, 0.75 ],
-	'red': [ 1, 0.3, 0.2 ],
-	'green': [ 0.2, 1, 0.2 ],
-	'blue': [ 0.2, 0.3, 1 ],
-	'cyan': [ 0.2, 1, 1 ],
-	'magenta': [ 1, 0.3, 1 ],
-	'yellow': [ 1, 1, 0.2 ],
-};
-
 class HelperGeometry extends BufferGeometry {
 
 	constructor( geometry, props ) {
@@ -1676,70 +1539,6 @@ class HelperGeometry extends BufferGeometry {
 		}
 
 		BufferGeometryUtils.mergeBufferGeometries( chunkGeometries, false, this );
-
-	}
-
-}
-
-/**
- * @author arodic / https://github.com/arodic
- */
-
-class TextHelper extends IoLiteMixin( Sprite ) {
-
-	constructor( props = {} ) {
-
-		super();
-
-		this.defineProperties( {
-			text: '',
-			color: props.color || 'black',
-			size: 0.33,
-		} );
-
-		this.scaleTarget = new Vector3( 1, 1, 1 );
-
-		this.canvas = document.createElement( 'canvas' );
-		this.ctx = this.canvas.getContext( '2d' );
-		this.texture = new Texture( this.canvas );
-
-		this.material.map = this.texture;
-
-		this.canvas.width = 256;
-		this.canvas.height = 64;
-
-		this.scale.set( 1, 0.25, 1 );
-		this.scale.multiplyScalar( this.size );
-
-		this.position.set( props.position[ 0 ], props.position[ 1 ], props.position[ 2 ] );
-
-		this.text = '-+0.4';
-
-	}
-	textChanged() {
-
-		const ctx = this.ctx;
-		const canvas = this.canvas;
-
-		ctx.clearRect( 0, 0, canvas.width, canvas.height );
-
-		ctx.font = 'bold ' + canvas.height * 0.9 + 'px monospace';
-
-		ctx.fillStyle = this.color;
-		ctx.textAlign = "center";
-		ctx.textBaseline = "middle";
-
-		ctx.strokeStyle = 'black';
-		ctx.lineWidth = canvas.height / 8;
-
-		ctx.strokeText( this.text, canvas.width / 2, canvas.height / 2 );
-		ctx.fillText( this.text, canvas.width / 2, canvas.height / 2 );
-
-		ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
-
-		ctx.fillText( this.text, canvas.width / 2, canvas.height / 2 );
-
-		this.texture.needsUpdate = true;
 
 	}
 
@@ -2177,268 +1976,567 @@ class TransformHelper extends Helper {
 
 }
 
-// Reusable utility variables
-const _worldY = new Vector3( 0, 0, 0 );
-const _alignVector = new Vector3( 0, 1, 0 );
-const _zero = new Vector3( 0, 0, 0 );
-const _lookAtMatrix = new Matrix4();
-const _tempQuaternion = new Quaternion();
-const _identityQuaternion = new Quaternion();
+/**
+ * @author arodic / https://github.com/arodic
+ */
 
+// Reusable utility variables
 const PI$1 = Math.PI;
 const HPI$1 = PI$1 / 2;
-const QPI = HPI$1 / 2;
 const EPS$1 = 0.000001;
 
-const _unitX = new Vector3( 1, 0, 0 );
-const _unitY = new Vector3( 0, 1, 0 );
-const _unitZ = new Vector3( 0, 0, 1 );
+// TODO: consider supporting objects with skewed transforms.
+const _position$1 = new Vector3();
+const _quaternion$1 = new Quaternion();
+const _scale$1 = new Vector3();
+const _m1 = new Matrix4();
+const _m2 = new Matrix4();
+const _one = new Vector3( 1, 1, 1 );
 
-const ringGeometry = new HelperGeometry( new TorusBufferGeometry( 1, EPS$1, 4, 64 ), { rotation: [ HPI$1, 0, 0 ], thickness: 1 } );
-
-const halfRingGeometry = new HelperGeometry( new TorusBufferGeometry( 1, EPS$1, 4, 12, PI$1 ), { rotation: [ HPI$1, 0, 0 ], thickness: 1 } );
-
-const coneGeometry = new HelperGeometry( [
-	[ new OctahedronBufferGeometry( 0.03, 2 ) ],
-	[ new CylinderBufferGeometry( 0, 0.03, 0.2, 8, 1, true ), { position: [ 0, 0.1, 0 ] } ],
-] );
-
-const rotateHandleGeometry = new HelperGeometry( [
-	[ new TorusBufferGeometry( 1, EPS$1, 4, 6, QPI ), { thickness: 1, rotation: [ 0, 0, HPI$1 - HPI$1 / 4 ] } ],
-	[ new TorusBufferGeometry( 0.96, 0.04, 2, 2, QPI / 3 ), { color: colors[ 'whiteTransparent' ], rotation: [ 0, 0, HPI$1 - HPI$1 / 4 / 3 ], scale: [ 1, 1, 0.01 ], outlineThickness: 0 } ],
-	[ coneGeometry, { position: [ 0.37, 0.93, 0 ], rotation: [ 0, 0, - 2.035 ] } ],
-	[ coneGeometry, { position: [ - 0.37, 0.93, 0 ], rotation: [ 0, 0, 2.035 ] } ],
-	[ halfRingGeometry, { rotation: [ - HPI$1, 0, 0 ], scale: 0.25 } ],
-] );
-
-const ringPickerGeometry = new HelperGeometry( new TorusBufferGeometry( 1, 0.1, 3, 12 ), { color: colors[ 'whiteTransparent' ], rotation: [ HPI$1, 0, 0 ] } );
-
-const rotatePickerGeometry = new HelperGeometry( new TorusBufferGeometry( 1, 0.1, 4, 4, HPI$1 / 1.5 ), { color: colors[ 'whiteTransparent' ], rotation: [ 0, 0, HPI$1 - HPI$1 / 3 ] } );
-
-const rotateGuideGeometry = new HelperGeometry( [
-	[ new TorusBufferGeometry( 1, EPS$1, 4, 64 ), { thickness: 1, outlineThickness: 0 } ],
-	[ new CylinderBufferGeometry( EPS$1, EPS$1, 10, 5, 1, true ), { position: [ 0, 1, 0 ], rotation: [ 0, 0, HPI$1 ], thickness: 1, outlineThickness: 0 } ],
+const corner3Geometry = new HelperGeometry( [
+	[ new CylinderBufferGeometry( EPS$1, EPS$1, 1, 4, 2, true ), { color: [ 1, 0, 0 ], position: [ 0.5, 0, 0 ], rotation: [ 0, 0, HPI$1 ], thickness: 1 } ],
+	[ new CylinderBufferGeometry( EPS$1, EPS$1, 1, 4, 2, true ), { color: [ 0, 1, 0 ], position: [ 0, 0.5, 0 ], rotation: [ 0, HPI$1, 0 ], thickness: 1 } ],
+	[ new CylinderBufferGeometry( EPS$1, EPS$1, 1, 4, 2, true ), { color: [ 0, 0, 1 ], position: [ 0, 0, 0.5 ], rotation: [ HPI$1, 0, 0 ], thickness: 1 } ],
 ] );
 
 const handleGeometry$1 = {
-	X: new HelperGeometry( rotateHandleGeometry, { color: colors[ 'red' ], rotation: [ HPI$1, HPI$1, 0 ] } ),
-	Y: new HelperGeometry( rotateHandleGeometry, { color: colors[ 'green' ], rotation: [ HPI$1, 0, 0 ] } ),
-	Z: new HelperGeometry( rotateHandleGeometry, { color: colors[ 'blue' ], rotation: [ 0, 0, - HPI$1 ] } ),
-	E: new HelperGeometry( ringGeometry, { color: colors[ 'yellow' ], rotation: [ HPI$1, HPI$1, 0 ] } ),
-	XYZ: new HelperGeometry( ringGeometry, { color: colors[ 'gray' ], rotation: [ HPI$1, HPI$1, 0 ], scale: 0.25, outlineThickness: 0 } ),
+	XYZ: new HelperGeometry( corner3Geometry, { color: [ 1, 1, 0 ], rotation: [ HPI$1, 0, PI$1 ] } ),
+	XYz: new HelperGeometry( corner3Geometry, { color: [ 1, 1, 0 ], rotation: [ HPI$1, 0, HPI$1 ] } ),
+	xyz: new HelperGeometry( corner3Geometry, { color: [ 1, 1, 0 ], rotation: [ - HPI$1, 0, - HPI$1 ] } ),
+	xyZ: new HelperGeometry( corner3Geometry, { color: [ 1, 1, 0 ], rotation: [ - HPI$1, 0, 0 ] } ),
+	xYZ: new HelperGeometry( corner3Geometry, { color: [ 1, 1, 0 ], rotation: [ PI$1 / 2, 0, - PI$1 / 2 ] } ),
+	xYz: new HelperGeometry( corner3Geometry, { color: [ 1, 1, 0 ], rotation: [ PI$1 / 2, 0, 0 ] } ),
+	Xyz: new HelperGeometry( corner3Geometry, { color: [ 1, 1, 0 ], rotation: [ 0, 0, HPI$1 ] } ),
+	XyZ: new HelperGeometry( corner3Geometry, { color: [ 1, 1, 0 ], rotation: [ 0, PI$1, 0 ] } ),
 };
 
-const pickerGeometry = {
-	X: new HelperGeometry( rotatePickerGeometry, { color: colors[ 'red' ], rotation: [ HPI$1, HPI$1, 0 ] } ),
-	Y: new HelperGeometry( rotatePickerGeometry, { color: colors[ 'green' ], rotation: [ HPI$1, 0, 0 ] } ),
-	Z: new HelperGeometry( rotatePickerGeometry, { color: colors[ 'blue' ], rotation: [ 0, 0, - HPI$1 ] } ),
-	E: new HelperGeometry( ringPickerGeometry, { color: colors[ 'yellow' ], rotation: [ HPI$1, HPI$1, 0 ] } ),
-	XYZ: new HelperGeometry( new OctahedronBufferGeometry( 1, 1 ), { color: colors[ 'whiteTransparent' ], rotation: [ HPI$1, HPI$1, 0 ], scale: 0.32 } ),
-};
-
-const guideGeometry = {
-	X: new HelperGeometry( rotateGuideGeometry, { color: colors[ 'red' ], opacity: 0.5, rotation: [ HPI$1, HPI$1, 0 ] } ),
-	Y: new HelperGeometry( rotateGuideGeometry, { color: colors[ 'green' ], opacity: 0.5, rotation: [ HPI$1, 0, 0 ] } ),
-	Z: new HelperGeometry( rotateGuideGeometry, { color: colors[ 'blue' ], opacity: 0.5, rotation: [ 0, 0, - HPI$1 ] } ),
-};
-
-function hasAxisAny$1( str, chars ) {
-
-	let has = true;
-	str.split( '' ).some( a => {
-
-		if ( chars.indexOf( a ) === - 1 ) has = false;
-
-	} );
-	return has;
-
-}
-
-class TransformHelperRotate extends TransformHelper {
+class SelectionHelper extends Helper {
 
 	get handleGeometry() {
 
 		return handleGeometry$1;
 
 	}
-	get pickerGeometry() {
+	constructor( props ) {
 
-		return pickerGeometry;
+		super( props );
+		this.size = 0.005;
+		this.combineHelperGroups( this.handleGeometry );
 
-	}
-	get guideGeometry() {
+		const axis = new TransformHelper( { object: this } );
+		axis.size = 0.01;
+		axis.doFlip = false;
+		axis.doHide = false;
+		super.add( axis );
 
-		return guideGeometry;
+		if ( this.object && this.object.geometry ) {
 
-	}
-	get infoGeometry() {
+			if ( ! this.object.geometry.boundingBox ) this.object.geometry.computeBoundingBox();
+			const bbMax = this.object.geometry.boundingBox.max;
+			const bbMin = this.object.geometry.boundingBox.min;
 
-		return {
-			X: { position: [ 0.5, 0, 0 ], color: 'red' },
-			Y: { position: [ 0, 0.5, 0 ], color: 'green' },
-			Z: { position: [ 0, 0, 0.5 ], color: 'blue' },
-		};
-
-	}
-	setGuide( guide ) {
-
-		super.setGuide( guide );
-		if ( this.axis === "XYZ" ) guide.highlight = - 2;
-
-	}
-	updateHelperMatrix() {
-
-		// TODO: simplify rotation handle logic
-		super.updateHelperMatrix();
-		const quaternion = this.space === "local" ? this.quaternion : _identityQuaternion;
-		// Align handles to current local or world rotation
-		_tempQuaternion.copy( quaternion ).inverse();
-		_alignVector.copy( this.eye ).applyQuaternion( _tempQuaternion );
-		_worldY.copy( _unitY ).applyQuaternion( _tempQuaternion );
-		// TODO: optimize!
-		this.traverseAxis( axis => this.updateAxesDirection( axis ) );
-		this.traverseGuides( axis => this.updateAxesDirection( axis ) );
-
-	}
-	// TODO: move to updateAxis?
-	updateAxesDirection( axis ) {
-
-		axis.quaternion.copy( _identityQuaternion );
-		if ( axis.name.indexOf( 'XYZ' ) !== - 1 ) {
-
-			axis.quaternion.setFromRotationMatrix( _lookAtMatrix.lookAt( _alignVector, _zero, _worldY ) );
-
-		}
-		if ( axis.name.indexOf( 'E' ) !== - 1 ) {
-
-			axis.quaternion.setFromRotationMatrix( _lookAtMatrix.lookAt( _alignVector, _zero, _worldY ) );
-
-		}
-		if ( axis.name === 'X' ) {
-
-			_tempQuaternion.setFromAxisAngle( _unitX, Math.atan2( - _alignVector.y, _alignVector.z ) );
-			_tempQuaternion.multiplyQuaternions( _identityQuaternion, _tempQuaternion );
-			axis.quaternion.copy( _tempQuaternion );
-
-		}
-		if ( axis.name === 'Y' ) {
-
-			_tempQuaternion.setFromAxisAngle( _unitY, Math.atan2( _alignVector.x, _alignVector.z ) );
-			_tempQuaternion.multiplyQuaternions( _identityQuaternion, _tempQuaternion );
-			axis.quaternion.copy( _tempQuaternion );
-
-		}
-		if ( axis.name === 'Z' ) {
-
-			_tempQuaternion.setFromAxisAngle( _unitZ, Math.atan2( _alignVector.y, _alignVector.x ) );
-			_tempQuaternion.multiplyQuaternions( _identityQuaternion, _tempQuaternion );
-			axis.quaternion.copy( _tempQuaternion );
+			this.corners[ 'XYZ' ].position.set( bbMax.x, bbMax.y, bbMax.z );
+			this.corners[ 'XYz' ].position.set( bbMax.x, bbMax.y, bbMin.z );
+			this.corners[ 'xyz' ].position.set( bbMin.x, bbMin.y, bbMin.z );
+			this.corners[ 'xyZ' ].position.set( bbMin.x, bbMin.y, bbMax.z );
+			this.corners[ 'xYZ' ].position.set( bbMin.x, bbMax.y, bbMax.z );
+			this.corners[ 'xYz' ].position.set( bbMin.x, bbMax.y, bbMin.z );
+			this.corners[ 'Xyz' ].position.set( bbMax.x, bbMin.y, bbMin.z );
+			this.corners[ 'XyZ' ].position.set( bbMax.x, bbMin.y, bbMax.z );
 
 		}
 
 	}
-	setInfo( info ) {
+	combineHelperGroups( groups ) {
 
-		info.highlight = this.axis ? hasAxisAny$1( info.name, this.axis ) ? 1 : 0 : 0;
-		// Flip axis
-		if ( this.doFlip ) {
+		this.corners = {};
+		for ( let name in groups ) {
 
-			const name = info.name.split( '_' ).pop() || null;
-			if ( name.indexOf( 'X' ) !== - 1 ) info.positionTarget.x = this.flipX ? - 0.5 : 0.5;
-			if ( name.indexOf( 'Y' ) !== - 1 ) info.positionTarget.y = this.flipY ? - 0.5 : 0.5;
-			if ( name.indexOf( 'Z' ) !== - 1 ) info.positionTarget.z = this.flipZ ? - 0.5 : 0.5;
+			this.corners[ name ] = this.makeMesh( groups[ name ], { name: name } );
+			// TODO: name?
+			this.add( this.corners[ name ] );
 
 		}
 
 	}
-	updateInfo( info ) {
+	updateMatrixWorld() {
 
-		info.visible = true;
-		info.material.opacity = ( 8 * info.material.opacity + info.highlight ) / 9;
-		if ( info.material.opacity <= 0.001 ) info.visible = false;
-		if ( info.name === 'X' ) info.text = Math.round( ( this.object.rotation.x / Math.PI ) * 180 * 100 ) / 100;
-		if ( info.name === 'Y' ) info.text = Math.round( ( this.object.rotation.y / Math.PI ) * 180 * 100 ) / 100;
-		if ( info.name === 'Z' ) info.text = Math.round( ( this.object.rotation.z / Math.PI ) * 180 * 100 ) / 100;
-		info.position.multiplyScalar( 5 ).add( info.positionTarget ).divideScalar( 6 );
+		this.updateHelperMatrix();
+		this.matrixWorldNeedsUpdate = false;
+
+		this.object.matrixWorld.decompose( _position$1, _quaternion$1, _scale$1 );
+
+		_m1.compose( this.position, this.quaternion, _one );
+
+		_scale$1.x = Math.abs( _scale$1.x );
+		_scale$1.y = Math.abs( _scale$1.y );
+		_scale$1.z = Math.abs( _scale$1.z );
+
+		for ( let i = 0; i < 8; i ++ ) {
+
+			_position$1.copy( this.children[ i ].position ).multiply( _scale$1 );
+
+			let __scale = this.scale.clone();
+
+			let dir = this.children[ i ].position.clone().applyQuaternion( this.quaternion ).normalize();
+
+			this.children[ i ].material.highlight = Math.min( Math.max( 3 - Math.abs( dir.dot( this.eye ) ) * 4, - 1 ), 0.5 );
+
+			__scale.x = Math.min( this.scale.x, Math.abs( _position$1.x ) / 2 );
+			__scale.y = Math.min( this.scale.y, Math.abs( _position$1.y ) / 2 );
+			__scale.z = Math.min( this.scale.z, Math.abs( _position$1.z ) / 2 );
+
+			__scale.x = Math.max( __scale.x, EPS$1 );
+			__scale.y = Math.max( __scale.y, EPS$1 );
+			__scale.z = Math.max( __scale.z, EPS$1 );
+
+			_m2.compose( _position$1, new Quaternion(), __scale );
+
+			this.children[ i ].matrixWorld.copy( _m1 ).multiply( _m2 );
+
+		}
+		this.children[ 8 ].updateMatrixWorld();
 
 	}
 
 }
 
 /**
- * @author arodic / https://github.com/arodic
+ * @author arodic / http://github.com/arodic
  */
 
 // Reusable utility variables
-const tempVector = new Vector3();
-const tempQuaternion = new Quaternion();
-const unit = {
-	X: new Vector3( 1, 0, 0 ),
-	Y: new Vector3( 0, 1, 0 ),
-	Z: new Vector3( 0, 0, 1 )
-};
-const offset = new Vector3();
-const startNorm = new Vector3();
-const endNorm = new Vector3();
-const rotationAxis = new Vector3();
-let rotationAngle = 0;
+const pos = new Vector3();
+const quat = new Quaternion();
+const quatInv = new Quaternion();
+const scale = new Vector3();
 
-class RotateTransformControls extends TransformControlsMixin( TransformHelperRotate ) {
+const posOld = new Vector3();
+const quatOld = new Quaternion();
+const scaleOld = new Vector3();
 
-	transform() {
+const posOffset = new Vector3();
+const quatOffset = new Quaternion();
+const scaleOffset = new Vector3();
 
-		offset.copy( this.pointEnd ).sub( this.pointStart );
+const itemPos = new Vector3();
+const itemPosOffset = new Vector3();
+const itemQuat = new Quaternion();
+const itemQuatInv = new Quaternion();
+const itemQuatOffset = new Quaternion();
+const itemScale = new Vector3();
 
-		// TODO: test with OrthographicCamera
-		const ROTATION_SPEED = 5 / this.scale.length();
+const parentPos = new Vector3();
+const parentQuat = new Quaternion();
+const parentQuatInv = new Quaternion();
+const parentScale = new Vector3();
 
-		if ( this.axis === 'E' ) {
+const dist0 = new Vector3();
+const dist1 = new Vector3();
+const bbox = new Box3();
 
-			rotationAxis.copy( this.eye );
-			rotationAngle = this.pointEnd.angleTo( this.pointStart );
+const selectedOld = [];
 
-			startNorm.copy( this.pointStart ).normalize();
-			endNorm.copy( this.pointEnd ).normalize();
+function filterItems( list, hierarchy, filter ) {
 
-			rotationAngle *= ( endNorm.cross( startNorm ).dot( this.eye ) < 0 ? 1 : - 1 );
+	list = list instanceof Array ? list : [ list ];
+	let filtered = [];
+	for ( let i = 0; i < list.length; i ++ ) {
 
-		} else if ( this.axis === 'XYZ' ) {
+		if ( ! filter || filter( list[ i ] ) ) filtered.push( list[ i ] );
+		if ( hierarchy ) {
 
-			rotationAxis.copy( offset ).cross( this.eye ).normalize();
-			rotationAngle = offset.dot( tempVector.copy( rotationAxis ).cross( this.eye ) ) * ROTATION_SPEED;
+			let children = filterItems( list[ i ].children, hierarchy, filter );
+			filtered.push( ...children );
 
-		} else if ( this.axis === 'X' || this.axis === 'Y' || this.axis === 'Z' ) {
+		}
 
-			rotationAxis.copy( unit[ this.axis ] );
+	}
+	return filtered;
 
-			tempVector.copy( unit[ this.axis ] );
+}
 
-			if ( this.space === 'local' ) {
+// Temp variables
+const raycaster = new Raycaster();
 
-				tempVector.applyQuaternion( this.worldQuaternion );
+// @event change
+const changeEvent = { type: 'change' };
+
+let time = 0, dtime = 0;
+const CLICK_DIST = 0.01;
+const CLICK_TIME = 250;
+
+/*
+ * Selection object stores selection list and implements various methods for selection list manipulation.
+ * Selection object transforms all selected objects when moved in either world or local space.
+ *
+ * @event chang - fired on selection change.
+ * @event selected-changed - also fired on selection change (includes selection payload).
+ */
+
+class SelectionControls extends Interactive {
+
+	constructor( props ) {
+
+		super( props );
+
+		this.defineProperties( {
+			object_: props.object_ || null, // TODO: remove
+			selected: [],
+			transformSelection: true,
+			transformSpace: 'local',
+			boundingBox: new Box3()
+			// translationSnap: null,
+			// rotationSnap: null
+		} );
+
+	}
+	select( position, add ) {
+
+		const camera = this.camera;
+		raycaster.setFromCamera( position, camera );
+
+		const intersects = raycaster.intersectObjects( this.object_.children, true );
+		if ( intersects.length > 0 ) {
+
+			const object = intersects[ 0 ].object;
+			// TODO: handle helper selection
+			if ( add ) {
+
+				this.toggle( object );
+
+			} else {
+
+				this.replace( object );
 
 			}
 
-			rotationAngle = offset.dot( tempVector.cross( this.eye ).normalize() ) * ROTATION_SPEED;
-
-		}
-
-		// Apply rotate
-		if ( this.space === 'local' && this.axis !== 'E' && this.axis !== 'XYZ' ) {
-
-			this.object.quaternion.copy( this.quaternionStart );
-			this.object.quaternion.multiply( tempQuaternion.setFromAxisAngle( rotationAxis, rotationAngle ) ).normalize();
-
 		} else {
 
-			rotationAxis.applyQuaternion( this.parentQuaternionInv );
-			this.object.quaternion.copy( tempQuaternion.setFromAxisAngle( rotationAxis, rotationAngle ) );
-			this.object.quaternion.multiply( this.quaternionStart ).normalize();
+			this.clear();
 
 		}
+		this.dispatchEvent( changeEvent );
+
+	}
+	onPointerDown() {
+
+		time = Date.now();
+
+	}
+	onPointerUp( pointers ) {
+
+		dtime = Date.now() - time;
+		if ( pointers.length === 0 && dtime < CLICK_TIME ) {
+
+			if ( pointers.removed[ 0 ].distance.length() < CLICK_DIST ) {
+
+				this.select( pointers.removed[ 0 ].position, pointers.removed[ 0 ].ctrlKey );
+
+			}
+
+		}
+
+	}
+	transformSpaceChanged() {
+
+		this.update();
+
+	}
+	toggle( list, hierarchy, filter ) {
+
+		list = filterItems( list, hierarchy, filter );
+		selectedOld.push( ...this.selected );
+		for ( let i = list.length; i --; ) {
+
+			let index = this.selected.indexOf( list[ i ] );
+			if ( index !== - 1 ) this.selected.splice( index, 1 );
+			else this.selected.push( list[ i ] );
+
+		}
+		this.update();
+
+	}
+	add( list, hierarchy, filter ) {
+
+		list = filterItems( list, hierarchy, filter );
+		selectedOld.push( ...this.selected );
+		this.selected.concat( ...list );
+		this.update();
+
+	}
+	addFirst( list, hierarchy, filter ) {
+
+		list = filterItems( list, hierarchy, filter );
+		selectedOld.push( ...this.selected );
+		this.selected.length = 0;
+		this.selected.push( ...list );
+		this.selected.push( ...selectedOld );
+		this.update();
+
+	}
+	remove( list, hierarchy, filter ) {
+
+		list = filterItems( list, hierarchy, filter );
+		selectedOld.push( ...this.selected );
+		for ( let i = list.length; i --; ) {
+
+			let index = this.selected.indexOf( list[ i ] );
+			if ( index !== - 1 ) this.selected.splice( i, 1 );
+
+		}
+		this.update();
+
+	}
+	replace( list, hierarchy, filter ) {
+
+		list = filterItems( list, hierarchy, filter );
+		selectedOld.push( ...this.selected );
+		this.selected.length = 0;
+		this.selected.push( ...list );
+		this.update();
+
+	}
+	clear() {
+
+		selectedOld.push( ...this.selected );
+		this.selected.length = 0;
+		this.update();
+
+	}
+	update() {
+
+		// Reset selection transform.
+		this.position.set( 0, 0, 0 );
+		this.quaternion.set( 0, 0, 0, 1 );
+		this.scale.set( 1, 1, 1 );
+
+		// TODO: temp for testing
+		this.boundingBox.makeEmpty();
+
+		if ( this.selected.length && this.transformSelection ) {
+
+			// Set selection transform to last selected item (not ancestor of selected).
+			if ( this.transformSpace === 'local' ) {
+
+				for ( let i = this.selected.length; i --; ) {
+
+					let item = this.selected[ i ];
+					if ( this._isAncestorOfSelected( item ) ) continue;
+					item.updateMatrixWorld();
+					item.matrixWorld.decompose( itemPos, itemQuat, itemScale );
+					this.position.copy( itemPos );
+					this.quaternion.copy( itemQuat );
+
+					if ( item.geometry ) {
+
+						if ( ! item.geometry.boundingBox ) item.geometry.computeBoundingBox();
+						bbox.copy( item.geometry.boundingBox );
+						bbox.min.multiply( itemScale );
+						bbox.max.multiply( itemScale );
+						this.boundingBox.copy( bbox );
+
+					}
+
+					break;
+
+				}
+				// Set selection transform to the average of selected items.
+
+			} else if ( this.transformSpace === 'world' ) {
+
+				// TODO: center should be in the center of combined boundging box.
+				// TODO: Verify with StretchTransformControls box handles
+				pos.set( 0, 0, 0 );
+				for ( let i = 0; i < this.selected.length; i ++ ) {
+
+					let item = this.selected[ i ];
+					item.updateMatrixWorld();
+					item.matrixWorld.decompose( itemPos, itemQuat, itemScale );
+					pos.add( itemPos );
+
+				}
+				this.position.copy( pos ).divideScalar( this.selected.length );
+
+				// this.updateMatrixWorld();
+
+				for ( let i = 0; i < this.selected.length; i ++ ) {
+
+					let item = this.selected[ i ];
+					item.matrixWorld.decompose( itemPos, itemQuat, itemScale );
+					if ( item.geometry ) {
+
+						if ( ! item.geometry.boundingBox ) item.geometry.computeBoundingBox();
+						bbox.copy( item.geometry.boundingBox );
+						bbox.min.multiply( itemScale );
+						bbox.max.multiply( itemScale );
+
+						bbox.min.add( itemPos.clone().sub( this.position ) );
+						bbox.max.add( itemPos.clone().sub( this.position ) );
+
+						this.boundingBox.expandByPoint( bbox.min );
+						this.boundingBox.expandByPoint( bbox.max );
+
+					} else {
+
+						// TODO: test with non-geometric objects
+						this.boundingBox.expandByPoint( itemPos ); // Doesent make sense
+
+					}
+
+				}
+
+			}
+
+		}
+
+		// TODO: apply snapping
+		// Apply translation snap
+		// if (this.translationSnap) {
+		// 	if (space === 'local') {
+		// 		object.position.applyQuaternion(_tempQuaternion.copy(this.quaternionStart).inverse());
+		// 		if (axis.hasAxis('X')) object.position.x = Math.round(object.position.x / this.translationSnap) * this.translationSnap;
+		// 		if (axis.hasAxis('Y')) object.position.y = Math.round(object.position.y / this.translationSnap) * this.translationSnap;
+		// 		if (axis.hasAxis('Z')) object.position.z = Math.round(object.position.z / this.translationSnap) * this.translationSnap;
+		// 		object.position.applyQuaternion(this.quaternionStart);
+		// 	}
+		// 	if (space === 'world') {
+		// 		if (object.parent) {
+		// 			object.position.add(_tempVector.setFromMatrixPosition(object.parent.matrixWorld));
+		// 		}
+		// 		if (axis.hasAxis('X')) object.position.x = Math.round(object.position.x / this.translationSnap) * this.translationSnap;
+		// 		if (axis.hasAxis('Y')) object.position.y = Math.round(object.position.y / this.translationSnap) * this.translationSnap;
+		// 		if (axis.hasAxis('Z')) object.position.z = Math.round(object.position.z / this.translationSnap) * this.translationSnap;
+		// 		if (object.parent) {
+		// 			object.position.sub(_tempVector.setFromMatrixPosition(object.parent.matrixWorld));
+		// 		}
+		// 	}
+		// }
+		// Apply rotation snap
+		// if (space === 'local') {
+		// 	const snap = this.rotationSnap;
+		// 	if (this.axis === 'X' && snap) this.object.rotation.x = Math.round(this.object.rotation.x / snap) * snap;
+		// 	if (this.axis === 'Y' && snap) this.object.rotation.y = Math.round(this.object.rotation.y / snap) * snap;
+		// 	if (this.axis === 'Z' && snap) this.object.rotation.z = Math.round(this.object.rotation.z / snap) * snap;
+		// }
+		// if (this.rotationSnap) this.rotationAngle = Math.round(this.rotationAngle / this.rotationSnap) * this.rotationSnap;
+
+		// Add helpers
+		// TODO: cache helpers per object
+		for ( let i = this.children.length; i --; ) {
+
+			super.remove( this.children[ i ] );
+
+		}
+
+		for ( let i = 0; i < this.selected.length; i ++ ) {
+
+			const _helper = new SelectionHelper( { object: this.selected[ i ] } );
+			super.add( _helper );
+
+		}
+
+		super.updateMatrixWorld();
+
+		// gather selection data and emit selection-changed event
+		let added = [];
+		for ( let i = 0; i < this.selected.length; i ++ ) {
+
+			if ( selectedOld.indexOf( this.selected[ i ] ) === - 1 ) {
+
+				added.push( this.selected[ i ] );
+
+			}
+
+		}
+		let removed = [];
+		for ( let i = 0; i < selectedOld.length; i ++ ) {
+
+			if ( this.selected.indexOf( selectedOld[ i ] ) === - 1 ) {
+
+				removed.push( selectedOld[ i ] );
+
+			}
+
+		}
+		selectedOld.length = 0;
+		this.dispatchEvent( { type: 'change' } );
+		this.dispatchEvent( { type: 'selected-changed', selected: [ ...this.selected ], added: added, removed: removed } );
+
+	}
+	updateMatrixWorld( force ) {
+
+		// Extract tranformations before and after matrix update.
+		this.matrixWorld.decompose( posOld, quatOld, scaleOld );
+		super.updateMatrixWorld( force );
+		this.matrixWorld.decompose( pos, quat, scale );
+
+		// Get transformation offsets from transform deltas.
+		posOffset.copy( pos ).sub( posOld );
+		quatOffset.copy( quat ).multiply( quatOld.inverse() );
+		scaleOffset.copy( scale ).divide( scaleOld );
+		quatInv.copy( quat ).inverse();
+
+		if ( ! this.selected.length || ! this.transformSelection ) return;
+		// Apply tranformatio offsets to ancestors.
+		for ( let i = 0; i < this.selected.length; i ++ ) {
+
+			// get local transformation variables.
+			this.selected[ i ].updateMatrixWorld();
+			this.selected[ i ].matrixWorld.decompose( itemPos, itemQuat, itemScale );
+			this.selected[ i ].parent.matrixWorld.decompose( parentPos, parentQuat, parentScale );
+			parentQuatInv.copy( parentQuat ).inverse();
+			itemQuatInv.copy( itemQuat ).inverse();
+			// Transform selected in local space.
+			if ( this.transformSpace === 'local' ) {
+
+				// Position
+				itemPosOffset.copy( posOffset ).applyQuaternion( quatInv ).divide( parentScale );
+				itemPosOffset.applyQuaternion( this.selected[ i ].quaternion );
+				this.selected[ i ].position.add( itemPosOffset );
+				// Rotation
+				itemQuatOffset.copy( quatInv ).multiply( quatOffset ).multiply( quat ).normalize();
+				this.selected[ i ].quaternion.multiply( itemQuatOffset );
+				// Scale
+				if ( this._isAncestorOfSelected( this.selected[ i ] ) ) continue; // lets not go there...
+				this.selected[ i ].scale.multiply( scaleOffset );
+			// Transform selected in world space.
+
+			} else if ( this.transformSpace === 'world' ) {
+
+				if ( this._isAncestorOfSelected( this.selected[ i ] ) ) continue;
+				// Position
+				itemPosOffset.copy( posOffset ).applyQuaternion( parentQuatInv ).divide( parentScale );
+				this.selected[ i ].position.add( itemPosOffset );
+				// Rotation
+				dist0.subVectors( itemPos, pos );
+				dist1.subVectors( itemPos, pos ).applyQuaternion( quatOffset );
+				dist1.sub( dist0 ).applyQuaternion( parentQuatInv ).divide( parentScale );
+				this.selected[ i ].position.add( dist1 );
+				itemQuatOffset.copy( itemQuatInv ).multiply( quatOffset ).multiply( itemQuat ).normalize();
+				this.selected[ i ].quaternion.multiply( itemQuatOffset );
+				// Scale
+				this.selected[ i ].scale.multiply( scaleOffset );
+
+			}
+			this.selected[ i ].updateMatrixWorld();
+
+		}
+
+	}
+	_isAncestorOfSelected( object ) {
+
+		let parent = object.parent;
+		while ( parent ) {
+
+			if ( this.selected.indexOf( parent ) !== - 1 ) return true;
+			object = parent, parent = object.parent;
+
+		}
+		return false;
 
 	}
 
 }
 
-export { RotateTransformControls };
+export { SelectionControls };

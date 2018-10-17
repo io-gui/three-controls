@@ -1,4 +1,4 @@
-import { UniformsUtils, Vector3, Color, FrontSide, ShaderMaterial, DataTexture, RGBAFormat, FloatType, NearestFilter, Mesh, BoxBufferGeometry, Raycaster, Quaternion, Plane, Sprite, Texture, Vector2, BufferGeometry, BufferAttribute, Euler, Matrix4, Float32BufferAttribute, Uint16BufferAttribute, CylinderBufferGeometry } from '../../../lib/three.module.js';
+import { UniformsUtils, Vector3, Color, FrontSide, ShaderMaterial, DataTexture, RGBAFormat, FloatType, NearestFilter, Mesh, BoxBufferGeometry, Raycaster, Quaternion, Plane, Vector2, BufferGeometry, BufferAttribute, Euler, Matrix4, Float32BufferAttribute, Uint16BufferAttribute, Sprite, Texture, CylinderBufferGeometry, OctahedronBufferGeometry, PlaneBufferGeometry } from '../lib/three.module.js';
 
 /**
  * @author arodic / https://github.com/arodic
@@ -1127,70 +1127,6 @@ const TransformControlsMixin = ( superclass ) => class extends InteractiveMixin(
 };
 
 /**
- * @author arodic / https://github.com/arodic
- */
-
-class TextHelper extends IoLiteMixin( Sprite ) {
-
-	constructor( props = {} ) {
-
-		super();
-
-		this.defineProperties( {
-			text: '',
-			color: props.color || 'black',
-			size: 0.33,
-		} );
-
-		this.scaleTarget = new Vector3( 1, 1, 1 );
-
-		this.canvas = document.createElement( 'canvas' );
-		this.ctx = this.canvas.getContext( '2d' );
-		this.texture = new Texture( this.canvas );
-
-		this.material.map = this.texture;
-
-		this.canvas.width = 256;
-		this.canvas.height = 64;
-
-		this.scale.set( 1, 0.25, 1 );
-		this.scale.multiplyScalar( this.size );
-
-		this.position.set( props.position[ 0 ], props.position[ 1 ], props.position[ 2 ] );
-
-		this.text = '-+0.4';
-
-	}
-	textChanged() {
-
-		const ctx = this.ctx;
-		const canvas = this.canvas;
-
-		ctx.clearRect( 0, 0, canvas.width, canvas.height );
-
-		ctx.font = 'bold ' + canvas.height * 0.9 + 'px monospace';
-
-		ctx.fillStyle = this.color;
-		ctx.textAlign = "center";
-		ctx.textBaseline = "middle";
-
-		ctx.strokeStyle = 'black';
-		ctx.lineWidth = canvas.height / 8;
-
-		ctx.strokeText( this.text, canvas.width / 2, canvas.height / 2 );
-		ctx.fillText( this.text, canvas.width / 2, canvas.height / 2 );
-
-		ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
-
-		ctx.fillText( this.text, canvas.width / 2, canvas.height / 2 );
-
-		this.texture.needsUpdate = true;
-
-	}
-
-}
-
-/**
  * @author mrdoob / http://mrdoob.com/
  */
 
@@ -1583,6 +1519,18 @@ const _quaternion = new Quaternion();
 const _scale = new Vector3();
 const _matrix = new Matrix4();
 
+const colors = {
+	'white': [ 1, 1, 1 ],
+	'whiteTransparent': [ 1, 1, 1, 0.25 ],
+	'gray': [ 0.75, 0.75, 0.75 ],
+	'red': [ 1, 0.3, 0.2 ],
+	'green': [ 0.2, 1, 0.2 ],
+	'blue': [ 0.2, 0.3, 1 ],
+	'cyan': [ 0.2, 1, 1 ],
+	'magenta': [ 1, 0.3, 1 ],
+	'yellow': [ 1, 1, 0.2 ],
+};
+
 class HelperGeometry extends BufferGeometry {
 
 	constructor( geometry, props ) {
@@ -1728,6 +1676,70 @@ class HelperGeometry extends BufferGeometry {
 		}
 
 		BufferGeometryUtils.mergeBufferGeometries( chunkGeometries, false, this );
+
+	}
+
+}
+
+/**
+ * @author arodic / https://github.com/arodic
+ */
+
+class TextHelper extends IoLiteMixin( Sprite ) {
+
+	constructor( props = {} ) {
+
+		super();
+
+		this.defineProperties( {
+			text: '',
+			color: props.color || 'black',
+			size: 0.33,
+		} );
+
+		this.scaleTarget = new Vector3( 1, 1, 1 );
+
+		this.canvas = document.createElement( 'canvas' );
+		this.ctx = this.canvas.getContext( '2d' );
+		this.texture = new Texture( this.canvas );
+
+		this.material.map = this.texture;
+
+		this.canvas.width = 256;
+		this.canvas.height = 64;
+
+		this.scale.set( 1, 0.25, 1 );
+		this.scale.multiplyScalar( this.size );
+
+		this.position.set( props.position[ 0 ], props.position[ 1 ], props.position[ 2 ] );
+
+		this.text = '-+0.4';
+
+	}
+	textChanged() {
+
+		const ctx = this.ctx;
+		const canvas = this.canvas;
+
+		ctx.clearRect( 0, 0, canvas.width, canvas.height );
+
+		ctx.font = 'bold ' + canvas.height * 0.9 + 'px monospace';
+
+		ctx.fillStyle = this.color;
+		ctx.textAlign = "center";
+		ctx.textBaseline = "middle";
+
+		ctx.strokeStyle = 'black';
+		ctx.lineWidth = canvas.height / 8;
+
+		ctx.strokeText( this.text, canvas.width / 2, canvas.height / 2 );
+		ctx.fillText( this.text, canvas.width / 2, canvas.height / 2 );
+
+		ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
+
+		ctx.fillText( this.text, canvas.width / 2, canvas.height / 2 );
+
+		this.texture.needsUpdate = true;
 
 	}
 
@@ -2165,34 +2177,166 @@ class TransformHelper extends Helper {
 
 }
 
-/**
- * @author arodic / https://github.com/arodic
- */
+// Reusable utility variables
+const PI$1 = Math.PI;
+const HPI$1 = PI$1 / 2;
+const EPS$1 = 0.000001;
 
-// TODO: Drag Controls should use object as picker and no handle.
-class DragTransformControls extends TransformControlsMixin( TransformHelper ) {
+const planeGeometry = new PlaneBufferGeometry( 1, 1, 1, 1 );
 
-	constructor( props ) {
+const scaleArrowGeometry = new HelperGeometry( [
+	[ new CylinderBufferGeometry( EPS$1, EPS$1, 0.5, 5, 1, true ), { position: [ 0, 0.5, 0 ], thickness: 1 } ],
+	[ new OctahedronBufferGeometry( 0.05, 2 ), { position: [ 0, 0.8, 0 ] } ],
+] );
 
-		super( props );
-		this.size = 0.02;
+const scaleUniformArrowGeometry = new HelperGeometry( [
+	[ new CylinderBufferGeometry( EPS$1, EPS$1, 0.1, 5, 1, true ), { position: [ 0, 0.9, 0 ], thickness: 1 } ],
+	[ new OctahedronBufferGeometry( 0.05, 2 ), { position: [ 0, 1, 0 ] } ],
+] );
+
+const scaleCornerGeometry = new HelperGeometry( [
+	[ new OctahedronBufferGeometry( 0.05, 2 ) ],
+	[ planeGeometry, { color: colors[ 'whiteTransparent' ], position: [ 0, - 0.1, 0 ], scale: [ 0.1, 0.2, 0.1 ], outlineThickness: 0 } ],
+	[ planeGeometry, { color: colors[ 'whiteTransparent' ], position: [ - 0.1, 0, 0 ], scale: [ 0.2, 0.1, 0.1 ], outlineThickness: 0 } ],
+] );
+
+const scalePickerGeometry = new HelperGeometry( new CylinderBufferGeometry( 0.15, 0, 0.8, 4, 1, true ), { color: colors[ 'whiteTransparent' ], position: [ 0, 0.5, 0 ] } );
+
+const scaleCornerPickerGeometry = new HelperGeometry( new OctahedronBufferGeometry( 0.2, 0 ), { color: colors[ 'whiteTransparent' ] } );
+
+const scaleGuideGeometry = new HelperGeometry( [
+	[ new CylinderBufferGeometry( EPS$1, EPS$1, 10.45, 5, 1, true ), { thickness: 1, outlineThickness: 0 } ],
+] );
+
+const handleGeometry$1 = {
+	X: new HelperGeometry( scaleArrowGeometry, { color: colors[ 'red' ], rotation: [ 0, 0, - HPI$1 ] } ),
+	Y: new HelperGeometry( scaleArrowGeometry, { color: colors[ 'green' ] } ),
+	Z: new HelperGeometry( scaleArrowGeometry, { color: colors[ 'blue' ], rotation: [ HPI$1, 0, 0 ] } ),
+	XY: new HelperGeometry( [
+		[ scaleCornerGeometry, { position: [ 0.8, 0.8, 0 ], color: colors[ 'yellow' ] } ],
+	] ),
+	YZ: new HelperGeometry( [
+		[ scaleCornerGeometry, { position: [ 0, 0.8, 0.8 ], color: colors[ 'cyan' ], rotation: [ 0, - HPI$1, 0 ] } ],
+	] ),
+	XZ: new HelperGeometry( [
+		[ scaleCornerGeometry, { position: [ 0.8, 0, 0.8 ], color: colors[ 'magenta' ], rotation: [ HPI$1, 0, 0 ] } ],
+	] ),
+	XYZ: new HelperGeometry( [
+		[ scaleUniformArrowGeometry, { color: colors[ 'gray' ], rotation: [ 0, 0, - HPI$1 ] } ],
+		[ scaleUniformArrowGeometry, { color: colors[ 'gray' ] } ],
+		[ scaleUniformArrowGeometry, { color: colors[ 'gray' ], rotation: [ HPI$1, 0, 0 ] } ],
+	] ),
+};
+
+const pickerGeometry = {
+	X: new HelperGeometry( scalePickerGeometry, { color: colors[ 'red' ], rotation: [ 0, 0, - HPI$1 ] } ),
+	Y: new HelperGeometry( scalePickerGeometry, { color: colors[ 'green' ] } ),
+	Z: new HelperGeometry( scalePickerGeometry, { color: colors[ 'blue' ], rotation: [ HPI$1, 0, 0 ] } ),
+	XY: new HelperGeometry( scaleCornerPickerGeometry, { color: colors[ 'yellow' ], position: [ 0.75, 0.75, 0 ] } ),
+	YZ: new HelperGeometry( scaleCornerPickerGeometry, { color: colors[ 'cyan' ], position: [ 0, 0.75, 0.75 ], rotation: [ 0, - HPI$1, 0 ] } ),
+	XZ: new HelperGeometry( scaleCornerPickerGeometry, { color: colors[ 'magenta' ], position: [ 0.75, 0, 0.75 ], rotation: [ HPI$1, 0, 0 ] } ),
+	XYZ: new HelperGeometry( [
+		[ new OctahedronBufferGeometry( 0.1, 1 ), { color: colors[ 'whiteTransparent' ], position: [ 1, 0, 0 ] } ],
+		[ new OctahedronBufferGeometry( 0.1, 1 ), { color: colors[ 'whiteTransparent' ], position: [ 0, 1, 0 ] } ],
+		[ new OctahedronBufferGeometry( 0.1, 1 ), { color: colors[ 'whiteTransparent' ], position: [ 0, 0, 1 ] } ],
+	] ),
+};
+
+const guideGeometry = {
+	X: new HelperGeometry( scaleGuideGeometry, { color: colors[ 'red' ], opacity: 0.5, rotation: [ 0, 0, - HPI$1 ] } ),
+	Y: new HelperGeometry( scaleGuideGeometry, { color: colors[ 'green' ], opacity: 0.5 } ),
+	Z: new HelperGeometry( scaleGuideGeometry, { color: colors[ 'blue' ], opacity: 0.5, rotation: [ HPI$1, 0, 0 ] } ),
+};
+
+class TransformHelperScale extends TransformHelper {
+
+	get handleGeometry() {
+
+		return handleGeometry$1;
 
 	}
-	transform( space ) {
+	get pickerGeometry() {
 
-		if ( space === 'local' ) {
+		return pickerGeometry;
 
-			this.object.position.copy( this.pointEnd ).sub( this.pointStart ).applyQuaternion( this.quaternionStart );
+	}
+	get guideGeometry() {
 
-		} else {
+		return guideGeometry;
 
-			this.object.position.copy( this.pointEnd ).sub( this.pointStart );
+	}
+	get infoGeometry() {
 
-		}
-		this.object.position.add( this.positionStart );
+		return {
+			X: { position: [ 0.5, 0, 0 ], color: 'red' },
+			Y: { position: [ 0, 0.5, 0 ], color: 'green' },
+			Z: { position: [ 0, 0, 0.5 ], color: 'blue' },
+		};
+
+	}
+	setAxis( axis ) {
+
+		super.setAxis( axis );
+		// Hide per-axis scale in world mode
+		if ( ( axis.name == 'X' || axis.name == 'Y' || axis.name == 'Z' ) && this.space === 'world' ) axis.hidden = true;
+		if ( ( axis.name == 'XY' || axis.name == 'YZ' || axis.name == 'XZ' ) && this.space === 'world' ) axis.hidden = true;
+
+	}
+	updateInfo( info ) {
+
+		info.visible = true;
+		info.material.opacity = ( 8 * info.material.opacity + info.highlight ) / 9;
+		if ( info.material.opacity <= 0.001 ) info.visible = false;
+		if ( info.name === 'X' ) info.text = Math.round( this.object.scale.x * 100 ) / 100;
+		if ( info.name === 'Y' ) info.text = Math.round( this.object.scale.y * 100 ) / 100;
+		if ( info.name === 'Z' ) info.text = Math.round( this.object.scale.z * 100 ) / 100;
+		info.position.multiplyScalar( 5 ).add( info.positionTarget ).divideScalar( 6 );
 
 	}
 
 }
 
-export { DragTransformControls };
+/**
+ * @author arodic / https://github.com/arodic
+ */
+
+// Reusable utility variables
+const scaleFactor = new Vector3();
+const EPS$2 = 0.000001;
+
+class ScaleTransformControls extends TransformControlsMixin( TransformHelperScale ) {
+
+	transform() {
+
+		if ( this.axis === 'XYZ' ) {
+
+			let refVector = this.pointStart.clone().normalize();
+			let factor = this.pointEnd.dot( refVector ) / this.pointStart.dot( refVector );
+			scaleFactor.set( factor, factor, factor );
+
+		} else {
+
+			scaleFactor.set(
+				this.pointEnd.dot( this.worldX ) / this.pointStart.dot( this.worldX ),
+				this.pointEnd.dot( this.worldY ) / this.pointStart.dot( this.worldY ),
+				this.pointEnd.dot( this.worldZ ) / this.pointStart.dot( this.worldZ ),
+			);
+
+			if ( this.axis.indexOf( 'X' ) === - 1 ) scaleFactor.x = 1;
+			if ( this.axis.indexOf( 'Y' ) === - 1 ) scaleFactor.y = 1;
+			if ( this.axis.indexOf( 'Z' ) === - 1 ) scaleFactor.z = 1;
+
+		}
+
+		this.object.scale.copy( this.scaleStart ).multiply( scaleFactor );
+		this.object.scale.set(
+			Math.max( this.object.scale.x, EPS$2 ),
+			Math.max( this.object.scale.y, EPS$2 ),
+			Math.max( this.object.scale.z, EPS$2 ),
+		);
+
+	}
+
+}
+
+export { ScaleTransformControls };
