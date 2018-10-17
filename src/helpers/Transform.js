@@ -119,6 +119,8 @@ export class TransformHelper extends Helper {
 			mesh.scaleTarget = new Vector3(1, 1, 1);
 			mesh.isGuide = true;
 			mesh.highlight = -2;
+			mesh.material.opacity = 0;
+			mesh.material.visible = false;
 			axes.push(mesh);
 			axes[name] = mesh;
 			this.add(mesh);
@@ -156,6 +158,8 @@ export class TransformHelper extends Helper {
 	}
 	objectChanged() {
 		super.objectChanged();
+		this.axis = null;
+		this.active = false;
 		this.hideX = false;
 		this.hideY = false;
 		this.hideZ = false;
