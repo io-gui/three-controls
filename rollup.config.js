@@ -19,91 +19,53 @@ function external( list ) {
 
 export default [
   {
-    input: 'examples/GLTFLoader.js',
-    output: output( 'build/GLTFLoader.js' ),
-    external: external( [
-      './lib/three.module.js'
-    ] )
-  },
-  {
-    input: 'src/controls/DragControls.js',
-    output: output( 'build/controls/DragControls.js' ),
-    external: external( [
-      './lib/three.module.js'
-    ] )
-  },
-  {
-    input: 'src/controls/EditorCameraControls.js',
-    output: output( 'build/controls/EditorCameraControls.js' ),
-    external: external( [
-      'src/controls/CameraControls.js',
-      './lib/three.module.js'
-    ] )
-  },
-  {
-    input: 'src/controls/OrbitCameraControls.js',
-    output: output( 'build/controls/OrbitCameraControls.js' ),
-    external: external( [
-      'src/controls/CameraControls.js',
-      './lib/three.module.js'
-    ] )
-  },
-  {
-    input: 'src/controls/SelectionControls.js',
+    input: 'src/controls/Selection.js',
     output: output( 'build/controls/SelectionControls.js' ),
-    external: external( [
-      'src/controls/CameraControls.js',
-      './lib/three.module.js'
-    ] )
+    external: external( [ './lib/three.module.js' ] )
   },
   {
-    input: 'src/controls/TrackballCameraControls.js',
+    input: 'src/controls/camera/Editor.js',
+    output: output( 'build/controls/EditorCameraControls.js' ),
+    external: external( [ './lib/three.module.js' ] )
+  },
+  {
+    input: 'src/controls/camera/Orbit.js',
+    output: output( 'build/controls/OrbitCameraControls.js' ),
+    external: external( [ './lib/three.module.js' ] )
+  },
+  {
+    input: 'src/controls/camera/Trackball.js',
     output: output( 'build/controls/TrackballCameraControls.js' ),
-    external: external( [
-      'src/controls/CameraControls.js',
-      './lib/three.module.js'
-    ] )
+    external: external( [ './lib/three.module.js' ] )
   },
   {
-    input: 'src/controls/CombinedTransformControls.js',
+    input: 'src/controls/transform/Drag.js',
+    output: output( 'build/controls/DragTransformControls.js' ),
+    external: external( [ './lib/three.module.js' ] )
+  },
+  {
+    input: 'src/controls/transform/Combined.js',
     output: output( 'build/controls/CombinedTransformControls.js' ),
-    external: external( [
-      './lib/three.module.js'
-    ] )
+    external: external( [ './lib/three.module.js' ] )
   },
   {
-    input: 'src/controls/RotateTransformControls.js',
+    input: 'src/controls/transform/Rotate.js',
     output: output( 'build/controls/RotateTransformControls.js' ),
-    external: external( [
-      './lib/three.module.js'
-    ] )
+    external: external( [ './lib/three.module.js' ] )
   },
   {
-    input: 'src/controls/ScaleTransformControls.js',
+    input: 'src/controls/transform/Scale.js',
     output: output( 'build/controls/ScaleTransformControls.js' ),
-    external: external( [
-      './lib/three.module.js'
-    ] )
+    external: external( [ './lib/three.module.js' ] )
   },
   {
-    input: 'src/controls/StretchTransformControls.js',
+    input: 'src/controls/transform/Stretch.js',
     output: output( 'build/controls/StretchTransformControls.js' ),
-    external: external( [
-      './lib/three.module.js'
-    ] )
+    external: external( [ './lib/three.module.js' ] )
   },
   {
-    input: 'src/controls/TranslateTransformControls.js',
+    input: 'src/controls/transform/Translate.js',
     output: output( 'build/controls/TranslateTransformControls.js' ),
-    external: external( [
-      './lib/three.module.js'
-    ] )
-  },
-  {
-    input: 'src/controls/CameraControls.js',
-    output: output( 'build/controls/CameraControls.js' ),
-    external: external( [
-      './lib/three.module.js'
-    ] )
-  },
+    external: external( [ './lib/three.module.js' ] )
+  }
 ];

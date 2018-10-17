@@ -1,6 +1,6 @@
-import {IoLiteMixin} from "../../lib/IoLiteMixin.js";
-import {UniformsUtils, Vector3, Vector4, Color, FrontSide, ShaderMaterial,
-	DataTexture, RGBAFormat, FloatType, NearestFilter} from "../../lib/three.module.js";
+import {IoLiteMixin} from "../lib/IoLiteMixin.js";
+import {UniformsUtils, Vector3, Color, FrontSide, ShaderMaterial,
+	DataTexture, RGBAFormat, FloatType, NearestFilter} from "../lib/three.module.js";
 
 // TODO: pixel-perfect outlines
 export class HelperMaterial extends IoLiteMixin(ShaderMaterial) {

@@ -49,10 +49,6 @@ const rotateHandleGeometry = new HelperGeometry([
 	[coneGeometry, {position: [-0.37, 0.93, 0], rotation: [0, 0, 2.035], scale: 0.75}],
 ]);
 
-const rotateLinearHandleGeometry = new HelperGeometry([
-	[new TorusBufferGeometry( 1, 0.001, 4, 2, HPI/2/3 ), {color: [1, 1, 1, 0.25], rotation: [0, 0, HPI - HPI/4/3], scale: [1, 1, 50], outlineThickness: 0}],
-]);
-
 const translatePickerGeometry = new HelperGeometry(new CylinderBufferGeometry(0.15, 0, 0.6, 4, 1, true), {color: colors['whiteTransparent'], position: [0, 0.5, 0]});
 
 const scalePickerGeometry = new HelperGeometry(new OctahedronBufferGeometry(0.1, 0), {color: colors['whiteTransparent']});

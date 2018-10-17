@@ -6,7 +6,6 @@ import {Mesh, Vector3, BoxBufferGeometry} from "../lib/three.module.js";
 import {IoLiteMixin} from "../lib/IoLiteMixin.js";
 import {HelperMaterial} from "./HelperMaterial.js";
 
-
 // Reusable utility variables
 const _cameraPosition = new Vector3();
 

@@ -2,9 +2,9 @@
  * @author arodic / http://github.com/arodic
  */
 
-import {Vector2, Vector3, MOUSE} from "../../../lib/three.module.js";
+import {Vector2, Vector3, MOUSE} from "../../lib/three.module.js";
 import {Interactive} from "./Interactive.js";
-import {Animation} from "../../../lib/Animation.js";
+import {Animation} from "../../lib/Animation.js";
 
 /*
  * CameraControls is a base class for controls performing orbiting, dollying, and panning.

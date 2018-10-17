@@ -3,14 +3,7 @@
  */
 
 import {IoLiteMixin} from "../../lib/IoLiteMixin.js";
-import {Sprite, Vector3, Quaternion, Matrix4, SpriteMaterial, Texture, LinearFilter} from "../../lib/three.module.js";
-import {HelperMaterial} from "../HelperMaterial.js";
-
-// Reusable utility variables
-const parentPosition = new Vector3();
-const parentQuaternion = new Quaternion();
-const parentScale = new Vector3();
-const scaleMatrix = new Matrix4();
+import {Sprite, Vector3, Texture} from "../../lib/three.module.js";
 
 export class TextHelper extends IoLiteMixin(Sprite) {
 	constructor(props = {}) {
@@ -58,7 +51,7 @@ export class TextHelper extends IoLiteMixin(Sprite) {
 		ctx.strokeText(this.text, canvas.width / 2, canvas.height / 2);
 		ctx.fillText(this.text, canvas.width / 2, canvas.height / 2);
 
-		ctx.fillStyle = "rgba(255, 255, 255, 0.5)";;
+		ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
 
 		ctx.fillText(this.text, canvas.width / 2, canvas.height / 2);
 

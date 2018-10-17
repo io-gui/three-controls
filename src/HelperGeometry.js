@@ -1,8 +1,5 @@
-import {
-	Vector3, Euler, Quaternion, Matrix4, BufferGeometry, Float32BufferAttribute, Uint16BufferAttribute
-} from "../../lib/three.module.js";
-
-import {BufferGeometryUtils} from "../../lib/BufferGeometryUtils.js";
+import {Vector3, Euler, Quaternion, Matrix4, BufferGeometry, Float32BufferAttribute, Uint16BufferAttribute} from "../lib/three.module.js";
+import {BufferGeometryUtils} from "../lib/BufferGeometryUtils.js";
 
 // Reusable utility variables
 const _position = new Vector3();

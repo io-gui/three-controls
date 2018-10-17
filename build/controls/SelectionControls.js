@@ -1,4 +1,4 @@
-import { Mesh, Vector3, BoxBufferGeometry, UniformsUtils, Color, FrontSide, ShaderMaterial, DataTexture, RGBAFormat, FloatType, NearestFilter, Vector2, BufferGeometry, BufferAttribute, Euler, Quaternion, Matrix4, Float32BufferAttribute, Uint16BufferAttribute, CylinderBufferGeometry, OctahedronBufferGeometry, Raycaster, Box3 } from '../../lib/three.module.js';
+import { UniformsUtils, Vector3, Color, FrontSide, ShaderMaterial, DataTexture, RGBAFormat, FloatType, NearestFilter, Mesh, BoxBufferGeometry, Sprite, Texture, Vector2, BufferGeometry, BufferAttribute, Euler, Quaternion, Matrix4, Float32BufferAttribute, Uint16BufferAttribute, CylinderBufferGeometry, Raycaster, Box3 } from '../../lib/three.module.js';
 
 /**
  * @author arodic / https://github.com/arodic
@@ -555,6 +555,158 @@ const defineProperty = function ( scope, propName, propDef ) {
 
 };
 
+// TODO: pixel-perfect outlines
+class HelperMaterial extends IoLiteMixin( ShaderMaterial ) {
+
+	constructor( props = {} ) {
+
+		super( {
+			depthTest: true,
+			depthWrite: true,
+			transparent: !! props.opacity,
+			side: FrontSide,
+		} );
+
+		const data = new Float32Array( [
+			1.0 / 17.0, 0, 0, 0, 9.0 / 17.0, 0, 0, 0, 3.0 / 17.0, 0, 0, 0, 11.0 / 17.0, 0, 0, 0,
+			13.0 / 17.0, 0, 0, 0, 5.0 / 17.0, 0, 0, 0, 15.0 / 17.0, 0, 0, 0, 7.0 / 17.0, 0, 0, 0,
+			4.0 / 17.0, 0, 0, 0, 12.0 / 17.0, 0, 0, 0, 2.0 / 17.0, 0, 0, 0, 10.0 / 17.0, 0, 0, 0,
+			16.0 / 17.0, 0, 0, 0, 8.0 / 17.0, 0, 0, 0, 14.0 / 17.0, 0, 0, 0, 6.0 / 17.0, 0, 0, 0,
+		] );
+		const texture = new DataTexture( data, 4, 4, RGBAFormat, FloatType );
+		texture.magFilter = NearestFilter;
+		texture.minFilter = NearestFilter;
+
+		let color = props.color || new Color( 0xffffff );
+		let opacity = props.opacity !== undefined ? props.opacity : 1;
+
+		const res = new Vector3( window.innerWidth, window.innerHeight, window.devicePixelRatio );
+
+
+		this.defineProperties( {
+			color: { value: color, observer: 'uniformChanged' },
+			opacity: { value: opacity, observer: 'uniformChanged' },
+			depthBias: { value: props.depthBias || 0, observer: 'uniformChanged' },
+			highlight: { value: props.highlight || 0, observer: 'uniformChanged' },
+			resolution: { value: res, observer: 'uniformChanged' },
+		} );
+
+		this.uniforms = UniformsUtils.merge( [ this.uniforms, {
+			"uColor": { value: this.color },
+			"uOpacity": { value: this.opacity },
+			"uDepthBias": { value: this.depthBias },
+			"uHighlight": { value: this.highlight },
+			"uResolution": { value: this.resolution },
+			"tDitherMatrix": { value: texture },
+		} ] );
+
+		this.uniforms.tDitherMatrix.value = texture;
+		texture.needsUpdate = true;
+
+		this.vertexShader = `
+
+			attribute vec4 color;
+			attribute float outline;
+
+			varying vec4 vColor;
+			varying float isOutline;
+			varying vec2 vUv;
+
+			uniform vec3 uResolution;
+			uniform float uDepthBias;
+			uniform float uHighlight;
+
+			void main() {
+				float aspect = projectionMatrix[0][0] / projectionMatrix[1][1];
+
+				vColor = color;
+				isOutline = outline;
+
+				vec3 nor = normalMatrix * normal;
+				vec4 pos = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+
+				// nor = (projectionMatrix * vec4(nor, 1.0)).xyz;
+				nor = normalize((nor.xyz) * vec3(1., 1., 0.));
+
+				pos.z -= uDepthBias * 0.1;
+				pos.z -= uHighlight;
+
+				float extrude = 0.0;
+				if (outline > 0.0) {
+					extrude = outline;
+					pos.z += 0.01;
+					pos.z = max(-0.99, pos.z);
+				} else {
+					extrude -= outline;
+					pos.z = max(-1.0, pos.z);
+				}
+
+				pos.xy /= pos.w;
+
+				float dx = nor.x * extrude * 2.2;
+				float dy = nor.y * extrude * 2.2;
+
+				pos.x += (dx) * (1.0 / uResolution.x);
+				pos.y += (dy) * (1.0 / uResolution.y);
+
+				vUv = uv;
+
+				pos.xy *= pos.w;
+
+				gl_Position = pos;
+			}
+		`;
+		this.fragmentShader = `
+			uniform vec3 uColor;
+			uniform float uOpacity;
+			uniform float uHighlight;
+			uniform vec3 uResolution;
+			uniform sampler2D tDitherMatrix;
+
+			varying vec4 vColor;
+			varying float isOutline;
+			varying vec2 vUv;
+
+			void main() {
+
+				float opacity = 1.0;
+				vec3 color = vColor.rgb;
+
+				if (isOutline > 0.0) {
+					color = mix(color * vec3(0.25), vec3(1.0), max(0.0, uHighlight) );
+					color = mix(color, vColor.rgb, max(0.0, -uHighlight) );
+				}
+
+				float dimming = mix(1.0, 0.0, max(0.0, -uHighlight));
+				dimming = mix(dimming, 2.0, max(0.0, uHighlight));
+				opacity = vColor.a * dimming;
+
+				color = mix(vec3(0.5), saturate(color), dimming);
+
+				gl_FragColor = vec4(color, uOpacity);
+
+				opacity = opacity - mod(opacity, 0.25) + 0.25;
+
+				vec2 matCoord = ( mod(gl_FragCoord.xy, 4.0) - vec2(0.5) ) / 4.0;
+				vec4 ditherPattern = texture2D( tDitherMatrix, matCoord.xy );
+				if (opacity < ditherPattern.r) discard;
+			}
+		`;
+
+	}
+	uniformChanged() {
+
+		this.uniforms.uColor.value = this.color;
+		this.uniforms.uOpacity.value = this.opacity;
+		this.uniforms.uDepthBias.value = this.depthBias;
+		this.uniforms.uHighlight.value = this.highlight;
+		this.uniforms.uResolution.value = this.resolution;
+		this.uniformsNeedUpdate = true;
+
+	}
+
+}
+
 /**
  * @author arodic / https://github.com/arodic
  */
@@ -603,6 +755,16 @@ class Helper extends IoLiteMixin( Mesh ) {
 		} );
 
 	}
+	objectChanged() {
+
+		this.updateHelperMatrix();
+
+	}
+	cameraChanged() {
+
+		this.updateHelperMatrix();
+
+	}
 	spaceChanged() {
 
 		this.updateHelperMatrix();
@@ -614,14 +776,13 @@ class Helper extends IoLiteMixin( Mesh ) {
 
 			this.matrix.copy( this.object.matrix );
 			this.matrixWorld.copy( this.object.matrixWorld );
+			this.matrixWorld.decompose( this.position, this.quaternion, this.scale );
 
 		} else {
 
 			super.updateMatrixWorld();
 
 		}
-
-		this.matrixWorld.decompose( this.position, this.quaternion, this.scale );
 
 		if ( this.camera ) {
 
@@ -653,6 +814,17 @@ class Helper extends IoLiteMixin( Mesh ) {
 		this.updateHelperMatrix();
 		this.matrixWorldNeedsUpdate = false;
 		for ( let i = this.children.length; i --; ) this.children[ i ].updateMatrixWorld( force );
+
+	}
+	// TODO: refactor. Consider movinf to utils.
+	makeMesh( geometry ) {
+
+		const props = geometry.props || {};
+		const material = new HelperMaterial( props );
+		const mesh = new Mesh( geometry, material );
+		mesh.hidden = false;
+		mesh.highlight = props.highlight || 0;
+		return mesh;
 
 	}
 
@@ -765,171 +937,65 @@ const InteractiveMixin = ( superclass ) => class extends superclass {
 
 class Interactive extends InteractiveMixin( Helper ) {}
 
-// TODO: pixel-perfect outlines
-class HelperMaterial extends IoLiteMixin( ShaderMaterial ) {
-
-	constructor( color, opacity ) {
-
-		super( {
-			depthTest: true,
-			depthWrite: true,
-			// transparent: true,
-			side: FrontSide,
-		} );
-
-		const data = new Float32Array( [
-			1.0 / 17.0, 0, 0, 0, 9.0 / 17.0, 0, 0, 0, 3.0 / 17.0, 0, 0, 0, 11.0 / 17.0, 0, 0, 0,
-			13.0 / 17.0, 0, 0, 0, 5.0 / 17.0, 0, 0, 0, 15.0 / 17.0, 0, 0, 0, 7.0 / 17.0, 0, 0, 0,
-			4.0 / 17.0, 0, 0, 0, 12.0 / 17.0, 0, 0, 0, 2.0 / 17.0, 0, 0, 0, 10.0 / 17.0, 0, 0, 0,
-			16.0 / 17.0, 0, 0, 0, 8.0 / 17.0, 0, 0, 0, 14.0 / 17.0, 0, 0, 0, 6.0 / 17.0, 0, 0, 0,
-		] );
-		const texture = new DataTexture( data, 4, 4, RGBAFormat, FloatType );
-		texture.magFilter = NearestFilter;
-		texture.minFilter = NearestFilter;
-
-		const res = new Vector3( window.innerWidth, window.innerHeight, window.devicePixelRatio );
-		color = color || new Color( 0xffffff );
-		opacity = opacity !== undefined ? opacity : 1;
-
-		this.defineProperties( {
-			color: { value: color, observer: 'uniformChanged' },
-			opacity: { value: opacity, observer: 'uniformChanged' },
-			depthBias: { value: 0, observer: 'uniformChanged' },
-			highlight: { value: 0, observer: 'uniformChanged' },
-			resolution: { value: res, observer: 'uniformChanged' },
-		} );
-
-		this.uniforms = UniformsUtils.merge( [ this.uniforms, {
-			"uColor": { value: this.color },
-			"uOpacity": { value: this.opacity },
-			"uDepthBias": { value: this.depthBias },
-			"uHighlight": { value: this.highlight },
-			"uResolution": { value: this.resolution },
-			"tDitherMatrix": { value: texture },
-		} ] );
-
-		this.uniforms.tDitherMatrix.value = texture;
-		texture.needsUpdate = true;
-
-		this.vertexShader = `
-
-			attribute vec4 color;
-			attribute float outline;
-
-			varying vec4 vColor;
-			varying float isOutline;
-
-			uniform vec3 uResolution;
-			uniform float uDepthBias;
-			uniform float uHighlight;
-
-			void main() {
-				float aspect = projectionMatrix[0][0] / projectionMatrix[1][1];
-
-				vColor = color;
-				isOutline = outline;
-
-				vec3 nor = normalMatrix * normal;
-				vec4 pos = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
-				float pixelRatio = uResolution.z;
-
-				// nor = (projectionMatrix * vec4(nor, 1.0)).xyz;
-				nor = normalize((nor.xyz) * vec3(1., 1., 0.));
-
-				pos.z -= uDepthBias * 0.1;
-				pos.z -= uHighlight;
-
-				float extrude = 0.0;
-				if (outline > 0.0) {
-					extrude = outline;
-					pos.z += 0.01;
-					pos.z = max(-0.99, pos.z);
-				} else {
-					extrude -= outline;
-					pos.z = max(-1.0, pos.z);
-				}
-
-				pos.xy /= pos.w;
-
-				float dx = nor.x * extrude * 2.2;
-				float dy = nor.y * extrude * 2.2;
-
-				pos.x += (dx) * (1.0 / uResolution.x);
-				pos.y += (dy) * (1.0 / uResolution.y);
-
-				pos.xy *= pos.w;
-
-				gl_Position = pos;
-			}
-		`;
-		this.fragmentShader = `
-			uniform vec3 uColor;
-			uniform float uOpacity;
-			uniform float uHighlight;
-			uniform vec3 uResolution;
-			uniform sampler2D tDitherMatrix;
-
-			varying vec4 vColor;
-			varying float isOutline;
-
-			void main() {
-
-				float opacity = 1.0;
-				vec3 color = vec3(1.0);
-				float pixelRatio = 1.0;//uResolution.z;
-
-				if (isOutline > 0.0) {
-					color = mix(color * vec3(0.2), vec3(1.0), max(0.0, uHighlight) );
-					color = mix(color, vec3(0.5), max(0.0, -uHighlight) );
-				} else {
-					color = uColor * vColor.rgb;
-				}
-
-				float dimming = mix(1.0, 0.2, max(0.0, -uHighlight));
-				dimming = mix(dimming, dimming * 1.25, max(0.0, uHighlight));
-				opacity = uOpacity * vColor.a * dimming;
-
-				color = mix(vec3(0.5), saturate(color), dimming);
-
-				gl_FragColor = vec4(color, opacity);
-
-				// opacity = opacity - mod(opacity, 0.25) + 0.25;
-
-				vec2 matCoord = ( mod(gl_FragCoord.xy / pixelRatio, 4.0) - vec2(0.5) ) / 4.0;
-				vec4 ditherPattern = texture2D( tDitherMatrix, matCoord.xy );
-				if (opacity < ditherPattern.r) discard;
-			}
-		`;
-
-	}
-	uniformChanged() {
-
-		this.uniforms.uColor.value = this.color;
-		this.uniforms.uOpacity.value = this.opacity;
-		this.uniforms.uDepthBias.value = this.depthBias;
-		this.uniforms.uHighlight.value = this.highlight;
-		this.uniforms.uResolution.value = this.resolution;
-		this.uniformsNeedUpdate = true;
-
-	}
-
-}
-
 /**
  * @author arodic / https://github.com/arodic
  */
 
-class HelperMesh extends Mesh {
+class TextHelper extends IoLiteMixin( Sprite ) {
 
-	constructor( geometry, props = {} ) {
+	constructor( props = {} ) {
 
 		super();
-		this.geometry = geometry;
-		this.material = new HelperMaterial( props.color, props.opacity || 1 );
+
+		this.defineProperties( {
+			text: '',
+			color: props.color || 'black',
+			size: 0.33,
+		} );
+
 		this.scaleTarget = new Vector3( 1, 1, 1 );
-		this.hidden = false;
-		this.highlight = 0;
-		this.name = props.name;
+
+		this.canvas = document.createElement( 'canvas' );
+		this.ctx = this.canvas.getContext( '2d' );
+		this.texture = new Texture( this.canvas );
+
+		this.material.map = this.texture;
+
+		this.canvas.width = 256;
+		this.canvas.height = 64;
+
+		this.scale.set( 1, 0.25, 1 );
+		this.scale.multiplyScalar( this.size );
+
+		this.position.set( props.position[ 0 ], props.position[ 1 ], props.position[ 2 ] );
+
+		this.text = '-+0.4';
+
+	}
+	textChanged() {
+
+		const ctx = this.ctx;
+		const canvas = this.canvas;
+
+		ctx.clearRect( 0, 0, canvas.width, canvas.height );
+
+		ctx.font = 'bold ' + canvas.height * 0.9 + 'px monospace';
+
+		ctx.fillStyle = this.color;
+		ctx.textAlign = "center";
+		ctx.textBaseline = "middle";
+
+		ctx.strokeStyle = 'black';
+		ctx.lineWidth = canvas.height / 8;
+
+		ctx.strokeText( this.text, canvas.width / 2, canvas.height / 2 );
+		ctx.fillText( this.text, canvas.width / 2, canvas.height / 2 );
+
+		ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
+
+		ctx.fillText( this.text, canvas.width / 2, canvas.height / 2 );
+
+		this.texture.needsUpdate = true;
 
 	}
 
@@ -1334,6 +1400,8 @@ class HelperGeometry extends BufferGeometry {
 
 		super();
 
+		this.props = props;
+
 		this.index = new Uint16BufferAttribute( [], 1 );
 		this.addAttribute( 'position', new Float32BufferAttribute( [], 3 ) );
 		this.addAttribute( 'uv', new Float32BufferAttribute( [], 2 ) );
@@ -1411,9 +1479,9 @@ class HelperGeometry extends BufferGeometry {
 			const colorArray = chunkGeo.attributes.color.array;
 			for ( let j = 0; j < vertCount; j ++ ) {
 
-				const r = j * 4 + 0; colorArray[ r ] = color[ 0 ] !== undefined ? color[ 0 ] : colorArray[ r ] || 1;
-				const g = j * 4 + 1; colorArray[ g ] = color[ 1 ] !== undefined ? color[ 1 ] : colorArray[ g ] || 1;
-				const b = j * 4 + 2; colorArray[ b ] = color[ 2 ] !== undefined ? color[ 2 ] : colorArray[ b ] || 1;
+				const r = j * 4 + 0; colorArray[ r ] = color[ 0 ] !== undefined ? color[ 0 ] : colorArray[ r ];
+				const g = j * 4 + 1; colorArray[ g ] = color[ 1 ] !== undefined ? color[ 1 ] : colorArray[ g ];
+				const b = j * 4 + 2; colorArray[ b ] = color[ 2 ] !== undefined ? color[ 2 ] : colorArray[ b ];
 				const a = j * 4 + 3; colorArray[ a ] = color[ 3 ] !== undefined ? color[ 3 ] : colorArray[ a ] || 1;
 
 			}
@@ -1471,28 +1539,6 @@ class HelperGeometry extends BufferGeometry {
 		}
 
 		BufferGeometryUtils.mergeBufferGeometries( chunkGeometries, false, this );
-
-	}
-
-}
-
-/**
- * @author arodic / https://github.com/arodic
- */
-
-const PI = Math.PI;
-const HPI = PI / 2;
-const EPS = 0.000001;
-
-class Corner3Geometry extends HelperGeometry {
-
-	constructor() {
-
-		super( [
-			[ new CylinderBufferGeometry( EPS, EPS, 1, 5, 2, false ), { color: [ 1, 0, 0 ], position: [ 0.5, 0, 0 ], rotation: [ 0, 0, HPI ], thickness: 1 } ],
-			[ new CylinderBufferGeometry( EPS, EPS, 1, 5, 2, false ), { color: [ 0, 1, 0 ], position: [ 0, 0.5, 0 ], rotation: [ 0, HPI, 0 ], thickness: 1 } ],
-			[ new CylinderBufferGeometry( EPS, EPS, 1, 5, 2, false ), { color: [ 0, 0, 1 ], position: [ 0, 0, 0.5 ], rotation: [ HPI, 0, 0 ], thickness: 1 } ],
-		] );
 
 	}
 
@@ -1571,6 +1617,9 @@ class Animation extends IoLiteMixin( Object ) {
 // TODO: dispose
 
 // Reusable utility variables
+const PI = Math.PI;
+const HPI = PI / 2;
+const EPS = 0.000001;
 const AXIS_HIDE_TRESHOLD = 0.99;
 const PLANE_HIDE_TRESHOLD = 0.1;
 const AXIS_FLIP_TRESHOLD = 0;
@@ -1587,29 +1636,12 @@ function hasAxisAny( str, chars ) {
 
 }
 
-class HelperMeshes extends Array {
-
-	constructor( groupDef ) {
-
-		super();
-		for ( let name in groupDef ) {
-
-			const mesh = new HelperMesh( groupDef[ name ], { name: name } );
-			this.push( mesh );
-			this[ name ] = mesh;
-
-		}
-
-	}
-
-}
-
 const handleGeometry = {
-	XYZ: new Corner3Geometry()
-};
-
-const pickerGeometry = {
-	XYZ: new HelperGeometry( new OctahedronBufferGeometry( 0.5, 0 ), { color: [ 1, 1, 1, 0.25 ] } )
+	XYZ: new HelperGeometry( [
+		[ new CylinderBufferGeometry( EPS, EPS, 1, 4, 2, true ), { color: [ 1, 0, 0 ], position: [ 0.5, 0, 0 ], rotation: [ 0, 0, HPI ], thickness: 1 } ],
+		[ new CylinderBufferGeometry( EPS, EPS, 1, 4, 2, true ), { color: [ 0, 1, 0 ], position: [ 0, 0.5, 0 ], rotation: [ 0, HPI, 0 ], thickness: 1 } ],
+		[ new CylinderBufferGeometry( EPS, EPS, 1, 4, 2, true ), { color: [ 0, 0, 1 ], position: [ 0, 0, 0.5 ], rotation: [ HPI, 0, 0 ], thickness: 1 } ],
+	] )
 };
 
 class TransformHelper extends Helper {
@@ -1621,7 +1653,17 @@ class TransformHelper extends Helper {
 	}
 	get pickerGeometry() {
 
-		return pickerGeometry;
+		return {};
+
+	}
+	get guideGeometry() {
+
+		return {};
+
+	}
+	get infoGeometry() {
+
+		return {};
 
 	}
 	constructor( props ) {
@@ -1634,6 +1676,8 @@ class TransformHelper extends Helper {
 			showZ: { value: true, observer: 'paramChanged' },
 			axis: null,
 			active: false,
+			doHide: true,
+			doFlip: true,
 			hideX: { value: false, observer: 'paramChanged' },
 			hideY: { value: false, observer: 'paramChanged' },
 			hideZ: { value: false, observer: 'paramChanged' },
@@ -1651,14 +1695,18 @@ class TransformHelper extends Helper {
 		this.axisDotEye = new Vector3();
 		this.size = 0.05;
 
-		this.handles = new HelperMeshes( this.handleGeometry );
-		this.pickers = new HelperMeshes( this.pickerGeometry );
+		this.handles = this.initAxes( this.handleGeometry );
+		this.pickers = this.initPickers( this.pickerGeometry );
+		this.guides = this.initGuides( this.guideGeometry );
+		this.infos = this.initInfoMeshes( this.infoGeometry );
 
-		if ( this.handles.length ) this.add( ...this.handles );
-		if ( this.pickers.length ) this.add( ...this.pickers );
+		this.setAxis = this.setAxis.bind( this );
+		this.setGuide = this.setGuide.bind( this );
+		this.setInfo = this.setInfo.bind( this );
 
-		// Hide pickers
-		for ( let i = 0; i < this.pickers.length; i ++ ) this.pickers[ i ].material.visible = false;
+		this.updateAxis = this.updateAxis.bind( this );
+		this.updateGuide = this.updateGuide.bind( this );
+		this.updateInfo = this.updateInfo.bind( this );
 
 		this.animation = new Animation();
 
@@ -1669,12 +1717,93 @@ class TransformHelper extends Helper {
 		} );
 
 	}
+	initAxes( axesDef ) {
+
+		const axes = [];
+		for ( let name in axesDef ) {
+
+			const mesh = this.makeMesh( axesDef[ name ] );
+			mesh.name = name;
+			mesh.scaleTarget = new Vector3( 1, 1, 1 );
+			axes.push( mesh );
+			axes[ name ] = mesh;
+			this.add( mesh );
+
+		}
+		return axes;
+
+	}
+	initPickers( pickersDef ) {
+
+		const axes = [];
+		for ( let name in pickersDef ) {
+
+			const mesh = this.makeMesh( pickersDef[ name ] );
+			mesh.name = name;
+			mesh.scaleTarget = new Vector3( 1, 1, 1 );
+			mesh.material.visible = false;
+			axes.push( mesh );
+			axes[ name ] = mesh;
+			this.add( mesh );
+
+		}
+		return axes;
+
+	}
+	initGuides( guidesDef ) {
+
+		const axes = [];
+		for ( let name in guidesDef ) {
+
+			const mesh = this.makeMesh( guidesDef[ name ] );
+			mesh.name = name;
+			mesh.scaleTarget = new Vector3( 1, 1, 1 );
+			mesh.isGuide = true;
+			mesh.highlight = - 2;
+			axes.push( mesh );
+			axes[ name ] = mesh;
+			this.add( mesh );
+
+		}
+		return axes;
+
+	}
+	initInfoMeshes( infosDef ) {
+
+		const infos = [];
+		for ( let name in infosDef ) {
+
+			const mesh = new TextHelper( infosDef[ name ] );
+			mesh.name = name;
+			mesh.positionTarget = mesh.position.clone();
+			mesh.material.opacity = 0;
+			mesh.isInfo = true;
+			infos.push( mesh );
+			infos[ name ] = mesh;
+			this.add( mesh );
+
+		}
+		return infos;
+
+	}
+
 	traverseAxis( callback ) {
 
 		for ( let i = this.handles.length; i --; ) callback( this.handles[ i ] );
 		for ( let i = this.pickers.length; i --; ) callback( this.pickers[ i ] );
 
 	}
+	traverseGuides( callback ) {
+
+		for ( let i = this.guides.length; i --; ) callback( this.guides[ i ] );
+
+	}
+	traverseInfos( callback ) {
+
+		for ( let i = this.infos.length; i --; ) callback( this.infos[ i ] );
+
+	}
+
 	spaceChanged() {
 
 		super.spaceChanged();
@@ -1684,7 +1813,16 @@ class TransformHelper extends Helper {
 	}
 	objectChanged() {
 
-		this.paramChanged();
+		super.objectChanged();
+		this.hideX = false;
+		this.hideY = false;
+		this.hideZ = false;
+		this.hideXY = false;
+		this.hideYZ = false;
+		this.hideXZ = false;
+		this.flipX = false;
+		this.flipY = false;
+		this.flipZ = false;
 		this.animateScaleUp();
 
 	}
@@ -1701,40 +1839,15 @@ class TransformHelper extends Helper {
 	}
 	axisChanged() {
 
-		this.traverseAxis( axis => {
-
-			axis.highlight = this.axis ? hasAxisAny( axis.name, this.axis ) ? 1 : - 0.75 : 0;
-
-		} );
+		this.paramChanged();
 		this.animation.startAnimation( 0.5 );
 
 	}
 	paramChanged() {
 
-		this.traverseAxis( axis => {
-
-			axis.hidden = false;
-			const name = axis.name.split( '_' ).pop() || null;
-
-			// Hide by show[axis] parameter
-			if ( name.indexOf( 'X' ) !== - 1 && ! this.showX ) axis.hidden = true;
-			if ( name.indexOf( 'Y' ) !== - 1 && ! this.showY ) axis.hidden = true;
-			if ( name.indexOf( 'Z' ) !== - 1 && ! this.showZ ) axis.hidden = true;
-			if ( name.indexOf( 'E' ) !== - 1 && ( ! this.showX || ! this.showY || ! this.showZ ) ) axis.hidden = true;
-
-			// Hide axis facing the camera
-			if ( ( name == 'X' || name == 'XYZ' ) && this.hideX ) axis.hidden = true;
-			if ( ( name == 'Y' || name == 'XYZ' ) && this.hideY ) axis.hidden = true;
-			if ( ( name == 'Z' || name == 'XYZ' ) && this.hideZ ) axis.hidden = true;
-			if ( name == 'XY' && this.hideXY ) axis.hidden = true;
-			if ( name == 'YZ' && this.hideYZ ) axis.hidden = true;
-			if ( name == 'XZ' && this.hideXZ ) axis.hidden = true;
-			// Flip axis
-			if ( name.indexOf( 'X' ) !== - 1 || axis.name.indexOf( 'R' ) !== - 1 ) axis.scaleTarget.x = this.flipX ? - 1 : 1;
-			if ( name.indexOf( 'Y' ) !== - 1 || axis.name.indexOf( 'R' ) !== - 1 ) axis.scaleTarget.y = this.flipY ? - 1 : 1;
-			if ( name.indexOf( 'Z' ) !== - 1 || axis.name.indexOf( 'R' ) !== - 1 ) axis.scaleTarget.z = this.flipZ ? - 1 : 1;
-
-		} );
+		this.traverseAxis( this.setAxis );
+		this.traverseGuides( this.setGuide );
+		this.traverseInfos( this.setInfo );
 		this.animation.startAnimation( 0.5 );
 
 	}
@@ -1745,15 +1858,12 @@ class TransformHelper extends Helper {
 		this.worldY.set( 0, 1, 0 ).applyQuaternion( this.quaternion );
 		this.worldZ.set( 0, 0, 1 ).applyQuaternion( this.quaternion );
 		this.axisDotEye.set( this.worldX.dot( this.eye ), this.worldY.dot( this.eye ), this.worldZ.dot( this.eye ) );
-
 		const xDotE = this.axisDotEye.x;
 		const yDotE = this.axisDotEye.y;
 		const zDotE = this.axisDotEye.z;
-
 		// Hide axis facing the camera
-		if ( ! this.active ) { // skip while controls are active
+		if ( ! this.active ) {
 
-			// TODO: fix incorrect flip on space shange
 			this.hideX = Math.abs( xDotE ) > AXIS_HIDE_TRESHOLD;
 			this.hideY = Math.abs( yDotE ) > AXIS_HIDE_TRESHOLD;
 			this.hideZ = Math.abs( zDotE ) > AXIS_HIDE_TRESHOLD;
@@ -1765,18 +1875,102 @@ class TransformHelper extends Helper {
 			this.flipZ = zDotE < AXIS_FLIP_TRESHOLD;
 
 		}
+		if ( this.object ) {
 
-		this.traverseAxis( axis => this.updateAxis( axis ) );
+			this.traverseAxis( this.updateAxis );
+			this.traverseGuides( this.updateGuide );
+			this.traverseInfos( this.updateInfo );
+
+		}
 
 	}
 	// TODO: optimize, make less ugly and framerate independent!
+	setAxis( axis ) {
+
+		axis.hidden = false;
+		const name = axis.name.split( '_' ).pop() || null;
+		axis.highlight = this.axis ? hasAxisAny( axis.name, this.axis ) ? 1 : - 0.75 : 0;
+		// Hide by show[axis] parameter
+		if ( this.doHide ) {
+
+			if ( name.indexOf( 'X' ) !== - 1 && ! this.showX ) axis.hidden = true;
+			if ( name.indexOf( 'Y' ) !== - 1 && ! this.showY ) axis.hidden = true;
+			if ( name.indexOf( 'Z' ) !== - 1 && ! this.showZ ) axis.hidden = true;
+			if ( name.indexOf( 'E' ) !== - 1 && ( ! this.showX || ! this.showY || ! this.showZ ) ) axis.hidden = true;
+			// Hide axis facing the camera
+			if ( ( name == 'X' || name == 'XYZ' ) && this.hideX ) axis.hidden = true;
+			if ( ( name == 'Y' || name == 'XYZ' ) && this.hideY ) axis.hidden = true;
+			if ( ( name == 'Z' || name == 'XYZ' ) && this.hideZ ) axis.hidden = true;
+			if ( name == 'XY' && this.hideXY ) axis.hidden = true;
+			if ( name == 'YZ' && this.hideYZ ) axis.hidden = true;
+			if ( name == 'XZ' && this.hideXZ ) axis.hidden = true;
+
+		}
+		// Flip axis
+		if ( this.doFlip ) {
+
+			if ( name.indexOf( 'X' ) !== - 1 || axis.name.indexOf( 'R' ) !== - 1 ) axis.scaleTarget.x = this.flipX ? - 1 : 1;
+			if ( name.indexOf( 'Y' ) !== - 1 || axis.name.indexOf( 'R' ) !== - 1 ) axis.scaleTarget.y = this.flipY ? - 1 : 1;
+			if ( name.indexOf( 'Z' ) !== - 1 || axis.name.indexOf( 'R' ) !== - 1 ) axis.scaleTarget.z = this.flipZ ? - 1 : 1;
+
+		}
+
+	}
+	setGuide( guide ) {
+
+		guide.highlight = this.axis ? hasAxisAny( guide.name, this.axis ) ? 0 : - 2 : - 2;
+		// Flip axis
+		if ( this.doFlip ) {
+
+			const name = guide.name.split( '_' ).pop() || null;
+			if ( name.indexOf( 'X' ) !== - 1 || guide.name.indexOf( 'R' ) !== - 1 ) guide.scaleTarget.x = this.flipX ? - 1 : 1;
+			if ( name.indexOf( 'Y' ) !== - 1 || guide.name.indexOf( 'R' ) !== - 1 ) guide.scaleTarget.y = this.flipY ? - 1 : 1;
+			if ( name.indexOf( 'Z' ) !== - 1 || guide.name.indexOf( 'R' ) !== - 1 ) guide.scaleTarget.z = this.flipZ ? - 1 : 1;
+
+		}
+
+	}
+	setInfo( info ) {
+
+		info.highlight = this.axis ? hasAxisAny( info.name, this.axis ) ? 1 : 0 : 0;
+		// Flip axis
+		if ( this.doFlip ) {
+
+			const name = info.name.split( '_' ).pop() || null;
+			if ( name.indexOf( 'X' ) !== - 1 ) info.positionTarget.x = this.flipX ? - 1.2 : 1.2;
+			if ( name.indexOf( 'Y' ) !== - 1 ) info.positionTarget.y = this.flipY ? - 1.2 : 1.2;
+			if ( name.indexOf( 'Z' ) !== - 1 ) info.positionTarget.z = this.flipZ ? - 1.2 : 1.2;
+
+		}
+
+	}
 	updateAxis( axis ) {
 
 		axis.visible = true;
-		const highlight = axis.hidden ? - 1.5 : axis.highlight || 0;
+		const highlight = axis.hidden ? - 2 : axis.highlight || 0;
 		axis.material.highlight = ( 4 * axis.material.highlight + highlight ) / 5;
-		if ( axis.material.highlight < - 1.49 ) axis.visible = false;
+		if ( axis.material.highlight < - 1.99 ) axis.visible = false;
 		axis.scale.multiplyScalar( 5 ).add( axis.scaleTarget ).divideScalar( 6 );
+
+	}
+	updateGuide( guide ) {
+
+		guide.visible = true;
+		const highlight = guide.hidden ? - 2 : guide.highlight || 0;
+		guide.material.highlight = ( 8 * guide.material.highlight + highlight ) / 9;
+		if ( guide.material.highlight < - 1.99 ) guide.visible = false;
+		guide.scale.multiplyScalar( 5 ).add( guide.scaleTarget ).divideScalar( 6 );
+
+	}
+	updateInfo( info ) {
+
+		info.visible = true;
+		info.material.opacity = ( 8 * info.material.opacity + info.highlight ) / 9;
+		if ( info.material.opacity <= 0.001 ) info.visible = false;
+		if ( info.name === 'X' ) info.text = Math.round( this.object.position.x * 100 ) / 100;
+		if ( info.name === 'Y' ) info.text = Math.round( this.object.position.y * 100 ) / 100;
+		if ( info.name === 'Z' ) info.text = Math.round( this.object.position.z * 100 ) / 100;
+		info.position.multiplyScalar( 5 ).add( info.positionTarget ).divideScalar( 6 );
 
 	}
 
@@ -1799,7 +1993,11 @@ const _m1 = new Matrix4();
 const _m2 = new Matrix4();
 const _one = new Vector3( 1, 1, 1 );
 
-const corner3Geometry = new Corner3Geometry();
+const corner3Geometry = new HelperGeometry( [
+	[ new CylinderBufferGeometry( EPS$1, EPS$1, 1, 4, 2, true ), { color: [ 1, 0, 0 ], position: [ 0.5, 0, 0 ], rotation: [ 0, 0, HPI$1 ], thickness: 1 } ],
+	[ new CylinderBufferGeometry( EPS$1, EPS$1, 1, 4, 2, true ), { color: [ 0, 1, 0 ], position: [ 0, 0.5, 0 ], rotation: [ 0, HPI$1, 0 ], thickness: 1 } ],
+	[ new CylinderBufferGeometry( EPS$1, EPS$1, 1, 4, 2, true ), { color: [ 0, 0, 1 ], position: [ 0, 0, 0.5 ], rotation: [ HPI$1, 0, 0 ], thickness: 1 } ],
+] );
 
 const handleGeometry$1 = {
 	XYZ: new HelperGeometry( corner3Geometry, { color: [ 1, 1, 0 ], rotation: [ HPI$1, 0, PI$1 ] } ),
@@ -1827,6 +2025,8 @@ class SelectionHelper extends Helper {
 
 		const axis = new TransformHelper( { object: this } );
 		axis.size = 0.01;
+		axis.doFlip = false;
+		axis.doHide = false;
 		super.add( axis );
 
 		if ( this.object && this.object.geometry ) {
@@ -1852,7 +2052,8 @@ class SelectionHelper extends Helper {
 		this.corners = {};
 		for ( let name in groups ) {
 
-			this.corners[ name ] = new HelperMesh( groups[ name ], { name: name } );
+			this.corners[ name ] = this.makeMesh( groups[ name ], { name: name } );
+			// TODO: name?
 			this.add( this.corners[ name ] );
 
 		}
@@ -1862,7 +2063,9 @@ class SelectionHelper extends Helper {
 
 		this.updateHelperMatrix();
 		this.matrixWorldNeedsUpdate = false;
+
 		this.object.matrixWorld.decompose( _position$1, _quaternion$1, _scale$1 );
+
 		_m1.compose( this.position, this.quaternion, _one );
 
 		_scale$1.x = Math.abs( _scale$1.x );
@@ -1892,7 +2095,6 @@ class SelectionHelper extends Helper {
 			this.children[ i ].matrixWorld.copy( _m1 ).multiply( _m2 );
 
 		}
-
 		this.children[ 8 ].updateMatrixWorld();
 
 	}
@@ -1974,12 +2176,6 @@ const CLICK_TIME = 250;
 
 class SelectionControls extends Interactive {
 
-	// get isSelection() { return true; } // TODO?
-	get isSelectionControls() {
-
-		return true;
-
-	}
 	constructor( props ) {
 
 		super( props );
@@ -2111,9 +2307,9 @@ class SelectionControls extends Interactive {
 	update() {
 
 		// Reset selection transform.
-		// this.position.set(0,0,0);
-		// this.quaternion.set(0,0,0,1);
-		// this.scale.set(1,1,1);
+		this.position.set( 0, 0, 0 );
+		this.quaternion.set( 0, 0, 0, 1 );
+		this.scale.set( 1, 1, 1 );
 
 		// TODO: temp for testing
 		this.boundingBox.makeEmpty();
@@ -2270,11 +2466,11 @@ class SelectionControls extends Interactive {
 	}
 	updateMatrixWorld( force ) {
 
-		// TODO: fix transform propagation lag
 		// Extract tranformations before and after matrix update.
 		this.matrixWorld.decompose( posOld, quatOld, scaleOld );
 		super.updateMatrixWorld( force );
 		this.matrixWorld.decompose( pos, quat, scale );
+
 		// Get transformation offsets from transform deltas.
 		posOffset.copy( pos ).sub( posOld );
 		quatOffset.copy( quat ).multiply( quatOld.inverse() );
@@ -2288,7 +2484,7 @@ class SelectionControls extends Interactive {
 			// get local transformation variables.
 			this.selected[ i ].updateMatrixWorld();
 			this.selected[ i ].matrixWorld.decompose( itemPos, itemQuat, itemScale );
-			if ( this.selected[ i ].parent ) this.selected[ i ].parent.matrixWorld.decompose( parentPos, parentQuat, parentScale );
+			this.selected[ i ].parent.matrixWorld.decompose( parentPos, parentQuat, parentScale );
 			parentQuatInv.copy( parentQuat ).inverse();
 			itemQuatInv.copy( itemQuat ).inverse();
 			// Transform selected in local space.
