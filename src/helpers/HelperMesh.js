@@ -11,7 +11,6 @@ export class HelperMesh extends Mesh {
 		const props = geometry.props || {};
 		this.geometry = geometry;
 		this.material = new HelperMaterial(props);
-		this.scaleTarget = new Vector3(1, 1, 1);
 		this.hidden = false;
 		this.highlight = props.highlight || 0;
 	}

@@ -51,11 +51,10 @@ export class Helper extends IoLiteMixin(Mesh) {
 		if (this.object) {
 			this.matrix.copy(this.object.matrix);
 			this.matrixWorld.copy(this.object.matrixWorld);
+			this.matrixWorld.decompose(this.position, this.quaternion, this.scale);
 		} else {
 			super.updateMatrixWorld();
 		}
-
-		this.matrixWorld.decompose(this.position, this.quaternion, this.scale);
 
 		if (this.camera) {
 			let eyeDistance = 1;

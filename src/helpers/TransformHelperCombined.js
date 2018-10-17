@@ -143,16 +143,14 @@ export class TransformHelperCombined extends TransformHelper {
 	get guideGeometry() {
 		return guideGeometry;
 	}
-	paramChanged() {
-		super.paramChanged();
-		this.traverseAxis(axis => {
-			// Hide per-axis scale in world mode
-			if ((axis.name == 'S_X' || axis.name == 'S_Y' || axis.name == 'S_Z') && this.space === 'world') axis.hidden = true;
-			if ((axis.name == 'S_XY' || axis.name == 'S_YZ' || axis.name == 'S_XZ') && this.space === 'world') axis.hidden = true;
+	setAxis(axis) {
+		super.setAxis(axis);
+		// Hide per-axis scale in world mode
+		if ((axis.name == 'S_X' || axis.name == 'S_Y' || axis.name == 'S_Z') && this.space === 'world') axis.hidden = true;
+		if ((axis.name == 'S_XY' || axis.name == 'S_YZ' || axis.name == 'S_XZ') && this.space === 'world') axis.hidden = true;
 
-			if (axis.name == 'R_Z' && this.hideXY) axis.hidden = true;
-			if (axis.name == 'R_X' && this.hideYZ) axis.hidden = true;
-			if (axis.name == 'R_Y' && this.hideXZ) axis.hidden = true;
-		});
+		if (axis.name == 'R_Z' && this.hideXY) axis.hidden = true;
+		if (axis.name == 'R_X' && this.hideYZ) axis.hidden = true;
+		if (axis.name == 'R_Y' && this.hideXZ) axis.hidden = true;
 	}
 }

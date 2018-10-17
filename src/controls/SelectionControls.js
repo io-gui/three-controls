@@ -168,9 +168,9 @@ export class SelectionControls extends Interactive {
 	}
 	update() {
 		// Reset selection transform.
-		// this.position.set(0,0,0);
-		// this.quaternion.set(0,0,0,1);
-		// this.scale.set(1,1,1);
+		this.position.set(0,0,0);
+		this.quaternion.set(0,0,0,1);
+		this.scale.set(1,1,1);
 
 		// TODO: temp for testing
 		this.boundingBox.makeEmpty();
@@ -302,6 +302,7 @@ export class SelectionControls extends Interactive {
 		this.matrixWorld.decompose(posOld, quatOld, scaleOld);
 		super.updateMatrixWorld(force);
 		this.matrixWorld.decompose(pos, quat, scale);
+
 		// Get transformation offsets from transform deltas.
 		posOffset.copy(pos).sub(posOld);
 		quatOffset.copy(quat).multiply(quatOld.inverse());
@@ -314,7 +315,7 @@ export class SelectionControls extends Interactive {
 			// get local transformation variables.
 			this.selected[i].updateMatrixWorld();
 			this.selected[i].matrixWorld.decompose(itemPos, itemQuat, itemScale);
-			if (this.selected[i].parent) this.selected[i].parent.matrixWorld.decompose(parentPos, parentQuat, parentScale);
+			this.selected[i].parent.matrixWorld.decompose(parentPos, parentQuat, parentScale);
 			parentQuatInv.copy(parentQuat).inverse();
 			itemQuatInv.copy(itemQuat).inverse();
 			// Transform selected in local space.

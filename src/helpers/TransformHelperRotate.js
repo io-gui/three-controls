@@ -68,6 +68,12 @@ const guideGeometry = {
 	Z: new HelperGeometry(rotateGuideGeometry, {color: colors['blue'], opacity: 0.5, rotation: [0, 0, -HPI]}),
 };
 
+function hasAxisAny(str, chars) {
+	let has = true;
+	str.split('').some(a => { if (chars.indexOf(a) === -1) has = false; });
+	return has;
+}
+
 export class TransformHelperRotate extends TransformHelper {
 	get handleGeometry() {
 		return handleGeometry;
@@ -78,14 +84,30 @@ export class TransformHelperRotate extends TransformHelper {
 	get guideGeometry() {
 		return guideGeometry;
 	}
-	axisChanged() {
-		super.axisChanged();
-		if (this.axis === "XYZ") {
-			this.guides['X'].highlight = -2;
-			this.guides['Y'].highlight = -2;
-			this.guides['Z'].highlight = -2;
-		}
+	get infoGeometry() {
+		return {
+			X: {position: [0.5, 0, 0], color: 'red'},
+			Y: {position: [0, 0.5, 0], color: 'green'},
+			Z: {position: [0, 0, 0.5], color: 'blue'},
+		};
 	}
+	setGuide(guide) {
+		super.setGuide(guide);
+		if (this.axis === "XYZ") guide.highlight = -2;
+	}
+	updateHelperMatrix() {
+		// TODO: simplify rotation handle logic
+		super.updateHelperMatrix();
+		const quaternion = this.space === "local" ? this.quaternion : _identityQuaternion;
+		// Align handles to current local or world rotation
+		_tempQuaternion.copy(quaternion).inverse();
+		_alignVector.copy(this.eye).applyQuaternion(_tempQuaternion);
+		_worldY.copy(_unitY).applyQuaternion(_tempQuaternion);
+		// TODO: optimize!
+		this.traverseAxis(axis => this.updateAxesDirection(axis));
+		this.traverseGuides(axis => this.updateAxesDirection(axis));
+	}
+	// TODO: move to updateAxis?
 	updateAxesDirection(axis){
 		axis.quaternion.copy(_identityQuaternion);
 		if (axis.name.indexOf('XYZ') !== -1) {
@@ -110,17 +132,23 @@ export class TransformHelperRotate extends TransformHelper {
 			axis.quaternion.copy(_tempQuaternion);
 		}
 	}
-	updateHelperMatrix() {
-		// TODO: simplify rotation handle logic
-		super.updateHelperMatrix();
-		const quaternion = this.space === "local" ? this.quaternion : _identityQuaternion;
-		// Align handles to current local or world rotation
-		_tempQuaternion.copy(quaternion).inverse();
-		_alignVector.copy(this.eye).applyQuaternion(_tempQuaternion);
-		_worldY.copy(_unitY).applyQuaternion(_tempQuaternion);
-		// // TODO: optimize!
-		for (let i = this.handles.length; i--;) this.updateAxesDirection(this.handles[i]);
-		for (let i = this.pickers.length; i--;) this.updateAxesDirection(this.pickers[i]);
-		for (let i = this.guides.length; i--;) this.updateAxesDirection(this.guides[i]);
+	setInfo(info) {
+		info.highlight = this.axis ? hasAxisAny(info.name, this.axis) ? 1 : 0 : 0;
+		// Flip axis
+		if (this.doFlip) {
+			const name = info.name.split('_').pop() || null;
+			if (name.indexOf('X') !== -1) info.positionTarget.x = this.flipX ? -0.5 : 0.5;
+			if (name.indexOf('Y') !== -1) info.positionTarget.y = this.flipY ? -0.5 : 0.5;
+			if (name.indexOf('Z') !== -1) info.positionTarget.z = this.flipZ ? -0.5 : 0.5;
+		}
+	}
+	updateInfo(info) {
+		info.visible = true;
+		info.material.opacity = (8 * info.material.opacity + info.highlight) / 9;
+		if (info.material.opacity <= 0.001) info.visible = false;
+		if (info.name === 'X') info.text = Math.round((this.object.rotation.x / Math.PI) * 180 * 100) / 100;
+		if (info.name === 'Y') info.text = Math.round((this.object.rotation.y / Math.PI) * 180 * 100) / 100;
+		if (info.name === 'Z') info.text = Math.round((this.object.rotation.z / Math.PI) * 180 * 100) / 100;
+		info.position.multiplyScalar(5).add(info.positionTarget).divideScalar(6);
 	}
 }

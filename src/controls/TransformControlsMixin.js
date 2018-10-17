@@ -116,6 +116,7 @@ export const TransformControlsMixin = (superclass) => class extends InteractiveM
 	}
 	transform() {}
 	updateGuide(axis) {
+		super.updateGuide(axis);
 		if (this.active === true) {
 			let offset = new Vector3().copy(this.positionStart).sub(this.object.position).divide(this.scale);
 			axis.position.copy(offset).applyQuaternion(this.worldQuaternionInv);
@@ -128,7 +129,6 @@ export const TransformControlsMixin = (superclass) => class extends InteractiveM
 		}
 	}
 	updateAxis(axis) {
-		if (axis.isGuide) this.updateGuide(axis);
 		super.updateAxis(axis);
 		if (!this.enabled) axis.material.highlight = (10 * axis.material.highlight - 2.5) / 11;
 	}
