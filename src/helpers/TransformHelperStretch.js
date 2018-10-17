@@ -1,6 +1,5 @@
-import {Vector3, Quaternion, Matrix4, Box3} from "../../lib/three.module.js";
+import {Vector3, Quaternion, Matrix4, Box3, PlaneBufferGeometry, CylinderBufferGeometry} from "../../lib/three.module.js";
 import {TransformHelper} from "./TransformHelper.js";
-import {Corner2Geometry, PlaneGeometry, LineGeometry} from "./HelperGeometries.js";
 import {HelperGeometry} from "./HelperGeometry.js";
 
 // Reusable utility variables
@@ -17,22 +16,27 @@ const _m1 = new Matrix4();
 const _m2 = new Matrix4();
 const _one = new Vector3(1, 1, 1);
 
+const planeGeometry = new PlaneBufferGeometry(1, 1, 1, 1);
+
+const lineGeometry = new CylinderBufferGeometry(EPS, EPS, 1, 16, 2, false);
+
 const cornerHandle = new HelperGeometry([
-	[new Corner2Geometry(), {rotation: [-HPI, 0, 0], depthBias: 1}],
-	[new PlaneGeometry(), {color: [1, 1, 1, 0.25], position: [0.5, 0.5, 0], outlineThickness: 0}]
+	[planeGeometry, {color: [1, 1, 1, 0.25], position: [0.5, 0.5, 0], outlineThickness: 0}],
+	[new CylinderBufferGeometry(EPS, EPS, 1, 4, 2, true), {position: [0, 0.5, 0], rotation: [0, 0, 0], thickness: 1}],
+	[new CylinderBufferGeometry(EPS, EPS, 1, 4, 2, true), {position: [0.5, 0, 0], rotation: [0, 0, HPI], thickness: 1}],
 ]);
 
 const edgeHandle = new HelperGeometry([
-	[new LineGeometry()],
-	[new PlaneGeometry(), {color: [1, 1, 1, 0.25], position: [0.5, 0, 0], outlineThickness: 0}],
+	[lineGeometry, {thickness: 1}],
+	[planeGeometry, {color: [1, 1, 1, 0.25], position: [0.5, 0, 0], outlineThickness: 0}],
 ]);
 
 const cornerPicker = new HelperGeometry([
-	[new PlaneGeometry(), {position: [0.75, 0.75, 0], color: [1, 1, 1, 0.125], scale: [1.5, 1.5, 1]}]
+	[planeGeometry, {position: [0.75, 0.75, 0], color: [1, 1, 1, 0.125], scale: [1.5, 1.5, 1]}]
 ]);
 
 const edgePicker = new HelperGeometry([
-	[new PlaneGeometry(), {position: [0.75, 0, 0], color: [1, 1, 1, 0.125], scale: [1.5, 1, 1]}],
+	[planeGeometry, {position: [0.75, 0, 0], color: [1, 1, 1, 0.125], scale: [1.5, 1, 1]}],
 ]);
 
 const handleGeometry = {

@@ -1,13 +1,14 @@
-import {TorusBufferGeometry, OctahedronBufferGeometry, CylinderBufferGeometry} from "../../lib/three.module.js";
+import {TorusBufferGeometry, OctahedronBufferGeometry, CylinderBufferGeometry, PlaneBufferGeometry} from "../../lib/three.module.js";
 import {HelperGeometry, colors} from "./HelperGeometry.js";
 import {TransformHelper} from "./TransformHelper.js";
-import {Corner2Geometry, PlaneGeometry} from "./HelperGeometries.js";
 
 // Reusable utility variables
 const PI = Math.PI;
 const HPI = PI / 2;
 const QPI = HPI / 2;
 const EPS = 0.000001;
+
+const planeGeometry = new PlaneBufferGeometry(1, 1, 1, 1);
 
 const coneGeometry = new HelperGeometry([
 	[new OctahedronBufferGeometry(0.03, 2)],
@@ -30,14 +31,15 @@ const scaleUniformArrowGeometry = new HelperGeometry([
 ]);
 
 const translateCornerGeometry = new HelperGeometry([
-	[new PlaneGeometry(), {color: colors['whiteTransparent'], position: [-0.1, -0.1, 0], scale: 0.2, outlineThickness: 0}],
-	[new Corner2Geometry(), {color: [1,1,0.25], scale: 0.2, rotation: [HPI, 0, PI]}],
+	[planeGeometry, {color: colors['whiteTransparent'], position: [-0.1, -0.1, 0], scale: 0.2, outlineThickness: 0}],
+	[new CylinderBufferGeometry(EPS, EPS, 0.2, 4, 2, true), {position: [0, -0.1, 0], rotation: [0, 0, 0], thickness: 1}],
+	[new CylinderBufferGeometry(EPS, EPS, 0.2, 4, 2, true), {position: [-0.1, 0, 0], rotation: [0, 0, HPI], thickness: 1}],
 ]);
 
 const scaleCornerGeometry = new HelperGeometry([
 	[new OctahedronBufferGeometry(0.03, 2)],
-	[new PlaneGeometry(), {color: colors['whiteTransparent'], position: [0, -0.06, 0], scale: [0.06, 0.1, 0.06], outlineThickness: 0}],
-	[new PlaneGeometry(), {color: colors['whiteTransparent'], position: [-0.06, 0, 0], scale: [0.1, 0.06, 0.06], outlineThickness: 0}],
+	[planeGeometry, {color: colors['whiteTransparent'], position: [0, -0.06, 0], scale: [0.06, 0.1, 0.06], outlineThickness: 0}],
+	[planeGeometry, {color: colors['whiteTransparent'], position: [-0.06, 0, 0], scale: [0.1, 0.06, 0.06], outlineThickness: 0}],
 ]);
 
 const rotateHandleGeometry = new HelperGeometry([
@@ -57,7 +59,7 @@ const scalePickerGeometry = new HelperGeometry(new OctahedronBufferGeometry(0.1,
 
 const rotatePickerGeometry = new HelperGeometry(new TorusBufferGeometry( 1, 0.1, 4, 4, HPI/1.5 ), {color: colors['whiteTransparent'], rotation: [0, 0, HPI - HPI/3]});
 
-const cornerPickerGeometry = new HelperGeometry(new PlaneGeometry(), {color: colors['whiteTransparent'], scale: 0.3, outlineThickness: 0});
+const cornerPickerGeometry = new HelperGeometry(planeGeometry, {color: colors['whiteTransparent'], scale: 0.3, outlineThickness: 0});
 
 const translateGuideGeometry = new HelperGeometry([
 	[new CylinderBufferGeometry(EPS, EPS, 25, 5, 1, true), {thickness: 1, outlineThickness: 0}],

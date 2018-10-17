@@ -2,12 +2,11 @@
  * @author arodic / https://github.com/arodic
  */
 
-import {Vector3, Quaternion, Matrix4} from "../../lib/three.module.js";
+import {Vector3, Quaternion, Matrix4, CylinderBufferGeometry} from "../../lib/three.module.js";
 import {Helper} from "../Helper.js";
 import {HelperMesh} from "./HelperMesh.js";
 import {TransformHelper} from "./TransformHelper.js";
 import {HelperGeometry} from "./HelperGeometry.js";
-import {Corner3Geometry} from "./HelperGeometries.js";
 
 // Reusable utility variables
 const PI = Math.PI;
@@ -22,7 +21,11 @@ const _m1 = new Matrix4();
 const _m2 = new Matrix4();
 const _one = new Vector3(1, 1, 1);
 
-const corner3Geometry = new Corner3Geometry();
+const corner3Geometry = new HelperGeometry([
+	[new CylinderBufferGeometry(EPS, EPS, 1, 4, 2, true), {color: [1, 0, 0], position: [0.5, 0, 0], rotation: [0, 0, HPI], thickness: 1}],
+	[new CylinderBufferGeometry(EPS, EPS, 1, 4, 2, true), {color: [0, 1, 0], position: [0, 0.5, 0], rotation: [0, HPI, 0], thickness: 1}],
+	[new CylinderBufferGeometry(EPS, EPS, 1, 4, 2, true), {color: [0, 0, 1], position: [0, 0, 0.5], rotation: [HPI, 0, 0], thickness: 1}],
+]);
 
 const handleGeometry = {
 	XYZ: new HelperGeometry(corner3Geometry, {color: [1, 1, 0], rotation: [HPI, 0, PI]}),

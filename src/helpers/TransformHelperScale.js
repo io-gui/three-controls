@@ -1,12 +1,13 @@
-import {OctahedronBufferGeometry, CylinderBufferGeometry} from "../../lib/three.module.js";
+import {OctahedronBufferGeometry, CylinderBufferGeometry, PlaneBufferGeometry} from "../../lib/three.module.js";
 import {TransformHelper} from "./TransformHelper.js";
 import {HelperGeometry, colors} from "./HelperGeometry.js";
-import {PlaneGeometry} from "./HelperGeometries.js";
 
 // Reusable utility variables
 const PI = Math.PI;
 const HPI = PI / 2;
 const EPS = 0.000001;
+
+const planeGeometry = new PlaneBufferGeometry(1, 1, 1, 1);
 
 const scaleArrowGeometry = new HelperGeometry([
 	[new CylinderBufferGeometry(EPS, EPS, 0.5, 5, 1, true), {position: [0, 0.5, 0], thickness: 1}],
@@ -20,8 +21,8 @@ const scaleUniformArrowGeometry = new HelperGeometry([
 
 const scaleCornerGeometry = new HelperGeometry([
 	[new OctahedronBufferGeometry(0.05, 2)],
-	[new PlaneGeometry(), {color: colors['whiteTransparent'], position: [0, -0.1, 0], scale: [0.1, 0.2, 0.1], outlineThickness: 0}],
-	[new PlaneGeometry(), {color: colors['whiteTransparent'], position: [-0.1, 0, 0], scale: [0.2, 0.1, 0.1], outlineThickness: 0}],
+	[planeGeometry, {color: colors['whiteTransparent'], position: [0, -0.1, 0], scale: [0.1, 0.2, 0.1], outlineThickness: 0}],
+	[planeGeometry, {color: colors['whiteTransparent'], position: [-0.1, 0, 0], scale: [0.2, 0.1, 0.1], outlineThickness: 0}],
 ]);
 
 const scalePickerGeometry = new HelperGeometry(new CylinderBufferGeometry(0.15, 0, 0.8, 4, 1, true), {color: colors['whiteTransparent'], position: [0, 0.5, 0]});
