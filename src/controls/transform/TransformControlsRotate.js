@@ -2,9 +2,9 @@
  * @author arodic / https://github.com/arodic
  */
 
-import {Vector3, Quaternion} from "../../lib/three.module.js";
+import {Vector3, Quaternion} from "../../../lib/three.module.js";
 import {TransformControlsMixin} from "./TransformControlsMixin.js";
-import {TransformHelperRotate} from "../helpers/TransformHelperRotate.js";
+import {TransformHelperRotate} from "../../helpers/transform/TransformHelperRotate.js";
 
 // Reusable utility variables
 const tempVector = new Vector3();

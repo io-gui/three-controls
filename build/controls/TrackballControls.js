@@ -1,5 +1,5 @@
 import { Vector3, Quaternion } from '../../lib/three.module.js';
-import { ViewportControls } from './ViewportControls.js';
+import { CameraControls } from './CameraControls.js';
 
 /**
  * @author Eberhard Graether / http://egraether.com/
@@ -27,7 +27,7 @@ const upDirection = new Vector3();
 const sideDirection = new Vector3();
 const moveDirection = new Vector3();
 
-class TrackballControls extends ViewportControls {
+class TrackballControls extends CameraControls {
 
 	constructor( props ) {
 

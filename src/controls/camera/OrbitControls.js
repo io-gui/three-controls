@@ -7,8 +7,8 @@
  * @author arodic / http://github.com/arodic
  */
 
-import * as THREE from "../../lib/three.module.js";
-import {ViewportControls} from "./ViewportControls.js";
+import * as THREE from "../../../lib/three.module.js";
+import {CameraControls} from "./CameraControls.js";
 
 /*
  * This set of controls performs orbiting, dollying, and panning.
@@ -27,7 +27,7 @@ const unitY = new THREE.Vector3(0, 1, 0);
 const tempQuat = new THREE.Quaternion();
 const tempQuatInverse = tempQuat.clone().inverse();
 
-export class OrbitControls extends ViewportControls {
+export class OrbitControls extends CameraControls {
 	constructor(props) {
 		super(props);
 

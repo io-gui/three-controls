@@ -3,10 +3,10 @@
  */
 
 import {TransformControlsMixin} from "./TransformControlsMixin.js";
-import {TransformHelper} from "../helpers/TransformHelper.js";
+import {TransformHelper} from "../../helpers/transform/TransformHelper.js";
 
 // TODO: Drag Controls should use object as picker and no handle.
-export class DragControls extends TransformControlsMixin(TransformHelper) {
+export class TransformControlsDrag extends TransformControlsMixin(TransformHelper) {
 	constructor(props) {
 		super(props);
 		this.size = 0.02;

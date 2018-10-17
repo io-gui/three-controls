@@ -1,5 +1,5 @@
 import { Vector3, Box3, Matrix3, Spherical, Sphere } from '../../lib/three.module.js';
-import { ViewportControls } from './ViewportControls.js';
+import { CameraControls } from './CameraControls.js';
 
 /**
  * @author qiao / https://github.com/qiao
@@ -17,7 +17,7 @@ const normalMatrix = new Matrix3();
 const spherical = new Spherical();
 const sphere = new Sphere();
 
-class EditorControls extends ViewportControls {
+class EditorControls extends CameraControls {
 
 	orbit( orbit ) {
 

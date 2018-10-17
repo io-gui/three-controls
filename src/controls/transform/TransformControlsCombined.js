@@ -1,9 +1,9 @@
 /**
  * @author arodic / https://github.com/arodic
  */
-import {Vector3, Quaternion} from "../../lib/three.module.js";
+import {Vector3, Quaternion} from "../../../lib/three.module.js";
 import {TransformControlsMixin} from "./TransformControlsMixin.js";
-import {TransformHelperCombined} from "../helpers/TransformHelperCombined.js";
+import {TransformHelperCombined} from "../../helpers/transform/TransformHelperCombined.js";
 
 const offset = new Vector3();
 const scaleFactor = new Vector3();

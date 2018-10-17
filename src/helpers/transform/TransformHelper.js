@@ -1,9 +1,9 @@
-import {Vector3, CylinderBufferGeometry} from "../../lib/three.module.js";
-import {Helper} from "../Helper.js";
-import {HelperMesh} from "./HelperMesh.js";
-import {TransformInfoMesh} from "./TransformInfoMesh.js";
-import {HelperGeometry} from "./HelperGeometry.js";
-import {Animation} from "../../lib/Animation.js";
+import {Vector3, CylinderBufferGeometry} from "../../../lib/three.module.js";
+import {Helper} from "../../Helper.js";
+import {HelperMesh} from "../HelperMesh.js";
+import {HelperText} from "../HelperText.js";
+import {HelperGeometry} from "../HelperGeometry.js";
+import {Animation} from "../../../lib/Animation.js";
 
 // Reusable utility variables
 const PI = Math.PI;
@@ -129,7 +129,7 @@ export class TransformHelper extends Helper {
 	initInfoMeshes(infosDef) {
 		const infos = [];
 		for (let name in infosDef) {
-			const mesh = new TransformInfoMesh(infosDef[name]);
+			const mesh = new HelperText(infosDef[name]);
 			mesh.name = name;
 			mesh.positionTarget = mesh.position.clone();
 			mesh.material.opacity = 0;

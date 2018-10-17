@@ -6,8 +6,8 @@
  * @author arodic / https://github.com/arodic
  */
 
-import {Vector3, Quaternion} from "../../lib/three.module.js";
-import {ViewportControls} from "./ViewportControls.js";
+import {Vector3, Quaternion} from "../../../lib/three.module.js";
+import {CameraControls} from "./CameraControls.js";
 
 /*
  * This set of controls performs orbiting, dollying, and panning.
@@ -27,7 +27,7 @@ const upDirection = new Vector3();
 const sideDirection = new Vector3();
 const moveDirection = new Vector3();
 
-export class TrackballControls extends ViewportControls {
+export class TrackballControls extends CameraControls {
 	constructor(props) {
 		super(props);
 		this.defineProperties({

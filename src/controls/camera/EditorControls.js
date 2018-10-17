@@ -6,8 +6,8 @@
  * @author arodic / http://github.com/arodic
  */
 
-import * as THREE from "../../lib/three.module.js";
-import {ViewportControls} from "./ViewportControls.js";
+import * as THREE from "../../../lib/three.module.js";
+import {CameraControls} from "./CameraControls.js";
 
 // Reusable utility variables
 const center = new THREE.Vector3();
@@ -17,7 +17,7 @@ const normalMatrix = new THREE.Matrix3();
 const spherical = new THREE.Spherical();
 const sphere = new THREE.Sphere();
 
-export class EditorControls extends ViewportControls {
+export class EditorControls extends CameraControls {
 	orbit(orbit) {
 		delta.copy(this.camera.position).sub(this.target);
 		spherical.setFromVector3(delta);

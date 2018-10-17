@@ -2,9 +2,9 @@
  * @author arodic / https://github.com/arodic
  */
 
-import {Vector3} from "../../lib/three.module.js";
+import {Vector3} from "../../../lib/three.module.js";
 import {TransformControlsMixin} from "./TransformControlsMixin.js";
-import {TransformHelperScale} from "../helpers/TransformHelperScale.js";
+import {TransformHelperScale} from "../../helpers/transform/TransformHelperScale.js";
 
 // Reusable utility variables
 const scaleFactor = new Vector3();

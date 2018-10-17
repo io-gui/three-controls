@@ -2,12 +2,12 @@
  * @author arodic / http://github.com/arodic
  */
 
-import {Vector2, Vector3, MOUSE} from "../../lib/three.module.js";
-import {Interactive} from "../Interactive.js";
-import {Animation} from "../../lib/Animation.js";
+import {Vector2, Vector3, MOUSE} from "../../../lib/three.module.js";
+import {Interactive} from "../../Interactive.js";
+import {Animation} from "../../../lib/Animation.js";
 
 /*
- * ViewportControls is a base class for controls performing orbiting, dollying, and panning.
+ * CameraControls is a base class for controls performing orbiting, dollying, and panning.
  *
  *    Orbit - left mouse / touch: one-finger move
  *    Dolly - middle mouse, or mousewheel / touch: two-finger spread or squish
@@ -29,7 +29,7 @@ function dampTo(source, target, smoothing, dt) {
 	return source * (1 - t) + target * t;
 }
 
-export class ViewportControls extends Interactive {
+export class CameraControls extends Interactive {
 	constructor(props) {
 		super(props);
 
@@ -282,15 +282,15 @@ export class ViewportControls extends Interactive {
 	}
 	// ViewportControl control methods. Implement in subclass!
 	pan() {
-		console.warn('ViewportControls: pan() not implemented!');
+		console.warn('CameraControls: pan() not implemented!');
 	}
 	dolly() {
-		console.warn('ViewportControls: dolly() not implemented!');
+		console.warn('CameraControls: dolly() not implemented!');
 	}
 	orbit() {
-		console.warn('ViewportControls: orbit() not implemented!');
+		console.warn('CameraControls: orbit() not implemented!');
 	}
 	focus() {
-		console.warn('ViewportControls: focus() not implemented!');
+		console.warn('CameraControls: focus() not implemented!');
 	}
 }

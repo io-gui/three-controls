@@ -1,9 +1,9 @@
 /**
  * @author arodic / https://github.com/arodic
  */
-import {Vector3} from "../../lib/three.module.js";
+import {Vector3} from "../../../lib/three.module.js";
 import {TransformControlsMixin} from "./TransformControlsMixin.js";
-import {TransformHelperTranslate} from "../helpers/TransformHelperTranslate.js";
+import {TransformHelperTranslate} from "../../helpers/transform/TransformHelperTranslate.js";
 
 const offset = new Vector3();
 

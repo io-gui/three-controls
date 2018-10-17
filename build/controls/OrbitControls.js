@@ -1,5 +1,5 @@
 import { Vector3, Quaternion, Spherical } from '../../lib/three.module.js';
-import { ViewportControls } from './ViewportControls.js';
+import { CameraControls } from './CameraControls.js';
 
 /**
  * @author qiao / https://github.com/qiao
@@ -27,7 +27,7 @@ const unitY = new Vector3( 0, 1, 0 );
 const tempQuat = new Quaternion();
 const tempQuatInverse = tempQuat.clone().inverse();
 
-class OrbitControls extends ViewportControls {
+class OrbitControls extends CameraControls {
 
 	constructor( props ) {
 

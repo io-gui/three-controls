@@ -12,7 +12,7 @@ const parentQuaternion = new Quaternion();
 const parentScale = new Vector3();
 const scaleMatrix = new Matrix4();
 
-export class TransformInfoMesh extends IoLiteMixin(Sprite) {
+export class HelperText extends IoLiteMixin(Sprite) {
 	constructor(props = {}) {
 		super();
 

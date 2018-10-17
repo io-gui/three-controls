@@ -36,7 +36,7 @@ export default [
     input: 'src/controls/EditorControls.js',
     output: output( 'build/controls/EditorControls.js' ),
     external: external( [
-      'src/controls/ViewportControls.js',
+      'src/controls/CameraControls.js',
       './lib/three.module.js'
     ] )
   },
@@ -44,7 +44,7 @@ export default [
     input: 'src/controls/OrbitControls.js',
     output: output( 'build/controls/OrbitControls.js' ),
     external: external( [
-      'src/controls/ViewportControls.js',
+      'src/controls/CameraControls.js',
       './lib/three.module.js'
     ] )
   },
@@ -52,7 +52,7 @@ export default [
     input: 'src/controls/SelectionControls.js',
     output: output( 'build/controls/SelectionControls.js' ),
     external: external( [
-      'src/controls/ViewportControls.js',
+      'src/controls/CameraControls.js',
       './lib/three.module.js'
     ] )
   },
@@ -60,7 +60,7 @@ export default [
     input: 'src/controls/TrackballControls.js',
     output: output( 'build/controls/TrackballControls.js' ),
     external: external( [
-      'src/controls/ViewportControls.js',
+      'src/controls/CameraControls.js',
       './lib/three.module.js'
     ] )
   },
@@ -100,8 +100,8 @@ export default [
     ] )
   },
   {
-    input: 'src/controls/ViewportControls.js',
-    output: output( 'build/controls/ViewportControls.js' ),
+    input: 'src/controls/CameraControls.js',
+    output: output( 'build/controls/CameraControls.js' ),
     external: external( [
       './lib/three.module.js'
     ] )

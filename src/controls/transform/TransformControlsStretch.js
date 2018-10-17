@@ -2,9 +2,9 @@
  * @author arodic / https://github.com/arodic
  */
 
-import {Vector3} from "../../lib/three.module.js";
+import {Vector3} from "../../../lib/three.module.js";
 import {TransformControlsMixin} from "./TransformControlsMixin.js";
-import {TransformHelperStretch} from "../helpers/TransformHelperStretch.js";
+import {TransformHelperStretch} from "../../helpers/transform/TransformHelperStretch.js";
 
 // Reusable utility variables
 const offset = new Vector3();
