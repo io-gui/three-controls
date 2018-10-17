@@ -2,8 +2,8 @@
  * @author arodic / https://github.com/arodic
  */
 
-import {PointerEvents} from "../../lib/PointerEvents.js";
-import {Helper} from "../Helper.js";
+import {PointerEvents} from "../lib/PointerEvents.js";
+import {Helper} from "./helpers/Helper.js";
 
 /*
  * Wraps target class with PointerEvent API polyfill for more powerful mouse/touch interactions.

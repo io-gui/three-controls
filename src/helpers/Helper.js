@@ -2,8 +2,8 @@
  * @author arodic / https://github.com/arodic
  */
 
-import {Mesh, Vector3, BoxBufferGeometry} from "../lib/three.module.js";
-import {IoLiteMixin} from "../lib/IoLiteMixin.js";
+import {Mesh, Vector3, BoxBufferGeometry} from "../../lib/three.module.js";
+import {IoLiteMixin} from "../../lib/IoLiteMixin.js";
 import {HelperMaterial} from "./HelperMaterial.js";
 
 // Reusable utility variables

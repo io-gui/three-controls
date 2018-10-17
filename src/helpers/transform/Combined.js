@@ -1,5 +1,5 @@
 import {TorusBufferGeometry, OctahedronBufferGeometry, CylinderBufferGeometry, PlaneBufferGeometry} from "../../../lib/three.module.js";
-import {HelperGeometry, colors} from "../../HelperGeometry.js";
+import {HelperGeometry, colors} from "../HelperGeometry.js";
 import {TransformHelper} from "../Transform.js";
 
 // Reusable utility variables

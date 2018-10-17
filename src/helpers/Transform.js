@@ -1,7 +1,7 @@
 import {Vector3, CylinderBufferGeometry} from "../../lib/three.module.js";
-import {Helper} from "../Helper.js";
+import {Helper} from "./Helper.js";
 import {TextHelper} from "./Text.js";
-import {HelperGeometry} from "../HelperGeometry.js";
+import {HelperGeometry} from "./HelperGeometry.js";
 import {Animation} from "../../lib/Animation.js";
 
 // Reusable utility variables
