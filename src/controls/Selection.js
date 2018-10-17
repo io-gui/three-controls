@@ -295,6 +295,7 @@ export class SelectionControls extends Interactive {
 		this.dispatchEvent({type: 'change'});
 		this.dispatchEvent({type: 'selected-changed', selected: [...this.selected], added: added, removed: removed});
 	}
+	// TODO: group scale not from selection center!
 	updateMatrixWorld(force) {
 		// Extract tranformations before and after matrix update.
 		this.matrixWorld.decompose(posOld, quatOld, scaleOld);

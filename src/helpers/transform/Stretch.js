@@ -106,7 +106,9 @@ export class TransformHelperStretch extends TransformHelper {
 	}
 	constructor(props) {
 		super(props);
-		this.depthBias = -1;
+		this.defineProperties({
+			depthBias: -1
+		});
 	}
 	objectChanged() {
 		super.objectChanged();

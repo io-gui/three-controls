@@ -30,8 +30,6 @@ export class TextHelper extends IoLiteMixin(Sprite) {
 		this.scale.multiplyScalar(this.size);
 
 		this.position.set(props.position[0], props.position[1], props.position[2]);
-
-		this.text = '-+0.4';
 	}
 	textChanged() {
 		const ctx = this.ctx;

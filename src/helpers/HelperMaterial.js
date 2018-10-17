@@ -27,7 +27,6 @@ export class HelperMaterial extends IoLiteMixin(ShaderMaterial) {
 
 		const res = new Vector3(window.innerWidth, window.innerHeight, window.devicePixelRatio);
 
-
 		this.defineProperties({
 			color: { value: color, observer: 'uniformChanged'},
 			opacity: { value: opacity, observer: 'uniformChanged'},

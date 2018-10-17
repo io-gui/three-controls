@@ -43,29 +43,29 @@ export class TransformHelper extends Helper {
 		super(props);
 
 		this.defineProperties({
-			showX: {value: true, observer: 'paramChanged'},
-			showY: {value: true, observer: 'paramChanged'},
-			showZ: {value: true, observer: 'paramChanged'},
+			showX: true,
+			showY: true,
+			showZ: true,
 			axis: null,
 			active: false,
 			doHide: true,
 			doFlip: true,
-			hideX: { value: false, observer: 'paramChanged' },
-			hideY: { value: false, observer: 'paramChanged' },
-			hideZ: { value: false, observer: 'paramChanged' },
-			hideXY: { value: false, observer: 'paramChanged' },
-			hideYZ: { value: false, observer: 'paramChanged' },
-			hideXZ: { value: false, observer: 'paramChanged' },
-			flipX: { value: false, observer: 'paramChanged' },
-			flipY: { value: false, observer: 'paramChanged' },
-			flipZ: { value: false, observer: 'paramChanged' },
+			hideX: false,
+			hideY: false,
+			hideZ: false,
+			hideXY: false,
+			hideYZ: false,
+			hideXZ: false,
+			flipX: false,
+			flipY: false,
+			flipZ: false,
+			size: 0.05,
 		});
 
 		this.worldX = new Vector3();
 		this.worldY = new Vector3();
 		this.worldZ = new Vector3();
 		this.axisDotEye = new Vector3();
-		this.size = 0.05;
 
 		this.handles = this.initAxes(this.handleGeometry);
 		this.pickers = this.initPickers(this.pickerGeometry);
@@ -139,7 +139,6 @@ export class TransformHelper extends Helper {
 		}
 		return infos;
 	}
-
 	traverseAxis(callback) {
 		for (let i = this.handles.length; i--;) callback(this.handles[i]);
 		for (let i = this.pickers.length; i--;) callback(this.pickers[i]);
@@ -150,7 +149,6 @@ export class TransformHelper extends Helper {
 	traverseInfos(callback) {
 		for (let i = this.infos.length; i--;) callback(this.infos[i]);
 	}
-
 	spaceChanged() {
 		super.spaceChanged();
 		this.paramChanged();
@@ -176,15 +174,12 @@ export class TransformHelper extends Helper {
 		});
 		this.animation.startAnimation(0.5);
 	}
-	axisChanged() {
-		this.paramChanged();
-		this.animation.startAnimation(0.5);
-	}
+	axisChanged() {}
 	paramChanged() {
 		this.traverseAxis(this.setAxis);
 		this.traverseGuides(this.setGuide);
 		this.traverseInfos(this.setInfo);
-		this.animation.startAnimation(0.5);
+		this.animation.startAnimation(1.5);
 	}
 	updateHelperMatrix() {
 		super.updateHelperMatrix();
@@ -217,7 +212,8 @@ export class TransformHelper extends Helper {
 	setAxis(axis) {
 		axis.hidden = false;
 		const name = axis.name.split('_').pop() || null;
-		axis.highlight = this.axis ? hasAxisAny(axis.name, this.axis) ? 1 : -0.75 : 0;
+		const dimmed = this.active ? -2 : -0.75;
+		axis.highlight = this.axis ? hasAxisAny(axis.name, this.axis) ? 1 : dimmed : 0;
 		// Hide by show[axis] parameter
 		if (this.doHide) {
 			if (name.indexOf('X') !== -1 && !this.showX) axis.hidden = true;
@@ -262,7 +258,7 @@ export class TransformHelper extends Helper {
 	updateAxis(axis) {
 		axis.visible = true;
 		const highlight = axis.hidden ? -2 : axis.highlight || 0;
-		axis.material.highlight = (4 * axis.material.highlight + highlight) / 5;
+		axis.material.highlight = (8 * axis.material.highlight + highlight) / 9;
 		if (axis.material.highlight < -1.99) axis.visible = false;
 		axis.scale.multiplyScalar(5).add(axis.scaleTarget).divideScalar(6);
 	}
