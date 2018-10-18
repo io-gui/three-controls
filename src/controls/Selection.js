@@ -170,8 +170,7 @@ export class SelectionControls extends Interactive {
 		this.quaternion.set(0,0,0,1);
 		this.scale.set(1,1,1);
 
-		// TODO: temp for testing
-		this.boundingBox.makeEmpty();
+		// this.boundingBox.makeEmpty();
 
 		if (this.selected.length && this.transformSelection) {
 

@@ -62,12 +62,11 @@ export class Helper extends IoLiteMixin(Mesh) {
 			let eyeDistance = 1;
 			_cameraPosition.set(this.camera.matrixWorld.elements[12], this.camera.matrixWorld.elements[13], this.camera.matrixWorld.elements[14]);
 			if (this.camera.isPerspectiveCamera) {
-				// TODO: make scale zoom independent with PerspectiveCamera
 				this.eye.copy(_cameraPosition).sub(this.position);
-				eyeDistance = this.eye.length();
+				eyeDistance = 0.15 * this.eye.length() * (this.camera.fov / Math.PI);
 				this.eye.normalize();
 			} else if (this.camera.isOrthographicCamera) {
-				eyeDistance = 3 * (this.camera.top - this.camera.bottom) / this.camera.zoom; // TODO: Why magic number 3 matches perspective?
+				eyeDistance = 3 * (this.camera.top - this.camera.bottom) / this.camera.zoom;
 				this.eye.copy(_cameraPosition).normalize();
 			}
 			if (this.size) this.scale.set(1, 1, 1).multiplyScalar(eyeDistance * this.size);
@@ -113,19 +112,19 @@ export class Helper extends IoLiteMixin(Mesh) {
 		this.add(mesh);
 		return mesh;
 	}
-	addTextSprites(infosDef) {
-		const infos = [];
-		for (let name in infosDef) {
-			const mesh = new TextHelper(infosDef[name]);
+	addTextSprites(textSprites) {
+		const texts = [];
+		for (let name in textSprites) {
+			const mesh = new TextHelper(textSprites[name]);
 			mesh.name = name;
 			mesh.positionTarget = mesh.position.clone();
 			mesh.material.opacity = 0;
 			mesh.material.visible = false;
 			mesh.isInfo = true;
-			infos.push(mesh);
-			infos[name] = mesh;
+			texts.push(mesh);
+			texts[name] = mesh;
 			this.add(mesh);
 		}
-		return infos;
+		return texts;
 	}
 }

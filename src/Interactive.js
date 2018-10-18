@@ -15,7 +15,7 @@ import {Helper} from "./helpers/Helper.js";
  * See PointerEvents.js for more details.
  */
 
-// TODO: PointerEvents documentation
+// TODO: implement multiple DOM elements / viewports
 
 export const InteractiveMixin = (superclass) => class extends superclass {
 	constructor(props) {
@@ -23,7 +23,7 @@ export const InteractiveMixin = (superclass) => class extends superclass {
 
 		this.defineProperties({
 			enabled: true,
-			domElement: props.domElement // TODO: implement domElement change / multiple elements
+			domElement: props.domElement
 		});
 
 		this._pointerEvents = new PointerEvents(props.domElement, {normalized: true});

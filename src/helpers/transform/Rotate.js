@@ -83,31 +83,32 @@ export class TransformHelperRotate extends TransformHelper {
 	get guideGeometry() {
 		return guideGeometry;
 	}
-	get infoGeometry() {
+	get textGeometry() {
 		return {
 			X: {position: [0.5, 0, 0], color: 'red'},
 			Y: {position: [0, 0.5, 0], color: 'green'},
 			Z: {position: [0, 0, 0.5], color: 'blue'},
 		};
 	}
+	constructor(props) {
+		super(props);
+		this.alignAxis = this.alignAxis.bind(this);
+	}
 	setGuide(guide) {
 		super.setGuide(guide);
 		if (this.axis === "XYZ") guide.highlight = -2;
 	}
 	updateHelperMatrix() {
-		// TODO: simplify rotation handle logic
 		super.updateHelperMatrix();
 		const quaternion = this.space === "local" ? this.quaternion : _identityQuaternion;
-		// Align handles to current local or world rotation
 		_tempQuaternion.copy(quaternion).inverse();
 		_alignVector.copy(this.eye).applyQuaternion(_tempQuaternion);
 		_worldY.copy(_unitY).applyQuaternion(_tempQuaternion);
-		// TODO: optimize!
-		this.traverseAxis(axis => this.updateAxesDirection(axis));
-		this.traverseGuides(axis => this.updateAxesDirection(axis));
+		// repeat axis updates
+		this.traverseAxis(this.alignAxis);
+		this.traverseGuides(this.alignAxis);
 	}
-	// TODO: move to updateAxis?
-	updateAxesDirection(axis){
+	alignAxis(axis){
 		axis.quaternion.copy(_identityQuaternion);
 		if (axis.name.indexOf('XYZ') !== -1) {
 			axis.quaternion.setFromRotationMatrix(_lookAtMatrix.lookAt(_alignVector, _zero, _worldY));
@@ -131,23 +132,23 @@ export class TransformHelperRotate extends TransformHelper {
 			axis.quaternion.copy(_tempQuaternion);
 		}
 	}
-	setInfo(info) {
-		info.highlight = this.axis ? hasAxisAny(info.name, this.axis) ? 1 : 0 : 0;
+	setInfo(text) {
+		text.highlight = this.axis ? hasAxisAny(text.name, this.axis) ? 1 : 0 : 0;
 		// Flip axis
 		if (this.doFlip) {
-			const name = info.name.split('_').pop() || null;
-			if (name.indexOf('X') !== -1) info.positionTarget.x = this.flipX ? -0.5 : 0.5;
-			if (name.indexOf('Y') !== -1) info.positionTarget.y = this.flipY ? -0.5 : 0.5;
-			if (name.indexOf('Z') !== -1) info.positionTarget.z = this.flipZ ? -0.5 : 0.5;
+			const name = text.name.split('_').pop() || null;
+			if (name.indexOf('X') !== -1) text.positionTarget.x = this.flipX ? -0.5 : 0.5;
+			if (name.indexOf('Y') !== -1) text.positionTarget.y = this.flipY ? -0.5 : 0.5;
+			if (name.indexOf('Z') !== -1) text.positionTarget.z = this.flipZ ? -0.5 : 0.5;
 		}
 	}
-	updateInfo(info) {
-		info.visible = true;
-		info.material.opacity = (8 * info.material.opacity + info.highlight) / 9;
-		if (info.material.opacity <= 0.001) info.visible = false;
-		if (info.name === 'X') info.text = Math.round((this.object.rotation.x / Math.PI) * 180 * 100) / 100;
-		if (info.name === 'Y') info.text = Math.round((this.object.rotation.y / Math.PI) * 180 * 100) / 100;
-		if (info.name === 'Z') info.text = Math.round((this.object.rotation.z / Math.PI) * 180 * 100) / 100;
-		info.position.multiplyScalar(5).add(info.positionTarget).divideScalar(6);
+	updateText(text) {
+		text.visible = true;
+		text.material.opacity = (8 * text.material.opacity + text.highlight) / 9;
+		if (text.material.opacity <= 0.001) text.visible = false;
+		if (text.name === 'X') text.text = Math.round((this.object.rotation.x / Math.PI) * 180 * 100) / 100;
+		if (text.name === 'Y') text.text = Math.round((this.object.rotation.y / Math.PI) * 180 * 100) / 100;
+		if (text.name === 'Z') text.text = Math.round((this.object.rotation.z / Math.PI) * 180 * 100) / 100;
+		text.position.multiplyScalar(5).add(text.positionTarget).divideScalar(6);
 	}
 }

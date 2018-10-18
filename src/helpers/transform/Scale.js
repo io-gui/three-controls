@@ -83,7 +83,7 @@ export class TransformHelperScale extends TransformHelper {
 	get guideGeometry() {
 		return guideGeometry;
 	}
-	get infoGeometry() {
+	get textGeometry() {
 		return {
 			X: {position: [0.5, 0, 0], color: 'red'},
 			Y: {position: [0, 0.5, 0], color: 'green'},
@@ -96,13 +96,13 @@ export class TransformHelperScale extends TransformHelper {
 		if ((axis.name == 'X' || axis.name == 'Y' || axis.name == 'Z') && this.space === 'world') axis.hidden = true;
 		if ((axis.name == 'XY' || axis.name == 'YZ' || axis.name == 'XZ') && this.space === 'world') axis.hidden = true;
 	}
-	updateInfo(info) {
-		info.visible = true;
-		info.material.opacity = (8 * info.material.opacity + info.highlight) / 9;
-		if (info.material.opacity <= 0.001) info.visible = false;
-		if (info.name === 'X') info.text = Math.round(this.object.scale.x * 100) / 100;
-		if (info.name === 'Y') info.text = Math.round(this.object.scale.y * 100) / 100;
-		if (info.name === 'Z') info.text = Math.round(this.object.scale.z * 100) / 100;
-		info.position.multiplyScalar(5).add(info.positionTarget).divideScalar(6);
+	updateText(text) {
+		text.visible = true;
+		text.material.opacity = (8 * text.material.opacity + text.highlight) / 9;
+		if (text.material.opacity <= 0.001) text.visible = false;
+		if (text.name === 'X') text.text = Math.round(this.object.scale.x * 100) / 100;
+		if (text.name === 'Y') text.text = Math.round(this.object.scale.y * 100) / 100;
+		if (text.name === 'Z') text.text = Math.round(this.object.scale.z * 100) / 100;
+		text.position.multiplyScalar(5).add(text.positionTarget).divideScalar(6);
 	}
 }

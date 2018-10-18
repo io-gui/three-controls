@@ -35,7 +35,7 @@ export class TransformHelper extends Helper {
 	get guideGeometry() {
 		return {};
 	}
-	get infoGeometry() {
+	get textGeometry() {
 		return {};
 	}
 	constructor(props) {
@@ -69,7 +69,7 @@ export class TransformHelper extends Helper {
 		this.handles = this.addGeometries(this.handleGeometry);
 		this.pickers = this.addGeometries(this.pickerGeometry, {isPicker: true});
 		this.guides = this.addGeometries(this.guideGeometry, {isGuide: true, highlight: -2});
-		this.infos = this.addTextSprites(this.infoGeometry);
+		this.texts = this.addTextSprites(this.textGeometry);
 
 		this.setAxis = this.setAxis.bind(this);
 		this.setGuide = this.setGuide.bind(this);
@@ -77,7 +77,7 @@ export class TransformHelper extends Helper {
 
 		this.updateAxis = this.updateAxis.bind(this);
 		this.updateGuide = this.updateGuide.bind(this);
-		this.updateInfo = this.updateInfo.bind(this);
+		this.updateText = this.updateText.bind(this);
 
 		this.animation = new Animation();
 
@@ -93,7 +93,7 @@ export class TransformHelper extends Helper {
 		for (let i = this.guides.length; i--;) callback(this.guides[i]);
 	}
 	traverseInfos(callback) {
-		for (let i = this.infos.length; i--;) callback(this.infos[i]);
+		for (let i = this.texts.length; i--;) callback(this.texts[i]);
 	}
 	spaceChanged() {
 		super.spaceChanged();
@@ -153,7 +153,7 @@ export class TransformHelper extends Helper {
 		if (this.object) {
 			this.traverseAxis(this.updateAxis);
 			this.traverseGuides(this.updateGuide);
-			this.traverseInfos(this.updateInfo);
+			this.traverseInfos(this.updateText);
 		}
 	}
 	// TODO: optimize, make less ugly and framerate independent!
@@ -193,14 +193,14 @@ export class TransformHelper extends Helper {
 			if (name.indexOf('Z') !== -1 || guide.name.indexOf('R') !== -1) guide.scaleTarget.z = this.flipZ ? -1 : 1;
 		}
 	}
-	setInfo(info) {
-		info.highlight = this.axis ? hasAxisAny(info.name, this.axis) ? 1 : 0 : 0;
+	setInfo(text) {
+		text.highlight = this.axis ? hasAxisAny(text.name, this.axis) ? 1 : 0 : 0;
 		// Flip axis
 		if (this.doFlip) {
-			const name = info.name.split('_').pop() || null;
-			if (name.indexOf('X') !== -1) info.positionTarget.x = this.flipX ? -1.2 : 1.2;
-			if (name.indexOf('Y') !== -1) info.positionTarget.y = this.flipY ? -1.2 : 1.2;
-			if (name.indexOf('Z') !== -1) info.positionTarget.z = this.flipZ ? -1.2 : 1.2;
+			const name = text.name.split('_').pop() || null;
+			if (name.indexOf('X') !== -1) text.positionTarget.x = this.flipX ? -1.2 : 1.2;
+			if (name.indexOf('Y') !== -1) text.positionTarget.y = this.flipY ? -1.2 : 1.2;
+			if (name.indexOf('Z') !== -1) text.positionTarget.z = this.flipZ ? -1.2 : 1.2;
 		}
 	}
 	updateAxis(axis) {
@@ -217,14 +217,14 @@ export class TransformHelper extends Helper {
 		guide.material.visible = guide.material.highlight > -1.99;
 		guide.scale.multiplyScalar(5).add(guide.scaleTarget).divideScalar(6);
 	}
-	updateInfo(info) {
-		info.visible = true;
-		info.material.opacity = (8 * info.material.opacity + info.highlight) / 9;
-		info.material.visible = info.material.opacity < 0.01;
-		if (info.name === 'X') info.text = Math.round(this.object.position.x * 100) / 100;
-		if (info.name === 'Y') info.text = Math.round(this.object.position.y * 100) / 100;
-		if (info.name === 'Z') info.text = Math.round(this.object.position.z * 100) / 100;
-		info.position.multiplyScalar(5).add(info.positionTarget).divideScalar(6);
+	updateText(text) {
+		text.visible = true;
+		text.material.opacity = (8 * text.material.opacity + text.highlight) / 9;
+		text.material.visible = text.material.opacity < 0.01;
+		if (text.name === 'X') text.text = Math.round(this.object.position.x * 100) / 100;
+		if (text.name === 'Y') text.text = Math.round(this.object.position.y * 100) / 100;
+		if (text.name === 'Z') text.text = Math.round(this.object.position.z * 100) / 100;
+		text.position.multiplyScalar(5).add(text.positionTarget).divideScalar(6);
 	}
 
 }

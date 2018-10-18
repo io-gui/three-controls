@@ -72,8 +72,6 @@ export class StretchTransformControls extends TransformControlsMixin(TransformHe
 
 		// Apply scale
 		this.object.scale.copy(this.scaleStart).add(scaleOffset);
-
-
 	}
 	updatePlane() {
 		const normal = this._plane.normal;
@@ -104,7 +102,6 @@ export class StretchTransformControls extends TransformControlsMixin(TransformHe
 			);
 		}
 
-		// TODO: test
 		if (this.object) position.applyMatrix4(this.object.matrixWorld);
 
 		this._plane.setFromNormalAndCoplanarPoint(normal, position);

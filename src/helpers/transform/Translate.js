@@ -68,7 +68,7 @@ export class TransformHelperTranslate extends TransformHelper {
 	get guideGeometry() {
 		return guideGeometry;
 	}
-	get infoGeometry() {
+	get textGeometry() {
 		return {
 			X: {position: [1.2, 0, 0], color: 'red'},
 			Y: {position: [0, 1.2, 0], color: 'green'},

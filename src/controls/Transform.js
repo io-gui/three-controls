@@ -50,9 +50,6 @@ export const TransformControlsMixin = (superclass) => class extends InteractiveM
 		}
 		this.animation.startAnimation(1.5);
 	}
-	// TODO: better animation trigger
-	// TODO: also trigger on object change
-	// TODO: Debug stalling animations on hover
 	enabledChanged(value) {
 		super.enabledChanged(value);
 		this.animation.startAnimation(0.5);

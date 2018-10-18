@@ -92,7 +92,7 @@
 
 			let rendered = false;
 			let renderer, camera, scene, helperScene;
-			var transformControls, viewportControls;
+			var transformControls, viewportControls, selectionControls;
 
 			scene = new Scene();
 			helperScene = new Scene();
@@ -103,6 +103,8 @@
 				gltf.scene.scale.multiplyScalar(1000);
 
 				scene.add( gltf.scene );
+
+				selectionControls.toggle(gltf.scene.children[0].children[0]);
 
 				render();
 
@@ -140,7 +142,7 @@
 				canvas.width = Math.round(innerWidth * window.devicePixelRatio);
 				canvas.height = Math.round(innerHeight * window.devicePixelRatio);
 
-				camera = new PerspectiveCamera(20, innerWidth / innerHeight, 100, 1000000);
+				camera = new PerspectiveCamera(9, innerWidth / innerHeight, 100, 1000000);
 
 				// let a = innerWidth / innerHeight;
 				// let s = 1800
@@ -171,12 +173,12 @@
 				// 	}
 				// }
 
-				var selectionControls = new SelectionControls({domElement: canvas, camera: camera, object_: scene});
+				selectionControls = new SelectionControls({domElement: canvas, camera: camera, object_: scene});
 				helperScene.add(selectionControls);
 				selectionControls.addEventListener('change', render);
 				selectionControls.addEventListener('selected-changed', event => {
 					transformControls.object = event.selected.length ? selectionControls : null;
-					// TODO: test individual objects
+					// TODO: test with individual objects
 					// transformControls.object = event.selected.length ? event.selected[0] : null;
 					transformControls.objectChanged();
 					transformControls.enabled = true;
