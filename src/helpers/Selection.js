@@ -2,7 +2,7 @@
  * @author arodic / https://github.com/arodic
  */
 
-import {Vector3, Quaternion, Matrix4, CylinderBufferGeometry} from "../../lib/three.module.js";
+import {Mesh, Vector3, Quaternion, Matrix4, CylinderBufferGeometry} from "../../lib/three.module.js";
 import {Helper} from "./Helper.js";
 import {TransformHelper} from "./Transform.js";
 import {HelperGeometry} from "./HelperGeometry.js";
@@ -43,7 +43,7 @@ export class SelectionHelper extends Helper {
 	}
 	constructor(props) {
 		super(props);
-		this.combineHelperGroups(this.handleGeometry);
+		this.corners = this.addGeometries(this.handleGeometry);
 
 		const axis = new TransformHelper({object: this});
 		axis.size = 0.01;
@@ -64,14 +64,6 @@ export class SelectionHelper extends Helper {
 			this.corners['xYz'].position.set(bbMin.x, bbMax.y, bbMin.z);
 			this.corners['Xyz'].position.set(bbMax.x, bbMin.y, bbMin.z);
 			this.corners['XyZ'].position.set(bbMax.x, bbMin.y, bbMax.z);
-		}
-	}
-	combineHelperGroups(groups) {
-		this.corners = {};
-		for (let name in groups) {
-			this.corners[name] = this.makeMesh(groups[name], {name: name});
-			// TODO: name?
-			this.add(this.corners[name]);
 		}
 	}
 	updateMatrixWorld() {

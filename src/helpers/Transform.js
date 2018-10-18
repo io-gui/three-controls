@@ -1,6 +1,5 @@
 import {Vector3, CylinderBufferGeometry} from "../../lib/three.module.js";
 import {Helper} from "./Helper.js";
-import {TextHelper} from "./Text.js";
 import {HelperGeometry} from "./HelperGeometry.js";
 import {Animation} from "../../lib/Animation.js";
 
@@ -67,10 +66,10 @@ export class TransformHelper extends Helper {
 		this.worldZ = new Vector3();
 		this.axisDotEye = new Vector3();
 
-		this.handles = this.initAxes(this.handleGeometry);
-		this.pickers = this.initPickers(this.pickerGeometry);
-		this.guides = this.initGuides(this.guideGeometry);
-		this.infos = this.initInfoMeshes(this.infoGeometry);
+		this.handles = this.addGeometries(this.handleGeometry);
+		this.pickers = this.addGeometries(this.pickerGeometry, {isPicker: true});
+		this.guides = this.addGeometries(this.guideGeometry, {isGuide: true, highlight: -2});
+		this.infos = this.addTextSprites(this.infoGeometry);
 
 		this.setAxis = this.setAxis.bind(this);
 		this.setGuide = this.setGuide.bind(this);
@@ -85,61 +84,6 @@ export class TransformHelper extends Helper {
 		this.animation.addEventListener('update', () => {
 			this.dispatchEvent({type: 'change'});
 		});
-	}
-	initAxes(axesDef) {
-		const axes = [];
-		for (let name in axesDef) {
-			const mesh = this.makeMesh(axesDef[name]);
-			mesh.name = name;
-			mesh.scaleTarget = new Vector3(1, 1, 1);
-			axes.push(mesh);
-			axes[name] = mesh;
-			this.add(mesh);
-		}
-		return axes;
-	}
-	initPickers(pickersDef) {
-		const axes = [];
-		for (let name in pickersDef) {
-			const mesh = this.makeMesh(pickersDef[name]);
-			mesh.name = name;
-			mesh.scaleTarget = new Vector3(1, 1, 1);
-			mesh.material.visible = false;
-			axes.push(mesh);
-			axes[name] = mesh;
-			this.add(mesh);
-		}
-		return axes;
-	}
-	initGuides(guidesDef) {
-		const axes = [];
-		for (let name in guidesDef) {
-			const mesh = this.makeMesh(guidesDef[name]);
-			mesh.name = name;
-			mesh.scaleTarget = new Vector3(1, 1, 1);
-			mesh.isGuide = true;
-			mesh.highlight = -2;
-			mesh.material.opacity = 0;
-			mesh.material.visible = false;
-			axes.push(mesh);
-			axes[name] = mesh;
-			this.add(mesh);
-		}
-		return axes;
-	}
-	initInfoMeshes(infosDef) {
-		const infos = [];
-		for (let name in infosDef) {
-			const mesh = new TextHelper(infosDef[name]);
-			mesh.name = name;
-			mesh.positionTarget = mesh.position.clone();
-			mesh.material.opacity = 0;
-			mesh.isInfo = true;
-			infos.push(mesh);
-			infos[name] = mesh;
-			this.add(mesh);
-		}
-		return infos;
 	}
 	traverseAxis(callback) {
 		for (let i = this.handles.length; i--;) callback(this.handles[i]);
@@ -261,22 +205,22 @@ export class TransformHelper extends Helper {
 	}
 	updateAxis(axis) {
 		axis.visible = true;
-		const highlight = axis.hidden ? -2 : axis.highlight || 0;
+		const highlight = (axis.hidden || axis.isPicker) ? -2 : axis.highlight || 0;
 		axis.material.highlight = (8 * axis.material.highlight + highlight) / 9;
-		if (axis.material.highlight < -1.99) axis.visible = false;
+		axis.material.visible = axis.material.highlight > -1.99;
 		axis.scale.multiplyScalar(5).add(axis.scaleTarget).divideScalar(6);
 	}
 	updateGuide(guide) {
 		guide.visible = true;
 		const highlight = guide.hidden ? -2 : guide.highlight || 0;
 		guide.material.highlight = (8 * guide.material.highlight + highlight) / 9;
-		if (guide.material.highlight < -1.99) guide.visible = false;
+		guide.material.visible = guide.material.highlight > -1.99;
 		guide.scale.multiplyScalar(5).add(guide.scaleTarget).divideScalar(6);
 	}
 	updateInfo(info) {
 		info.visible = true;
 		info.material.opacity = (8 * info.material.opacity + info.highlight) / 9;
-		if (info.material.opacity <= 0.001) info.visible = false;
+		info.material.visible = info.material.opacity < 0.01;
 		if (info.name === 'X') info.text = Math.round(this.object.position.x * 100) / 100;
 		if (info.name === 'Y') info.text = Math.round(this.object.position.y * 100) / 100;
 		if (info.name === 'Z') info.text = Math.round(this.object.position.z * 100) / 100;

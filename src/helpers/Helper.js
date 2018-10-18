@@ -5,6 +5,7 @@
 import {Mesh, Vector3, BoxBufferGeometry} from "../../lib/three.module.js";
 import {IoLiteMixin} from "../../lib/IoLiteMixin.js";
 import {HelperMaterial} from "./HelperMaterial.js";
+import {TextHelper} from "./Text.js";
 
 // Reusable utility variables
 const _cameraPosition = new Vector3();
@@ -78,15 +79,53 @@ export class Helper extends IoLiteMixin(Mesh) {
 	updateMatrixWorld( force ) {
 		this.updateHelperMatrix();
 		this.matrixWorldNeedsUpdate = false;
-		for (let i = this.children.length; i--;) this.children[i].updateMatrixWorld( force );
+		for (let i = this.children.length; i--;) this.children[i].updateMatrixWorld(force);
 	}
-	// TODO: refactor. Consider movinf to utils.
-	makeMesh(geometry) {
-		const props = geometry.props || {};
-		const material = new HelperMaterial(props);
+	// TODO: refactor. Consider moving to utils.
+	addGeometries(geometries, props = {}) {
+		const objects = [];
+		for (let name in geometries) {
+			objects.push(objects[name] = this.addObject(geometries[name], Object.assign(props, {name: name})));
+		}
+		return objects;
+	}
+	addObject(geometry, meshProps = {}) {
+
+		const geometryProps = geometry.props || {};
+
+		const materialProps = {highlight: 0};
+
+		if (geometryProps.opacity !== undefined) materialProps.opacity = geometryProps.opacity;
+		if (geometryProps.depthBias !== undefined) materialProps.depthBias = geometryProps.depthBias;
+		if (meshProps.highlight !== undefined) materialProps.highlight = meshProps.highlight;
+
+		const material = new HelperMaterial(materialProps);
+
 		const mesh = new Mesh(geometry, material);
-		mesh.hidden = false;
-		mesh.highlight = props.highlight || 0;
+
+		meshProps = Object.assign({hidden: false, highlight: 0}, meshProps);
+
+		mesh.positionTarget = mesh.position.clone();
+		mesh.quaternionTarget = mesh.quaternion.clone();
+		mesh.scaleTarget = mesh.scale.clone();
+
+		for (var i in meshProps) mesh[i] = meshProps[i]; //TODO
+		this.add(mesh);
 		return mesh;
+	}
+	addTextSprites(infosDef) {
+		const infos = [];
+		for (let name in infosDef) {
+			const mesh = new TextHelper(infosDef[name]);
+			mesh.name = name;
+			mesh.positionTarget = mesh.position.clone();
+			mesh.material.opacity = 0;
+			mesh.material.visible = false;
+			mesh.isInfo = true;
+			infos.push(mesh);
+			infos[name] = mesh;
+			this.add(mesh);
+		}
+		return infos;
 	}
 }
