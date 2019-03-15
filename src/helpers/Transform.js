@@ -82,7 +82,7 @@ export class TransformHelper extends Helper {
 		this.animation = new Animation();
 
 		this.animation.addEventListener('update', () => {
-			this.dispatchEvent({type: 'change'});
+			this.dispatchEvent('change');
 		});
 	}
 	traverseAxis(callback) {

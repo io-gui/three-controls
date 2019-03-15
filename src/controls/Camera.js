@@ -78,7 +78,7 @@ export class CameraControls extends Interactive {
 
 		this.animation.addEventListener('update', event => {
 			this.update(event.timestep);
-			this.dispatchEvent({type: 'change'});
+			this.dispatchEvent('change');
 		});
 
 		this.cameraChanged(); // TODO: ahmm...
