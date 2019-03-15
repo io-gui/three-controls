@@ -1,7 +1,0 @@
-{
-  "extends": "mdcs",
-  "globals": {
-    "PI": true,
-    "HPI": true
-  }
-}
