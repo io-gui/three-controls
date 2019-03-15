@@ -177,9 +177,9 @@
 				helperScene.add(selectionControls);
 				selectionControls.addEventListener('change', render);
 				selectionControls.addEventListener('selected-changed', event => {
-					transformControls.object = event.selected.length ? selectionControls : null;
+					transformControls.object = event.detail.selected.length ? selectionControls : null;
 					// TODO: test with individual objects
-					// transformControls.object = event.selected.length ? event.selected[0] : null;
+					// transformControls.object = event.detail.selected.length ? event.detail.selected[0] : null;
 					transformControls.objectChanged();
 					transformControls.enabled = true;
 				});
@@ -215,7 +215,7 @@
 				window.setupCameraControls = setupCameraControls;
 
 				function viewportControlsChanged(event) {
-					if (event.property === 'active') transformControls.enabled = event.value ? false : true && !!selectionControls.selected.length;
+					if (event.detail.property === 'active') transformControls.enabled = event.detail.value ? false : true && !!selectionControls.selected.length;
 					render();
 				}
 
@@ -246,11 +246,11 @@
 				window.setupTransformControls = setupTransformControls;
 
 				function transformControlsChanged(event) {
-					if (event.property === 'active') viewportControls.enabled = event.value ? false : true;
-					if (event.property === 'space') selectionControls.transformSpace = event.value;
-					if (event.property === 'axis') {
-						selectionControls.enabled = event.value ? false : true;
-						viewportControls.enabled = event.value ? false : true;
+					if (event.detail.property === 'active') viewportControls.enabled = event.detail.value ? false : true;
+					if (event.detail.property === 'space') selectionControls.transformSpace = event.detail.value;
+					if (event.detail.property === 'axis') {
+						selectionControls.enabled = event.detail.value ? false : true;
+						viewportControls.enabled = event.detail.value ? false : true;
 					}
 					render();
 				}
