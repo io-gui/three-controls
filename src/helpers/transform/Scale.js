@@ -85,9 +85,9 @@ export class TransformHelperScale extends TransformHelper {
 	}
 	get textGeometry() {
 		return {
-			X: {position: [0.5, 0, 0], color: 'red'},
-			Y: {position: [0, 0.5, 0], color: 'green'},
-			Z: {position: [0, 0, 0.5], color: 'blue'},
+			X: {pos: [0.5, 0, 0], color: 'red'},
+			Y: {pos: [0, 0.5, 0], color: 'green'},
+			Z: {pos: [0, 0, 0.5], color: 'blue'},
 		};
 	}
 	setAxis(axis) {
@@ -99,7 +99,7 @@ export class TransformHelperScale extends TransformHelper {
 	updateText(text) {
 		text.visible = true;
 		text.material.opacity = (8 * text.material.opacity + text.highlight) / 9;
-		if (text.material.opacity <= 0.001) text.visible = false;
+		text.material.visible = text.material.opacity > 0.01;
 		if (text.name === 'X') text.text = Math.round(this.object.scale.x * 100) / 100;
 		if (text.name === 'Y') text.text = Math.round(this.object.scale.y * 100) / 100;
 		if (text.name === 'Z') text.text = Math.round(this.object.scale.z * 100) / 100;

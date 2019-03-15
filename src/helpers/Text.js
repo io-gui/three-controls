@@ -3,18 +3,18 @@
  */
 
 import {IoCoreMixin} from "../../../io/build/io-core.js";
-import {Sprite, Vector3, Texture} from "../../../three.js/src/Three.js";
+import {Sprite, Vector3, Texture, SpriteMaterial} from "../../../three.js/src/Three.js";
 
 export class TextHelper extends IoCoreMixin(Sprite) {
 	static get properties() {
 		return {
 			text: '',
 			color: 'black',
-			size: 0.33,
+			size: 0.6,
 		};
 	}
 	constructor(props = {}) {
-		super(props);
+		super(new SpriteMaterial());
 		this.connect(window); // TODO: GC warning!;
 
 		this.scaleTarget = new Vector3(1, 1, 1);
@@ -31,7 +31,7 @@ export class TextHelper extends IoCoreMixin(Sprite) {
 		this.scale.set(1, 0.25, 1);
 		this.scale.multiplyScalar(this.size);
 
-		this.position.set(props.position[0], props.position[1], props.position[2]);
+		this.position.set(props.pos[0], props.pos[1], props.pos[2]);
 	}
 	textChanged() {
 		const ctx = this.ctx;

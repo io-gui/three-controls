@@ -220,7 +220,7 @@ export class TransformHelper extends Helper {
 	updateText(text) {
 		text.visible = true;
 		text.material.opacity = (8 * text.material.opacity + text.highlight) / 9;
-		text.material.visible = text.material.opacity < 0.01;
+		text.material.visible = text.material.opacity > 0.01;
 		if (text.name === 'X') text.text = Math.round(this.object.position.x * 100) / 100;
 		if (text.name === 'Y') text.text = Math.round(this.object.position.y * 100) / 100;
 		if (text.name === 'Z') text.text = Math.round(this.object.position.z * 100) / 100;
