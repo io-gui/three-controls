@@ -4,14 +4,32 @@ import {UniformsUtils, Vector3, Color, FrontSide, ShaderMaterial,
 	DataTexture, RGBAFormat, FloatType, NearestFilter} from "../../../three.js/src/Three.js";
 
 // TODO: pixel-perfect outlines
-export class HelperMaterial extends IoLiteMixin(ShaderMaterial) {
-	constructor(props = {}) {
-		super({
+export class HelperMaterial extends IoCoreMixin(ShaderMaterial) {
+	static get properties() {
+		return {
 			depthTest: true,
 			depthWrite: true,
-			transparent: !!props.opacity,
+			transparent: false,
 			side: FrontSide,
+			//
+			color: Color,
+			opacity: 1,
+			depthBias: Number,
+			highlight: Number,
+			resolution: Vector3,
+		};
+	}
+	constructor(props = {}) {
+		super({
+			transparent: !!props.opacity,
+			opacity: props.opacity !== undefined ? props.opacity : 1,
 		});
+		this.connect(window); // TODO: GC warning!;
+
+		this.depthBias = props.depthBias || 0;
+		this.highlight = props.highlight || 0;
+		this.color = props.color || new Color(0xffffff);
+		this.resolution = new Vector3(window.innerWidth, window.innerHeight, window.devicePixelRatio);
 
 		const data = new Float32Array([
 			1.0 / 17.0, 0,0,0, 9.0 / 17.0, 0,0,0, 3.0 / 17.0, 0,0,0, 11.0 / 17.0, 0,0,0,
@@ -22,14 +40,6 @@ export class HelperMaterial extends IoLiteMixin(ShaderMaterial) {
 		const texture = new DataTexture( data, 4, 4, RGBAFormat, FloatType );
 		texture.magFilter = NearestFilter;
 		texture.minFilter = NearestFilter;
-
-		this.defineProperties({
-			color: { value: props.color || new Color(0xffffff)},
-			opacity: { value: props.opacity !== undefined ? props.opacity : 1},
-			depthBias: { value: props.depthBias || 0},
-			highlight: { value: props.highlight || 0},
-			resolution: { value: new Vector3(window.innerWidth, window.innerHeight, window.devicePixelRatio)},
-		});
 
 		this.uniforms = UniformsUtils.merge([this.uniforms, {
 			"uColor":  {value: this.color},
@@ -134,11 +144,15 @@ export class HelperMaterial extends IoLiteMixin(ShaderMaterial) {
 		`;
 	}
 	changed() {
-		this.uniforms.uColor.value = this.color;
-		this.uniforms.uOpacity.value = this.opacity;
-		this.uniforms.uDepthBias.value = this.depthBias;
-		this.uniforms.uHighlight.value = this.highlight;
-		this.uniforms.uResolution.value = this.resolution;
-		this.uniformsNeedUpdate = true;
+		if (this.uniforms.uColor) {
+			this.uniforms.uColor.value = this.color;
+			this.uniforms.uOpacity.value = this.opacity;
+			this.uniforms.uDepthBias.value = this.depthBias;
+			this.uniforms.uHighlight.value = this.highlight;
+			this.uniforms.uResolution.value = this.resolution;
+			this.uniformsNeedUpdate = true;
+		}
 	}
 }
+
+HelperMaterial.Register = IoCoreMixin.Register;

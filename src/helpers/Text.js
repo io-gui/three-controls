@@ -15,6 +15,7 @@ export class TextHelper extends IoCoreMixin(Sprite) {
 	}
 	constructor(props = {}) {
 		super(props);
+		this.connect(window); // TODO: GC warning!;
 
 		this.scaleTarget = new Vector3(1, 1, 1);
 

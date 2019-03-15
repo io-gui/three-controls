@@ -118,7 +118,7 @@ export class Helper extends IoLiteMixin(Mesh) {
 			const mesh = new TextHelper(textSprites[name]);
 			mesh.name = name;
 			mesh.positionTarget = mesh.position.clone();
-			mesh.material.opacity = 0;
+			mesh.material.opacity = 2;
 			mesh.material.visible = false;
 			mesh.isInfo = true;
 			texts.push(mesh);
