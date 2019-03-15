@@ -1,4 +1,5 @@
 import {IoLiteMixin} from "../../lib/IoLiteMixin.js";
+import {IoCoreMixin} from "../../../io/build/io-core.js";
 import {UniformsUtils, Vector3, Color, FrontSide, ShaderMaterial,
 	DataTexture, RGBAFormat, FloatType, NearestFilter} from "../../../three.js/src/Three.js";
 
@@ -22,17 +23,12 @@ export class HelperMaterial extends IoLiteMixin(ShaderMaterial) {
 		texture.magFilter = NearestFilter;
 		texture.minFilter = NearestFilter;
 
-		let color = props.color || new Color(0xffffff);
-		let opacity = props.opacity !== undefined ? props.opacity : 1;
-
-		const res = new Vector3(window.innerWidth, window.innerHeight, window.devicePixelRatio);
-
 		this.defineProperties({
-			color: { value: color, observer: 'uniformChanged'},
-			opacity: { value: opacity, observer: 'uniformChanged'},
-			depthBias: { value: props.depthBias || 0, observer: 'uniformChanged'},
-			highlight: { value: props.highlight || 0, observer: 'uniformChanged'},
-			resolution: { value: res, observer: 'uniformChanged'},
+			color: { value: props.color || new Color(0xffffff)},
+			opacity: { value: props.opacity !== undefined ? props.opacity : 1},
+			depthBias: { value: props.depthBias || 0},
+			highlight: { value: props.highlight || 0},
+			resolution: { value: new Vector3(window.innerWidth, window.innerHeight, window.devicePixelRatio)},
 		});
 
 		this.uniforms = UniformsUtils.merge([this.uniforms, {
@@ -137,7 +133,7 @@ export class HelperMaterial extends IoLiteMixin(ShaderMaterial) {
 			}
 		`;
 	}
-	uniformChanged() {
+	changed() {
 		this.uniforms.uColor.value = this.color;
 		this.uniforms.uOpacity.value = this.opacity;
 		this.uniforms.uDepthBias.value = this.depthBias;
