@@ -3,7 +3,7 @@
  */
 
 import {IoLiteMixin} from "../../lib/IoLiteMixin.js";
-import {Sprite, Vector3, Texture} from "../../lib/three.module.js";
+import {Sprite, Vector3, Texture} from "../../../three.js/src/Three.js";
 
 export class TextHelper extends IoLiteMixin(Sprite) {
 	constructor(props = {}) {

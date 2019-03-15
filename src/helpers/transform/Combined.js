@@ -1,4 +1,4 @@
-import {TorusBufferGeometry, OctahedronBufferGeometry, CylinderBufferGeometry, PlaneBufferGeometry} from "../../../lib/three.module.js";
+import {TorusBufferGeometry, OctahedronBufferGeometry, CylinderBufferGeometry, PlaneBufferGeometry} from "../../../../three.js/src/Three.js";
 import {HelperGeometry, colors} from "../HelperGeometry.js";
 import {TransformHelper} from "../Transform.js";
 

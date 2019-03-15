@@ -6,7 +6,7 @@
  * @author arodic / http://github.com/arodic
  */
 
-import * as THREE from "../../../lib/three.module.js";
+import * as THREE from "../../../../three.js/src/Three.js";
 import {CameraControls} from "../Camera.js";
 
 // Reusable utility variables

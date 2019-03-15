@@ -2,7 +2,7 @@
  * @author arodic / https://github.com/arodic
  */
 
-import {Mesh, Vector3, BoxBufferGeometry} from "../../lib/three.module.js";
+import {Mesh, Vector3, BoxBufferGeometry} from "../../../three.js/src/Three.js";
 import {IoLiteMixin} from "../../lib/IoLiteMixin.js";
 import {HelperMaterial} from "./HelperMaterial.js";
 import {TextHelper} from "./Text.js";
