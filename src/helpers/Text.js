@@ -3,7 +3,7 @@
  */
 
 import {IoCoreMixin} from "../../../io/build/io-core.js";
-import {Sprite, Vector3, Texture, SpriteMaterial} from "../../../three.js/src/Three.js";
+import {Sprite, Vector3, Texture, Color, SpriteMaterial} from "../../../three.js/src/Three.js";
 
 export class TextHelper extends IoCoreMixin(Sprite) {
 	static get properties() {
@@ -18,6 +18,7 @@ export class TextHelper extends IoCoreMixin(Sprite) {
 		this.connect(window); // TODO: GC warning!;
 
 		this.scaleTarget = new Vector3(1, 1, 1);
+		this.color = props.color;
 
 		this.canvas = document.createElement('canvas');
 		this.ctx = this.canvas.getContext('2d');
