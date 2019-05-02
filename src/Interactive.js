@@ -42,7 +42,9 @@ export const InteractiveMixin = (superclass) => class extends superclass {
 		this._addEvents();
 	}
 	dispose() {
+		super.dispose();
 		this._removeEvents();
+		this.enabled = false;
 		this._pointerEvents.dispose();
 	}
 	_addEvents() {

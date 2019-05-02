@@ -2,10 +2,10 @@
  * @author arodic / https://github.com/arodic
  */
 
-import {IoCoreMixin} from "../../../io/build/io-core.js";
+import {IoNodeMixin} from "../../../io/build/io-core.js";
 import {Sprite, Vector3, Texture, Color, SpriteMaterial} from "../../../three.js/src/Three.js";
 
-export class TextHelper extends IoCoreMixin(Sprite) {
+export class TextHelper extends IoNodeMixin(Sprite) {
 	static get properties() {
 		return {
 			text: '',
@@ -60,4 +60,4 @@ export class TextHelper extends IoCoreMixin(Sprite) {
 	}
 }
 
-TextHelper.Register = IoCoreMixin.Register;
+TextHelper.Register = IoNodeMixin.Register;

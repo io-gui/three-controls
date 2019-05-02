@@ -34,6 +34,11 @@ export class Helper extends IoLiteMixin(Mesh) {
 		this.material.colorWrite = false;
 		this.material.depthWrite = false;
 	}
+	dispose() {
+		super.dispose();
+		this.geometry.dispose();
+		this.material.dispose();
+	}
 	onBeforeRender(renderer, scene, camera) {
 		this.camera = camera;
 	}

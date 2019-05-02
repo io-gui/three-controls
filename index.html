@@ -185,6 +185,7 @@
 				});
 
 				setupCameraControls('CameraControls');
+
 				setupTransformControls('RotateTransformControls');
 
 				scene.updateMatrixWorld();
@@ -232,8 +233,9 @@
 
 					if (transformControls) {
 						space = transformControls.space;
-						transformControls.dispose();
+						transformControls.removeEventListener('change', transformControlsChanged);
 						helperScene.remove(transformControls);
+						transformControls.dispose();
 					}
 					if (selectionControls) selectionControls.enabled = true;
 					if (viewportControls) viewportControls.enabled = true;

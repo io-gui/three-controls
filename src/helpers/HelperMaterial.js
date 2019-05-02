@@ -1,10 +1,10 @@
 import {IoLiteMixin} from "../../lib/IoLiteMixin.js";
-import {IoCoreMixin} from "../../../io/build/io-core.js";
+import {IoNodeMixin} from "../../../io/build/io-core.js";
 import {UniformsUtils, Vector3, Color, FrontSide, ShaderMaterial,
 	DataTexture, RGBAFormat, FloatType, NearestFilter} from "../../../three.js/src/Three.js";
 
 // TODO: pixel-perfect outlines
-export class HelperMaterial extends IoCoreMixin(ShaderMaterial) {
+export class HelperMaterial extends IoNodeMixin(ShaderMaterial) {
 	static get properties() {
 		return {
 			depthTest: true,
@@ -155,4 +155,4 @@ export class HelperMaterial extends IoCoreMixin(ShaderMaterial) {
 	}
 }
 
-HelperMaterial.Register = IoCoreMixin.Register;
+HelperMaterial.Register = IoNodeMixin.Register;
