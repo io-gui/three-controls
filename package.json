@@ -1,0 +1,25 @@
+{
+  "name": "three.js-controls",
+  "version": "1.0.0",
+  "main": "src/index.ts",
+  "license": "MIT",
+  "scripts": {
+    "build": "tsc",
+    "build:clean": "yarn clean && yarn build",
+    "clean": "rm -rf build",
+    "lint": "eslint --ext .ts src/",
+    "test": "jest",
+    "test:clean": "yarn clean && yarn test"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.11.6",
+    "@babel/preset-env": "^7.11.5",
+    "@babel/preset-typescript": "^7.10.4",
+    "@types/jest": "^26.0.14",
+    "@types/node": "^14.11.2",
+    "babel-jest": "^26.5.0",
+    "jest": "^26.5.0",
+    "ts-node": "^9.0.0",
+    "typescript": "^4.0.3"
+  }
+}
