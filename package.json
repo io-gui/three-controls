@@ -1,25 +1,60 @@
 {
   "name": "three.js-controls",
   "version": "1.0.0",
-  "main": "src/index.ts",
+  "main": "src/Controls.ts",
   "license": "MIT",
   "scripts": {
-    "build": "tsc",
-    "build:clean": "yarn clean && yarn build",
     "clean": "rm -rf build",
-    "lint": "eslint --ext .ts src/",
-    "test": "jest",
-    "test:clean": "yarn clean && yarn test"
+    "watch": "yarn clean && tsc -w",
+    "watch:three": "yarn clean && tsc -w & yarn copy:three:watch",
+    "lint": "eslint src",
+    "lint:mdcs": "eslint build -c eslintMdcs.json --no-ignore build --fix",
+    "copy:three": "yarn cpx 'build/*' '../three/examples/jsm/controls/' -t './transform.js'",
+    "copy:three:watch": "yarn cpx 'build/*' '../three/examples/jsm/controls/' -t './transform.js' -w",
+    "build": "tsc",
+    "build:clean": "yarn clean && tsc",
+    "build:three": "yarn clean && tsc --declarationMap false --sourceMap false && yarn lint:mdcs && yarn copy:three && yarn build:clean"
   },
+  "eslintConfig": {
+    "env": {
+      "browser": true
+    },
+    "parser": "@typescript-eslint/parser",
+    "parserOptions": {
+      "project": "./tsconfig.json"
+    },
+    "plugins": [
+      "@typescript-eslint"
+    ],
+    "extends": [
+      "eslint:recommended",
+      "plugin:@typescript-eslint/eslint-recommended",
+      "plugin:@typescript-eslint/recommended"
+    ],
+    "rules": {
+      "@typescript-eslint/explicit-module-boundary-types": "off",
+      "@typescript-eslint/consistent-type-assertions": "error",
+      "@typescript-eslint/no-use-before-define": "warn",
+      "@typescript-eslint/no-floating-promises": "warn",
+      "@typescript-eslint/no-explicit-any": "off",
+      "no-var": "error",
+      "eqeqeq": "error"
+    }
+  },
+  "eslintIgnore": [
+    "build"
+  ],
   "devDependencies": {
-    "@babel/core": "^7.11.6",
-    "@babel/preset-env": "^7.11.5",
-    "@babel/preset-typescript": "^7.10.4",
-    "@types/jest": "^26.0.14",
-    "@types/node": "^14.11.2",
-    "babel-jest": "^26.5.0",
-    "jest": "^26.5.0",
-    "ts-node": "^9.0.0",
+    "@typescript-eslint/eslint-plugin": "^4.4.0",
+    "@typescript-eslint/parser": "^4.4.0",
+    "cpx": "^1.5.0",
+    "eslint": "^7.10.0",
+    "eslint-config-mdcs": "^5.0.0",
+    "replacestream": "^4.0.3",
     "typescript": "^4.0.3"
-  }
+  },
+  "peerDependencies": {
+    "three": "^0.121.1"
+  },
+  "dependencies": {}
 }
