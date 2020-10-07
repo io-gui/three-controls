@@ -1,5 +1,5 @@
 {
-  "name": "@iogui/three-controls",
+  "name": "@io-gui/three-controls",
   "version": "1.0.0",
   "main": "build/Controls.js",
   "type": "module",
