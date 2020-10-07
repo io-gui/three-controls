@@ -1,5 +1,5 @@
 {
-  "name": "three.js-controls",
+  "name": "@iogui/three-controls",
   "version": "1.0.0",
   "main": "src/Controls.ts",
   "license": "MIT",
