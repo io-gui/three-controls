@@ -4,16 +4,16 @@
   "main": "src/Controls.ts",
   "license": "MIT",
   "scripts": {
-    "clean": "rm -rf build",
-    "watch": "yarn clean && tsc -w",
-    "watch:three": "yarn clean && tsc -w & yarn copy:three:watch",
     "lint": "eslint src",
-    "lint:mdcs": "eslint build -c eslintMdcs.json --no-ignore build --fix",
-    "copy:three": "yarn cpx 'build/*' '../three/examples/jsm/controls/' -t './transform.js'",
-    "copy:three:watch": "yarn cpx 'build/*' '../three/examples/jsm/controls/' -t './transform.js' -w",
-    "build": "tsc",
-    "build:clean": "yarn clean && tsc",
-    "build:three": "yarn clean && tsc --declarationMap false --sourceMap false && yarn lint:mdcs && yarn copy:three && yarn build:clean"
+    "clean": "rm -rf build",
+    "dev": "yarn clean && tsc -w",
+    "build": "yarn clean && tsc && yarn repath:build && yarn lint:mdcs",
+    "build:three": "yarn clean && tsc --declarationMap false --sourceMap false && yarn lint:mdcs && yarn repath:three && yarn copy:three",
+    "repath:build": "node repath.js '../../three/src/Three' '../../three/build/three.module.js' build/*.js",
+    "repath:three": "yarn repath:build && node repath.js '../../three/' '../../../' build/*",
+    "copy:three": "yarn cpx 'build/*' '../three/examples/jsm/controls/'",
+    "lint:mdcs": "eslint build -c three.eslint.json --no-ignore build --fix",
+    "dev:three": "yarn clean && tsc -w & yarn cpx 'build/*' '../three/examples/jsm/controls/' -t './repath.js' -w"
   },
   "eslintConfig": {
     "env": {
@@ -42,9 +42,11 @@
     }
   },
   "eslintIgnore": [
-    "build"
+    "build",
+    "repath.js"
   ],
   "devDependencies": {
+    "@babel/plugin-transform-typescript": "^7.11.0",
     "@typescript-eslint/eslint-plugin": "^4.4.0",
     "@typescript-eslint/parser": "^4.4.0",
     "cpx": "^1.5.0",
