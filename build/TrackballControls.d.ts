@@ -1,4 +1,4 @@
-import { MOUSE } from "../../../three/src/Three";
+import { MOUSE } from "../../../src/Three";
 import { Controls, Pointer, Camera } from "./Controls.js";
 
 declare class TrackballControls extends Controls {

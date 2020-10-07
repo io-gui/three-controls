@@ -1,4 +1,4 @@
-import { Vector2, Vector3, Plane, Intersection, Object3D, PerspectiveCamera, OrthographicCamera, Quaternion } from "../../../three/src/Three";
+import { Vector2, Vector3, Plane, Intersection, Object3D, PerspectiveCamera, OrthographicCamera, Quaternion } from "../../../src/Three";
 
 export declare type Callback = ( callbackValue?: any ) => void;
 

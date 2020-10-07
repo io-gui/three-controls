@@ -1,6 +1,6 @@
 {
   "name": "@io-gui/three-controls",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "main": "index.js",
   "files": [
     "src",
@@ -14,7 +14,7 @@
     "clean": "rm -rf build",
     "dev": "yarn clean && tsc -w",
     "build": "yarn clean && tsc --declarationMap false --sourceMap false && yarn repath:build && yarn lint:mdcs",
-    "build:three": "yarn build yarn repath:three && yarn copy:three",
+    "build:three": "yarn build && yarn repath:three && yarn copy:three",
     "repath:build": "node repath.js '../../../three/src/Three' '../../three/build/three.module.js' build/*.js",
     "repath:three": "yarn repath:build && node repath.js '../../../three/' '../../../' build/*",
     "copy:three": "yarn cpx 'build/*' '../three/examples/jsm/controls/'",
