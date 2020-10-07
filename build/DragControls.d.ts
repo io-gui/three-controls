@@ -1,4 +1,4 @@
-import { Object3D } from "../../three/src/Three";
+import { Object3D } from "../../../three/src/Three";
 import { Controls, Pointer, Camera } from "./Controls.js";
 
 export declare class DragControls extends Controls {
@@ -12,5 +12,3 @@ export declare class DragControls extends Controls {
 	onTrackedPointerUp( pointer: Pointer, pointers: Pointer[] ): void;
 
 }
-
-//# sourceMappingURL=DragControls.d.ts.map

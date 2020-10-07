@@ -1,4 +1,4 @@
-import { MOUSE } from "../../three/src/Three";
+import { MOUSE } from "../../../three/src/Three";
 import { Controls, Pointer, Camera } from "./Controls.js";
 
 declare class TrackballControls extends Controls {
@@ -30,5 +30,3 @@ declare class TrackballControls extends Controls {
 }
 
 export { TrackballControls };
-
-//# sourceMappingURL=TrackballControls.d.ts.map

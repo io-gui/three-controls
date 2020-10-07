@@ -475,5 +475,3 @@ class OrbitControls extends Controls {
 }
 
 export { OrbitControls };
-
-//# sourceMappingURL=OrbitControls.js.map

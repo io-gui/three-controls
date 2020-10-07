@@ -263,5 +263,3 @@ class TrackballControls extends Controls {
 }
 
 export { TrackballControls };
-
-//# sourceMappingURL=TrackballControls.js.map

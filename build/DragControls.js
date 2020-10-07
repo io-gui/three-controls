@@ -129,5 +129,3 @@ export class DragControls extends Controls {
 	}
 
 }
-
-//# sourceMappingURL=DragControls.js.map

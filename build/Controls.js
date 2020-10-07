@@ -820,5 +820,3 @@ const ControlsMixin = ( superclass ) => {
 
 export class Controls extends ControlsMixin( EventDispatcher ) {
 }
-
-//# sourceMappingURL=Controls.js.map

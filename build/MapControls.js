@@ -24,5 +24,3 @@ export class MapControls extends OrbitControls {
 	}
 
 }
-
-//# sourceMappingURL=MapControls.js.map

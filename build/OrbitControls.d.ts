@@ -1,4 +1,4 @@
-import { MOUSE, TOUCH, Vector3 } from "../../three/src/Three";
+import { MOUSE, TOUCH, Vector3 } from "../../../three/src/Three";
 import { Controls, Pointer, CenterPointer, Callback, Camera } from "./Controls.js";
 
 declare class OrbitControls extends Controls {
@@ -60,5 +60,3 @@ declare class OrbitControls extends Controls {
 }
 
 export { OrbitControls };
-
-//# sourceMappingURL=OrbitControls.d.ts.map

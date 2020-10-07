@@ -1,4 +1,4 @@
-import { MOUSE, TOUCH } from "../../three/src/Three";
+import { MOUSE, TOUCH } from "../../../three/src/Three";
 import { OrbitControls } from "./OrbitControls.js";
 
 export declare class MapControls extends OrbitControls {
@@ -15,5 +15,3 @@ export declare class MapControls extends OrbitControls {
 	};
 
 }
-
-//# sourceMappingURL=MapControls.d.ts.map
