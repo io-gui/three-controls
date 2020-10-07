@@ -1,4 +1,4 @@
-import { Object3D, Intersection } from "../../three/src/Three";
+import { Object3D, Intersection } from "../../../three/src/Three";
 import { Controls, SyntheticEvent, Pointer, Camera } from "./Controls.js";
 
 let _intersections: Intersection[];

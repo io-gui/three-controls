@@ -1,8 +1,7 @@
 {
   "name": "@io-gui/three-controls",
   "version": "1.0.0",
-  "main": "build/Controls.js",
-  "type": "module",
+  "main": "index.js",
   "files": [
     "src",
     "build",
@@ -10,15 +9,15 @@
     "README.md"
   ],
   "scripts": {
-    "lint": "eslint src",
+    "lint": "eslint src --fix",
+    "lint:mdcs": "eslint build -c three.eslint.json --no-ignore build --fix",
     "clean": "rm -rf build",
     "dev": "yarn clean && tsc -w",
-    "build": "yarn clean && tsc && yarn repath:build && yarn lint:mdcs",
-    "build:three": "yarn clean && tsc --declarationMap false --sourceMap false && yarn lint:mdcs && yarn repath:three && yarn copy:three",
-    "repath:build": "node repath.js '../../three/src/Three' '../../three/build/three.module.js' build/*.js",
-    "repath:three": "yarn repath:build && node repath.js '../../three/' '../../../' build/*",
+    "build": "yarn clean && tsc --declarationMap false --sourceMap false && yarn repath:build && yarn lint:mdcs",
+    "build:three": "yarn build yarn repath:three && yarn copy:three",
+    "repath:build": "node repath.js '../../../three/src/Three' '../../three/build/three.module.js' build/*.js",
+    "repath:three": "yarn repath:build && node repath.js '../../../three/' '../../../' build/*",
     "copy:three": "yarn cpx 'build/*' '../three/examples/jsm/controls/'",
-    "lint:mdcs": "eslint build -c three.eslint.json --no-ignore build --fix",
     "dev:three": "yarn clean && tsc -w & yarn cpx 'build/*' '../three/examples/jsm/controls/' -t './repath.js' -w"
   },
   "sideEffects": false,
@@ -66,10 +65,10 @@
   },
   "eslintIgnore": [
     "build",
-    "repath.js"
+    "repath.js",
+    "index.js"
   ],
   "devDependencies": {
-    "@babel/plugin-transform-typescript": "^7.11.0",
     "@typescript-eslint/eslint-plugin": "^4.4.0",
     "@typescript-eslint/parser": "^4.4.0",
     "cpx": "^1.5.0",

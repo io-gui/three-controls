@@ -27,13 +27,13 @@ for (let i = 4; i < process.argv.length; i++) {
 // Repath transformer for `yarn copy:three:watch` (live development with `cpx --watch --transform`)
 module.exports = function convert(filename) {
   if (path.extname(filename) === '.ts') {
-    return replaceStream(new RegExp('../../three/src/Three', 'g'), '../../../src/Three');
+    return replaceStream(new RegExp('../../../three/src/Three', 'g'), '../../../src/Three');
   }
   if (path.extname(filename) === '.js') {
-    return replaceStream(new RegExp('../../three/src/Three', 'g'), '../../../../three/examples/jsm/controls/three.module.js');
+    return replaceStream(new RegExp('../../../three/src/Three', 'g'), '../../../../three/examples/jsm/controls/three.module.js');
   }
   if (path.extname(filename) === '.map') {
-    return replaceStream(new RegExp('../src', 'g'), '../../../../three-controls/src');
+    return replaceStream(new RegExp('../src', 'g'), '../../../../@io-gui/three-controls/src');
   }
   return new stream.PassThrough();
 };
