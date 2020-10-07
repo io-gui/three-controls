@@ -1,8 +1,14 @@
 {
   "name": "@iogui/three-controls",
   "version": "1.0.0",
-  "main": "src/Controls.ts",
-  "license": "MIT",
+  "main": "build/Controls.js",
+  "type": "module",
+  "files": [
+    "src",
+    "build",
+    "LICENSE",
+    "README.md"
+  ],
   "scripts": {
     "lint": "eslint src",
     "clean": "rm -rf build",
@@ -15,6 +21,23 @@
     "lint:mdcs": "eslint build -c three.eslint.json --no-ignore build --fix",
     "dev:three": "yarn clean && tsc -w & yarn cpx 'build/*' '../three/examples/jsm/controls/' -t './repath.js' -w"
   },
+  "sideEffects": false,
+  "publishConfig": { "registry": "https://npm.pkg.github.com/" },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/io-gui/three-controls.git"
+  },
+  "keywords": [
+    "typescript",
+    "threejs",
+    "controls"
+  ],
+  "author": "Aleksandar (Aki) Rodic",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/io-gui/three-controls/issues"
+  },
+  "homepage": "https://github.com/io-gui/three.js-controls",
   "eslintConfig": {
     "env": {
       "browser": true
