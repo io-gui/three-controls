@@ -13,8 +13,8 @@ yarn add -D @io-gui/three-controls
 yarn add -D three
 
 # With npm:
-npm i  --save-dev three-controls
-npm i  --save-dev three
+npm i -D @io-gui/three-controls
+npm i -D three
 ```
 
 ## Development

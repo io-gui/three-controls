@@ -1,5 +1,5 @@
-import { MOUSE, Vector2, Vector3, Quaternion, PerspectiveCamera, OrthographicCamera } from "../../../three/src/Three";
-import { Controls, Pointer, Camera } from "./Controls.js";
+import { MOUSE, Vector2, Vector3, Quaternion, PerspectiveCamera, OrthographicCamera } from "../../three";
+import { Controls, Pointer, CHANGE_EVENT, START_EVENT, END_EVENT } from "./Controls.js";
 
 const STATE = { NONE: - 1, ROTATE: 0, ZOOM: 1, PAN: 2 };
 
@@ -10,9 +10,6 @@ const _zoomMagnitude = new Vector2();
 const _panMagnitude = new Vector3();
 
 // TODO: make sure events are always fired in right order (start > change > end)
-const changeEvent = { type: 'change' };
-const startEvent = { type: 'start' };
-const endEvent = { type: 'end' };
 
 // Temp variables
 
@@ -24,6 +21,7 @@ const _cameraSidewaysDirection = new Vector3();
 const _moveDirection = new Vector3();
 
 class TrackballControls extends Controls {
+  // Public API
   rotateSpeed = 1.0;
   zoomSpeed = 1.2;
   panSpeed = 1.0;
@@ -34,38 +32,12 @@ class TrackballControls extends Controls {
   maxDistance = Infinity;
   keys = [65 /*A*/, 83 /*S*/, 68 /*D*/];
   mouseButtons = { LEFT: MOUSE.ROTATE, MIDDLE: MOUSE.DOLLY, RIGHT: MOUSE.PAN };
-  // internals
-  private _keyState = STATE.NONE;
-  constructor(camera: Camera, domElement: HTMLElement) {
+
+  // Internal utility variables
+  _keyState = STATE.NONE;
+
+  constructor(camera:  PerspectiveCamera | OrthographicCamera, domElement: HTMLElement) {
     super(camera, domElement);
-
-    // event handlers
-    const _onContextMenu = (event: Event) => {
-      event.preventDefault();
-    }
-
-    const _onWheel = (event: WheelEvent) => {
-      if (this.noZoom === true) return;
-      event.preventDefault();
-      event.stopPropagation();
-      switch (event.deltaMode) {
-        case 2:
-          // Zoom in pages
-          _zoomMagnitude.y -= event.deltaY * 0.025 * this.zoomSpeed;
-          break;
-        case 1:
-          // Zoom in lines
-          _zoomMagnitude.y -= event.deltaY * 0.01 * this.zoomSpeed;
-          break;
-        default:
-          // undefined, 0, assume pixels
-          _zoomMagnitude.y -= event.deltaY * 0.00025 * this.zoomSpeed;
-          break;
-      }
-    };
-    this.addEventListener('contextmenu', _onContextMenu);
-    this.addEventListener('wheel', _onWheel);
-    this.dispatchEvent(changeEvent);
 
     // Deprecation warnings
     Object.defineProperty(this, 'staticMoving', {
@@ -88,9 +60,39 @@ class TrackballControls extends Controls {
     }
   }
 
+  // Event handlers
+
+  _onContextMenu(event: Event) {
+    super._onContextMenu(event);
+    event.preventDefault();
+  }
+
+  _onWheel(event: WheelEvent) {
+    super._onWheel(event);
+    if (this.noZoom === true) return;
+    event.preventDefault();
+    event.stopPropagation();
+    switch (event.deltaMode) {
+      case 2:
+        // Zoom in pages
+        _zoomMagnitude.y -= event.deltaY * 0.025 * this.zoomSpeed;
+        break;
+      case 1:
+        // Zoom in lines
+        _zoomMagnitude.y -= event.deltaY * 0.01 * this.zoomSpeed;
+        break;
+      default:
+        // undefined, 0, assume pixels
+        _zoomMagnitude.y -= event.deltaY * 0.00025 * this.zoomSpeed;
+        break;
+    }
+  }
+
+  // Tracked pointer handlers
+
   onTrackedPointerDown(pointer: Pointer, pointers: Pointer[]): void {
     if (pointers.length === 1) {
-      this.dispatchEvent(startEvent);
+      this.dispatchEvent(START_EVENT);
     }
   }
 
@@ -129,12 +131,12 @@ class TrackballControls extends Controls {
 
     this.camera.position.addVectors(this.target, _eye);
     this.camera.lookAt(this.target);
-    this.dispatchEvent(changeEvent);
+    this.dispatchEvent(CHANGE_EVENT);
   }
 
   onTrackedPointerUp(pointer: Pointer, pointers: Pointer[]): void {
     if (pointers.length === 0) {
-      this.dispatchEvent(endEvent);
+      this.dispatchEvent(END_EVENT);
     }
   }
 
@@ -152,7 +154,9 @@ class TrackballControls extends Controls {
     }
   }
 
-  private _rotateCamera(): void {
+  // Internal helper functions
+
+  _rotateCamera(): void {
     const angle = _rotationMagnitude.length();
     if (angle) {
       _eye.copy(this.camera.position).sub(this.target);
@@ -169,7 +173,7 @@ class TrackballControls extends Controls {
     }
   }
 
-  private _zoomCamera(): void {
+  _zoomCamera(): void {
     const factor = 1.0 - _zoomMagnitude.y;
     if (factor !== 1.0 && factor > 0.0) {
       if (this.camera instanceof PerspectiveCamera) {
@@ -191,10 +195,11 @@ class TrackballControls extends Controls {
     }
   }
 
-  private _panCamera(): void {
+  _panCamera(): void {
     this.camera.position.sub(_panMagnitude);
     this.target.sub(_panMagnitude);
   }
+
 }
 
 export { TrackballControls };

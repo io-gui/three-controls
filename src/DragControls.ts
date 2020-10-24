@@ -1,23 +1,25 @@
-import { Object3D, Intersection } from "../../../three/src/Three";
-import { Controls, SyntheticEvent, Pointer, Camera } from "./Controls.js";
+import { Object3D, Intersection, Event as ThreeEvent } from "../../three";
+import { PerspectiveCamera, OrthographicCamera } from "../../three";
+import { Controls, Pointer } from "./Controls.js";
 
 let _intersections: Intersection[];
 const _hoveredObjects: Record<string, Object3D> = {};
 const _selectedObjects: Record<string, Object3D> = {};
 
 export class DragControls extends Controls {
+  // Public API
   objects: Object3D[];
   transformGroup = false;
-  constructor(objects: Object3D[], camera: Camera, domElement: HTMLElement) {
+
+  constructor(objects: Object3D[], camera:  PerspectiveCamera | OrthographicCamera, domElement: HTMLElement) {
     super(camera, domElement);
     this.objects = objects;
 
-    const _onEnabledChanged = (event: SyntheticEvent) => {
+    const _onEnabledChanged = (event: ThreeEvent) => {
       if (!event.value) this.domElement.style.cursor = '';
     }
 
     this.addEventListener('enabled-changed', _onEnabledChanged);
-
     // Deprecation warnings
     this.getObjects = function() {
       console.warn('THREE.DragControls: getObjects() is deprecated. Use `objects` property instead.');

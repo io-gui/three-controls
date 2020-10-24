@@ -1,5 +1,5 @@
-import { MOUSE, TOUCH, Vector3, Quaternion, Spherical, PerspectiveCamera, OrthographicCamera } from "../../../three/src/Three";
-import { Controls, Pointer, CenterPointer, Callback, Camera } from "./Controls.js";
+import { MOUSE, TOUCH, Vector3, Quaternion, Spherical, PerspectiveCamera, OrthographicCamera } from "../../three";
+import { Controls, Pointer, CenterPointer, Callback, CHANGE_EVENT, START_EVENT, END_EVENT, onChange } from "./Controls.js";
 
 // This set of controls performs orbiting, dollying (zooming), and panning.
 // Unlike TrackballControls, it maintains the "up" direction camera.up (+Y by default).
@@ -7,10 +7,6 @@ import { Controls, Pointer, CenterPointer, Callback, Camera } from "./Controls.j
 //    Orbit - left mouse / touch: one-finger move
 //    Zoom - middle mouse, or mousewheel / touch: two-finger spread or squish
 //    Pan - right mouse, or left mouse + ctrl/meta/shiftKey, or arrow keys / touch: two-finger move
-
-const changeEvent = {type: 'change'};
-const startEvent = {type: 'start'};
-const endEvent = {type: 'end'};
 
 let scale = 1;
 
@@ -23,6 +19,7 @@ const movement = new Vector3();
 const twoPI = 2 * Math.PI;
 
 class OrbitControls extends Controls {
+  // Public API
   // How far you can dolly in and out (PerspectiveCamera only)
   minDistance = 0;
   maxDistance = Infinity;
@@ -50,8 +47,9 @@ class OrbitControls extends Controls {
   screenSpacePanning = true; // if false, pan orthogonal to world-space direction camera.up
   keyPanSpeed = 7;
   // Set to true to automatically rotate around the target
-  autoRotateSpeed = 1; // 30 seconds per round when fps is 60
+  @onChange('_autoRotateChanged')
   autoRotate = false;
+  autoRotateSpeed = 1; // 30 seconds per round when fps is 60
   // Set to false to disable use of the keys
   enableKeys = true;
   // The four arrow keys
@@ -61,12 +59,12 @@ class OrbitControls extends Controls {
   // Touch fingers // TODO: deprecate touches.ONE
   touches = {ONE: TOUCH.ROTATE, TWO: TOUCH.DOLLY_PAN};
 
-  // Internal
-  // current position in spherical coordinates
-  private _spherical = new Spherical();
-  private _autoRotationMagnitude = 0;
-  private _interacting = false;
-  constructor(camera: Camera, domElement: HTMLElement) {
+  // Internal utility variables
+  _spherical = new Spherical();
+  _autoRotationMagnitude = 0;
+  _interacting = false;
+
+  constructor(camera:  PerspectiveCamera | OrthographicCamera, domElement: HTMLElement) {
 
     super(camera, domElement);
 
@@ -76,60 +74,11 @@ class OrbitControls extends Controls {
       this.enablePan = false;
     }
 
-    // TODO: restart animation on disable > enable.
-    this._defineProperty('autoRotate', false, value => {
-      value ? (() => {
-        this.startAnimation(this._autoRotate);
-      })() : (() => {
-        this.stopAnimation(this._autoRotate);
-      })();
-    });
-
-    this._autoRotate = this._autoRotate.bind(this);
-
-    // event handlers
-    const _onContextMenu = (event: Event) => {
-      event.preventDefault();
-    }
-
-    const _onKeyDown = (event: KeyboardEvent) => {
-      if (this.enableKeys === false || this.enablePan === false) return;
-      const code = Number(event.code);
-      switch (code) {
-        case this.keys.UP:
-          this._keydownPan(0, this.keyPanSpeed);
-          event.preventDefault();
-          break;
-        case this.keys.BOTTOM:
-          this._keydownPan(0, - this.keyPanSpeed);
-          event.preventDefault();
-          break;
-        case this.keys.LEFT:
-          this._keydownPan(this.keyPanSpeed, 0);
-          event.preventDefault();
-          break;
-        case this.keys.RIGHT:
-          this._keydownPan(- this.keyPanSpeed, 0);
-          event.preventDefault();
-          break;
-      }
-    }
-
-    const _onWheel = (event: WheelEvent) => {
-      // TODO: test with inerial movement
-      if (this.enableZoom === false) return;
-      event.preventDefault();
-      event.stopPropagation();
-      this._applyDollyMovement(event.deltaY);
-    }
-
-    this.addEventListener('contextmenu', _onContextMenu);
-    this.addEventListener('keydown', _onKeyDown);
-    this.addEventListener('wheel', _onWheel);
-
-    this.dispatchEvent(changeEvent);
+    this._autoRotateAnimation = this._autoRotateAnimation.bind(this);
+    this._autoRotateChanged = this._autoRotateChanged.bind(this);
 
     // Deprecation warnings
+
     Object.defineProperty(this, 'dynamicDampingFactor', {
       set: (value) => {
         console.warn('THREE.OrbitControls: "dynamicDampingFactor" is now "dampingFactor"!');
@@ -141,7 +90,8 @@ class OrbitControls extends Controls {
     };
   }
 
-  // API
+  // Public methods
+
   getPolarAngle(): number {
     return this._spherical.phi;
   }
@@ -149,16 +99,67 @@ class OrbitControls extends Controls {
     return this._spherical.theta;
   }
 
+  // Deprecated event warning
+
+  addEventListener(type: string, listener: Callback): void {
+    if (type === 'cancel') {
+      console.warn(`THREE.OrbitControls: "cancel" event is deprecated. Use "enabled-changed" event instead.`);
+      type = 'enabled-changed';
+    }
+    super.addEventListener(type, listener);
+  }
+
   // Event handlers
+
+  _onContextMenu(event: Event) {
+    super._onContextMenu(event);
+    event.preventDefault();
+  }
+
+  _onWheel(event: WheelEvent) {
+    super._onWheel(event);
+    // TODO: test with inerial movement
+    if (this.enableZoom === false) return;
+    event.preventDefault();
+    event.stopPropagation();
+    this._applyDollyMovement(event.deltaY);
+  }
+
+  _onKeyDown(event: KeyboardEvent) {
+    super._onKeyDown(event);
+    if (this.enableKeys === false || this.enablePan === false) return;
+    const code = Number(event.code);
+    switch (code) {
+      case this.keys.UP:
+        this._keydownPan(0, this.keyPanSpeed);
+        event.preventDefault();
+        break;
+      case this.keys.BOTTOM:
+        this._keydownPan(0, - this.keyPanSpeed);
+        event.preventDefault();
+        break;
+      case this.keys.LEFT:
+        this._keydownPan(this.keyPanSpeed, 0);
+        event.preventDefault();
+        break;
+      case this.keys.RIGHT:
+        this._keydownPan(- this.keyPanSpeed, 0);
+        event.preventDefault();
+        break;
+    }
+  }
+
+  // Tracked pointer handlers
+
   onTrackedPointerDown(pointer: Pointer, pointers: Pointer[]): void {
     if (pointers.length === 1) {
-      this.dispatchEvent(startEvent);
+      this.dispatchEvent(START_EVENT);
     }
   }
 
   onTrackedPointerMove(pointer: Pointer, pointers: Pointer[], center: CenterPointer): void {
     let button = -1;
-    this._interacting = true;
+    this._interacting = !pointer.isSimulated;
     switch (pointers.length) {
       case 1: // 1 pointer
         switch (pointer.button) {
@@ -204,10 +205,12 @@ class OrbitControls extends Controls {
 
   onTrackedPointerUp(pointer: Pointer, pointers: Pointer[]): void {
     if (pointers.length === 0) {
-      this.dispatchEvent(endEvent);
+      this.dispatchEvent(END_EVENT);
       this._interacting = false;
     }
   }
+
+  // Internal helper functions
 
   _pointerDolly(pointer: Pointer): void {
     this._applyDollyMovement(pointer.canvas.movement.y);
@@ -231,7 +234,7 @@ class OrbitControls extends Controls {
     offset.setFromSpherical(this._spherical);
     this.camera.position.copy(this.target).add(offset);
     this.camera.lookAt(this.target);
-    this.dispatchEvent(changeEvent);
+    this.dispatchEvent(CHANGE_EVENT);
   }
 
   _pointerPan(pointer: Pointer): void {
@@ -242,8 +245,8 @@ class OrbitControls extends Controls {
     }
   }
 
-  // deltaX and deltaY are in pixels; right and down are positive
   _keydownPan(deltaX: number, deltaY: number): void {
+    // deltaX and deltaY are in pixels; right and down are positive
     let fovFactor = 1;
     if (this.camera instanceof PerspectiveCamera) {
       offset.copy(this.camera.position).sub(this.target);
@@ -273,7 +276,7 @@ class OrbitControls extends Controls {
     offset.copy(movement).multiplyScalar(this.panSpeed);
     this.target.sub(offset);
     this.camera.position.sub(offset);
-    this.dispatchEvent(changeEvent);
+    this.dispatchEvent(CHANGE_EVENT);
   }
 
   _pointerRotate(pointer: Pointer): void {
@@ -283,12 +286,17 @@ class OrbitControls extends Controls {
     this._applyRotateMovement(movement);
   }
 
-  _autoRotate(timeDelta: number): void {
-    // TODO: use timeDelta
+  _autoRotateChanged() {
+    // TODO: restart animation on disable > enable.
+    this.autoRotate ? this.startAnimation(this._autoRotateAnimation) : this.stopAnimation(this._autoRotateAnimation);
+  }
+
+  _autoRotateAnimation(deltaTime: number): void {
+    const damping = Math.pow(1 - this.dampingFactor, deltaTime * 60 / 1000);
     const angle = this._interacting ? 0 : 2 * Math.PI / 60 / 60 * this.autoRotateSpeed;
     if (this.enableDamping) {
-      this._autoRotationMagnitude += angle * this.dampingFactor;
-      this._autoRotationMagnitude *= (1 - this.dampingFactor);
+      this._autoRotationMagnitude += angle * (1 - damping);
+      this._autoRotationMagnitude *= damping;
     } else {
       this._autoRotationMagnitude = angle;
     }
@@ -329,15 +337,7 @@ class OrbitControls extends Controls {
     offset.applyQuaternion(quatInverse);
     this.camera.position.copy(this.target).add(offset);
     this.camera.lookAt(this.target);
-    this.dispatchEvent(changeEvent);
-  }
-
-  addEventListener(type: string, listener: Callback): void {
-    if (type === 'cancel') {
-      console.warn(`THREE.OrbitControls: "cancel" event is deprecated. Use "enabled-changed" event instead.`);
-      type = 'enabled-changed';
-    }
-    super.addEventListener(type, listener);
+    this.dispatchEvent(CHANGE_EVENT);
   }
 
 }
