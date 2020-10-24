@@ -1,8 +1,8 @@
 import { MOUSE, TOUCH } from "../../three";
 import { OrbitControls } from "./OrbitControls.js";
 
-// This set of controls performs orbiting, dollying (zooming), and panning.
-// Unlike TrackballControls, it maintains the "up" direction object.up (+Y by default).
+// This set of controls performs orbiting, dollying ( zooming ), and panning.
+// Unlike TrackballControls, it maintains the "up" direction object.up ( +Y by default ).
 // This is very similar to OrbitControls, another set of touch behavior
 //
 //    Orbit - right mouse, or left mouse + ctrl/meta/shiftKey / touch: two-finger rotate
