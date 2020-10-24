@@ -4,6 +4,8 @@ import { Vector2, Vector3, Plane, Intersection, Object3D, PerspectiveCamera, Ort
 
 // Internal variables
 const EPS = 0.00001;
+const PI = Math.PI;
+const HPI = PI / 2;
 
 // Common reusable types
 export type Callback = (callbackValue?: any) => void;
@@ -323,8 +325,7 @@ export function ControlsMixin<T extends Constructor<any>>(base: T) {
           }
         }
         this._center = this._center || new CenterPointer(event, this.camera, this.target);
-        this._center.update(event, this.camera, this.target);
-        this._center.updateCenter(pointers);
+        this._center.updateCenter(event, this.camera, this.target, pointers);
         // TODO: consider throttling once per frame. On Mac pointermove fires up to 120 Hz.
         this.onTrackedPointerMove(pointer, pointers, this._center);
       } else if (this._hover && this._hover.pointerId === event.pointerId) {
@@ -537,7 +538,6 @@ class Pointer2D {
   }
 }
 
-// Shoots a "view pointer" ray from the camera towards a 3D plane at target to calculate "world/planar pointer" coordinates.
 class Pointer3D {
   start: Vector3 = new Vector3();
   current: Vector3 = new Vector3();
@@ -592,6 +592,8 @@ class Pointer3D {
     return this;
   }
 }
+
+const virtualCameras = new WeakMap();
 
 export class Pointer {
   domElement: HTMLElement;
@@ -650,8 +652,26 @@ export class Pointer {
     });
     Object.defineProperty(this, 'planar', {
       get: () => {
-        plane.setFromNormalAndCoplanarPoint(unitY, this._target)
-        return planar.fromView(this.view, this._camera, plane);
+        plane.setFromNormalAndCoplanarPoint(unitY, this._target);
+        eye0.set(0, 0, 1).applyQuaternion(this._camera.quaternion);
+
+        const angle =  HPI - eye0.angleTo(unitY);
+        const minAngle = ((this._camera instanceof PerspectiveCamera) ? (this._camera.fov / 2) : 30) / 180 * PI
+        const rotationAxis = eye0.cross(unitY).normalize();
+
+        let virtualCamera = virtualCameras.get(this._camera);
+        if (!virtualCamera) virtualCameras.set(this._camera, virtualCamera = this._camera.clone());
+
+        virtualCamera.copy(this._camera);
+
+        const rp = new Vector3().setFromMatrixPosition(virtualCamera.matrixWorld).sub(this._target);
+        if (Math.abs(angle) < minAngle) rp.applyAxisAngle(rotationAxis, - angle + (angle >= 0 ? minAngle : - minAngle));
+
+        virtualCamera.position.copy(rp).add(this._target);
+        virtualCamera.lookAt(this._target);
+        virtualCamera.updateMatrixWorld();
+
+        return planar.fromView(this.view, virtualCamera, plane);
       }
     });
   }
@@ -704,10 +724,23 @@ export class CenterPointer extends Pointer {
   _pointers: Pointer[] = [];
   constructor(pointerEvent: PointerEvent, camera: PerspectiveCamera | OrthographicCamera, target: Vector3) {
     super(pointerEvent, camera, target);
+
+    this.pointerId = -1;
+    this.type = 'virtual';
+
+    this.button = -1;
+    this.buttons = -1;
+
+    this.altKey = pointerEvent.altKey;
+    this.ctrlKey = pointerEvent.ctrlKey;
+    this.metaKey = pointerEvent.metaKey;
+    this.shiftKey = pointerEvent.shiftKey;
+
     const canvas = new Pointer2D(0, 0);
     const view = new Pointer2D(0, 0);
     const world = new Pointer3D(0, 0, 0);
     const planar = new Pointer3D(0, 0, 0);
+
     Object.defineProperty(this, 'canvas', {
       get: () => {
         canvas.set(0, 0);
@@ -742,7 +775,15 @@ export class CenterPointer extends Pointer {
     });
   }
   // Calculates center points from all pointers
-  updateCenter(pointers: Pointer[]) {
+  updateCenter(pointerEvent: PointerEvent, camera: PerspectiveCamera | OrthographicCamera, target: Vector3, pointers: Pointer[]) {
+    this._camera = camera;
+    this._target = target;
+
+    this.altKey = pointerEvent.altKey;
+    this.ctrlKey = pointerEvent.ctrlKey;
+    this.metaKey = pointerEvent.metaKey;
+    this.shiftKey = pointerEvent.shiftKey;
+
     this._pointers = pointers;
   }
 }
