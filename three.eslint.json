@@ -11,6 +11,8 @@
     "@typescript-eslint/explicit-module-boundary-types": "off",
     "padding-line-between-statements": [
       "error",
+      { "blankLine": "always", "prev": "*", "next": "expression" },
+      { "blankLine": "always", "prev": "expression", "next": "*" },
       { "blankLine": "always", "prev": "*", "next": "export" },
       { "blankLine": "always", "prev": "export", "next": "*" },
       { "blankLine": "always", "prev": "import", "next": "*" },
@@ -28,12 +30,6 @@
         "SwitchCase": 1
       }
     ],
-    "prefer-const": [
-      "error",
-      {
-        "destructuring": "any",
-        "ignoreReadBeforeAssign": false
-      }
-    ]
+    "no-cond-assign": "off"
   }
 }

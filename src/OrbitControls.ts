@@ -217,8 +217,8 @@ class OrbitControls extends Controls {
   }
 
   _twoPointerDolly(pointers: Pointer[]): void {
-    const dist0 = pointers[ 0 ].world.current.distanceTo(pointers[ 1 ].world.current);
-    const dist1 = pointers[ 0 ].world.previous.distanceTo(pointers[ 1 ].world.previous);
+    const dist0 = pointers[ 0 ].planeE.current.distanceTo(pointers[ 1 ].planeE.current);
+    const dist1 = pointers[ 0 ].planeE.previous.distanceTo(pointers[ 1 ].planeE.previous);
     this._applyDollyMovement(dist0 - dist1);
 
   }
@@ -239,9 +239,9 @@ class OrbitControls extends Controls {
 
   _pointerPan(pointer: Pointer): void {
     if (this.screenSpacePanning) {
-      this._applyPanMovement(pointer.world.movement);
+      this._applyPanMovement(pointer.planeE.movement);
     } else {
-      this._applyPanMovement(pointer.planar.movement);
+      this._applyPanMovement(pointer.planeY.movement);
     }
   }
 

@@ -13,7 +13,7 @@
     "lint:mdcs": "eslint build -c three.eslint.json --no-ignore build --fix",
     "clean": "rm -rf build",
     "dev": "yarn clean && tsc -w",
-    "build": "yarn clean && tsc --declarationMap false --sourceMap false && yarn repath:build",
+    "build": "yarn clean && tsc --declarationMap false --sourceMap false && yarn repath:build && yarn lint:mdcs",
     "build:three": "yarn build && yarn repath:three && yarn copy:three",
     "repath:build": "node repath.js '../../three' '../../three/build/three.module.js' build/*.js",
     "repath:three": "yarn repath:build && node repath.js '../../three/build/three.module.js' '../../..' build/*",
@@ -77,7 +77,7 @@
     "eslint": "^7.10.0",
     "eslint-config-mdcs": "^5.0.0",
     "replacestream": "^4.0.3",
-    "typescript": "^4.1.0-beta"
+    "typescript": "^4.1.0"
   },
   "peerDependencies": {
     "three": "^0.121.1"

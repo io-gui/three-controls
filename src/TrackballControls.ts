@@ -109,7 +109,7 @@ class TrackballControls extends Controls {
         } else if ((button === this.mouseButtons.MIDDLE || this._keyState === STATE.ZOOM) && ! this.noZoom) {
           _zoomMagnitude.y = pointers[0].view.movement.y * this.zoomSpeed;
         } else if ((button === this.mouseButtons.RIGHT || this._keyState === STATE.PAN) && ! this.noPan) {
-          _panMagnitude.copy(pointers[0].world.movement).multiplyScalar(this.panSpeed);
+          _panMagnitude.copy(pointers[0].planeE.movement).multiplyScalar(this.panSpeed);
         }
         break;
 
@@ -118,8 +118,8 @@ class TrackballControls extends Controls {
         _zoomMagnitude.y -= pointers[0].view.previous.distanceTo(pointers[1].view.previous);
         _zoomMagnitude.y *= this.zoomSpeed;
 
-        _panMagnitude.copy(pointers[0].world.movement);
-        _panMagnitude.add(pointers[1].world.movement);
+        _panMagnitude.copy(pointers[0].planeE.movement);
+        _panMagnitude.add(pointers[1].planeE.movement);
         _panMagnitude.multiplyScalar(this.panSpeed * 0.5);
         break;
     }

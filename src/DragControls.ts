@@ -71,7 +71,7 @@ export class DragControls extends Controls {
     const id = String(pointer.pointerId);
     const _selectedObject = _selectedObjects[id];
     if (_selectedObject) {
-      _selectedObject.position.add(pointer.world.movement);
+      _selectedObject.position.add(pointer.planeE.movement);
       this.dispatchEvent({type: 'drag', object: _selectedObject});
     }
   }
