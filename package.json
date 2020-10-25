@@ -15,10 +15,10 @@
     "dev": "yarn clean && tsc -w",
     "build": "yarn clean && tsc --declarationMap false --sourceMap false && yarn repath:build && yarn lint:mdcs",
     "build:three": "yarn build && yarn repath:three && yarn copy:three",
-    "repath:build": "node repath.js '../../three' '../../three/build/three.module.js' build/*.js",
-    "repath:three": "yarn repath:build && node repath.js '../../three/build/three.module.js' '../../..' build/*",
-    "copy:three": "yarn cpx 'build/*.{js,ts,map}' '../three/examples/jsm/controls/'",
-    "dev:three": "yarn clean && tsc -w & yarn cpx 'build/*.{js,ts,map}' ../three/examples/jsm/controls/ -t './repath.js' -w"
+    "repath:build": "node repath.js '../../../three' '../../../three/build/three.module.js' build/*.js",
+    "repath:three": "yarn repath:build && node repath.js '../../../three/build/three.module.js' '../../..' build/*",
+    "copy:three": "yarn cpx 'build/controls/*.{js,ts,map}' '../three/examples/jsm/controls/'",
+    "dev:three": "yarn clean && tsc -w & yarn cpx 'build/controls/*.{js,ts,map}' ../three/examples/jsm/controls/ -t './repath.js' -w"
   },
   "sideEffects": false,
   "publishConfig": {

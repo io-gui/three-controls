@@ -1,5 +1,4 @@
-import { Vector3, Object3D, Intersection, Event as ThreeEvent } from "../../three";
-import { PerspectiveCamera, OrthographicCamera } from "../../three";
+import { Vector3, Object3D, Intersection, Event as ThreeEvent, PerspectiveCamera, OrthographicCamera } from "../../../three";
 import { Controls, Pointer } from "./Controls.js";
 
 let _intersections: Intersection[];
