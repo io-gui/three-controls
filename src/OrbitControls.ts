@@ -1,5 +1,5 @@
 import { MOUSE, TOUCH, Vector3, Quaternion, Spherical, PerspectiveCamera, OrthographicCamera } from "../../three";
-import { Controls, Pointer, CenterPointer, Callback, CHANGE_EVENT, START_EVENT, END_EVENT, onChange } from "./Controls.js";
+import { Controls, Pointer, CenterPointer, Callback, CHANGE_EVENT, START_EVENT, END_EVENT } from "./Controls.js";
 
 // This set of controls performs orbiting, dollying ( zooming ), and panning.
 // Unlike TrackballControls, it maintains the "up" direction camera.up ( +Y by default ).
@@ -47,7 +47,6 @@ class OrbitControls extends Controls {
   screenSpacePanning = true; // if false, pan orthogonal to world-space direction camera.up
   keyPanSpeed = 7;
   // Set to true to automatically rotate around the target
-  @onChange( '_autoRotateChanged' )
   autoRotate = false;
   autoRotateSpeed = 1; // 30 seconds per round when fps is 60
   // Set to false to disable use of the keys
@@ -76,6 +75,8 @@ class OrbitControls extends Controls {
 
     this._autoRotateAnimation = this._autoRotateAnimation.bind( this );
     this._autoRotateChanged = this._autoRotateChanged.bind( this );
+
+    this.observeProperty( 'autoRotate', this._autoRotateChanged );
 
     // Deprecation warnings
 

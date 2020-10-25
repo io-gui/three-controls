@@ -18,31 +18,6 @@ export const START_EVENT: ThreeEvent = { type: 'start' };
 export const END_EVENT: ThreeEvent = { type: 'end' };
 export const DISPOSE_EVENT: ThreeEvent = { type: 'dispose' };
 
-// onChange property decorator. Helps setting up property change handler functions.
-export function onChange( onChangeFunc: string, onChangeToFalsyFunc?: string ) {
-  return ( target: any, propertyKey: string ) => {
-    const values = new WeakMap();
-    Object.defineProperty( target, propertyKey, {
-      set( newValue: any ) {
-        Object.defineProperty( this, propertyKey, {
-          get() {
-            return values.get( this );
-         },
-          set( newValue: any ) {
-            const oldValue = values.get( this );
-            values.set( this, newValue );
-            if ( oldValue !== undefined && newValue !== oldValue ) {
-              ( newValue || !onChangeToFalsyFunc ) ? this[onChangeFunc]() : this[onChangeToFalsyFunc]();
-              this.dispatchEvent({ type: propertyKey + '-changed', value: newValue });
-           }
-         }
-        });
-        this[propertyKey] = newValue;
-     }
-    }); 
- }
-}
-
 type Constructor<TBase extends any> = new ( ...args: any[] ) => TBase;
 
 /**
@@ -78,7 +53,6 @@ export function ControlsMixin<T extends Constructor<any>>( base: T ) {
     camera: PerspectiveCamera | OrthographicCamera;
     domElement: HTMLElement;
     target = new Vector3();
-    @onChange( '_connect', '_disconnect' )
     enabled = true;
     enableDamping = false;
     dampingFactor = 0.05;
@@ -110,7 +84,7 @@ export function ControlsMixin<T extends Constructor<any>>( base: T ) {
       if ( this.domElement === document as unknown ) console.error( 'THREE.Controls: "domElement" should be "renderer.domElement"!' );
 
       // Camera target used for camera controls and pointer view -> world space conversion. 
-      let target = cameraTargets.get( this.camera ) || cameraTargets.set( this.camera, new Vector3() ).get( this.camera );
+      const target = cameraTargets.get( this.camera ) || cameraTargets.set( this.camera, new Vector3() ).get( this.camera );
 
       // TODO encode target in camera matrix + focus?
       Object.defineProperty( this, 'target', {
@@ -126,13 +100,13 @@ export function ControlsMixin<T extends Constructor<any>>( base: T ) {
         this.camera.lookAt( target );
         this.dispatchEvent( CHANGE_EVENT );
         return target;
-     }
+      }
       target.copy = ( value: Vector3 ) => {
         Vector3.prototype.copy.call( target, value );
         this.camera.lookAt( target );
         this.dispatchEvent( CHANGE_EVENT );
         return target;
-     }
+      }
       target.set( 0, 0, 0 );
 
       // Save initial camera state
@@ -153,21 +127,41 @@ export function ControlsMixin<T extends Constructor<any>>( base: T ) {
       this._onKeyUp = this._onKeyUp.bind( this );
       this._connect = this._connect.bind( this );
       this._disconnect = this._disconnect.bind( this );
+
+      this.observeProperty( 'enabled', this._connect, this._disconnect );
+
       // Perform initial `connect()`
       this._connect();
-   }
+    }
+    // Adds property observing mechanism via getter/setter functions. Also emits '[property]-changed' event.
+    observeProperty( propertyKey: string, onChangeFunc: Callback, onChangeToFalsyFunc?: Callback ) {
+      let value: any = this[ propertyKey ];
+      Object.defineProperty( this, propertyKey, {
+        get() {
+          return value;
+        },
+        set( newValue: any ) {
+          const oldValue = value;
+          value = newValue;
+          if ( oldValue !== undefined && newValue !== oldValue ) {
+            ( newValue || !onChangeToFalsyFunc ) ? onChangeFunc() : onChangeToFalsyFunc();
+            this.dispatchEvent({ type: propertyKey + '-changed', value: newValue, oldValue: oldValue });
+          }
+        }
+      });
+    }
     // Adds animation callback to animation loop.
     startAnimation( callback: Callback ) {
       const index = this._animations.findIndex( animation => animation === callback );
       if ( index === -1 ) this._animations.push( callback );
       AnimationManagerSingleton.add( callback );
-   }
+    }
     // Removes animation callback to animation loop.
     stopAnimation( callback: Callback ) {
       const index = this._animations.findIndex( animation => animation === callback );
       if ( index !== -1 ) this._animations.splice( index, 1 );
       AnimationManagerSingleton.remove( callback );
-   }
+    }
     // Internal lyfecycle method
     _connect() {
       this.domElement.addEventListener( 'contextmenu', this._onContextMenu, false );
@@ -185,13 +179,13 @@ export function ControlsMixin<T extends Constructor<any>>( base: T ) {
       // make sure element can receive keys.
       if ( this.domElement.tabIndex === - 1 ) {
         this.domElement.tabIndex = 0;
-     }
+      }
       // make sure element has disabled touch-actions.
       if ( window.getComputedStyle( this.domElement ).touchAction !== 'none' ) {
         this.domElement.style.touchAction = 'none';
-     }
+      }
       // TODO: consider reverting "tabIndex" and "style.touchAction" attributes on disconnect.
-   }
+    }
     // Internal lyfecycle method
     _disconnect() {
       this.domElement.removeEventListener( 'contextmenu', this._onContextMenu, false );
@@ -207,30 +201,30 @@ export function ControlsMixin<T extends Constructor<any>>( base: T ) {
       // Release all captured pointers
       for ( let i = 0; i < this._pointers.length; i++ ) {
         this.domElement.releasePointerCapture( this._pointers[i].pointerId );
-     }
+      }
       // Stop all animations
       for ( let i = 0; i < this._animations.length; i++ ) {
         this.stopAnimation( this._animations[i] );
-     }
+      }
       // Clear current pointers and keys
       this._pointers.length = 0;
       this._keys.length = 0;
-   }
+    }
     // Disables controls and triggers internal _disconnect method to stop animations, diconnects listeners and clears pointer arrays. Dispatches 'dispose' event.
     dispose() {
       this.enabled = false;
       this.dispatchEvent( DISPOSE_EVENT );
-   }
+    }
     // Deprecation warning.
     saveState() {
       console.warn( 'THREE.Controls: "saveState" is now "saveCameraState"!' );
       this.saveCameraState();
-   }
+    }
     // Deprecation warning.
     reset() {
       console.warn( 'THREE.Controls: "reset" is now "resetCameraState"!' );
       this.resetCameraState();
-   }
+    }
     // Saves camera state for later reset.
     saveCameraState() {
       this._resetQuaternion.copy( this.camera.quaternion );
@@ -240,8 +234,8 @@ export function ControlsMixin<T extends Constructor<any>>( base: T ) {
       this._resetZoom = this.camera.zoom;
       if ( this.camera instanceof PerspectiveCamera ) {
         this._resetFocus = this.camera.focus;
-     }
-   }
+      }
+    }
     // Resets camera state from saved reset state.
     resetCameraState() {
       this.camera.quaternion.copy( this._resetQuaternion );
@@ -251,36 +245,36 @@ export function ControlsMixin<T extends Constructor<any>>( base: T ) {
       this.camera.zoom = this._resetZoom;
       if ( this.camera instanceof PerspectiveCamera ) {
         this.camera.focus = this._resetFocus;
-     }
+      }
       this.camera.updateProjectionMatrix();
       this.dispatchEvent( CHANGE_EVENT );
-   }
+    }
     // EventDispatcher.addEventListener with added deprecation warnings.
     addEventListener( type: string, listener: Callback ) {
       if ( type === 'enabled' ) {
         console.warn( `THREE.Controls: "enabled" event is now "enabled-changed"!` );
         type = 'enabled-changed';
-     }
+      }
       if ( type === 'disabled' ) {
         console.warn( `THREE.Controls: "disabled" event is now "enabled-changed"!` );
         type = 'enabled-changed';
-     }
+      }
       super.addEventListener( type, listener );
-   }
+    }
     // EventDispatcher.dispatchEvent with added ability to dispatch native DOM Events.
     dispatchEvent( event: ThreeEvent | Event ) {
       if ( this._listeners && this._listeners[event.type] && this._listeners[event.type].length ) {
         Object.defineProperty( event, 'target', {writable: true });
         super.dispatchEvent( event );
-     }
-   }
+      }
+    }
     // Internal event handlers
     _onContextMenu( event: Event ) {
       this.dispatchEvent( event );
-   }
+    }
     _onWheel( event: WheelEvent ) {
       this.dispatchEvent( event );
-   }
+    }
     _onPointerDown( event: PointerEvent ) {
       if ( this._simulatedPointer ) this._simulatedPointer = null;
       this.domElement.focus ? this.domElement.focus() : window.focus();
@@ -290,7 +284,7 @@ export function ControlsMixin<T extends Constructor<any>>( base: T ) {
       pointers.push( pointer );
       this.onTrackedPointerDown( pointer, pointers );
       this.dispatchEvent( event );
-   }
+    }
     _onPointerMove( event: PointerEvent ) {
       const pointers = this._pointers;
       const index = pointers.findIndex( pointer => pointer.pointerId === event.pointerId );
@@ -315,25 +309,25 @@ export function ControlsMixin<T extends Constructor<any>>( base: T ) {
         for ( let i = 0; i < pointers.length; i++ ) {
           if ( pointer.pointerId !== pointers[i].pointerId ) {
             pointers[i]._clearMovement();
-         }
+          }
        }
         this._center = this._center || new CenterPointer( event, this.camera );
         this._center.updateCenter( pointers );
         // TODO: consider throttling once per frame. On Mac pointermove fires up to 120 Hz.
         this.onTrackedPointerMove( pointer, pointers, this._center );
-     } else if ( this._hover && this._hover.pointerId === event.pointerId ) {
+      } else if ( this._hover && this._hover.pointerId === event.pointerId ) {
         pointer = this._hover;
         pointer.update( event, this.camera );
         this.onTrackedPointerHover( pointer, [pointer] );
-     } else {
+      } else {
         pointer = this._hover = new Pointer( event, this.camera );
         this.onTrackedPointerHover( pointer, [pointer] );
-     }
+      }
       // Fix MovementX/Y for Safari
       Object.defineProperty( event, 'movementX', {writable: true, value: pointer.canvas.movement.x });
       Object.defineProperty( event, 'movementY', {writable: true, value: pointer.canvas.movement.y });
       this.dispatchEvent( event );
-   }
+    }
     _onPointerSimulation( timeDelta: number ) {
       if ( this._simulatedPointer ) {
         const pointer = this._simulatedPointer;
@@ -344,10 +338,10 @@ export function ControlsMixin<T extends Constructor<any>>( base: T ) {
           this.onTrackedPointerUp( pointer, [] );
           this._simulatedPointer = null
        }
-     } else {
+      } else {
         this.stopAnimation( this._onPointerSimulation as Callback );
-     }
-   }
+      }
+    }
     _onPointerUp( event: PointerEvent ) {
       // TODO: three-finger drag on Mac touchpad producing delayed pointerup.
       const pointers = this._pointers;
@@ -363,9 +357,9 @@ export function ControlsMixin<T extends Constructor<any>>( base: T ) {
        } else {
           this.onTrackedPointerUp( pointer, pointers );
        }
-     }
+      }
       this.dispatchEvent( event );
-   }
+    }
     _onPointerLeave( event: PointerEvent ) {
       const pointers = this._pointers;
       const index = pointers.findIndex( pointer => pointer.pointerId === event.pointerId );
@@ -374,9 +368,9 @@ export function ControlsMixin<T extends Constructor<any>>( base: T ) {
         pointers.splice( index, 1 );
         this.domElement.releasePointerCapture( event.pointerId );
         this.onTrackedPointerUp( pointer, pointers );
-     }
+      }
       this.dispatchEvent( event );
-   }
+    }
     _onPointerCancel( event: PointerEvent ) {
       const pointers = this._pointers;
       const index = pointers.findIndex( pointer => pointer.pointerId === event.pointerId );
@@ -385,19 +379,19 @@ export function ControlsMixin<T extends Constructor<any>>( base: T ) {
         pointers.splice( index, 1 );
         this.domElement.releasePointerCapture( event.pointerId );
         this.onTrackedPointerUp( pointer, pointers );
-     }
+      }
       this.dispatchEvent( event );
-   }
+    }
     _onPointerOver( event: PointerEvent ) {
       this.dispatchEvent( event );
-   }
+    }
     _onPointerEnter( event: PointerEvent ) {
       this.dispatchEvent( event );
-   }
+    }
 
     _onPointerOut( event: PointerEvent ) {
       this.dispatchEvent( event );
-   }
+    }
     _onKeyDown( event: KeyboardEvent ) {
       const code = Number( event.code );
       const keys = this._keys;
@@ -406,9 +400,9 @@ export function ControlsMixin<T extends Constructor<any>>( base: T ) {
       if ( !event.repeat ) {
         this.onTrackedKeyDown( code, keys );
         this.onTrackedKeyChange( code, keys );
-     }
+      }
       this.dispatchEvent( event );
-   }
+    }
     _onKeyUp( event: KeyboardEvent ) {
       const code = Number( event.code );
       const keys = this._keys;
@@ -417,7 +411,7 @@ export function ControlsMixin<T extends Constructor<any>>( base: T ) {
       this.onTrackedKeyUp( code, keys );
       this.onTrackedKeyChange( code, keys );
       this.dispatchEvent( event );
-   }
+    }
 
     // Tracked pointer handlers
 
@@ -564,7 +558,7 @@ class Pointer3D {
  }
   fromView( viewPointer: Pointer2D, camera: PerspectiveCamera | OrthographicCamera, planeNormal: Vector3 ): this {
 
-    let target = cameraTargets.get( camera ) || cameraTargets.set( camera, new Vector3() ).get( camera );
+    const target = cameraTargets.get( camera ) || cameraTargets.set( camera, new Vector3() ).get( camera );
 
     plane.setFromNormalAndCoplanarPoint( planeNormal, target );
 
@@ -700,12 +694,12 @@ export class Pointer {
  }
 
   update( pointerEvent: PointerEvent, camera: PerspectiveCamera | OrthographicCamera ) {
-    debug: {
+    {
       if ( this.pointerId !== pointerEvent.pointerId ) {
         console.error( 'Invalid pointerId!' );
         return;
-     }
-   }
+      }
+    }
     this._camera = camera;
     // Update buttons and keys from latest PointerEvent data.
     this.buttons = pointerEvent.buttons;
@@ -770,7 +764,7 @@ export class CenterPointer extends Pointer {
       for ( let i = 0; i < pointers.length; i++ ) pointer.add( pointers[i][type] as Pointer2D & Pointer3D );
       if ( pointers.length > 1 ) pointer.divideScalar( pointers.length );
       return pointer;
-   }
+    }
     // Getters for center pointer from pointers converted to various 2D and 3D spaces.
     Object.defineProperty( this, 'canvas', {
       get: () => _averagePointers( canvas, this._pointers, 'canvas' )
@@ -824,7 +818,7 @@ class AnimationManager {
     if ( index === -1 ) {
       this._queue.push( callback );
       if ( this._queue.length === 1 ) this._start();
-   }
+    }
  }
 
   // Removes animation callback from the queue
@@ -833,7 +827,7 @@ class AnimationManager {
     if ( index !== -1 ) {
       this._queue.splice( index, 1 );
       if ( this._queue.length === 0 ) this._stop();
-   }
+    }
  }
 
   private _start() {
@@ -850,14 +844,14 @@ class AnimationManager {
     if ( this._queue.length === 0 ) {
       this._running = false;
       return;
-   }
+    }
     if ( this._running ) requestAnimationFrame( this._update );
     const time = performance.now();
     const timestep = performance.now() - this._time;
     this._time = time;
     for ( let i = 0; i < this._queue.length; i++ ) {
       this._queue[i]( timestep );
-   }
+    }
  }
 }
 
