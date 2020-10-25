@@ -1,13 +1,15 @@
-import { Object3D, Intersection, Event as ThreeEvent } from "../../three";
+import { Vector3, Object3D, Intersection, Event as ThreeEvent } from "../../three";
 import { PerspectiveCamera, OrthographicCamera } from "../../three";
 import { Controls, Pointer } from "./Controls.js";
 
 let _intersections: Intersection[];
 const _hoveredObjects: Record<string, Object3D> = {};
 const _selectedObjects: Record<string, Object3D> = {};
+const _eye = new Vector3();
 
 export class DragControls extends Controls {
   // Public API
+  lookAtTarget = false;
   objects: Object3D[];
   transformGroup = false;
 
@@ -15,11 +17,10 @@ export class DragControls extends Controls {
     super( camera, domElement );
     this.objects = objects;
 
-    const _onEnabledChanged = ( event: ThreeEvent ) => {
+    this.addEventListener( 'enabled-changed', ( event: ThreeEvent ) => {
       if ( !event.value ) this.domElement.style.cursor = '';
-    }
+    } );
 
-    this.addEventListener( 'enabled-changed', _onEnabledChanged );
     // Deprecation warnings
     this.getObjects = function() {
       console.warn( 'THREE.DragControls: getObjects() is deprecated. Use `objects` property instead.' );
@@ -48,9 +49,9 @@ export class DragControls extends Controls {
         _hoveredObjects[id] = object;
       }
     } else if ( _hoveredObject ) {
-        this.dispatchEvent({ type: 'hoveroff', object: _hoveredObject });
-        this.domElement.style.cursor = 'auto';
-        delete _hoveredObjects[id];
+      this.dispatchEvent({ type: 'hoveroff', object: _hoveredObject });
+      this.domElement.style.cursor = 'auto';
+      delete _hoveredObjects[id];
     }
   }
 
@@ -60,7 +61,7 @@ export class DragControls extends Controls {
     _intersections = pointer.intersectObjects( this.objects );
     if ( _intersections.length > 0 ) {
       const object = ( this.transformGroup === true ) ? this.objects[0] : _intersections[0].object;
-      this.target.setFromMatrixPosition( object.matrixWorld )
+      this.target.setFromMatrixPosition( object.matrixWorld );
       this.domElement.style.cursor = 'move';
       this.dispatchEvent({ type: 'dragstart', object: object });
       _selectedObjects[id] = object
@@ -71,7 +72,8 @@ export class DragControls extends Controls {
     const id = String( pointer.pointerId );
     const _selectedObject = _selectedObjects[id];
     if ( _selectedObject ) {
-      _selectedObject.position.add( pointer.planeE.movement );
+      _eye.set( 0, 0, 1 ).applyQuaternion( this.camera.quaternion ).normalize()
+      _selectedObject.position.add( pointer.projectOnPlane( this.target, _eye ).movement );
       this.dispatchEvent({ type: 'drag', object: _selectedObject });
     }
   }

@@ -8,15 +8,15 @@ import { Controls, Pointer, CenterPointer, Callback, CHANGE_EVENT, START_EVENT, 
 //    Zoom - middle mouse, or mousewheel / touch: two-finger spread or squish
 //    Pan - right mouse, or left mouse + ctrl/meta/shiftKey, or arrow keys / touch: two-finger move
 
-let scale = 1;
-
 // so camera.up is the orbit axis
-const quat = new Quaternion();
-const quatInverse = new Quaternion();
-const offset = new Vector3();
-const movement = new Vector3();
+const _eye = new Vector3();
+const _unitY = new Vector3(0, 1, 0);
+const _quat = new Quaternion();
+const _quatInverse = new Quaternion();
+const _offset = new Vector3();
+const _movement = new Vector3();
 
-const twoPI = 2 * Math.PI;
+const PI2 = Math.PI * 2;
 
 class OrbitControls extends Controls {
   // Public API
@@ -161,6 +161,7 @@ class OrbitControls extends Controls {
   onTrackedPointerMove( pointer: Pointer, pointers: Pointer[], center: CenterPointer ): void {
     let button = -1;
     this._interacting = !pointer.isSimulated;
+    _eye.set( 0, 0, 1 ).applyQuaternion( this.camera.quaternion ).normalize()
     switch ( pointers.length ) {
       case 1: // 1 pointer
         switch ( pointer.button ) {
@@ -218,31 +219,30 @@ class OrbitControls extends Controls {
   }
 
   _twoPointerDolly( pointers: Pointer[] ): void {
-    const dist0 = pointers[  0  ].planeE.current.distanceTo( pointers[  1  ].planeE.current );
-    const dist1 = pointers[  0  ].planeE.previous.distanceTo( pointers[  1  ].planeE.previous );
+    const dist0 = pointers[  0  ].projectOnPlane( this.target, _eye ).current.distanceTo( pointers[  1  ].projectOnPlane( this.target, _eye ).current );
+    const dist1 = pointers[  0  ].projectOnPlane( this.target, _eye ).previous.distanceTo( pointers[  1  ].projectOnPlane( this.target, _eye ).previous );
     this._applyDollyMovement( dist0 - dist1 );
-
   }
 
   _applyDollyMovement( dollyMovement: number ): void {
-    scale = Math.pow( 1 - dollyMovement / this.domElement.clientHeight, this.zoomSpeed );
-    offset.copy( this.camera.position ).sub( this.target );
+    const scale = Math.pow( 1 - dollyMovement / this.domElement.clientHeight, this.zoomSpeed );
+    _offset.copy( this.camera.position ).sub( this.target );
     // angle from z-axis around y-axis
-    this._spherical.setFromVector3( offset );
+    this._spherical.setFromVector3( _offset );
     // restrict radius to be between desired limits
     this._spherical.radius = Math.max( this.minDistance, Math.min( this.maxDistance, this._spherical.radius * scale ) );
     // move target to panned location
-    offset.setFromSpherical( this._spherical );
-    this.camera.position.copy( this.target ).add( offset );
+    _offset.setFromSpherical( this._spherical );
+    this.camera.position.copy( this.target ).add( _offset );
     this.camera.lookAt( this.target );
     this.dispatchEvent( CHANGE_EVENT );
   }
 
   _pointerPan( pointer: Pointer ): void {
     if ( this.screenSpacePanning ) {
-      this._applyPanMovement( pointer.planeE.movement );
+      this._applyPanMovement( pointer.projectOnPlane( this.target, _eye ).movement );
     } else {
-      this._applyPanMovement( pointer.planeY.movement );
+      this._applyPanMovement( pointer.projectOnPlane( this.target, _unitY ).movement );
     }
   }
 
@@ -250,41 +250,41 @@ class OrbitControls extends Controls {
     // deltaX and deltaY are in pixels; right and down are positive
     let fovFactor = 1;
     if ( this.camera instanceof PerspectiveCamera ) {
-      offset.copy( this.camera.position ).sub( this.target );
+      _offset.copy( this.camera.position ).sub( this.target );
       // half of the fov is center to top of screen. We use clientHeight only so aspect ratio does not distort speed
-      fovFactor = offset.length() * Math.tan( ( this.camera.fov / 2 ) * Math.PI / 180.0 ) * 2 / this.domElement.clientHeight;
+      fovFactor = _offset.length() * Math.tan( ( this.camera.fov / 2 ) * Math.PI / 180.0 ) * 2 / this.domElement.clientHeight;
     } else if ( this.camera instanceof OrthographicCamera ) {
       fovFactor = ( this.camera.top - this.camera.bottom ) / this.camera.zoom / this.domElement.clientHeight;
     }
     // Pan movement up / down
-    movement.set( 0, 0, 0 );
+    _movement.set( 0, 0, 0 );
     if ( this.screenSpacePanning === true ) {
-      offset.setFromMatrixColumn( this.camera.matrix, 1 );
+      _offset.setFromMatrixColumn( this.camera.matrix, 1 );
     } else {
-      offset.setFromMatrixColumn( this.camera.matrix, 0 );
-      offset.crossVectors( this.camera.up, offset );
+      _offset.setFromMatrixColumn( this.camera.matrix, 0 );
+      _offset.crossVectors( this.camera.up, _offset );
     }
-    offset.multiplyScalar( -deltaY * fovFactor );
-    movement.add( offset );
+    _offset.multiplyScalar( -deltaY * fovFactor );
+    _movement.add( _offset );
     // Pan movement left / right
-    offset.setFromMatrixColumn( this.camera.matrix, 0 ); // get X column of objectMatrix
-    offset.multiplyScalar( deltaX * fovFactor );
-    movement.add( offset );
-    this._applyPanMovement( movement );
+    _offset.setFromMatrixColumn( this.camera.matrix, 0 ); // get X column of objectMatrix
+    _offset.multiplyScalar( deltaX * fovFactor );
+    _movement.add( _offset );
+    this._applyPanMovement( _movement );
   }
 
   _applyPanMovement( movement: Vector3 ): void {
-    offset.copy( movement ).multiplyScalar( this.panSpeed );
-    this.target.sub( offset );
-    this.camera.position.sub( offset );
+    _offset.copy( movement ).multiplyScalar( this.panSpeed );
+    this.target.sub( _offset );
+    this.camera.position.sub( _offset );
     this.dispatchEvent( CHANGE_EVENT );
   }
 
   _pointerRotate( pointer: Pointer ): void {
     const aspect = this.domElement.clientWidth / this.domElement.clientHeight;
-    movement.set( pointer.view.movement.x, pointer.view.movement.y, 0 ).multiplyScalar( this.rotateSpeed );
-    movement.x *= aspect;
-    this._applyRotateMovement( movement );
+    _movement.set( pointer.view.movement.x, pointer.view.movement.y, 0 ).multiplyScalar( this.rotateSpeed );
+    _movement.x *= aspect;
+    this._applyRotateMovement( _movement );
   }
 
   _autoRotateChanged() {
@@ -301,18 +301,18 @@ class OrbitControls extends Controls {
     } else {
       this._autoRotationMagnitude = angle;
     }
-    movement.set( this._autoRotationMagnitude, 0, 0 );
-    this._applyRotateMovement( movement );
+    _movement.set( this._autoRotationMagnitude, 0, 0 );
+    this._applyRotateMovement( _movement );
   }
 
   _applyRotateMovement( movement: Vector3 ): void {
-    offset.copy( this.camera.position ).sub( this.target );
-    // rotate offset to "y-axis-is-up" space
-    quat.setFromUnitVectors( this.camera.up, new Vector3( 0, 1, 0 ) );
-    quatInverse.copy( quat ).inverse();
-    offset.applyQuaternion( quat );
+    _offset.copy( this.camera.position ).sub( this.target );
+    // rotate _offset to "y-axis-is-up" space
+    _quat.setFromUnitVectors( this.camera.up, new Vector3( 0, 1, 0 ) );
+    _quatInverse.copy( _quat ).inverse();
+    _offset.applyQuaternion( _quat );
     // angle from z-axis around y-axis
-    this._spherical.setFromVector3( offset );
+    this._spherical.setFromVector3( _offset );
     this._spherical.theta -= movement.x;
     this._spherical.theta -= movement.x + this._autoRotationMagnitude;
     this._spherical.phi += movement.y;
@@ -320,8 +320,8 @@ class OrbitControls extends Controls {
     let min = this.minAzimuthAngle;
     let max = this.maxAzimuthAngle;
     if ( isFinite( min ) && isFinite( max ) ) {
-      if ( min < - Math.PI ) min += twoPI; else if ( min > Math.PI ) min -= twoPI;
-      if ( max < - Math.PI ) max += twoPI; else if ( max > Math.PI ) max -= twoPI;
+      if ( min < - Math.PI ) min += PI2; else if ( min > Math.PI ) min -= PI2;
+      if ( max < - Math.PI ) max += PI2; else if ( max > Math.PI ) max -= PI2;
       if ( min < max ) {
         this._spherical.theta = Math.max( min, Math.min( max, this._spherical.theta ) );
       } else {
@@ -333,10 +333,10 @@ class OrbitControls extends Controls {
     // restrict phi to be between desired limits
     this._spherical.phi = Math.max( this.minPolarAngle, Math.min( this.maxPolarAngle, this._spherical.phi ) );
     this._spherical.makeSafe();
-    offset.setFromSpherical( this._spherical );
-    // rotate offset back to "camera-up-vector-is-up" space
-    offset.applyQuaternion( quatInverse );
-    this.camera.position.copy( this.target ).add( offset );
+    _offset.setFromSpherical( this._spherical );
+    // rotate _offset back to_ "camera-up-vector-is-up" space
+    _offset.applyQuaternion( _quatInverse );
+    this.camera.position.copy( this.target ).add( _offset );
     this.camera.lookAt( this.target );
     this.dispatchEvent( CHANGE_EVENT );
   }
