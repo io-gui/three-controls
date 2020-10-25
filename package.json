@@ -61,6 +61,7 @@
       "@typescript-eslint/no-use-before-define": "warn",
       "@typescript-eslint/no-floating-promises": "warn",
       "@typescript-eslint/no-explicit-any": "off",
+      "no-unused-labels": "off",
       "no-var": "error",
       "eqeqeq": "error"
     }
