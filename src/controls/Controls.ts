@@ -289,6 +289,7 @@ export function ControlsMixin<T extends Constructor<any>>( base: T ) {
       this.domElement.setPointerCapture( event.pointerId );
       const pointers = this._pointers;
       const pointer = new Pointer( event, this.camera );
+      pointer._clearMovement();
       pointers.push( pointer );
       this.onTrackedPointerDown( pointer, pointers );
       this.dispatchEvent( event );
