@@ -3,7 +3,7 @@ import { Vector2, Vector3, Plane, Intersection, Object3D, PerspectiveCamera, Ort
 /* eslint-disable @typescript-eslint/no-use-before-define */
 
 // Internal variables
-const EPS = 0.00001;
+const EPS = 0.05;
 const PI = Math.PI;
 const HPI = PI / 2;
 

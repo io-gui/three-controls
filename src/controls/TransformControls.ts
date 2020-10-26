@@ -1,9 +1,9 @@
 import { BoxBufferGeometry, BufferGeometry, Color, CylinderBufferGeometry, DoubleSide, Euler, Float32BufferAttribute, Line, LineBasicMaterial, Matrix4,
- Mesh, MeshBasicMaterial, Object3D, OctahedronBufferGeometry, PlaneBufferGeometry, Quaternion, Raycaster, SphereBufferGeometry, TorusBufferGeometry, Vector3,
+ Mesh, MeshBasicMaterial, Object3D, OctahedronBufferGeometry, PlaneBufferGeometry, Quaternion, SphereBufferGeometry, TorusBufferGeometry, Vector3,
  PerspectiveCamera, OrthographicCamera, Intersection
 } from "../../../three";
 
-import { Controls, ControlsMixin, Pointer, CenterPointer, Callback, CHANGE_EVENT, START_EVENT, END_EVENT } from "./Controls.js";
+import { ControlsMixin, Pointer, CHANGE_EVENT, START_EVENT, END_EVENT } from "./Controls.js";
 
 const _tempVector = new Vector3();
 const _tempVector2 = new Vector3();
@@ -46,7 +46,6 @@ const positionStart = new Vector3();
 const quaternionStart = new Quaternion();
 const scaleStart = new Vector3();
 
-const changeEvent = { type: "change" };
 const mouseDownEvent = { type: "mouseDown", mode: '' };
 const mouseUpEvent = { type: "mouseUp", mode: '' }; // TODO: make dynamic
 const objectChangeEvent = { type: "objectChange" };
@@ -115,7 +114,7 @@ class TransformControls extends ControlsMixin( Object3D as any ) {
             _plane[ propName as 'type' ] = value;
             _gizmo[ propName as 'type' ] = value;
             this.dispatchEvent( { type: propName + "-changed", value: value } );
-            this.dispatchEvent( changeEvent );
+            this.dispatchEvent( CHANGE_EVENT );
           }
         }
       } );
@@ -184,9 +183,14 @@ class TransformControls extends ControlsMixin( Object3D as any ) {
   }
 
   onTrackedPointerDown( pointer: Pointer ): void {
+    // TODO: Unhack! This enables axis reset/interrupt when simulated pointer is driving gesture with inertia.
+    this.axis = '';
     // TODO: consider triggering hover from Controls.js
     // Simulates hover before down on touchscreen
     this.onTrackedPointerHover( pointer );
+    // TODO: Unhack! This enables axis reset/interrupt when simulated pointer is driving gesture with inertia.
+    if ( this.axis === '' ) this.dragging = false;
+
     if ( this.object === undefined || this.dragging === true || pointer.button !== 0 ) return;
     this.domElement.style.touchAction = 'none'; // disable touch scroll
     if ( this.axis !== '' ) {
@@ -215,6 +219,7 @@ class TransformControls extends ControlsMixin( Object3D as any ) {
       this.dragging = true
       mouseDownEvent.mode = this.mode
       this.dispatchEvent( mouseDownEvent );
+      this.dispatchEvent( START_EVENT );
     }
   }
 
@@ -347,7 +352,7 @@ class TransformControls extends ControlsMixin( Object3D as any ) {
         object.quaternion.multiply( quaternionStart ).normalize();
       }
     }
-    this.dispatchEvent( changeEvent )
+    this.dispatchEvent( CHANGE_EVENT )
     this.dispatchEvent( objectChangeEvent );
   }
 
@@ -356,17 +361,17 @@ class TransformControls extends ControlsMixin( Object3D as any ) {
     if ( this.dragging && ( this.axis !== '' ) ) {
       mouseUpEvent.mode = this.mode
       this.dispatchEvent( mouseUpEvent );
+      this.dispatchEvent( END_EVENT );
     }
     this.domElement.style.touchAction = '';
     this.dragging = false
     this.axis = '';
   }
   dispose() {
-    this.traverse( ( child ) => {
-      if (child instanceof Mesh) {
-        if ( child.geometry ) child.geometry.dispose();
-        if ( child.material ) child.material.dispose();
-      }
+    this.traverse( ( child: Object3D ) => {
+      const mesh = child as Mesh;
+      if ( mesh.geometry ) mesh.geometry.dispose();
+      if ( mesh.material ) (mesh.material as MeshBasicMaterial).dispose();
     } );
   }
   // Set current object
