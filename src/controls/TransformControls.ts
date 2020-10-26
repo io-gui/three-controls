@@ -1,7 +1,9 @@
 import { BoxBufferGeometry, BufferGeometry, Color, CylinderBufferGeometry, DoubleSide, Euler, Float32BufferAttribute, Line, LineBasicMaterial, Matrix4,
  Mesh, MeshBasicMaterial, Object3D, OctahedronBufferGeometry, PlaneBufferGeometry, Quaternion, Raycaster, SphereBufferGeometry, TorusBufferGeometry, Vector3,
- PerspectiveCamera, OrthographicCamera
+ PerspectiveCamera, OrthographicCamera, Intersection
 } from "../../../three";
+
+import { Controls, ControlsMixin, Pointer, CenterPointer, Callback, CHANGE_EVENT, START_EVENT, END_EVENT } from "./Controls.js";
 
 const _tempVector = new Vector3();
 const _tempVector2 = new Vector3();
@@ -49,25 +51,16 @@ const mouseDownEvent = { type: "mouseDown", mode: '' };
 const mouseUpEvent = { type: "mouseUp", mode: '' }; // TODO: make dynamic
 const objectChangeEvent = { type: "objectChange" };
 
-// Reusable utility variables
-const raycaster = new Raycaster();
-function intersectObjectWithRay( object: Object3D, raycaster: Raycaster, includeInvisible: boolean ) {
-  const allIntersections = raycaster.intersectObject( object, true );
-  for ( let i = 0; i < allIntersections.length; i ++ ) {
-    if ( allIntersections[ i ].object.visible || includeInvisible ) {
-      return allIntersections[ i ];
+function getFirstIntersection(intersections: Intersection[], includeInvisible: boolean ): Intersection | null {
+  for ( let i = 0; i < intersections.length; i ++ ) {
+    if ( intersections[ i ].object.visible || includeInvisible ) {
+      return intersections[ i ];
     }
   }
-  return false;
+  return null;
 }
 
-interface PointerData {
-  x: number,
-  y: number,
-  button: number,
-}
-
-class TransformControls extends Object3D {
+class TransformControls extends ControlsMixin( Object3D as any ) {
   // Public API
   camera: PerspectiveCamera | OrthographicCamera;
   domElement: HTMLElement;
@@ -93,7 +86,7 @@ class TransformControls extends Object3D {
   _gizmo: TransformControlsGizmo;
   _plane: TransformControlsPlane;
   constructor ( camera: PerspectiveCamera | OrthographicCamera, domElement: HTMLElement ) {
-    super();
+    super( camera, domElement );
 
     this.visible = false;
     this.camera = camera;
@@ -160,18 +153,6 @@ class TransformControls extends Object3D {
     defineProperty( "rotationAngle", rotationAngle );
     defineProperty( "eye", eye );
 
-    this._onPointerHover = this._onPointerHover.bind(this);
-    this._onPointerDown = this._onPointerDown.bind(this);
-    this._onPointerMove = this._onPointerMove.bind(this);
-    this._onPointerUp = this._onPointerUp.bind(this);
-
-    {
-      this.domElement.addEventListener( "pointerdown", this._onPointerDown, false );
-      this.domElement.addEventListener( "pointermove", this._onPointerHover, false );
-      this.domElement.ownerDocument.addEventListener( "pointerup", this._onPointerUp, false );
-
-    }
-
   }
   // updateMatrixWorld  updates key transformation variables
   updateMatrixWorld() {
@@ -191,21 +172,25 @@ class TransformControls extends Object3D {
     eye.copy( cameraPosition ).sub( worldPosition ).normalize();
     super.updateMatrixWorld();
   }
-  pointerHover( pointer: PointerData ) {
+
+  onTrackedPointerHover( pointer: Pointer ): void {
     if ( this.object === undefined || this.dragging === true ) return;
-    raycaster.setFromCamera( pointer, this.camera );
-    const intersect = intersectObjectWithRay( this._gizmo.picker[ this.mode ], raycaster, true );
+    const intersect = getFirstIntersection(pointer.intersectObjects([this._gizmo.picker[ this.mode ]]), true);
     if ( intersect ) {
       this.axis = intersect.object.name as '';
     } else {
       this.axis = '';
     }
   }
-  pointerDown( pointer: PointerData ) {
+
+  onTrackedPointerDown( pointer: Pointer ): void {
+    // TODO: consider triggering hover from Controls.js
+    // Simulates hover before down on touchscreen
+    this.onTrackedPointerHover( pointer );
     if ( this.object === undefined || this.dragging === true || pointer.button !== 0 ) return;
+    this.domElement.style.touchAction = 'none'; // disable touch scroll
     if ( this.axis !== '' ) {
-      raycaster.setFromCamera( pointer, this.camera );
-      const planeIntersect = intersectObjectWithRay( this._plane, raycaster, true );
+      const planeIntersect = getFirstIntersection(pointer.intersectObjects([this._plane]), true);
       if ( planeIntersect ) {
         let space = this.space;
         if ( this.mode === 'scale' ) {
@@ -232,7 +217,8 @@ class TransformControls extends Object3D {
       this.dispatchEvent( mouseDownEvent );
     }
   }
-  pointerMove( pointer: PointerData ) {
+
+  onTrackedPointerMove( pointer: Pointer ): void {
     const axis = this.axis
     const mode = this.mode
     const object = this.object
@@ -242,9 +228,8 @@ class TransformControls extends Object3D {
     } else if ( axis === 'E' || axis === 'XYZE' || axis === 'XYZ' ) {
       space = 'world';
     }
-    if ( object === undefined || axis === '' || this.dragging === false || pointer.button !== - 1 ) return;
-    raycaster.setFromCamera( pointer, this.camera );
-    const planeIntersect = intersectObjectWithRay( this._plane, raycaster, true );
+    if ( object === undefined || axis === '' || this.dragging === false || pointer.button !== 0 ) return;
+    const planeIntersect = getFirstIntersection(pointer.intersectObjects([this._plane]), true);
     if ( ! planeIntersect ) return;
     pointEnd.copy( planeIntersect.point ).sub( worldPositionStart );
     if ( mode === 'translate' ) {
@@ -365,65 +350,18 @@ class TransformControls extends Object3D {
     this.dispatchEvent( changeEvent )
     this.dispatchEvent( objectChangeEvent );
   }
-  pointerUp( pointer: PointerData ) {
+
+  onTrackedPointerUp( pointer: Pointer ): void {
     if ( pointer.button !== 0 ) return;
     if ( this.dragging && ( this.axis !== '' ) ) {
       mouseUpEvent.mode = this.mode
       this.dispatchEvent( mouseUpEvent );
     }
+    this.domElement.style.touchAction = '';
     this.dragging = false
     this.axis = '';
   }
-  // normalize mouse / touch pointer and remap {x,y} to view space.
-  _getPointer( event: MouseEvent | TouchEvent ) {
-    if ( this.domElement.ownerDocument.pointerLockElement ) {
-      return {
-        x: 0,
-        y: 0,
-        button: (event as MouseEvent).button
-      };
-    } else {
-      const pointer = (event as TouchEvent).changedTouches ? (event as TouchEvent).changedTouches[ 0 ] : event;
-      const rect = this.domElement.getBoundingClientRect();
-      return {
-        x: ( (pointer as MouseEvent).clientX - rect.left ) / rect.width * 2 - 1,
-        y: - ( (pointer as MouseEvent).clientY - rect.top ) / rect.height * 2 + 1,
-        button: (event as MouseEvent).button
-      };
-    }
-  }
-  // mouse / touch event handlers
-  _onPointerHover( event: PointerEvent ) {
-    if ( ! this.enabled ) return;
-    switch ( event.pointerType ) {
-      case 'mouse':
-      case 'pen':
-        this.pointerHover( this._getPointer( event ) );
-        break;
-    }
-  }
-  _onPointerDown( event: PointerEvent ) {
-    if ( ! this.enabled ) return;
-    this.domElement.style.touchAction = 'none'; // disable touch scroll
-    this.domElement.ownerDocument.addEventListener( "pointermove", this._onPointerMove, false );
-    this.pointerHover( this._getPointer( event ) );
-    this.pointerDown( this._getPointer( event ) );
-  }
-  _onPointerMove( event: PointerEvent ) {
-    if ( ! this.enabled ) return;
-    this.pointerMove( this._getPointer( event ) );
-  }
-  _onPointerUp( event: PointerEvent ) {
-    if ( ! this.enabled ) return;
-    this.domElement.style.touchAction = '';
-    this.domElement.ownerDocument.removeEventListener( "pointermove", this._onPointerMove, false );
-    this.pointerUp( this._getPointer( event ) );
-  }
   dispose() {
-    this.domElement.removeEventListener( "pointerdown", this._onPointerDown );
-    this.domElement.removeEventListener( "pointermove", this._onPointerHover );
-    this.domElement.ownerDocument.removeEventListener( "pointermove", this._onPointerMove );
-    this.domElement.ownerDocument.removeEventListener( "pointerup", this._onPointerUp );
     this.traverse( ( child ) => {
       if (child instanceof Mesh) {
         if ( child.geometry ) child.geometry.dispose();
