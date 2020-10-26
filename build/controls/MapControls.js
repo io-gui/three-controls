@@ -1,9 +1,9 @@
-import { MOUSE, TOUCH } from "../../three/build/three.module.js";
+import { MOUSE, TOUCH } from "../../../three";
 import { OrbitControls } from "./OrbitControls.js";
 
 
-// This set of controls performs orbiting, dollying (zooming), and panning.
-// Unlike TrackballControls, it maintains the "up" direction object.up (+Y by default).
+// This set of controls performs orbiting, dollying ( zooming ), and panning.
+// Unlike TrackballControls, it maintains the "up" direction object.up ( +Y by default ).
 // This is very similar to OrbitControls, another set of touch behavior
 //
 //    Orbit - right mouse, or left mouse + ctrl/meta/shiftKey / touch: two-finger rotate
@@ -19,6 +19,7 @@ export class MapControls extends OrbitControls {
 
 		// Mouse buttons
 		this.mouseButtons = { LEFT: MOUSE.PAN, MIDDLE: MOUSE.DOLLY, RIGHT: MOUSE.ROTATE };
+
 
 		// Touch fingers // TODO: deprecate touches.ONE
 		this.touches = { ONE: TOUCH.PAN, TWO: TOUCH.DOLLY_ROTATE };

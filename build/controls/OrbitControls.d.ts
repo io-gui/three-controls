@@ -1,4 +1,4 @@
-import { MOUSE, TOUCH, Vector3, Spherical, PerspectiveCamera, OrthographicCamera } from "../../three";
+import { MOUSE, TOUCH, Vector3, Spherical, PerspectiveCamera, OrthographicCamera } from "../../../three";
 import { Controls, Pointer, CenterPointer, Callback } from "./Controls.js";
 
 declare class OrbitControls extends Controls {

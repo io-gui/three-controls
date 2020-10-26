@@ -1,46 +1,40 @@
-const __decorate = ( this && this.__decorate ) || function ( decorators, target, key, desc ) {
-
-	let c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor( target, key ) : desc, d;
-	if ( typeof Reflect === "object" && typeof Reflect.decorate === "function" ) r = Reflect.decorate( decorators, target, key, desc );
-	else for ( let i = decorators.length - 1; i >= 0; i -- ) if ( d = decorators[ i ] ) r = ( c < 3 ? d( r ) : c > 3 ? d( target, key, r ) : d( target, key ) ) || r;
-	return c > 3 && r && Object.defineProperty( target, key, r ), r;
-
-};
-
-import { MOUSE, TOUCH, Vector3, Quaternion, Spherical, PerspectiveCamera, OrthographicCamera } from "../../three/build/three.module.js";
-import { Controls, CHANGE_EVENT, START_EVENT, END_EVENT, onChange } from "./Controls.js";
+import { MOUSE, TOUCH, Vector3, Quaternion, Spherical, PerspectiveCamera, OrthographicCamera } from "../../../three";
+import { Controls, CHANGE_EVENT, START_EVENT, END_EVENT } from "./Controls.js";
 
 
-// This set of controls performs orbiting, dollying (zooming), and panning.
-// Unlike TrackballControls, it maintains the "up" direction camera.up (+Y by default).
+// This set of controls performs orbiting, dollying ( zooming ), and panning.
+// Unlike TrackballControls, it maintains the "up" direction camera.up ( +Y by default ).
 //
 //    Orbit - left mouse / touch: one-finger move
 //    Zoom - middle mouse, or mousewheel / touch: two-finger spread or squish
 //    Pan - right mouse, or left mouse + ctrl/meta/shiftKey, or arrow keys / touch: two-finger move
-let scale = 1;
-
 // so camera.up is the orbit axis
-const quat = new Quaternion();
-const quatInverse = new Quaternion();
-const offset = new Vector3();
-const movement = new Vector3();
-const twoPI = 2 * Math.PI;
+const _eye = new Vector3();
+const _unitY = new Vector3( 0, 1, 0 );
+const _quat = new Quaternion();
+const _quatInverse = new Quaternion();
+const _offset = new Vector3();
+const _movement = new Vector3();
+const PI2 = Math.PI * 2;
 class OrbitControls extends Controls {
 
 	constructor( camera, domElement ) {
 
 		super( camera, domElement );
 
+
 		// Public API
-		// How far you can dolly in and out (PerspectiveCamera only)
+		// How far you can dolly in and out ( PerspectiveCamera only )
 		this.minDistance = 0;
 
 		this.maxDistance = Infinity;
 
-		// How far you can zoom in and out (OrthographicCamera only)
+
+		// How far you can zoom in and out ( OrthographicCamera only )
 		this.minZoom = 0;
 
 		this.maxZoom = Infinity;
+
 
 		// How far you can orbit vertically, upper and lower limits.
 		// Range is 0 to Math.PI radians.
@@ -48,11 +42,13 @@ class OrbitControls extends Controls {
 
 		this.maxPolarAngle = Math.PI;
 
+
 		// How far you can orbit horizontally, upper and lower limits.
-		// If set, the interval [ min, max ] must be a sub-interval of [ - 2 PI, 2 PI ], with (max - min < 2 PI)
+		// If set, the interval [  min, max  ] must be a sub-interval of [  - 2 PI, 2 PI  ], with ( max - min < 2 PI )
 		this.minAzimuthAngle = - Infinity;
 
 		this.maxAzimuthAngle = Infinity;
+
 
 		// This option actually enables dollying in and out; left as "zoom" for backwards compatibility.
 		// Set to false to disable zooming
@@ -60,10 +56,12 @@ class OrbitControls extends Controls {
 
 		this.zoomSpeed = 1;
 
+
 		// Set to false to disable rotating
 		this.enableRotate = true;
 
 		this.rotateSpeed = 1;
+
 
 		// Set to false to disable panning
 		this.enablePan = true;
@@ -74,6 +72,7 @@ class OrbitControls extends Controls {
 
 		this.keyPanSpeed = 7;
 
+
 		// Set to true to automatically rotate around the target
 		this.autoRotate = false;
 
@@ -82,14 +81,18 @@ class OrbitControls extends Controls {
 		// Set to false to disable use of the keys
 		this.enableKeys = true;
 
+
 		// The four arrow keys
 		this.keys = { LEFT: 37, UP: 38, RIGHT: 39, BOTTOM: 40 };
+
 
 		// Mouse buttons
 		this.mouseButtons = { LEFT: MOUSE.ROTATE, MIDDLE: MOUSE.DOLLY, RIGHT: MOUSE.PAN };
 
+
 		// Touch fingers // TODO: deprecate touches.ONE
 		this.touches = { ONE: TOUCH.ROTATE, TWO: TOUCH.DOLLY_PAN };
+
 
 		// Internal utility variables
 		this._spherical = new Spherical();
@@ -111,6 +114,9 @@ class OrbitControls extends Controls {
 		this._autoRotateAnimation = this._autoRotateAnimation.bind( this );
 
 		this._autoRotateChanged = this._autoRotateChanged.bind( this );
+
+		this.observeProperty( 'autoRotate', this._autoRotateChanged );
+
 
 		// Deprecation warnings
 		Object.defineProperty( this, 'dynamicDampingFactor', {
@@ -169,6 +175,7 @@ class OrbitControls extends Controls {
 	_onWheel( event ) {
 
 		super._onWheel( event );
+
 
 		// TODO: test with inerial movement
 		if ( this.enableZoom === false )
@@ -234,6 +241,8 @@ class OrbitControls extends Controls {
 		let button = - 1;
 
 		this._interacting = ! pointer.isSimulated;
+
+		_eye.set( 0, 0, 1 ).applyQuaternion( this.camera.quaternion ).normalize();
 
 		switch ( pointers.length ) {
 
@@ -332,28 +341,31 @@ class OrbitControls extends Controls {
 	}
 	_twoPointerDolly( pointers ) {
 
-		const dist0 = pointers[ 0 ].planeE.current.distanceTo( pointers[ 1 ].planeE.current );
-		const dist1 = pointers[ 0 ].planeE.previous.distanceTo( pointers[ 1 ].planeE.previous );
+		const dist0 = pointers[ 0 ].projectOnPlane( this.target, _eye ).current.distanceTo( pointers[ 1 ].projectOnPlane( this.target, _eye ).current );
+		const dist1 = pointers[ 0 ].projectOnPlane( this.target, _eye ).previous.distanceTo( pointers[ 1 ].projectOnPlane( this.target, _eye ).previous );
 
 		this._applyDollyMovement( dist0 - dist1 );
 
 	}
 	_applyDollyMovement( dollyMovement ) {
 
-		scale = Math.pow( 1 - dollyMovement / this.domElement.clientHeight, this.zoomSpeed );
+		const scale = Math.pow( 1 - dollyMovement / this.domElement.clientHeight, this.zoomSpeed );
 
-		offset.copy( this.camera.position ).sub( this.target );
+		_offset.copy( this.camera.position ).sub( this.target );
+
 
 		// angle from z-axis around y-axis
-		this._spherical.setFromVector3( offset );
+		this._spherical.setFromVector3( _offset );
+
 
 		// restrict radius to be between desired limits
 		this._spherical.radius = Math.max( this.minDistance, Math.min( this.maxDistance, this._spherical.radius * scale ) );
 
-		// move target to panned location
-		offset.setFromSpherical( this._spherical );
 
-		this.camera.position.copy( this.target ).add( offset );
+		// move target to panned location
+		_offset.setFromSpherical( this._spherical );
+
+		this.camera.position.copy( this.target ).add( _offset );
 
 		this.camera.lookAt( this.target );
 
@@ -364,11 +376,11 @@ class OrbitControls extends Controls {
 
 		if ( this.screenSpacePanning ) {
 
-			this._applyPanMovement( pointer.planeE.movement );
+			this._applyPanMovement( pointer.projectOnPlane( this.target, _eye ).movement );
 
 		} else {
 
-			this._applyPanMovement( pointer.planeY.movement );
+			this._applyPanMovement( pointer.projectOnPlane( this.target, _unitY ).movement );
 
 		}
 
@@ -380,10 +392,11 @@ class OrbitControls extends Controls {
 		let fovFactor = 1;
 		if ( this.camera instanceof PerspectiveCamera ) {
 
-			offset.copy( this.camera.position ).sub( this.target );
+			_offset.copy( this.camera.position ).sub( this.target );
+
 
 			// half of the fov is center to top of screen. We use clientHeight only so aspect ratio does not distort speed
-			fovFactor = offset.length() * Math.tan( ( this.camera.fov / 2 ) * Math.PI / 180.0 ) * 2 / this.domElement.clientHeight;
+			fovFactor = _offset.length() * Math.tan( ( this.camera.fov / 2 ) * Math.PI / 180.0 ) * 2 / this.domElement.clientHeight;
 
 		} else if ( this.camera instanceof OrthographicCamera ) {
 
@@ -393,41 +406,42 @@ class OrbitControls extends Controls {
 
 
 		// Pan movement up / down
-		movement.set( 0, 0, 0 );
+		_movement.set( 0, 0, 0 );
 
 		if ( this.screenSpacePanning === true ) {
 
-			offset.setFromMatrixColumn( this.camera.matrix, 1 );
+			_offset.setFromMatrixColumn( this.camera.matrix, 1 );
 
 		} else {
 
-			offset.setFromMatrixColumn( this.camera.matrix, 0 );
+			_offset.setFromMatrixColumn( this.camera.matrix, 0 );
 
-			offset.crossVectors( this.camera.up, offset );
+			_offset.crossVectors( this.camera.up, _offset );
 
 		}
 
-		offset.multiplyScalar( - deltaY * fovFactor );
+		_offset.multiplyScalar( - deltaY * fovFactor );
 
-		movement.add( offset );
+		_movement.add( _offset );
+
 
 		// Pan movement left / right
-		offset.setFromMatrixColumn( this.camera.matrix, 0 ); // get X column of objectMatrix
+		_offset.setFromMatrixColumn( this.camera.matrix, 0 ); // get X column of objectMatrix
 
-		offset.multiplyScalar( deltaX * fovFactor );
+		_offset.multiplyScalar( deltaX * fovFactor );
 
-		movement.add( offset );
+		_movement.add( _offset );
 
-		this._applyPanMovement( movement );
+		this._applyPanMovement( _movement );
 
 	}
 	_applyPanMovement( movement ) {
 
-		offset.copy( movement ).multiplyScalar( this.panSpeed );
+		_offset.copy( movement ).multiplyScalar( this.panSpeed );
 
-		this.target.sub( offset );
+		this.target.sub( _offset );
 
-		this.camera.position.sub( offset );
+		this.camera.position.sub( _offset );
 
 		this.dispatchEvent( CHANGE_EVENT );
 
@@ -436,11 +450,11 @@ class OrbitControls extends Controls {
 
 		const aspect = this.domElement.clientWidth / this.domElement.clientHeight;
 
-		movement.set( pointer.view.movement.x, pointer.view.movement.y, 0 ).multiplyScalar( this.rotateSpeed );
+		_movement.set( pointer.view.movement.x, pointer.view.movement.y, 0 ).multiplyScalar( this.rotateSpeed );
 
-		movement.x *= aspect;
+		_movement.x *= aspect;
 
-		this._applyRotateMovement( movement );
+		this._applyRotateMovement( _movement );
 
 	}
 	_autoRotateChanged() {
@@ -466,24 +480,26 @@ class OrbitControls extends Controls {
 
 		}
 
-		movement.set( this._autoRotationMagnitude, 0, 0 );
+		_movement.set( this._autoRotationMagnitude, 0, 0 );
 
-		this._applyRotateMovement( movement );
+		this._applyRotateMovement( _movement );
 
 	}
 	_applyRotateMovement( movement ) {
 
-		offset.copy( this.camera.position ).sub( this.target );
+		_offset.copy( this.camera.position ).sub( this.target );
 
-		// rotate offset to "y-axis-is-up" space
-		quat.setFromUnitVectors( this.camera.up, new Vector3( 0, 1, 0 ) );
 
-		quatInverse.copy( quat ).inverse();
+		// rotate _offset to "y-axis-is-up" space
+		_quat.setFromUnitVectors( this.camera.up, new Vector3( 0, 1, 0 ) );
 
-		offset.applyQuaternion( quat );
+		_quatInverse.copy( _quat ).inverse();
+
+		_offset.applyQuaternion( _quat );
+
 
 		// angle from z-axis around y-axis
-		this._spherical.setFromVector3( offset );
+		this._spherical.setFromVector3( _offset );
 
 		this._spherical.theta -= movement.x;
 
@@ -491,19 +507,20 @@ class OrbitControls extends Controls {
 
 		this._spherical.phi += movement.y;
 
+
 		// restrict theta to be between desired limits
 		let min = this.minAzimuthAngle;
 		let max = this.maxAzimuthAngle;
 		if ( isFinite( min ) && isFinite( max ) ) {
 
 			if ( min < - Math.PI )
-				min += twoPI;
+				min += PI2;
 			else if ( min > Math.PI )
-				min -= twoPI;
+				min -= PI2;
 			if ( max < - Math.PI )
-				max += twoPI;
+				max += PI2;
 			else if ( max > Math.PI )
-				max -= twoPI;
+				max -= PI2;
 			if ( min < max ) {
 
 				this._spherical.theta = Math.max( min, Math.min( max, this._spherical.theta ) );
@@ -524,12 +541,13 @@ class OrbitControls extends Controls {
 
 		this._spherical.makeSafe();
 
-		offset.setFromSpherical( this._spherical );
+		_offset.setFromSpherical( this._spherical );
 
-		// rotate offset back to "camera-up-vector-is-up" space
-		offset.applyQuaternion( quatInverse );
 
-		this.camera.position.copy( this.target ).add( offset );
+		// rotate _offset back to_ "camera-up-vector-is-up" space
+		_offset.applyQuaternion( _quatInverse );
+
+		this.camera.position.copy( this.target ).add( _offset );
 
 		this.camera.lookAt( this.target );
 
@@ -538,9 +556,5 @@ class OrbitControls extends Controls {
 	}
 
 }
-
-__decorate( [
-	onChange( '_autoRotateChanged' )
-], OrbitControls.prototype, "autoRotate", void 0 );
 
 export { OrbitControls };

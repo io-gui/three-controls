@@ -1,8 +1,10 @@
+import { Vector3 } from "../../../three";
 import { Controls } from "./Controls.js";
 
 let _intersections;
 const _hoveredObjects = {};
 const _selectedObjects = {};
+const _eye = new Vector3();
 
 export class DragControls extends Controls {
 
@@ -10,18 +12,21 @@ export class DragControls extends Controls {
 
 		super( camera, domElement );
 
+
+		// Public API
+		this.lookAtTarget = false;
+
 		this.transformGroup = false;
 
 		this.objects = objects;
 
-		const _onEnabledChanged = ( event ) => {
+		this.addEventListener( 'enabled-changed', ( event ) => {
 
 			if ( ! event.value )
 				this.domElement.style.cursor = '';
 
-		};
+		} );
 
-		this.addEventListener( 'enabled-changed', _onEnabledChanged );
 
 		// Deprecation warnings
 		this.getObjects = function () {
@@ -112,7 +117,9 @@ export class DragControls extends Controls {
 		const _selectedObject = _selectedObjects[ id ];
 		if ( _selectedObject ) {
 
-			_selectedObject.position.add( pointer.planeE.movement );
+			_eye.set( 0, 0, 1 ).applyQuaternion( this.camera.quaternion ).normalize();
+
+			_selectedObject.position.add( pointer.projectOnPlane( this.target, _eye ).movement );
 
 			this.dispatchEvent( { type: 'drag', object: _selectedObject } );
 

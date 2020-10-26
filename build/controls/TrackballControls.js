@@ -1,4 +1,4 @@
-import { MOUSE, Vector2, Vector3, Quaternion, PerspectiveCamera, OrthographicCamera } from "../../three/build/three.module.js";
+import { MOUSE, Vector2, Vector3, Quaternion, PerspectiveCamera, OrthographicCamera } from "../../../three";
 import { Controls, CHANGE_EVENT, START_EVENT, END_EVENT } from "./Controls.js";
 
 const STATE = { NONE: - 1, ROTATE: 0, ZOOM: 1, PAN: 2 };
@@ -7,7 +7,7 @@ const _rotationMagnitude = new Vector2();
 const _zoomMagnitude = new Vector2();
 const _panMagnitude = new Vector3();
 
-// TODO: make sure events are always fired in right order (start > change > end)
+// TODO: make sure events are always fired in right order ( start > change > end )
 // Temp variables
 const _axis = new Vector3();
 const _quaternion = new Quaternion();
@@ -20,6 +20,7 @@ class TrackballControls extends Controls {
 	constructor( camera, domElement ) {
 
 		super( camera, domElement );
+
 
 		// Public API
 		this.rotateSpeed = 1.0;
@@ -42,8 +43,10 @@ class TrackballControls extends Controls {
 
 		this.mouseButtons = { LEFT: MOUSE.ROTATE, MIDDLE: MOUSE.DOLLY, RIGHT: MOUSE.PAN };
 
+
 		// Internal utility variables
 		this._keyState = STATE.NONE;
+
 
 		// Deprecation warnings
 		Object.defineProperty( this, 'staticMoving', {
@@ -142,13 +145,15 @@ class TrackballControls extends Controls {
 
 		_panMagnitude.set( 0, 0, 0 );
 
+		_eye.set( 0, 0, 1 ).applyQuaternion( this.camera.quaternion ).normalize();
+
 		const button = pointers[ 0 ].button;
 		switch ( pointers.length ) {
 
 			case 1: // 1 pointer
 				if ( ( button === this.mouseButtons.LEFT || this._keyState === STATE.ROTATE ) && ! this.noRotate ) {
 
-					_rotationMagnitude.copy( pointers[ 0 ].view.movement ).multiplyScalar( this.rotateSpeed );
+					_rotationMagnitude.set( pointers[ 0 ].view.movement.x, pointers[ 0 ].view.movement.y ).multiplyScalar( this.rotateSpeed );
 
 				} else if ( ( button === this.mouseButtons.MIDDLE || this._keyState === STATE.ZOOM ) && ! this.noZoom ) {
 
@@ -156,7 +161,7 @@ class TrackballControls extends Controls {
 
 				} else if ( ( button === this.mouseButtons.RIGHT || this._keyState === STATE.PAN ) && ! this.noPan ) {
 
-					_panMagnitude.copy( pointers[ 0 ].planeE.movement ).multiplyScalar( this.panSpeed );
+					_panMagnitude.copy( pointers[ 0 ].projectOnPlane( this.target, _eye ).movement ).multiplyScalar( this.panSpeed );
 
 				}
 
@@ -168,9 +173,9 @@ class TrackballControls extends Controls {
 
 				_zoomMagnitude.y *= this.zoomSpeed;
 
-				_panMagnitude.copy( pointers[ 0 ].planeE.movement );
+				_panMagnitude.copy( pointers[ 0 ].projectOnPlane( this.target, _eye ).movement );
 
-				_panMagnitude.add( pointers[ 1 ].planeE.movement );
+				_panMagnitude.add( pointers[ 1 ].projectOnPlane( this.target, _eye ).movement );
 
 				_panMagnitude.multiplyScalar( this.panSpeed * 0.5 );
 
@@ -268,6 +273,7 @@ class TrackballControls extends Controls {
 			if ( this.camera instanceof PerspectiveCamera ) {
 
 				_eye.multiplyScalar( factor );
+
 
 				// Clamp min/max
 				if ( _eye.lengthSq() < this.minDistance * this.minDistance ) {

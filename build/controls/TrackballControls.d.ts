@@ -1,4 +1,4 @@
-import { MOUSE, PerspectiveCamera, OrthographicCamera } from "../../three";
+import { MOUSE, PerspectiveCamera, OrthographicCamera } from "../../../three";
 import { Controls, Pointer } from "./Controls.js";
 
 declare class TrackballControls extends Controls {

@@ -1,4 +1,4 @@
-import { Vector2, Vector3, Plane, Intersection, Object3D, PerspectiveCamera, OrthographicCamera, Event as ThreeEvent, Quaternion } from "../../three";
+import { Vector2, Vector3, Plane, Intersection, Object3D, PerspectiveCamera, OrthographicCamera, Event as ThreeEvent, Quaternion } from "../../../three";
 
 export declare type Callback = ( callbackValue?: any ) => void;
 
@@ -9,8 +9,6 @@ export declare const START_EVENT: ThreeEvent;
 export declare const END_EVENT: ThreeEvent;
 
 export declare const DISPOSE_EVENT: ThreeEvent;
-
-export declare function onChange( onChangeFunc: string, onChangeToFalsyFunc?: string ): ( target: any, propertyKey: string ) => void;
 
 declare type Constructor<TBase extends any> = new ( ...args: any[] ) => TBase;
 
@@ -33,7 +31,7 @@ declare type Constructor<TBase extends any> = new ( ...args: any[] ) => TBase;
  * ### Internal Update and Animation Loop ###
  *
  * - Removes the necessity to call `.update()` method externally from external animation loop for damping calculations.
- * - Developers can start and stop per-frame function invocations via `private startAnimation(callback)` and `stopAnimation(callback)`.
+ * - Developers can start and stop per-frame function invocations via `private startAnimation( callback )` and `stopAnimation( callback )`.
  *
  * ### Controls Livecycle ###
  *
@@ -48,6 +46,7 @@ export declare function ControlsMixin<T extends Constructor<any>>( base: T ): {
 		camera: PerspectiveCamera | OrthographicCamera;
 		domElement: HTMLElement;
 		target: Vector3;
+		lookAtTarget: boolean;
 		enabled: boolean;
 		enableDamping: boolean;
 		dampingFactor: number;
@@ -63,6 +62,7 @@ export declare function ControlsMixin<T extends Constructor<any>>( base: T ): {
 		_resetTarget: Vector3;
 		_resetZoom: number;
 		_resetFocus: number;
+		observeProperty( propertyKey: string, onChangeFunc: Callback, onChangeToFalsyFunc?: Callback | undefined ): void;
 		startAnimation( callback: Callback ): void;
 		stopAnimation( callback: Callback ): void;
 		_connect(): void;
@@ -139,7 +139,7 @@ declare class Pointer3D {
 	clear(): void;
 	add( pointer: Pointer3D ): this;
 	divideScalar( value: number ): this;
-	fromView( viewPointer: Pointer2D, camera: PerspectiveCamera | OrthographicCamera, planeNormal: Vector3 ): this;
+	projectOnPlane( viewPointer: Pointer2D, camera: PerspectiveCamera | OrthographicCamera, center: Vector3, planeNormal: Vector3, avoidGrazingAngles?: boolean ): this;
 
 }
 
@@ -162,15 +162,10 @@ export declare class Pointer {
 	isSimulated: boolean;
 	canvas: Pointer2D;
 	view: Pointer2D;
-	planeX: Pointer3D;
-	planeY: Pointer3D;
-	planeZ: Pointer3D;
-	planeE: Pointer3D;
-	planeNormalX: Pointer3D;
-	planeNormalY: Pointer3D;
-	planeNormalZ: Pointer3D;
 	private _camera;
+	protected _projected: Pointer3D;
 	constructor( pointerEvent: PointerEvent, camera: PerspectiveCamera | OrthographicCamera );
+	projectOnPlane( planeCenter: Vector3, planeNormal: Vector3 ): Pointer3D;
 	update( pointerEvent: PointerEvent, camera: PerspectiveCamera | OrthographicCamera ): void;
 	applyDamping( dampingFactor: number, deltaTime: number ): void;
 	intersectObjects( objects: Object3D[] ): Intersection[];
@@ -183,6 +178,7 @@ export declare class CenterPointer extends Pointer {
 
 	_pointers: Pointer[];
 	constructor( pointerEvent: PointerEvent, camera: PerspectiveCamera | OrthographicCamera );
+	projectOnPlane( planeCenter: Vector3, planeNormal: Vector3 ): Pointer3D;
 	updateCenter( pointers: Pointer[] ): void;
 
 }

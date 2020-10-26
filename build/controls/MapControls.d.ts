@@ -1,4 +1,4 @@
-import { MOUSE, TOUCH } from "../../three";
+import { MOUSE, TOUCH } from "../../../three";
 import { OrbitControls } from "./OrbitControls.js";
 
 export declare class MapControls extends OrbitControls {
