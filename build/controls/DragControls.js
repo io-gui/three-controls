@@ -1,4 +1,4 @@
-import { Vector3 } from "../../../three";
+import { Vector3 } from "../../../build/three.module.js";
 import { Controls } from "./Controls.js";
 
 let _intersections;

@@ -1,4 +1,4 @@
-import { Vector2, Vector3, Plane, PerspectiveCamera, OrthographicCamera, Raycaster, EventDispatcher, Quaternion } from "../../../three";
+import { Vector2, Vector3, Plane, PerspectiveCamera, OrthographicCamera, Raycaster, EventDispatcher, Quaternion } from "../../../build/three.module.js";
 
 /* eslint-disable @typescript-eslint/no-use-before-define */
 // Internal variables

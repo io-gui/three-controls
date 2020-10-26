@@ -1,4 +1,4 @@
-import { Object3D, PerspectiveCamera, OrthographicCamera } from "../../../three";
+import { Object3D, PerspectiveCamera, OrthographicCamera } from "../../../src/Three";
 import { Controls, Pointer } from "./Controls.js";
 
 export declare class DragControls extends Controls {

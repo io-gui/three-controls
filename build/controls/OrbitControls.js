@@ -1,4 +1,4 @@
-import { MOUSE, TOUCH, Vector3, Quaternion, Spherical, PerspectiveCamera, OrthographicCamera } from "../../../three";
+import { MOUSE, TOUCH, Vector3, Quaternion, Spherical, PerspectiveCamera, OrthographicCamera } from "../../../build/three.module.js";
 import { Controls, CHANGE_EVENT, START_EVENT, END_EVENT } from "./Controls.js";
 
 
