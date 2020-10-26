@@ -3,29 +3,8 @@ const stream = require('stream');
 const fs = require('fs')
 const replaceStream = require('replacestream')
 
-async function repath(filename, stringFrom, stringTo) {
-  const tempFilename = filename + '.temp';
-  await fs.createReadStream(filename)
-      .pipe(replaceStream(new RegExp(stringFrom, 'g'), stringTo))
-      .pipe(fs.createWriteStream(tempFilename))
-  fs.unlinkSync(filename, console.error);
-  fs.renameSync(tempFilename, filename);
-}
-
-const stringFrom = process.argv[2];
-const stringTo = process.argv[3];
-
-for (let i = 4; i < process.argv.length; i++) {
-  const filename = path.join(__dirname, process.argv[i]);
-  try {
-    if (fs.existsSync(filename)) repath(filename, stringFrom, stringTo);
-  } catch(err) {
-    console.error(err)
-  }
-}
-
 // Repath transformer for `yarn copy:three:watch` (live development with `cpx --watch --transform`)
-module.exports = function convert(filename) {
+function getConvertStream(filename) {
   if (path.extname(filename) === '.ts') {
     return replaceStream(new RegExp('../../../three', 'g'), '../../../src/Three');
   } else if (path.extname(filename) === '.js') {
@@ -35,3 +14,29 @@ module.exports = function convert(filename) {
   }
   return new stream.PassThrough();
 };
+
+module.exports = getConvertStream;
+
+async function repath(filename, convertStream) {
+  const tempFilename = filename + '.temp';
+  await fs.createReadStream(filename).pipe(convertStream).pipe(fs.createWriteStream(tempFilename))
+  fs.unlinkSync(filename, console.error);
+  fs.renameSync(tempFilename, filename);
+}
+
+const target = process.argv[2];
+if (target !== 'build' && target !== 'three') {
+  console.log(`Invalid target "${target}"! The first command argument should be "build" or "three.`);
+}
+
+for (let i = 3; i < process.argv.length; i++) {
+  const filename = path.join(__dirname, process.argv[i]);
+  try {
+    if (fs.existsSync(filename)) {
+      repath(filename, getConvertStream(filename));
+    }
+  } catch(err) {
+    console.error(err)
+  }
+}
+

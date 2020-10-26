@@ -91,6 +91,8 @@ class TransformControls extends ControlsMixin( Object3D as any ) {
     this.camera = camera;
     this.domElement = domElement;
 
+    /* eslint-disable @typescript-eslint/no-use-before-define */
+
     const _gizmo = this._gizmo = new TransformControlsGizmo();
     this.add( _gizmo );
 
