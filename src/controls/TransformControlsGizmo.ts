@@ -523,8 +523,8 @@ export class TransformControlsGizmo extends Object3D {
         handle.quaternion.copy( quaternion );
         if ( this.mode === 'translate' || this.mode === 'scale' ) {
           // Hide translate and scale axis facing the camera
-          const AXIS_HIDE_TRESHOLD = 0.99;
-          const PLANE_HIDE_TRESHOLD = 0.2;
+          const AXIS_HIDE_TRESHOLD = 0.998;
+          const PLANE_HIDE_TRESHOLD = 0.05;
           const AXIS_FLIP_TRESHOLD = 0.0;
           if ( handle.name === 'X' || handle.name === 'XYZX' ) {
             if ( Math.abs( alignVector.copy( unitX ).applyQuaternion( quaternion ).dot( this.eye ) ) > AXIS_HIDE_TRESHOLD ) {

@@ -174,31 +174,6 @@ class TransformControls extends ControlsMixin( Object3D as any ) {
     super.updateMatrixWorld();
   }
 
-  // Object.defineProperty( this, 'view', {
-  //   get: () => view.copy( this.canvas ).convertToViewSpace( this.domElement )
-  // });
-  // Object.defineProperty( this, 'planeX', {
-  //   get: () => planeX.fromView( this.view, this._camera, unitX )
-  // });
-  // Object.defineProperty( this, 'planeY', {
-  //   get: () => planeY.fromView( this.view, this._camera, unitY )
-  // });
-  // Object.defineProperty( this, 'planeZ', {
-  //   get: () => planeZ.fromView( this.view, this._camera, unitZ )
-  // });
-  // Object.defineProperty( this, 'planeE', {
-  //   get: () => planeE.fromView( this.view, this._camera, eye0.set( 0, 0, 1 ).applyQuaternion( this._camera.quaternion ).normalize() )
-  // });
-  // Object.defineProperty( this, 'planeNormalX', {
-  //   get: () => planeNormalX.fromView( this.view, this._camera, eye0.set( 0, 0, 1 ).applyQuaternion( this._camera.quaternion ).normalize().cross( unitX ).cross( unitX ) )
-  // });
-  // Object.defineProperty( this, 'planeNormalY', {
-  //   get: () => planeNormalY.fromView( this.view, this._camera, eye0.set( 0, 0, 1 ).applyQuaternion( this._camera.quaternion ).normalize().cross( unitY ).cross( unitY ) )
-  // });
-  // Object.defineProperty( this, 'planeNormalZ', {
-  //   get: () => planeNormalZ.fromView( this.view, this._camera, eye0.set( 0, 0, 1 ).applyQuaternion( this._camera.quaternion ).normalize().cross( unitZ ).cross( unitZ ) )
-  // });
-
   getPlaneNormal(): Vector3 {
     let space = this.space;
     if ( this.mode === 'scale' ) space = 'local'; // scale always oriented to local rotation
