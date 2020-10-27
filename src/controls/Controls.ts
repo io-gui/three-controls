@@ -99,18 +99,18 @@ export function ControlsMixin<T extends Constructor<any>>( base: T ) {
       });
       target.set = ( x: number, y: number, z: number ) => {
         Vector3.prototype.set.call( target, x, y, z );
-        if ( this.lookAtTarget ) this.camera.lookAt( target );
+        if ( this.enabled && this.lookAtTarget ) this.camera.lookAt( target );
         this.dispatchEvent( CHANGE_EVENT );
         return target;
       }
       target.copy = ( value: Vector3 ) => {
         Vector3.prototype.copy.call( target, value );
-        if ( this.lookAtTarget ) this.camera.lookAt( target );
+        if ( this.enabled && this.lookAtTarget ) this.camera.lookAt( target );
         this.dispatchEvent( CHANGE_EVENT );
         return target;
       }
       setTimeout( () => {
-        if ( this.lookAtTarget ) this.camera.lookAt( target );
+        if ( this.enabled && this.lookAtTarget ) this.camera.lookAt( target );
         this.dispatchEvent( CHANGE_EVENT );
       } );
 

@@ -29,6 +29,8 @@ if (target !== 'build' && target !== 'three') {
   console.log(`Invalid target "${target}"! The first command argument should be "build" or "three.`);
 }
 
+if (process.argv[1].endsWith('cpx')) return;
+
 for (let i = 3; i < process.argv.length; i++) {
   const filename = path.join(__dirname, process.argv[i]);
   try {
