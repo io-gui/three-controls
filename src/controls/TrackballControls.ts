@@ -1,5 +1,5 @@
-import { MOUSE, Vector2, Vector3, Quaternion, PerspectiveCamera, OrthographicCamera } from "../../../three";
-import { Controls, Pointer, CHANGE_EVENT, START_EVENT, END_EVENT } from "./Controls.js";
+import { MOUSE, Vector2, Vector3, Quaternion, PerspectiveCamera, OrthographicCamera } from '../../../three';
+import { Controls, Pointer, CHANGE_EVENT, START_EVENT, END_EVENT } from './Controls.js';
 
 const STATE = { NONE: - 1, ROTATE: 0, ZOOM: 1, PAN: 2 };
 

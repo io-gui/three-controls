@@ -1,4 +1,4 @@
-import { Vector2, Vector3, Plane, Intersection, Object3D, PerspectiveCamera, OrthographicCamera, Raycaster, EventDispatcher, Event as ThreeEvent, Quaternion } from "../../../three";
+import { Vector2, Vector3, Plane, Intersection, Object3D, PerspectiveCamera, OrthographicCamera, Raycaster, EventDispatcher, Event as ThreeEvent, Quaternion } from '../../../three';
 
 /* eslint-disable @typescript-eslint/no-use-before-define */
 
@@ -139,7 +139,7 @@ export function ControlsMixin<T extends Constructor<any>>( base: T ) {
       this._connect();
     }
     // Adds property observing mechanism via getter/setter functions. Also emits '[property]-changed' event.
-    observeProperty( propertyKey: string, onChangeFunc: Callback, onChangeToFalsyFunc?: Callback ) {
+    observeProperty( propertyKey: keyof Controls, onChangeFunc: Callback, onChangeToFalsyFunc?: Callback ) {
       let value: any = this[ propertyKey ];
       Object.defineProperty( this, propertyKey, {
         get() {
@@ -149,8 +149,9 @@ export function ControlsMixin<T extends Constructor<any>>( base: T ) {
           const oldValue = value;
           value = newValue;
           if ( oldValue !== undefined && newValue !== oldValue ) {
-            ( newValue || !onChangeToFalsyFunc ) ? onChangeFunc() : onChangeToFalsyFunc();
+            ( newValue || !onChangeToFalsyFunc ) ? (onChangeFunc && onChangeFunc()) : onChangeToFalsyFunc();
             this.dispatchEvent({ type: propertyKey + '-changed', value: newValue, oldValue: oldValue });
+            this.dispatchEvent(CHANGE_EVENT);
           }
         }
       });

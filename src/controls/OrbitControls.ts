@@ -1,5 +1,5 @@
-import { MOUSE, TOUCH, Vector3, Quaternion, Spherical, PerspectiveCamera, OrthographicCamera } from "../../../three";
-import { Controls, Pointer, CenterPointer, Callback, CHANGE_EVENT, START_EVENT, END_EVENT } from "./Controls.js";
+import { MOUSE, TOUCH, Vector3, Quaternion, Spherical, PerspectiveCamera, OrthographicCamera } from '../../../three';
+import { Controls, Pointer, CenterPointer, Callback, CHANGE_EVENT, START_EVENT, END_EVENT } from './Controls.js';
 
 // This set of controls performs orbiting, dollying ( zooming ), and panning.
 // Unlike TrackballControls, it maintains the "up" direction camera.up ( +Y by default ).
