@@ -71,6 +71,8 @@ export function ControlsMixin<T extends Constructor<any>>( base: T ) {
     _resetTarget = new Vector3();
     _resetZoom = 1;
     _resetFocus = 1;
+    //
+    _changeDispatched = false;
 
     constructor( ...args: any[] ) {
       super( ...args );
@@ -151,7 +153,13 @@ export function ControlsMixin<T extends Constructor<any>>( base: T ) {
           if ( oldValue !== undefined && newValue !== oldValue ) {
             ( newValue || !onChangeToFalsyFunc ) ? (onChangeFunc && onChangeFunc()) : onChangeToFalsyFunc();
             this.dispatchEvent({ type: propertyKey + '-changed', value: newValue, oldValue: oldValue });
-            this.dispatchEvent(CHANGE_EVENT);
+            if ( !this._changeDispatched ) {
+              this._changeDispatched = true;
+              requestAnimationFrame(() => {
+                this.dispatchEvent(CHANGE_EVENT);
+                this._changeDispatched = false;
+              });
+            }
           }
         }
       });

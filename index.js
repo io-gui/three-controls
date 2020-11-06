@@ -4,3 +4,6 @@ export * from 'build/MapControls.js';
 export * from 'build/OrbitControls.js';
 export * from 'build/TrackballControls.js';
 export * from 'build/TransformControls.js';
+export * from 'build/Helper.js';
+export * from 'build/TranslateHelper.js';
+export * from 'build/HelperGeometries.js';
