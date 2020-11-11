@@ -309,7 +309,7 @@ class OrbitControls extends Controls {
     _offset.copy( this.camera.position ).sub( this.target );
     // rotate _offset to "y-axis-is-up" space
     _quat.setFromUnitVectors( this.camera.up, new Vector3( 0, 1, 0 ) );
-    _quatInverse.copy( _quat ).inverse();
+    _quatInverse.copy( _quat ).invert();
     _offset.applyQuaternion( _quat );
     // angle from z-axis around y-axis
     this._spherical.setFromVector3( _offset );
@@ -322,7 +322,7 @@ class OrbitControls extends Controls {
     if ( isFinite( min ) && isFinite( max ) ) {
       if ( min < - Math.PI ) min += PI2; else if ( min > Math.PI ) min -= PI2;
       if ( max < - Math.PI ) max += PI2; else if ( max > Math.PI ) max -= PI2;
-      if ( min < max ) {
+      if ( min <= max ) {
         this._spherical.theta = Math.max( min, Math.min( max, this._spherical.theta ) );
       } else {
         this._spherical.theta = ( this._spherical.theta > ( min + max ) / 2 ) ?

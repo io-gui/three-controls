@@ -40,18 +40,19 @@ function getFirstIntersection(intersections: Intersection[], includeInvisible: b
 class TransformControls extends ControlsMixin( TransformHelper as any ) {
   readonly isTransformControls = true;
   type = 'TransformControls';
+
   // Public API
+
   camera: PerspectiveCamera | OrthographicCamera;
   domElement: HTMLElement;
   lookAtTarget = false;
   object?: Object3D;
-  //
-  mode: 'translate' | 'rotate' | 'scale' | '' = '';
+
   space = 'world';
   translationSnap = 0;
   rotationSnap = 0;
   scaleSnap = 0;
-  //
+
   cameraPosition = new Vector3();
   cameraQuaternion = new Quaternion();
   cameraScale = new Vector3();
@@ -73,9 +74,10 @@ class TransformControls extends ControlsMixin( TransformHelper as any ) {
   positionStart = new Vector3();
   quaternionStart = new Quaternion();
   scaleStart = new Vector3();
-  //
+
   rotationAxis = new Vector3();
   rotationAngle = 0;
+
   constructor ( camera: PerspectiveCamera | OrthographicCamera, domElement: HTMLElement ) {
     super( camera, domElement );
 
@@ -91,23 +93,33 @@ class TransformControls extends ControlsMixin( TransformHelper as any ) {
 
     this.observeProperty( 'camera' );
     this.observeProperty( 'object' );
-    this.observeProperty( 'enabled' );
-    this.observeProperty( 'axis' );
-    this.observeProperty( 'mode' );
+    this.observeProperty( 'activeAxis' );
+    this.observeProperty( 'activeMode' );
     this.observeProperty( 'space', );
     this.observeProperty( 'size' );
     this.observeProperty( 'dragging' );
     this.observeProperty( 'showX' );
     this.observeProperty( 'showY' );
     this.observeProperty( 'showZ' );
+    this.observeProperty( 'showTranslate' );
+    this.observeProperty( 'showRotate' );
+    this.observeProperty( 'showScale' );
+
+    // Deprecation warnings
+    Object.defineProperty( this, 'mode', {
+      set: ( value ) => {
+        console.warn( 'THREE.TransformControls: "mode" has been deprecated. Use showTranslate, showScale and showRotate.' );
+      }
+    });
   }
-  updateHandleVisibility( handle: Mesh ) {
-    super.updateHandleVisibility( handle );
-    if ( handle.userData.mode === 'scale' && this.space === 'world') {
-      if ( ['XYZX', 'XYZY', 'XYZZ'].indexOf( handle.name ) === -1 ) handle.visible = false;
+
+  updateHandle( handle: Mesh ) {
+    super.updateHandle( handle );
+    if ( handle.userData.type === 'scale' && this.space === 'world') {
+      if ( ['XYZX', 'XYZY', 'XYZZ'].indexOf( handle.userData.axis ) === -1 ) handle.visible = false;
     }
   }
-  // updateMatrixWorld  updates key transformation variables
+
   updateMatrixWorld() {
     if ( this.object !== undefined ) {
       this.object.updateMatrixWorld();
@@ -117,8 +129,8 @@ class TransformControls extends ControlsMixin( TransformHelper as any ) {
         this.object.parent.matrixWorld.decompose( this.parentPosition, this.parentQuaternion, this.parentScale );
       }
       this.object.matrixWorld.decompose( this.worldPosition, this.worldQuaternion, this.worldScale );
-      this.parentQuaternionInv.copy( this.parentQuaternion ).inverse();
-      this.worldQuaternionInv.copy( this.worldQuaternion ).inverse();
+      this.parentQuaternionInv.copy( this.parentQuaternion ).invert();
+      this.worldQuaternionInv.copy( this.worldQuaternion ).invert();
     }
     this.camera.updateMatrixWorld();
     this.camera.matrixWorld.decompose( this.cameraPosition, this.cameraQuaternion, this.cameraScale );
@@ -133,10 +145,10 @@ class TransformControls extends ControlsMixin( TransformHelper as any ) {
     unitY.set( 0, 1, 0 ).applyQuaternion( this.space === 'local' ? this.worldQuaternion : identityQuaternion );
     unitZ.set( 0, 0, 1 ).applyQuaternion( this.space === 'local' ? this.worldQuaternion : identityQuaternion );
     // Align the plane for current transform mode, axis and space.
-    switch ( this.mode ) {
+    switch ( this.activeMode ) {
       case 'translate':
       case 'scale':
-        switch ( this.axis ) {
+        switch ( this.activeAxis ) {
           case 'X':
             dirVector.set( 0, 0, 1 ).applyQuaternion( this.camera.quaternion ).normalize().cross( unitX ).cross( unitX )
             break;
@@ -179,40 +191,39 @@ class TransformControls extends ControlsMixin( TransformHelper as any ) {
     });
     const intersect = getFirstIntersection(pointer.intersectObjects(pickers), false);
     if ( intersect && !pointer.isSimulated ) {
-      this.mode = intersect.object.userData.mode as '';
-      this.axis = intersect.object.userData.axis as '';
+      this.activeMode = intersect.object.userData.type;
+      this.activeAxis = intersect.object.userData.axis;
     } else {
-      this.mode = '';
-      this.axis = '';
+      this.activeMode = '';
+      this.activeAxis = '';
     }
   }
 
   onTrackedPointerDown( pointer: Pointer ): void {
     // TODO: Unhack! This enables axis reset/interrupt when simulated pointer is driving gesture with inertia.
-    // this.axis = '';
+    this.activeAxis = '';
     // TODO: consider triggering hover from Controls.js
     // Simulates hover before down on touchscreen
     this.onTrackedPointerHover( pointer );
     // TODO: Unhack! This enables axis reset/interrupt when simulated pointer is driving gesture with inertia.
-    if ( this.axis === '' ) this.dragging = false;
+    if ( this.activeAxis === '' ) this.dragging = false;
 
     if ( this.object === undefined || this.dragging === true || pointer.button !== 0 ) return;
-    this.domElement.style.touchAction = 'none'; // disable touch scroll
-    if ( this.axis !== '' ) {
+    if ( this.activeAxis !== '' ) {
       // Plane
       const intersection = pointer.projectOnPlane(_tempVector.copy( this.worldPosition ), this.getPlaneNormal());
       if ( intersection ) { // TODO: handle intersection miss
         let space = this.space;
-        if ( this.mode === 'scale' ) {
+        if ( this.activeMode === 'scale' ) {
           space = 'local';
-        } else if ( this.axis === 'E' || this.axis === 'XYZE' || this.axis === 'XYZ' ) {
+        } else if ( this.activeAxis === 'E' || this.activeAxis === 'XYZE' || this.activeAxis === 'XYZ' ) {
           space = 'world';
         }
-        if ( space === 'local' && this.mode === 'rotate' ) {
+        if ( space === 'local' && this.activeMode === 'rotate' ) {
           const snap = this.rotationSnap;
-          if ( this.axis === 'X' && snap ) this.object.rotation.x = Math.round( this.object.rotation.x / snap ) * snap
-          if ( this.axis === 'Y' && snap ) this.object.rotation.y = Math.round( this.object.rotation.y / snap ) * snap
-          if ( this.axis === 'Z' && snap ) this.object.rotation.z = Math.round( this.object.rotation.z / snap ) * snap;
+          if ( this.activeAxis === 'X' && snap ) this.object.rotation.x = Math.round( this.object.rotation.x / snap ) * snap
+          if ( this.activeAxis === 'Y' && snap ) this.object.rotation.y = Math.round( this.object.rotation.y / snap ) * snap
+          if ( this.activeAxis === 'Z' && snap ) this.object.rotation.z = Math.round( this.object.rotation.z / snap ) * snap;
         }
         this.object.updateMatrixWorld()
         if (this.object.parent) this.object.parent.updateMatrixWorld();
@@ -223,15 +234,15 @@ class TransformControls extends ControlsMixin( TransformHelper as any ) {
         pointStart.copy( intersection.current ).sub( this.worldPositionStart );
       }
       this.dragging = true
-      mouseDownEvent.mode = this.mode
+      mouseDownEvent.mode = this.activeMode
       this.dispatchEvent( mouseDownEvent );
       this.dispatchEvent( START_EVENT );
     }
   }
 
   onTrackedPointerMove( pointer: Pointer ): void {
-    const axis = this.axis
-    const mode = this.mode
+    const axis = this.activeAxis
+    const mode = this.activeMode
     const object = this.object
     let space = this.space;
     if ( mode === 'scale' ) {
@@ -261,7 +272,7 @@ class TransformControls extends ControlsMixin( TransformHelper as any ) {
       // Apply translation snap
       if ( this.translationSnap ) {
         if ( space === 'local' ) {
-          object.position.applyQuaternion( _tempQuaternion.copy( this.quaternionStart ).inverse() );
+          object.position.applyQuaternion( _tempQuaternion.copy( this.quaternionStart ).invert() );
           if ( axis.search( 'X' ) !== - 1 ) {
             object.position.x = Math.round( object.position.x / this.translationSnap ) * this.translationSnap;
           }
@@ -363,14 +374,13 @@ class TransformControls extends ControlsMixin( TransformHelper as any ) {
 
   onTrackedPointerUp( pointer: Pointer ): void {
     if ( pointer.button > 0 ) return;
-    if ( this.dragging && ( this.axis !== '' ) ) {
-      mouseUpEvent.mode = this.mode
+    if ( this.dragging && ( this.activeAxis !== '' ) ) {
+      mouseUpEvent.mode = this.activeMode
       this.dispatchEvent( mouseUpEvent );
       this.dispatchEvent( END_EVENT );
     }
-    this.domElement.style.touchAction = '';
     this.dragging = false
-    this.axis = '';
+    this.activeAxis = '';
   }
   dispose() {
     this.traverse( ( child: Object3D ) => {
@@ -389,16 +399,15 @@ class TransformControls extends ControlsMixin( TransformHelper as any ) {
   detach(): this {
     this.object = undefined;
     this.visible = false;
-    this.axis = '';
+    this.activeAxis = '';
     return this;
   }
   // TODO: deprecate
-  getMode(): string {
-    return this.mode;
+  getMode() {
+    console.warn( 'THREE.TransformControls: getMode function has been deprecated. Use showTranslate, showScale and showRotate.' );
   }
-  setMode( mode: 'translate' | 'rotate' | 'scale' ) {
-    console.warn( 'THREE.TransformControls: setMode function has been deprecated.' );
-    this.mode = mode;
+  setMode() {
+    console.warn( 'THREE.TransformControls: setMode function has been deprecated. Use showTranslate, showScale and showRotate.' );
   }
   setTranslationSnap( translationSnap: number ) {
     console.warn( 'THREE.TransformControls: setTranslationSnap function has been deprecated.' );

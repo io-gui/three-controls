@@ -119,6 +119,7 @@ export function ControlsMixin<T extends Constructor<any>>( base: T ) {
       // Save initial camera state
       this.saveCameraState();
       // Bind handler functions
+      this._preventDefault = this._preventDefault.bind( this );
       this._onContextMenu = this._onContextMenu.bind( this );
       this._onWheel = this._onWheel.bind( this );
       this._onPointerDown = this._onPointerDown.bind( this );
@@ -180,8 +181,10 @@ export function ControlsMixin<T extends Constructor<any>>( base: T ) {
     _connect() {
       this.domElement.addEventListener( 'contextmenu', this._onContextMenu, false );
       this.domElement.addEventListener( 'wheel', this._onWheel, {capture: false, passive: false });
-      this.domElement.addEventListener( 'pointerdown', this._onPointerDown, false );
-      this.domElement.addEventListener( 'pointermove', this._onPointerMove, false );
+      this.domElement.addEventListener( 'touchdown', this._preventDefault, {capture: false, passive: false });
+      this.domElement.addEventListener( 'touchmove', this._preventDefault, {capture: false, passive: false });
+      this.domElement.addEventListener( 'pointerdown', this._onPointerDown );
+      this.domElement.addEventListener( 'pointermove', this._onPointerMove );
       this.domElement.addEventListener( 'pointerleave', this._onPointerLeave, false );
       this.domElement.addEventListener( 'pointercancel', this._onPointerCancel, false );
       this.domElement.addEventListener( 'pointerover', this._onPointerOver, false );
@@ -194,19 +197,15 @@ export function ControlsMixin<T extends Constructor<any>>( base: T ) {
       if ( this.domElement.tabIndex === - 1 ) {
         this.domElement.tabIndex = 0;
       }
-      // make sure element has disabled touch-actions.
-      if ( window.getComputedStyle( this.domElement ).touchAction !== 'none' ) {
-        this.domElement.style.touchAction = 'none';
-      }
-      // TODO: consider reverting "tabIndex" and "style.touchAction" attributes on disconnect.
     }
     // Internal lyfecycle method
     _disconnect() {
       this.domElement.removeEventListener( 'contextmenu', this._onContextMenu, false );
-      // TODO: investigate typescript bug?
-      ( this.domElement as any ).removeEventListener( 'wheel', this._onWheel, {capture: false, passive: false });
-      this.domElement.removeEventListener( 'pointerdown', this._onPointerDown, false );
-      this.domElement.removeEventListener( 'pointermove', this._onPointerMove, false );
+      this.domElement.removeEventListener( 'wheel', this._onWheel);
+      this.domElement.removeEventListener( 'touchdown', this._preventDefault);
+      this.domElement.removeEventListener( 'touchmove', this._preventDefault);
+      this.domElement.removeEventListener( 'pointerdown', this._onPointerDown);
+      this.domElement.removeEventListener( 'pointermove', this._onPointerMove);
       this.domElement.removeEventListener( 'pointerleave', this._onPointerLeave, false );
       this.domElement.removeEventListener( 'pointercancel', this._onPointerCancel, false );
       this.domElement.removeEventListener( 'pointerup', this._onPointerUp, false );
@@ -283,6 +282,9 @@ export function ControlsMixin<T extends Constructor<any>>( base: T ) {
       }
     }
     // Internal event handlers
+    _preventDefault( event: Event ) {
+      event.preventDefault();
+    }
     _onContextMenu( event: Event ) {
       this.dispatchEvent( event );
     }
@@ -296,6 +298,9 @@ export function ControlsMixin<T extends Constructor<any>>( base: T ) {
       }
       this.domElement.focus ? this.domElement.focus() : window.focus();
       this.domElement.setPointerCapture( event.pointerId );
+      // if (this.domElement.style.touchAction !== 'none') {
+      //   this.domElement.style.touchAction = 'none'; // disable touch scroll
+      // }
       const pointers = this._pointers;
       const pointer = new Pointer( event, this.camera );
       pointer._clearMovement();
@@ -378,6 +383,9 @@ export function ControlsMixin<T extends Constructor<any>>( base: T ) {
         }
       }
       this.dispatchEvent( event );
+      // if (!pointers.length  && this.domElement.style.touchAction !== '') {
+      //   this.domElement.style.touchAction = '';
+      // }
     }
     _onPointerLeave( event: PointerEvent ) {
       const pointers = this._pointers;
