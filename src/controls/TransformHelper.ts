@@ -22,6 +22,9 @@ export const arrowGeometry = new CylinderBufferGeometry( 0, 0.05, 0.2, 12, 1, fa
 export const lineGeometry = new BufferGeometry();
 lineGeometry.setAttribute( 'position', new Float32BufferAttribute( [ 0, 0, 0,  1, 0, 0 ], 3 ) );
 
+export const squareLineGeometry = new BufferGeometry();
+squareLineGeometry.setAttribute( 'position', new Float32BufferAttribute( [  -1, -1, 0, -1, 1, 0, 1, 1, 0, 1, -1, 0, -1, -1, 0 ], 3 ) );
+
 const zeroVector = new Vector3( 0, 0, 0 );
 const lookAtMatrix = new Matrix4();
 const alignVector = new Vector3( 0, 1, 0 );
@@ -33,8 +36,9 @@ const unitZ = new Vector3( 0, 0, 1 );
 
 // Hide translate and scale axis facing the camera
 const AXIS_HIDE_TRESHOLD = 0.99;
-const PLANE_HIDE_TRESHOLD = 0.05;
+const PLANE_HIDE_TRESHOLD = 0.9;
 const AXIS_FLIP_TRESHOLD = 0.0;
+const PICKER_ALPHA = 0.0;
 
 export const translateHelperGeometrySpec: [ Mesh | Line, ControlsHelperGeometrySpec ][] = [
   [
@@ -223,7 +227,7 @@ export const translateHelperGeometrySpec: [ Mesh | Line, ControlsHelperGeometryS
       type: 'translate',
       axis: 'X',
       tag: 'picker',
-      color: new Vector4( 1, 1, 1, 0 ),
+      color: new Vector4( 1, 1, 1, PICKER_ALPHA ),
       position: new Vector3( 0.6, 0, 0 ),
       rotation: new Euler( Math.PI / 4, 0, - Math.PI / 2 ),
     }
@@ -233,7 +237,7 @@ export const translateHelperGeometrySpec: [ Mesh | Line, ControlsHelperGeometryS
       type: 'translate',
       axis: 'Y',
       tag: 'picker',
-      color: new Vector4( 1, 1, 1, 0 ),
+      color: new Vector4( 1, 1, 1, PICKER_ALPHA ),
       position: new Vector3( 0, 0.6, 0),
       rotation: new Euler( 0, Math.PI / 4, 0 ),
     }
@@ -243,7 +247,7 @@ export const translateHelperGeometrySpec: [ Mesh | Line, ControlsHelperGeometryS
       type: 'translate',
       axis: 'Z',
       tag: 'picker',
-      color: new Vector4( 1, 1, 1, 0 ),
+      color: new Vector4( 1, 1, 1, PICKER_ALPHA ),
       position: new Vector3( 0, 0, 0.6 ),
       rotation: new Euler( Math.PI / 2, Math.PI / 4, 0 ),
     }
@@ -253,7 +257,7 @@ export const translateHelperGeometrySpec: [ Mesh | Line, ControlsHelperGeometryS
       type: 'translate',
       axis: 'XYZ',
       tag: 'picker',
-      color: new Vector4( 1, 1, 1, 0 ),
+      color: new Vector4( 1, 1, 1, PICKER_ALPHA ),
     }
   ], [
     new Mesh( new PlaneBufferGeometry( 0.5, 0.5 ) ),
@@ -261,7 +265,7 @@ export const translateHelperGeometrySpec: [ Mesh | Line, ControlsHelperGeometryS
       type: 'translate',
       axis: 'XY',
       tag: 'picker',
-      color: new Vector4( 1, 1, 1, 0 ),
+      color: new Vector4( 1, 1, 1, PICKER_ALPHA ),
       position: new Vector3( 0.25, 0.25, 0),
     }
   ], [
@@ -270,7 +274,7 @@ export const translateHelperGeometrySpec: [ Mesh | Line, ControlsHelperGeometryS
       type: 'translate',
       axis: 'YZ',
       tag: 'picker',
-      color: new Vector4( 1, 1, 1, 0 ),
+      color: new Vector4( 1, 1, 1, PICKER_ALPHA ),
       position: new Vector3( 0, 0.25, 0.25 ),
       rotation: new Euler( 0, Math.PI / 2, 0 ),
     }
@@ -280,7 +284,7 @@ export const translateHelperGeometrySpec: [ Mesh | Line, ControlsHelperGeometryS
       type: 'translate',
       axis: 'XZ',
       tag: 'picker',
-      color: new Vector4( 1, 1, 1, 0 ),
+      color: new Vector4( 1, 1, 1, PICKER_ALPHA ),
       position: new Vector3( 0.25, 0, 0.25 ),
       rotation: new Euler( - Math.PI / 2, 0, 0 ),
     }
@@ -357,51 +361,54 @@ export const rotateHelperGeometrySpec: [ Mesh | Line, ControlsHelperGeometrySpec
   ],
   // Pickers
   [
-    new Mesh( new TorusBufferGeometry( 0.9, 0.1, 4, 24 ) ),
+    new Mesh( new TorusBufferGeometry( 0.9, 0.2, 4, 6, Math.PI ) ),
     {
       type: 'rotate',
       axis: 'X',
       tag: 'picker',
-      color: new Vector4( 1, 1, 1, 0 ),
+      color: new Vector4( 1, 1, 1, PICKER_ALPHA ),
       position: new Vector3( 0, 0, 0 ),
       rotation: new Euler( 0, - Math.PI / 2, - Math.PI / 2 ),
+      scale: new Vector3( 1, 1, 0.3 ),
     }
   ], [
-    new Mesh( new TorusBufferGeometry( 0.9, 0.1, 4, 24 ) ),
+    new Mesh( new TorusBufferGeometry( 0.9, 0.2, 4, 6, Math.PI ) ),
     {
       type: 'rotate',
       axis: 'Y',
       tag: 'picker',
-      color: new Vector4( 1, 1, 1, 0 ),
+      color: new Vector4( 1, 1, 1, PICKER_ALPHA ),
       position: new Vector3( 0, 0, 0 ),
       rotation: new Euler( Math.PI / 2, 0, 0 ),
+      scale: new Vector3( 1, 1, 0.3 ),
     }
   ], [
-    new Mesh( new TorusBufferGeometry( 0.9, 0.1, 4, 24 ) ),
+    new Mesh( new TorusBufferGeometry( 0.9, 0.2, 4, 6, Math.PI ) ),
     {
       type: 'rotate',
       axis: 'Z',
       tag: 'picker',
-      color: new Vector4( 1, 1, 1, 0 ),
+      color: new Vector4( 1, 1, 1, PICKER_ALPHA ),
       position: new Vector3( 0, 0, 0 ),
       rotation: new Euler( 0, 0, - Math.PI / 2 ),
+      scale: new Vector3( 1, 1, 0.3 ),
     }
   ], [
-    new Mesh( new TorusBufferGeometry( 1.3, 0.1, 2, 24 ) ),
+    new Mesh( new TorusBufferGeometry( 1.3, 0.2, 2, 12 ) ),
     {
       type: 'rotate',
       axis: 'E',
       tag: 'picker',
-      color: new Vector4( 1, 1, 1, 0 ),
+      color: new Vector4( 1, 1, 1, PICKER_ALPHA ),
     }
   ], [
-    new Mesh( new SphereBufferGeometry( 0.9, 10, 8 ) ),
+    new Mesh( new SphereBufferGeometry( 1.3, 12, 2, 0, Math.PI * 2, 0, Math.PI / 2 ) ),
     {
       type: 'rotate',
       axis: 'XYZE',
-      color: new Vector4( 1, 1, 1, 0 ),
       tag: 'picker',
-      position: new Vector3( 0, 0, -1 ),
+      color: new Vector4( 1, 1, 1, PICKER_ALPHA ),
+      rotation: new Euler( - Math.PI / 2, 0, 0 ),
     }
   ]
 ];
@@ -522,23 +529,13 @@ export const scaleHelperGeometrySpec: [ Mesh | Line, ControlsHelperGeometrySpec 
       position: new Vector3( 0.85, 0.85, 0)
     }
   ], [
-    new Line( lineGeometry ),
+    new Line( squareLineGeometry ),
     {
       type: 'scale',
       axis: 'XY',
       color: new Vector4( 1, 1, 0, 1 ),
-      position: new Vector3( 0.8, 1, 0 ),
-      scale: new Vector3( 0.2, 1, 1 )
-    }
-  ], [
-    new Line( lineGeometry ),
-    {
-      type: 'scale',
-      axis: 'XY',
-      color: new Vector4( 1, 1, 0, 1 ),
-      position: new Vector3( 1, 0.8, 0 ),
-      rotation: new Euler( 0, 0, Math.PI / 2 ),
-      scale: new Vector3( 0.2, 1, 1 )
+      position: new Vector3( 0.925, 0.925, 0 ),
+      scale: new Vector3( 0.075, 0.075, 1 ),
     }
   ], [
     new Mesh( new PlaneBufferGeometry( 0.3, 0.3 ) ),
@@ -547,27 +544,17 @@ export const scaleHelperGeometrySpec: [ Mesh | Line, ControlsHelperGeometrySpec 
       axis: 'YZ',
       color: new Vector4( 0, 1, 1, 0.1 ),
       position: new Vector3( 0, 0.85, 0.85 ),
-      rotation: new Euler( 0, Math.PI / 2, 0 )
+      rotation: new Euler( 0, Math.PI / 2, 0 ),
     }
   ], [
-    new Line( lineGeometry ),
+    new Line( squareLineGeometry ),
     {
       type: 'scale',
       axis: 'YZ',
       color: new Vector4( 0, 1, 1, 1 ),
-      position: new Vector3( 0, 0.8, 1 ),
-      rotation: new Euler( 0, 0, Math.PI / 2 ),
-      scale: new Vector3( 0.2, 1, 1 )
-    }
-  ], [
-    new Line( lineGeometry ),
-    {
-      type: 'scale',
-      axis: 'YZ',
-      color: new Vector4( 0, 1, 1, 1 ),
-      position: new Vector3( 0, 1, 0.8 ),
-      rotation: new Euler( 0, - Math.PI / 2, 0 ),
-      scale: new Vector3( 0.2, 1, 1 )
+      position: new Vector3( 0, 0.925, 0.925 ),
+      rotation: new Euler( 0, Math.PI / 2, 0),
+      scale: new Vector3( 0.075, 0.075, 1 )
     }
   ], [
     new Mesh( new PlaneBufferGeometry( 0.3, 0.3 ) ),
@@ -579,53 +566,44 @@ export const scaleHelperGeometrySpec: [ Mesh | Line, ControlsHelperGeometrySpec 
       rotation: new Euler( - Math.PI / 2, 0, 0 )
     }
   ], [
-    new Line( lineGeometry ),
+    new Line( squareLineGeometry ),
     {
       type: 'scale',
       axis: 'XZ',
       color: new Vector4( 1, 0, 1, 1 ),
-      position: new Vector3( 0.8, 0, 1 ),
-      scale: new Vector3( 0.2, 1, 1 )
-    }
-  ], [
-    new Line( lineGeometry ),
-    {
-      type: 'scale',
-      axis: 'XZ',
-      color: new Vector4( 1, 0, 1, 1 ),
-      position: new Vector3( 1, 0, 0.8 ),
-      rotation: new Euler( 0, - Math.PI / 2, 0 ),
-      scale: new Vector3( 0.2, 1, 1 )
+      position: new Vector3( 0.925, 0, 0.925 ),
+      rotation: new Euler( Math.PI / 2, 0, 0 ),
+      scale: new Vector3( 0.075, 0.075, 1 ),
     }
   ],
   // Pickers
   [
-    new Mesh( new CylinderBufferGeometry( 0.3, 0, 0.7, 4, 1, false ) ),
+    new Mesh( new CylinderBufferGeometry( 0.2, 0, 0.7, 4, 1, false ) ),
     {
       type: 'scale',
       axis: 'X',
       tag: 'picker',
-      color: new Vector4( 1, 1, 1, 0 ),
+      color: new Vector4( 1, 1, 1, PICKER_ALPHA ),
       position: new Vector3( 0.7, 0, 0 ),
       rotation: new Euler( Math.PI / 4, 0, - Math.PI / 2 ),
     }
   ], [
-    new Mesh( new CylinderBufferGeometry( 0.3, 0, 0.7, 4, 1, false ) ),
+    new Mesh( new CylinderBufferGeometry( 0.2, 0, 0.7, 4, 1, false ) ),
     {
       type: 'scale',
       axis: 'Y',
       tag: 'picker',
-      color: new Vector4( 1, 1, 1, 0 ),
+      color: new Vector4( 1, 1, 1, PICKER_ALPHA ),
       position: new Vector3( 0, 0.7, 0),
       rotation: new Euler( 0, Math.PI / 4, 0 ),
     }
   ], [
-    new Mesh( new CylinderBufferGeometry( 0.3, 0, 0.7, 4, 1, false ) ),
+    new Mesh( new CylinderBufferGeometry( 0.2, 0, 0.7, 4, 1, false ) ),
     {
       type: 'scale',
       axis: 'Z',
       tag: 'picker',
-      color: new Vector4( 1, 1, 1, 0 ),
+      color: new Vector4( 1, 1, 1, PICKER_ALPHA ),
       position: new Vector3( 0, 0, 0.7 ),
       rotation: new Euler( Math.PI / 2, Math.PI / 4, 0 ),
     }
@@ -635,7 +613,7 @@ export const scaleHelperGeometrySpec: [ Mesh | Line, ControlsHelperGeometrySpec 
       type: 'scale',
       axis: 'XY',
       tag: 'picker',
-      color: new Vector4( 1, 1, 1, 0 ),
+      color: new Vector4( 1, 1, 1, PICKER_ALPHA ),
       position: new Vector3( 0.85, 0.85, 0 ),
       scale: new Vector3( 4, 4, 0.6 ),
     }
@@ -645,7 +623,7 @@ export const scaleHelperGeometrySpec: [ Mesh | Line, ControlsHelperGeometrySpec 
       type: 'scale',
       axis: 'YZ',
       tag: 'picker',
-      color: new Vector4( 1, 1, 1, 0 ),
+      color: new Vector4( 1, 1, 1, PICKER_ALPHA ),
       position: new Vector3( 0, 0.85, 0.85 ),
       scale: new Vector3( 0.6, 4, 4 ),
     }
@@ -655,38 +633,38 @@ export const scaleHelperGeometrySpec: [ Mesh | Line, ControlsHelperGeometrySpec 
       type: 'scale',
       axis: 'XZ',
       tag: 'picker',
-      color: new Vector4( 1, 1, 1, 0 ),
+      color: new Vector4( 1, 1, 1, PICKER_ALPHA ),
       position: new Vector3( 0.85, 0, 0.85 ),
       scale: new Vector3( 4, 0.6, 4 ),
     }
   ], [
-    new Mesh( new CylinderBufferGeometry( 0.3, 0, 0.9, 4, 1, false ) ),
+    new Mesh( new CylinderBufferGeometry( 0.24, 0, 0.55, 4, 1, false ) ),
     {
       type: 'scale',
       axis: 'XYZX',
       tag: 'picker',
-      color: new Vector4( 1, 1, 1, 0 ),
-      position: new Vector3( 0.8, 0, 0 ),
+      color: new Vector4( 1, 1, 1, PICKER_ALPHA ),
+      position: new Vector3( 1.1, 0, 0 ),
       rotation: new Euler( Math.PI / 4, 0, - Math.PI / 2 ),
     }
   ], [
-    new Mesh( new CylinderBufferGeometry( 0.3, 0, 0.9, 4, 1, false ) ),
+    new Mesh( new CylinderBufferGeometry( 0.24, 0, 0.55, 4, 1, false ) ),
     {
       type: 'scale',
       axis: 'XYZY',
       tag: 'picker',
-      color: new Vector4( 1, 1, 1, 0 ),
-      position: new Vector3( 0, 0.8, 0),
+      color: new Vector4( 1, 1, 1, PICKER_ALPHA ),
+      position: new Vector3( 0, 1.1, 0),
       rotation: new Euler( 0, Math.PI / 4, 0 ),
     }
   ], [
-    new Mesh( new CylinderBufferGeometry( 0.3, 0, 0.9, 4, 1, false ) ),
+    new Mesh( new CylinderBufferGeometry( 0.24, 0, 0.55, 4, 1, false ) ),
     {
       type: 'scale',
       axis: 'XYZZ',
       tag: 'picker',
-      color: new Vector4( 1, 1, 1, 0 ),
-      position: new Vector3( 0, 0, 0.8 ),
+      color: new Vector4( 1, 1, 1, PICKER_ALPHA ),
+      position: new Vector3( 0, 0, 1.1 ),
       rotation: new Euler( Math.PI / 2, Math.PI / 4, 0 ),
     }
   ], 
@@ -707,7 +685,7 @@ export class TransformHelper extends ControlsHelper {
   showY = true;
   showZ = true;
   showTranslate = true;
-  showRotate = false;
+  showRotate = true;
   showScale = true;
   sizeAttenuation = 1;
 
@@ -806,38 +784,41 @@ export class TransformHelper extends ControlsHelper {
 
     } else {
 
+      const hide_treshold = AXIS_HIDE_TRESHOLD * ( handleType === 'scale' ? AXIS_HIDE_TRESHOLD * 0.95 : AXIS_HIDE_TRESHOLD );
+      const plane_hide_treshold = AXIS_HIDE_TRESHOLD * ( handleType === 'scale' ? PLANE_HIDE_TRESHOLD * 0.95 : PLANE_HIDE_TRESHOLD );
+
       if ( handleAxis === 'X' || handleAxis === 'XYZX' ) {
-        if ( Math.abs( alignVector.copy( unitX ).applyQuaternion( quaternion ).dot( eye ) ) > AXIS_HIDE_TRESHOLD ) {
+        if ( Math.abs( alignVector.copy( unitX ).applyQuaternion( quaternion ).dot( eye ) ) > hide_treshold ) {
           handle.scale.set( 1e-10, 1e-10, 1e-10 );
           handle.visible = false;
         }
       }
       if ( handleAxis === 'Y' || handleAxis === 'XYZY' ) {
-        if ( Math.abs( alignVector.copy( unitY ).applyQuaternion( quaternion ).dot( eye ) ) > AXIS_HIDE_TRESHOLD ) {
+        if ( Math.abs( alignVector.copy( unitY ).applyQuaternion( quaternion ).dot( eye ) ) > hide_treshold ) {
           handle.scale.set( 1e-10, 1e-10, 1e-10 );
           handle.visible = false;
         }
       }
       if ( handleAxis === 'Z' || handleAxis === 'XYZZ' ) {
-        if ( Math.abs( alignVector.copy( unitZ ).applyQuaternion( quaternion ).dot( eye ) ) > AXIS_HIDE_TRESHOLD ) {
+        if ( Math.abs( alignVector.copy( unitZ ).applyQuaternion( quaternion ).dot( eye ) ) > hide_treshold ) {
           handle.scale.set( 1e-10, 1e-10, 1e-10 );
           handle.visible = false;
         }
       }
       if ( handleAxis === 'XY' ) {
-        if ( Math.abs( alignVector.copy( unitZ ).applyQuaternion( quaternion ).dot( eye ) ) < PLANE_HIDE_TRESHOLD ) {
+        if ( Math.abs( alignVector.copy( unitZ ).applyQuaternion( quaternion ).dot( eye ) ) < ( 1 - plane_hide_treshold ) ) {
           handle.scale.set( 1e-10, 1e-10, 1e-10 );
           handle.visible = false;
         }
       }
       if ( handleAxis === 'YZ' ) {
-        if ( Math.abs( alignVector.copy( unitX ).applyQuaternion( quaternion ).dot( eye ) ) < PLANE_HIDE_TRESHOLD ) {
+        if ( Math.abs( alignVector.copy( unitX ).applyQuaternion( quaternion ).dot( eye ) ) < ( 1 - plane_hide_treshold ) ) {
           handle.scale.set( 1e-10, 1e-10, 1e-10 );
           handle.visible = false;
         }
       }
       if ( handleAxis === 'XZ' ) {
-        if ( Math.abs( alignVector.copy( unitY ).applyQuaternion( quaternion ).dot( eye ) ) < PLANE_HIDE_TRESHOLD ) {
+        if ( Math.abs( alignVector.copy( unitY ).applyQuaternion( quaternion ).dot( eye ) ) < ( 1 - plane_hide_treshold ) ) {
           handle.scale.set( 1e-10, 1e-10, 1e-10 );
           handle.visible = false;
         }

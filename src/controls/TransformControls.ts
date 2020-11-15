@@ -107,7 +107,7 @@ class TransformControls extends ControlsMixin( TransformHelper as any ) {
 
     // Deprecation warnings
     Object.defineProperty( this, 'mode', {
-      set: ( value ) => {
+      set: () => {
         console.warn( 'THREE.TransformControls: "mode" has been deprecated. Use showTranslate, showScale and showRotate.' );
       }
     });
