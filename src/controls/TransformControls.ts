@@ -1,4 +1,4 @@
-import { Mesh, MeshBasicMaterial, Object3D, Quaternion, Vector3, PerspectiveCamera, OrthographicCamera, Intersection } from '../../../three';
+import { Mesh, MeshBasicMaterial, Object3D, Quaternion, Vector3, PerspectiveCamera, OrthographicCamera, Intersection } from '../../../three/src/Three';
 
 import { ControlsMixin, Pointer, CHANGE_EVENT, START_EVENT, END_EVENT } from './Controls.js';
 import { TransformHelper } from './TransformHelper.js';

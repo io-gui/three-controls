@@ -1,4 +1,4 @@
-import { Vector2, Vector3, Plane, Intersection, Object3D, PerspectiveCamera, OrthographicCamera, Raycaster, EventDispatcher, Event as ThreeEvent, Quaternion } from '../../../three';
+import { Vector2, Vector3, Plane, Intersection, Object3D, PerspectiveCamera, OrthographicCamera, Raycaster, EventDispatcher, Event as ThreeEvent, Quaternion } from '../../../three/src/Three';
 
 /* eslint-disable @typescript-eslint/no-use-before-define */
 

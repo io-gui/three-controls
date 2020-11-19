@@ -1,7 +1,7 @@
 import { Quaternion, Mesh, Euler, Vector3, Vector4, Matrix4, Line, MeshBasicMaterial, Color,
   OctahedronBufferGeometry, TorusBufferGeometry, SphereBufferGeometry,
   BoxBufferGeometry, PlaneBufferGeometry, CylinderBufferGeometry,
-  BufferGeometry, Float32BufferAttribute, OrthographicCamera, PerspectiveCamera } from '../../../three';
+  BufferGeometry, Float32BufferAttribute, OrthographicCamera, PerspectiveCamera } from '../../../three/src/Three';
 
 import { ControlsHelper, ControlsHelperGeometrySpec } from './ControlsHelper.js';
 
@@ -24,6 +24,9 @@ lineGeometry.setAttribute( 'position', new Float32BufferAttribute( [ 0, 0, 0,  1
 
 export const squareLineGeometry = new BufferGeometry();
 squareLineGeometry.setAttribute( 'position', new Float32BufferAttribute( [  -1, -1, 0, -1, 1, 0, 1, 1, 0, 1, -1, 0, -1, -1, 0 ], 3 ) );
+
+export const cornerLineGeometry = new BufferGeometry();
+cornerLineGeometry.setAttribute( 'position', new Float32BufferAttribute( [  0, -1, 0, 0, 0, 0, 1, 0, 0 ], 3 ) );
 
 const zeroVector = new Vector3( 0, 0, 0 );
 const lookAtMatrix = new Matrix4();
@@ -144,23 +147,14 @@ export const translateHelperGeometrySpec: [ Mesh | Line, ControlsHelperGeometryS
       position: new Vector3( 0.15, 0.15, 0)
     }
   ], [
-    new Line( lineGeometry ),
+    new Line( cornerLineGeometry ),
     {
       type: 'translate',
       axis: 'XY',
       color: new Vector4( 1, 1, 0, 1 ),
-      position: new Vector3( 0.15, 0.3, 0 ),
-      scale: new Vector3( 0.15, 1, 1 )
-    }
-  ], [
-    new Line( lineGeometry ),
-    {
-      type: 'translate',
-      axis: 'XY',
-      color: new Vector4( 1, 1, 0, 1 ),
-      position: new Vector3( 0.3, 0.15, 0 ),
-      rotation: new Euler( 0, 0, Math.PI / 2 ),
-      scale: new Vector3( 0.15, 1, 1 )
+      position: new Vector3( 0.3, 0.3, 0 ),
+      rotation: new Euler( 0, 0, -Math.PI / 2 ),
+      scale: new Vector3( 0.15, 0.15, 1 )
     }
   ], [
     new Mesh( new PlaneBufferGeometry( 0.3, 0.3 ) ),
@@ -172,24 +166,14 @@ export const translateHelperGeometrySpec: [ Mesh | Line, ControlsHelperGeometryS
       rotation: new Euler( 0, Math.PI / 2, 0 )
     }
   ], [
-    new Line( lineGeometry ),
+    new Line( cornerLineGeometry ),
     {
       type: 'translate',
       axis: 'YZ',
       color: new Vector4( 0, 1, 1, 1 ),
-      position: new Vector3( 0, 0.15, 0.3 ),
-      rotation: new Euler( 0, 0, Math.PI / 2 ),
-      scale: new Vector3( 0.15, 1, 1 )
-    }
-  ], [
-    new Line( lineGeometry ),
-    {
-      type: 'translate',
-      axis: 'YZ',
-      color: new Vector4( 0, 1, 1, 1 ),
-      position: new Vector3( 0, 0.3, 0.15 ),
-      rotation: new Euler( 0, - Math.PI / 2, 0 ),
-      scale: new Vector3( 0.15, 1, 1 )
+      position: new Vector3( 0, 0.3, 0.3 ),
+      rotation: new Euler( 0, - Math.PI / 2, - Math.PI / 2 ),
+      scale: new Vector3( 0.15, 0.15, 1 )
     }
   ], [
     new Mesh( new PlaneBufferGeometry( 0.3, 0.3 ) ),
@@ -201,23 +185,14 @@ export const translateHelperGeometrySpec: [ Mesh | Line, ControlsHelperGeometryS
       rotation: new Euler( - Math.PI / 2, 0, 0 )
     }
   ], [
-    new Line( lineGeometry ),
+    new Line( cornerLineGeometry ),
     {
       type: 'translate',
       axis: 'XZ',
       color: new Vector4( 1, 0, 1, 1 ),
-      position: new Vector3( 0.15, 0, 0.3 ),
-      scale: new Vector3( 0.15, 1, 1 )
-    }
-  ], [
-    new Line( lineGeometry ),
-    {
-      type: 'translate',
-      axis: 'XZ',
-      color: new Vector4( 1, 0, 1, 1 ),
-      position: new Vector3( 0.3, 0, 0.15 ),
-      rotation: new Euler( 0, - Math.PI / 2, 0 ),
-      scale: new Vector3( 0.15, 1, 1 )
+      position: new Vector3( 0.3, 0, 0.3 ),
+      rotation: new Euler( Math.PI / 2, 0, -Math.PI / 2 ),
+      scale: new Vector3( 0.15, 0.15, 1 )
     }
   ],
   // Pickers
