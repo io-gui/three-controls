@@ -1,5 +1,5 @@
-import { Vector3, Object3D, Intersection, Event as ThreeEvent, PerspectiveCamera, OrthographicCamera } from '../../../three';
-import { Controls, Pointer } from './Controls.js';
+import { Vector3, Object3D, Intersection, PerspectiveCamera, OrthographicCamera, Event as ThreeEvent } from 'three';
+import { Controls, PointerTracker } from './Controls';
 
 let _intersections: Intersection[];
 const _hoveredObjects: Record<string, Object3D> = {};
@@ -35,7 +35,7 @@ export class DragControls extends Controls {
     }
   }
 
-  onTrackedPointerHover( pointer: Pointer ): void {
+  onTrackedPointerHover( pointer: PointerTracker ): void {
     const id = String( pointer.pointerId );
     _intersections = pointer.intersectObjects( this.objects );
     const _hoveredObject = _hoveredObjects[id];
@@ -54,7 +54,7 @@ export class DragControls extends Controls {
     }
   }
 
-  onTrackedPointerDown( pointer: Pointer ): void {
+  onTrackedPointerDown( pointer: PointerTracker ): void {
     const id = String( pointer.pointerId );
     this.domElement.style.cursor = 'move';
     _intersections = pointer.intersectObjects( this.objects );
@@ -67,7 +67,7 @@ export class DragControls extends Controls {
     }
   }
 
-  onTrackedPointerMove( pointer: Pointer ): void {
+  onTrackedPointerMove( pointer: PointerTracker ): void {
     const id = String( pointer.pointerId );
     const _selectedObject = _selectedObjects[id];
     if ( _selectedObject ) {
@@ -77,7 +77,7 @@ export class DragControls extends Controls {
     }
   }
 
-  onTrackedPointerUp( pointer: Pointer, pointers: Pointer[] ): void {
+  onTrackedPointerUp( pointer: PointerTracker, pointers: PointerTracker[] ): void {
     const id = String( pointer.pointerId );
     for ( const idx in _selectedObjects ) {
       if ( id === idx ) {

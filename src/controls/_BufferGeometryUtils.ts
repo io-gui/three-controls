@@ -1,4 +1,4 @@
-import {Vector2, Vector3, BufferGeometry, BufferAttribute } from '../../../three/src/Three';
+import {Vector2, Vector3, BufferGeometry, BufferAttribute } from 'three';
 
 /**
  * @author mrdoob / http://mrdoob.com/

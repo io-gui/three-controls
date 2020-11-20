@@ -1,6 +1,6 @@
-import { Vector3, Color, Quaternion, Matrix4, BufferGeometry,
-  Float32BufferAttribute, Uint16BufferAttribute, UniformsUtils, FrontSide, ShaderMaterial,
-  DataTexture, RGBAFormat, FloatType, NearestFilter } from '../../../three';
+import { Vector3, Color, Quaternion, Matrix4, BufferGeometry, Float32BufferAttribute, Uint16BufferAttribute, UniformsUtils,
+  FrontSide, ShaderMaterial, DataTexture, RGBAFormat, FloatType, NearestFilter
+} from 'three';
 
 import { BufferGeometryUtils } from './_BufferGeometryUtils.js';
 import { ControlsHelperGeometrySpec } from './ControlsHelper.js';

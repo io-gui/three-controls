@@ -1,9 +1,8 @@
-import { Quaternion, Mesh, Euler, Vector3, Vector4, Matrix4, Line, MeshBasicMaterial, Color,
-  OctahedronBufferGeometry, TorusBufferGeometry, SphereBufferGeometry,
-  BoxBufferGeometry, PlaneBufferGeometry, CylinderBufferGeometry,
-  BufferGeometry, Float32BufferAttribute, OrthographicCamera, PerspectiveCamera } from '../../../three/src/Three';
+import { Quaternion, Mesh, Euler, Vector3, Vector4, Matrix4, Line, MeshBasicMaterial, Color, OctahedronBufferGeometry,
+  TorusBufferGeometry, SphereBufferGeometry, BoxBufferGeometry, PlaneBufferGeometry, CylinderBufferGeometry,
+  BufferGeometry, Float32BufferAttribute, OrthographicCamera, PerspectiveCamera } from 'three';
 
-import { ControlsHelper, ControlsHelperGeometrySpec } from './ControlsHelper.js';
+import { ControlsHelper, ControlsHelperGeometrySpec } from './ControlsHelper';
 
 export const CircleGeometry = function ( radius: number, arc: number ) {
   const geometry = new BufferGeometry( );
@@ -759,46 +758,6 @@ export class TransformHelper extends ControlsHelper {
 
     } else {
 
-      const hide_treshold = AXIS_HIDE_TRESHOLD * ( handleType === 'scale' ? AXIS_HIDE_TRESHOLD * 0.95 : AXIS_HIDE_TRESHOLD );
-      const plane_hide_treshold = AXIS_HIDE_TRESHOLD * ( handleType === 'scale' ? PLANE_HIDE_TRESHOLD * 0.95 : PLANE_HIDE_TRESHOLD );
-
-      if ( handleAxis === 'X' || handleAxis === 'XYZX' ) {
-        if ( Math.abs( alignVector.copy( unitX ).applyQuaternion( quaternion ).dot( eye ) ) > hide_treshold ) {
-          handle.scale.set( 1e-10, 1e-10, 1e-10 );
-          handle.visible = false;
-        }
-      }
-      if ( handleAxis === 'Y' || handleAxis === 'XYZY' ) {
-        if ( Math.abs( alignVector.copy( unitY ).applyQuaternion( quaternion ).dot( eye ) ) > hide_treshold ) {
-          handle.scale.set( 1e-10, 1e-10, 1e-10 );
-          handle.visible = false;
-        }
-      }
-      if ( handleAxis === 'Z' || handleAxis === 'XYZZ' ) {
-        if ( Math.abs( alignVector.copy( unitZ ).applyQuaternion( quaternion ).dot( eye ) ) > hide_treshold ) {
-          handle.scale.set( 1e-10, 1e-10, 1e-10 );
-          handle.visible = false;
-        }
-      }
-      if ( handleAxis === 'XY' ) {
-        if ( Math.abs( alignVector.copy( unitZ ).applyQuaternion( quaternion ).dot( eye ) ) < ( 1 - plane_hide_treshold ) ) {
-          handle.scale.set( 1e-10, 1e-10, 1e-10 );
-          handle.visible = false;
-        }
-      }
-      if ( handleAxis === 'YZ' ) {
-        if ( Math.abs( alignVector.copy( unitX ).applyQuaternion( quaternion ).dot( eye ) ) < ( 1 - plane_hide_treshold ) ) {
-          handle.scale.set( 1e-10, 1e-10, 1e-10 );
-          handle.visible = false;
-        }
-      }
-      if ( handleAxis === 'XZ' ) {
-        if ( Math.abs( alignVector.copy( unitY ).applyQuaternion( quaternion ).dot( eye ) ) < ( 1 - plane_hide_treshold ) ) {
-          handle.scale.set( 1e-10, 1e-10, 1e-10 );
-          handle.visible = false;
-        }
-      }
-
       // Flip handle to prevent occlusion by other handles
 
       if ( handleAxis.search( 'X' ) !== - 1 ) {
@@ -834,8 +793,38 @@ export class TransformHelper extends ControlsHelper {
           handle.visible = false;
         }
       }
-
     }
+
+    // Hide handles at grazing angles
+    const hideAllignedToX = ( handleType === 'translate' || handleType === 'scale' ) && ( handleAxis === 'X' || handleAxis === 'XYZX' );
+    const hideAllignedToY = ( handleType === 'translate' || handleType === 'scale' ) && ( handleAxis === 'Y' || handleAxis === 'XYZY' );
+    const hideAllignedToZ = ( handleType === 'translate' || handleType === 'scale' ) && ( handleAxis === 'Z' || handleAxis === 'XYZZ' );
+    const hideAllignedToXY = handleAxis === 'XY' || ( handleType === 'rotate' && handleAxis === 'Z' && ( this.showTranslate || this.showScale ) );
+    const hideAllignedToYZ = handleAxis === 'YZ' || ( handleType === 'rotate' && handleAxis === 'X' && ( this.showTranslate || this.showScale ) );
+    const hideAllignedToXZ = handleAxis === 'XZ' || ( handleType === 'rotate' && handleAxis === 'Y' && ( this.showTranslate || this.showScale ) );
+
+    const hide_treshold = AXIS_HIDE_TRESHOLD * ( handleType === 'scale' ? AXIS_HIDE_TRESHOLD * 0.95 : AXIS_HIDE_TRESHOLD );
+    const plane_hide_treshold = AXIS_HIDE_TRESHOLD * ( handleType === 'scale' ? PLANE_HIDE_TRESHOLD * 0.95 : PLANE_HIDE_TRESHOLD );
+
+    if ( hideAllignedToX && Math.abs( alignVector.copy( unitX ).applyQuaternion( quaternion ).dot( eye ) ) > hide_treshold ) {
+        handle.visible = false;
+    }
+    if ( hideAllignedToY && Math.abs( alignVector.copy( unitY ).applyQuaternion( quaternion ).dot( eye ) ) > hide_treshold ) {
+        handle.visible = false;
+    }
+    if ( hideAllignedToZ && Math.abs( alignVector.copy( unitZ ).applyQuaternion( quaternion ).dot( eye ) ) > hide_treshold ) {
+        handle.visible = false;
+    }
+    if ( hideAllignedToXY && Math.abs( alignVector.copy( unitZ ).applyQuaternion( quaternion ).dot( eye ) ) < ( 1 - plane_hide_treshold ) ) {
+        handle.visible = false;
+    }
+    if ( hideAllignedToYZ && Math.abs( alignVector.copy( unitX ).applyQuaternion( quaternion ).dot( eye ) ) < ( 1 - plane_hide_treshold ) ) {
+        handle.visible = false;
+    }
+    if ( hideAllignedToXZ && Math.abs( alignVector.copy( unitY ).applyQuaternion( quaternion ).dot( eye ) ) < ( 1 - plane_hide_treshold ) ) {
+        handle.visible = false;
+    }
+
   }
   updateMatrixWorld() {
     super.updateMatrixWorld();

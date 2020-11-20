@@ -1,5 +1,6 @@
-import { MOUSE, TOUCH, Vector3, Quaternion, Spherical, PerspectiveCamera, OrthographicCamera } from '../../../three';
-import { Controls, Pointer, CenterPointer, Callback, CHANGE_EVENT, START_EVENT, END_EVENT } from './Controls.js';
+import { MOUSE, TOUCH, Vector3, Quaternion, Spherical, PerspectiveCamera, OrthographicCamera } from 'three';
+import { PointerTracker, Callback, CHANGE_EVENT, START_EVENT, END_EVENT } from './Controls';
+import { CameraControls } from './CameraControls';
 
 // This set of controls performs orbiting, dollying ( zooming ), and panning.
 // Unlike TrackballControls, it maintains the "up" direction camera.up ( +Y by default ).
@@ -18,7 +19,7 @@ const _movement = new Vector3();
 
 const PI2 = Math.PI * 2;
 
-class OrbitControls extends Controls {
+class OrbitControls extends CameraControls {
   // Public API
   // How far you can dolly in and out ( PerspectiveCamera only )
   minDistance = 0;
@@ -152,13 +153,13 @@ class OrbitControls extends Controls {
 
   // Tracked pointer handlers
 
-  onTrackedPointerDown( pointer: Pointer, pointers: Pointer[] ): void {
+  onTrackedPointerDown( pointer: PointerTracker, pointers: PointerTracker[] ): void {
     if ( pointers.length === 1 ) {
       this.dispatchEvent( START_EVENT );
     }
   }
 
-  onTrackedPointerMove( pointer: Pointer, pointers: Pointer[], center: CenterPointer ): void {
+  onTrackedPointerMove( pointer: PointerTracker, pointers: PointerTracker[], center: PointerTracker ): void {
     let button = -1;
     this._interacting = !pointer.isSimulated;
     _eye.set( 0, 0, 1 ).applyQuaternion( this.camera.quaternion ).normalize()
@@ -205,7 +206,7 @@ class OrbitControls extends Controls {
     }
   }
 
-  onTrackedPointerUp( pointer: Pointer, pointers: Pointer[] ): void {
+  onTrackedPointerUp( pointer: PointerTracker, pointers: PointerTracker[] ): void {
     if ( pointers.length === 0 ) {
       this.dispatchEvent( END_EVENT );
       this._interacting = false;
@@ -214,11 +215,11 @@ class OrbitControls extends Controls {
 
   // Internal helper functions
 
-  _pointerDolly( pointer: Pointer ): void {
+  _pointerDolly( pointer: PointerTracker ): void {
     this._applyDollyMovement( pointer.canvas.movement.y );
   }
 
-  _twoPointerDolly( pointers: Pointer[] ): void {
+  _twoPointerDolly( pointers: PointerTracker[] ): void {
     const dist0 = pointers[  0  ].projectOnPlane( this.target, _eye ).current.distanceTo( pointers[  1  ].projectOnPlane( this.target, _eye ).current );
     const dist1 = pointers[  0  ].projectOnPlane( this.target, _eye ).previous.distanceTo( pointers[  1  ].projectOnPlane( this.target, _eye ).previous );
     this._applyDollyMovement( dist0 - dist1 );
@@ -238,7 +239,7 @@ class OrbitControls extends Controls {
     this.dispatchEvent( CHANGE_EVENT );
   }
 
-  _pointerPan( pointer: Pointer ): void {
+  _pointerPan( pointer: PointerTracker ): void {
     if ( this.screenSpacePanning ) {
       this._applyPanMovement( pointer.projectOnPlane( this.target, _eye ).movement );
     } else {
@@ -280,7 +281,7 @@ class OrbitControls extends Controls {
     this.dispatchEvent( CHANGE_EVENT );
   }
 
-  _pointerRotate( pointer: Pointer ): void {
+  _pointerRotate( pointer: PointerTracker ): void {
     const aspect = this.domElement.clientWidth / this.domElement.clientHeight;
     _movement.set( pointer.view.movement.x, pointer.view.movement.y, 0 ).multiplyScalar( this.rotateSpeed );
     _movement.x *= aspect;

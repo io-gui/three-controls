@@ -1,5 +1,6 @@
-import { MOUSE, Vector2, Vector3, Quaternion, PerspectiveCamera, OrthographicCamera } from '../../../three';
-import { Controls, Pointer, CHANGE_EVENT, START_EVENT, END_EVENT } from './Controls.js';
+import { MOUSE, Vector2, Vector3, Quaternion, PerspectiveCamera, OrthographicCamera } from 'three';
+import { PointerTracker, CHANGE_EVENT, START_EVENT, END_EVENT } from './Controls';
+import { CameraControls } from './CameraControls';
 
 const STATE = { NONE: - 1, ROTATE: 0, ZOOM: 1, PAN: 2 };
 
@@ -20,7 +21,7 @@ const _cameraUpDirection = new Vector3();
 const _cameraSidewaysDirection = new Vector3();
 const _moveDirection = new Vector3();
 
-class TrackballControls extends Controls {
+class TrackballControls extends CameraControls {
   // Public API
   rotateSpeed = 1.0;
   zoomSpeed = 1.2;
@@ -90,13 +91,13 @@ class TrackballControls extends Controls {
 
   // Tracked pointer handlers
 
-  onTrackedPointerDown( pointer: Pointer, pointers: Pointer[] ): void {
+  onTrackedPointerDown( pointer: PointerTracker, pointers: PointerTracker[] ): void {
     if ( pointers.length === 1 ) {
       this.dispatchEvent( START_EVENT );
     }
   }
 
-  onTrackedPointerMove( pointer: Pointer, pointers: Pointer[] ): void {
+  onTrackedPointerMove( pointer: PointerTracker, pointers: PointerTracker[] ): void {
     _rotationMagnitude.set( 0, 0 );
     _zoomMagnitude.set( 0, 0 );
     _panMagnitude.set( 0, 0, 0 );
@@ -134,7 +135,7 @@ class TrackballControls extends Controls {
     this.dispatchEvent( CHANGE_EVENT );
   }
 
-  onTrackedPointerUp( pointer: Pointer, pointers: Pointer[] ): void {
+  onTrackedPointerUp( pointer: PointerTracker, pointers: PointerTracker[] ): void {
     if ( pointers.length === 0 ) {
       this.dispatchEvent( END_EVENT );
     }

@@ -1,5 +1,6 @@
-import { WebGLRenderer, Scene, Mesh, Line, Vector3, Euler, Camera, PerspectiveCamera, OrthographicCamera,
-  DoubleSide, LineBasicMaterial, MeshBasicMaterial, Vector4 } from '../../../three/src/Three';
+import { Vector3, Vector4, Euler, WebGLRenderer, Scene, Mesh, Line, Camera, PerspectiveCamera, OrthographicCamera,
+  DoubleSide, LineBasicMaterial, MeshBasicMaterial,
+} from 'three';
 
 export const gizmoMaterial = new MeshBasicMaterial( {
   depthTest: false,
