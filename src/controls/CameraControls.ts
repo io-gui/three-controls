@@ -38,8 +38,8 @@ const cameraTargets = new WeakMap();
  * `ControlsMixin` applied to `EventDispatcher`.
  */
 export class CameraControls extends Controls {
-  public target = new Vector3();
-  public lookAtTarget = true;
+  target = new Vector3();
+  lookAtTarget = true;
   // Internal utility variables
   private readonly _resetQuaternion = new Quaternion();
   private readonly _resetPosition = new Vector3();

@@ -9,16 +9,11 @@
     "README.md"
   ],
   "scripts": {
-    "lint": "eslint src --fix",
-    "lint:mdcs": "eslint build -c three.eslint.json --no-ignore build --fix",
+    "lint:dev": "eslint src --fix",
+    "lint": "eslint build -c three.eslint.json --no-ignore build --fix",
     "clean": "rm -rf build",
-    "dev": "yarn clean && tsc -w",
-    "build": "yarn clean && tsc --declarationMap false --sourceMap false && yarn repath:build && yarn lint:mdcs",
-    "build:three": "yarn build && yarn repath:three && yarn copy:three",
-    "repath:build": "node repath.js 'build' build/controls/*",
-    "repath:three": "yarn repath:build && node repath.js 'three' build/controls/*",
-    "copy:three": "yarn cpx 'build/controls/*.{js,ts,map}' '../three/examples/jsm/controls/'",
-    "dev:three": "yarn clean && tsc -w & yarn cpx 'build/controls/*.{js,ts,map}' ../three/examples/jsm/controls/ -t './repath.js' -w"
+    "build:dev": "yarn clean && tsc -w & sleep 5; yarn rollup --config rollup.config.js -w",
+    "build": "yarn clean && tsc --declarationMap false --sourceMap false && yarn lint && yarn rollup --config rollup.config.js --sourceMap false" 
   },
   "sideEffects": false,
   "publishConfig": {
@@ -68,20 +63,21 @@
   },
   "eslintIgnore": [
     "build",
-    "repath.js",
+    "src/controls/_*.ts",
     "index.js"
   ],
   "devDependencies": {
+    "@rollup/plugin-alias": "^3.1.1",
     "@typescript-eslint/eslint-plugin": "^4.4.0",
     "@typescript-eslint/parser": "^4.4.0",
-    "cpx": "^1.5.0",
     "eslint": "^7.10.0",
     "eslint-config-mdcs": "^5.0.0",
-    "replacestream": "^4.0.3",
-    "typescript": "^4.1.0"
+    "rollup": "^2.33.3",
+    "rollup-plugin-dts": "^1.4.14",
+    "three": "^0.122.0",
+    "typescript": "^4.0.5"
   },
   "peerDependencies": {
-    "three": "^0.121.1"
-  },
-  "dependencies": {}
+    "three": "^0.122.0"
+  }
 }

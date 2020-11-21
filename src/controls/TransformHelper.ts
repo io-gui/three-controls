@@ -648,12 +648,10 @@ const _cameraPosition = new Vector3();
 const _position = new Vector3();
 
 export class TransformHelper extends ControlsHelper {
-  readonly isTransformHelper = true;
-  type = 'TransformHelper';
+  static readonly isTransformHelper = true;
+  static readonly type = 'TransformHelper';
 
   enabled = false;
-  activeMode: 'translate' | 'rotate' | 'scale' | '' = '';
-  activeAxis: 'X' | 'Y' | 'Z' | 'XY' | 'YZ' | 'XZ' | 'XYZ' | 'XYZE' | 'E' | '' = '';
   size = 1;
   showX = true;
   showY = true;
@@ -661,7 +659,10 @@ export class TransformHelper extends ControlsHelper {
   showTranslate = true;
   showRotate = true;
   showScale = true;
-  sizeAttenuation = 1;
+  activeMode: 'translate' | 'rotate' | 'scale' | '' = '';
+  activeAxis: 'X' | 'Y' | 'Z' | 'XY' | 'YZ' | 'XZ' | 'XYZ' | 'XYZE' | 'E' | '' = '';
+
+  protected _sizeAttenuation = 1;
 
   constructor() {
     super( [
@@ -670,11 +671,11 @@ export class TransformHelper extends ControlsHelper {
       ...rotateHelperGeometrySpec,
     ] );
   }
-  updateHandle( handle: Mesh ) {
+  updateHandle( handle: Mesh ): void {
 
     handle.quaternion.copy( this.quaternion ).invert();
     handle.position.set( 0, 0, 0 );
-    handle.scale.set( 1, 1, 1 ).multiplyScalar( this.sizeAttenuation * this.size / 7 );
+    handle.scale.set( 1, 1, 1 ).multiplyScalar( this._sizeAttenuation * this.size / 7 );
     handle.quaternion.multiply( this.quaternion );
 
     const eye = this.eye;
@@ -832,11 +833,11 @@ export class TransformHelper extends ControlsHelper {
     _position.setFromMatrixPosition( this.matrixWorld );
     _cameraPosition.setFromMatrixPosition( this.camera.matrixWorld );
 
-    this.sizeAttenuation = 1;
+    this._sizeAttenuation = 1;
     if ( this.camera instanceof OrthographicCamera ) {
-      this.sizeAttenuation = ( this.camera.top - this.camera.bottom ) / this.camera.zoom;
+      this._sizeAttenuation = ( this.camera.top - this.camera.bottom ) / this.camera.zoom;
     } else if ( this.camera instanceof PerspectiveCamera ) {
-      this.sizeAttenuation = _position.distanceTo( _cameraPosition ) * Math.min( 1.9 * Math.tan( Math.PI * this.camera.fov / 360 ) / this.camera.zoom, 7 );
+      this._sizeAttenuation = _position.distanceTo( _cameraPosition ) * Math.min( 1.9 * Math.tan( Math.PI * this.camera.fov / 360 ) / this.camera.zoom, 7 );
     }
 
     for ( let i = 0; i < this.children.length; i ++ ) {

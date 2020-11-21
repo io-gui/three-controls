@@ -48,11 +48,11 @@ type Constructor<TBase extends any> = new ( ...args: any[] ) => TBase;
 export function ControlsMixin<T extends Constructor<any>>( base: T ) {
   class MixinClass extends base {
     // Public API
-    public camera: PerspectiveCamera | OrthographicCamera;
-    public domElement: HTMLElement;
-    public enabled = true;
-    public enableDamping = false;
-    public dampingFactor = 0.05;
+    camera: PerspectiveCamera | OrthographicCamera;
+    domElement: HTMLElement;
+    enabled = true;
+    enableDamping = false;
+    dampingFactor = 0.05;
     // Tracked pointers and keys
     _hoverPointer: PointerTracker | null = null;
     _centerPointer: CenterPointerTracker | null = null;
@@ -477,7 +477,7 @@ class Pointer3D {
   constructor( x: number, y: number, z: number ) {
     this.set( x, y, z );
   }
-  public set( x: number, y: number, z: number ): this {
+  set( x: number, y: number, z: number ): this {
     this.start.set( x, y, z );
     this.current.set( x, y, z );
     this.previous.set( x, y, z );
@@ -485,7 +485,7 @@ class Pointer3D {
     this.offset.set( 0, 0, 0 );
     return this;
   }
-  public clear(): this {
+  clear(): this {
     this.start.set( 0, 0, 0 );
     this.current.set( 0, 0, 0 );
     this.previous.set( 0, 0, 0 );
@@ -493,7 +493,7 @@ class Pointer3D {
     this.offset.set( 0, 0, 0 );
     return this;
   }
-  public add( pointer: Pointer3D ): this {
+  add( pointer: Pointer3D ): this {
     this.start.add( pointer.start );
     this.current.add( pointer.current );
     this.previous.add( pointer.previous );
@@ -501,7 +501,7 @@ class Pointer3D {
     this.offset.add( pointer.offset );
     return this;
   }
-  public divideScalar( value: number ): this {
+  divideScalar( value: number ): this {
     this.start.divideScalar( value );
     this.current.divideScalar( value );
     this.previous.divideScalar( value );
@@ -509,7 +509,7 @@ class Pointer3D {
     this.offset.divideScalar( value );
     return this;
   }
-  public projectOnPlane( viewPointer: Pointer2D, camera: PerspectiveCamera | OrthographicCamera, center: Vector3, planeNormal: Vector3, avoidGrazingAngles = true ): this {
+  projectOnPlane( viewPointer: Pointer2D, camera: PerspectiveCamera | OrthographicCamera, center: Vector3, planeNormal: Vector3, avoidGrazingAngles = true ): this {
 
     _plane.setFromNormalAndCoplanarPoint( planeNormal, center );
 
@@ -518,12 +518,13 @@ class Pointer3D {
       // Calculate angle between camera and projection plane and rotation axis.
       _eye.set( 0, 0, 1 ).applyQuaternion( camera.quaternion );
       const angle =  HPI - _eye.angleTo( _plane.normal );
-      const minAngle = ( ( camera instanceof PerspectiveCamera ) ? ( camera.fov / 2 ) : 30 ) / 180 * PI
+      const minAngle = ( ( camera instanceof PerspectiveCamera ) ? ( camera.fov / 1.2 ) : 15 ) / 180 * PI
       const rotationAxis = _eye.cross( _plane.normal ).normalize();
       // Get rotation center by projecting a ray from the center of the camera frustum into the plane
       _intersectedPoint.set( 0, 0, 0 );
       _raycaster.setFromCamera( new Vector3(), camera );
       _raycaster.ray.intersectPlane( _plane, _intersectedPoint );
+      // TODO for orthographic camera shoot ray from far behind the camera center to support gestures beyond frustum.
 
       const rp = new Vector3().setFromMatrixPosition( camera.matrixWorld ).sub( _intersectedPoint );
       if ( Math.abs( angle ) < minAngle ) rp.applyAxisAngle( rotationAxis, - angle + ( angle >= 0 ? minAngle : - minAngle ) );
@@ -602,9 +603,9 @@ export class PointerTracker {
   // Used to distinguish a special "simulated" pointer used to actuate inertial gestures with damping.
   isSimulated = false;
   // 2D pointer with coordinates in canvas-space ( pixels )
-  public readonly canvas: Pointer2D = new Pointer2D( 0, 0 );
+  readonly canvas: Pointer2D = new Pointer2D( 0, 0 );
   // 2D pointer with coordinates in view-space ( [-1...1] range )
-  public readonly view: Pointer2D = new Pointer2D( 0, 0 );
+  readonly view: Pointer2D = new Pointer2D( 0, 0 );
   // 3D pointer with coordinates in 3D-space from ray projected onto a plane facing x-axis.
   protected _projected: Pointer3D = new Pointer3D( 0, 0, 0 );
   private _camera: PerspectiveCamera | OrthographicCamera;
@@ -620,7 +621,7 @@ export class PointerTracker {
     });
   }
   // Updates the pointer with the lastest pointerEvent and camera.
-  public update( pointerEvent: PointerEvent, camera: PerspectiveCamera | OrthographicCamera ) {
+  update( pointerEvent: PointerEvent, camera: PerspectiveCamera | OrthographicCamera ) {
     debug: {
       if ( this.pointerId !== pointerEvent.pointerId ) {
         console.error( 'Invalid pointerId!' );
@@ -632,7 +633,7 @@ export class PointerTracker {
     this.canvas.update( pointerEvent.clientX, pointerEvent.clientY );
   }
   // Simmulates inertial movement by applying damping to previous movement. For special **simmulated** pointer only!
-  public simmulateDamping( dampingFactor: number, deltaTime: number ): void {
+  simmulateDamping( dampingFactor: number, deltaTime: number ): void {
     debug: {
       if ( !this.isSimulated ) {
         console.error( 'Cannot invoke `simmulateDamping()` on non-simmulated PointerTracker!' );
@@ -643,24 +644,24 @@ export class PointerTracker {
     this.canvas.update( this.canvas.current.x + this.canvas.movement.x * damping, this.canvas.current.y + this.canvas.movement.y * damping );
   }
   // Projects tracked pointer onto a plane object-space.
-  projectOnPlane( planeCenter: Vector3, planeNormal: Vector3 ): Pointer3D {
-    return this._projected.projectOnPlane( this.view, this._camera, planeCenter, planeNormal );
+  projectOnPlane( planeCenter: Vector3, planeNormal: Vector3, avoidGrazingAngles = true ): Pointer3D {
+    return this._projected.projectOnPlane( this.view, this._camera, planeCenter, planeNormal, avoidGrazingAngles );
   }
   // Intersects specified objects with **current** view-space pointer vector.
-  public intersectObjects( objects: Object3D[] ): Intersection[] {
+  intersectObjects( objects: Object3D[] ): Intersection[] {
     _raycaster.setFromCamera( this.view.current, this._camera );
     _intersectedObjects.length = 0;
     _raycaster.intersectObjects( objects, true, _intersectedObjects );
     return _intersectedObjects;
   }
   // Intersects specified plane with **current** view-space pointer vector.
-  public intersectPlane( plane: Plane ): Vector3 {
+  intersectPlane( plane: Plane ): Vector3 {
     _raycaster.setFromCamera( this.view.current, this._camera );
     _raycaster.ray.intersectPlane( plane, _intersectedPoint );
     return _intersectedPoint;
   }
   // Clears pointer movement
-  public clearMovement(): void {
+  clearMovement(): void {
     this.canvas.previous.copy( this.canvas.current );
     this.canvas.movement.set( 0, 0 );
   }
@@ -699,14 +700,14 @@ class CenterPointerTracker extends PointerTracker {
       }
     });
   }
-  public projectOnPlane( planeCenter: Vector3, planeNormal: Vector3 ): Pointer3D {
+  projectOnPlane( planeCenter: Vector3, planeNormal: Vector3 ): Pointer3D {
     this._projected.clear();
     for ( let i = 0; i < this._pointers.length; i++ ) this._projected.add( this._pointers[i].projectOnPlane( planeCenter, planeNormal) );
     if ( this._pointers.length > 1 ) this._projected.divideScalar( this._pointers.length );
     return this._projected;
   }
   // Updates the internal array of pointers necessary to calculate the centers.
-  public updateCenter( pointers: PointerTracker[] ): void {
+  updateCenter( pointers: PointerTracker[] ): void {
     this._pointers = pointers;
   }
 }
@@ -723,7 +724,7 @@ class AnimationManager {
     this._update = this._update.bind( this );
   }
   // Adds animation callback to the queue
-  public add( callback: Callback ): void {
+  add( callback: Callback ): void {
     const index = this._queue.indexOf( callback );
     if ( index === -1 ) {
       this._queue.push( callback );
@@ -731,7 +732,7 @@ class AnimationManager {
     }
   }
   // Removes animation callback from the queue
-  public remove( callback: Callback ): void {
+  remove( callback: Callback ): void {
     const index = this._queue.indexOf( callback );
     if ( index !== -1 ) {
       this._queue.splice( index, 1 );
