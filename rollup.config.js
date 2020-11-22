@@ -39,8 +39,8 @@ const makeConfig = ( filename, externals = [] ) => {
 
 export default [
   ...makeConfig( 'TransformControls.js' ),
-  ...makeConfig( 'TrackballControls.js' ),
-  ...makeConfig( 'OrbitControls.js' ),
-  ...makeConfig( 'DragControls.js' ),
-  ...makeConfig( 'MapControls.js', [ './OrbitControls' ] ),
+  // ...makeConfig( 'TrackballControls.js' ),
+  // ...makeConfig( 'OrbitControls.js' ),
+  // ...makeConfig( 'DragControls.js' ),
+  // ...makeConfig( 'MapControls.js', [ './OrbitControls' ] ),
 ];
