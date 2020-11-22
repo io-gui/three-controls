@@ -1,6 +1,12 @@
-import { MOUSE, PerspectiveCamera, OrthographicCamera } from 'three';
-import { PointerTracker } from './Controls';
-import { CameraControls } from './CameraControls';
+import {
+	MOUSE, PerspectiveCamera, OrthographicCamera
+} from 'three';
+import {
+	PointerTracker
+} from './Controls';
+import {
+	CameraControls
+} from './CameraControls';
 
 declare class TrackballControls extends CameraControls {
 

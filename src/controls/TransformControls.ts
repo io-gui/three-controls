@@ -59,7 +59,7 @@ class TransformControls extends ControlsMixin( TransformHelper as any ) {
   camera: PerspectiveCamera | OrthographicCamera;
   domElement: HTMLElement;
   enabled = true;
-  enableDamping = false;
+  enableDamping = true;
   dampingFactor = 0.2;
 
   // TransformHelper API

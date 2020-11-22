@@ -12,8 +12,8 @@
     "lint:dev": "eslint src --fix",
     "lint": "eslint build -c three.eslint.json --no-ignore build --fix",
     "clean": "rm -rf build",
-    "build:dev": "yarn clean && tsc -w & sleep 5; yarn rollup --config rollup.config.js -w",
-    "build": "yarn clean && tsc --declarationMap false --sourceMap false && yarn lint && yarn rollup --config rollup.config.js --sourceMap false" 
+    "build:dev": "yarn clean && tsc -w & sleep 5; yarn rollup -c -w --environment SOUCEMAPS",
+    "build": "yarn clean && tsc --declarationMap false --sourceMap false && yarn lint && yarn rollup -c" 
   },
   "sideEffects": false,
   "publishConfig": {

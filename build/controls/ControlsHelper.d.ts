@@ -1,4 +1,6 @@
-import { Vector3, Vector4, Euler, WebGLRenderer, Scene, Mesh, Line, Camera, PerspectiveCamera, OrthographicCamera, LineBasicMaterial, MeshBasicMaterial } from 'three';
+import {
+	Vector3, Vector4, Euler, WebGLRenderer, Scene, Mesh, Line, Camera, PerspectiveCamera, OrthographicCamera, LineBasicMaterial, MeshBasicMaterial
+} from 'three';
 
 export declare const gizmoMaterial: MeshBasicMaterial;
 

@@ -1,5 +1,9 @@
-import { Mesh, Object3D, Vector3, PerspectiveCamera, OrthographicCamera } from 'three';
-import { PointerTracker } from './Controls';
+import {
+	Mesh, Object3D, Vector3, PerspectiveCamera, OrthographicCamera
+} from 'three';
+import {
+	PointerTracker
+} from './Controls';
 
 declare const TransformControls_base: any;
 declare class TransformControls extends TransformControls_base {

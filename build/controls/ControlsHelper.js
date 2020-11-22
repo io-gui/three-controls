@@ -1,4 +1,6 @@
-import { Vector3, Mesh, Line, PerspectiveCamera, DoubleSide, LineBasicMaterial, MeshBasicMaterial, } from 'three';
+import {
+	Vector3, Mesh, Line, PerspectiveCamera, DoubleSide, LineBasicMaterial, MeshBasicMaterial,
+} from 'three';
 
 export const gizmoMaterial = new MeshBasicMaterial( {
 	depthTest: false,

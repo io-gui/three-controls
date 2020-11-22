@@ -1,6 +1,12 @@
-import { Quaternion, Vector3, Color, Matrix4 } from 'three';
-import { ControlsMixin, CHANGE_EVENT, START_EVENT, END_EVENT } from './Controls';
-import { TransformHelper } from './TransformHelper';
+import {
+	Quaternion, Vector3, Color, Matrix4
+} from 'three';
+import {
+	ControlsMixin, CHANGE_EVENT, START_EVENT, END_EVENT
+} from './Controls';
+import {
+	TransformHelper
+} from './TransformHelper';
 
 const EPS = 0.001;
 const FADE_FACTOR = 0.15;
@@ -65,7 +71,7 @@ class TransformControls extends ControlsMixin( TransformHelper ) {
 
 		super( camera, domElement );
 		this.enabled = true;
-		this.enableDamping = false;
+		this.enableDamping = true;
 		this.dampingFactor = 0.2;
 
 		// TransformHelper API

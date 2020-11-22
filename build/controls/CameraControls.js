@@ -1,5 +1,9 @@
-import { Vector3, Quaternion, PerspectiveCamera } from 'three';
-import { Controls, CHANGE_EVENT } from './Controls';
+import {
+	Vector3, Quaternion, PerspectiveCamera
+} from 'three';
+import {
+	Controls, CHANGE_EVENT
+} from './Controls';
 
 
 // Internal variables

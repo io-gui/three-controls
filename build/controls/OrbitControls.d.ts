@@ -1,6 +1,12 @@
-import { MOUSE, TOUCH, Vector3, Spherical, PerspectiveCamera, OrthographicCamera } from 'three';
-import { PointerTracker, Callback } from './Controls';
-import { CameraControls } from './CameraControls';
+import {
+	MOUSE, TOUCH, Vector3, Spherical, PerspectiveCamera, OrthographicCamera
+} from 'three';
+import {
+	PointerTracker, Callback
+} from './Controls';
+import {
+	CameraControls
+} from './CameraControls';
 
 declare class OrbitControls extends CameraControls {
 

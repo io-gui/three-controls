@@ -5,10 +5,10 @@ let _intersections: Intersection[];
 const _hoveredObjects: Record<string, Object3D> = {};
 const _selectedObjects: Record<string, Object3D> = {};
 const _eye = new Vector3();
+const _target = new Vector3();
 
 export class DragControls extends Controls {
   // Public API
-  lookAtTarget = false;
   objects: Object3D[];
   transformGroup = false;
 
@@ -60,7 +60,7 @@ export class DragControls extends Controls {
     _intersections = pointer.intersectObjects( this.objects );
     if ( _intersections.length > 0 ) {
       const object = ( this.transformGroup === true ) ? this.objects[0] : _intersections[0].object;
-      this.target.setFromMatrixPosition( object.matrixWorld );
+      _target.setFromMatrixPosition( object.matrixWorld );
       this.domElement.style.cursor = 'move';
       this.dispatchEvent({ type: 'dragstart', object: object });
       _selectedObjects[id] = object
@@ -72,7 +72,7 @@ export class DragControls extends Controls {
     const _selectedObject = _selectedObjects[id];
     if ( _selectedObject ) {
       _eye.set( 0, 0, 1 ).applyQuaternion( this.camera.quaternion ).normalize()
-      _selectedObject.position.add( pointer.projectOnPlane( this.target, _eye ).movement );
+      _selectedObject.position.add( pointer.projectOnPlane( _target, _eye ).movement );
       this.dispatchEvent({ type: 'drag', object: _selectedObject });
     }
   }

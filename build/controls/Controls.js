@@ -1,4 +1,6 @@
-import { Vector2, Vector3, Plane, PerspectiveCamera, OrthographicCamera, Raycaster, EventDispatcher } from 'three';
+import {
+	Vector2, Vector3, Plane, PerspectiveCamera, OrthographicCamera, Raycaster, EventDispatcher
+} from 'three';
 
 /* eslint-disable @typescript-eslint/no-use-before-define */
 // Internal variables

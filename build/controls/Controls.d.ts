@@ -1,4 +1,6 @@
-import { Vector2, Vector3, Plane, Intersection, Object3D, PerspectiveCamera, OrthographicCamera, Event as ThreeEvent } from 'three';
+import {
+	Vector2, Vector3, Plane, Intersection, Object3D, PerspectiveCamera, OrthographicCamera, Event as ThreeEvent
+} from 'three';
 
 export declare type Callback = ( callbackValue?: any ) => void;
 

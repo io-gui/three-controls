@@ -1,5 +1,9 @@
-import { MOUSE, TOUCH } from 'three';
-import { OrbitControls } from './OrbitControls';
+import {
+	MOUSE, TOUCH
+} from 'three';
+import {
+	OrbitControls
+} from './OrbitControls';
 
 export declare class MapControls extends OrbitControls {
 

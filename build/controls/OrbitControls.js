@@ -1,6 +1,12 @@
-import { MOUSE, TOUCH, Vector3, Quaternion, Spherical, PerspectiveCamera, OrthographicCamera } from 'three';
-import { CHANGE_EVENT, START_EVENT, END_EVENT } from './Controls';
-import { CameraControls } from './CameraControls';
+import {
+	MOUSE, TOUCH, Vector3, Quaternion, Spherical, PerspectiveCamera, OrthographicCamera
+} from 'three';
+import {
+	CHANGE_EVENT, START_EVENT, END_EVENT
+} from './Controls';
+import {
+	CameraControls
+} from './CameraControls';
 
 
 // This set of controls performs orbiting, dollying ( zooming ), and panning.

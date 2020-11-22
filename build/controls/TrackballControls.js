@@ -1,6 +1,12 @@
-import { MOUSE, Vector2, Vector3, Quaternion, PerspectiveCamera, OrthographicCamera } from 'three';
-import { CHANGE_EVENT, START_EVENT, END_EVENT } from './Controls';
-import { CameraControls } from './CameraControls';
+import {
+	MOUSE, Vector2, Vector3, Quaternion, PerspectiveCamera, OrthographicCamera
+} from 'three';
+import {
+	CHANGE_EVENT, START_EVENT, END_EVENT
+} from './Controls';
+import {
+	CameraControls
+} from './CameraControls';
 
 const STATE = { NONE: - 1, ROTATE: 0, ZOOM: 1, PAN: 2 };
 const _eye = new Vector3();

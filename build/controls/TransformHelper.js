@@ -1,5 +1,9 @@
-import { Quaternion, Mesh, Euler, Vector3, Vector4, Matrix4, Line, OctahedronBufferGeometry, TorusBufferGeometry, SphereBufferGeometry, BoxBufferGeometry, PlaneBufferGeometry, CylinderBufferGeometry, BufferGeometry, Float32BufferAttribute, OrthographicCamera, PerspectiveCamera } from 'three';
-import { ControlsHelper } from './ControlsHelper';
+import {
+	Quaternion, Mesh, Euler, Vector3, Vector4, Matrix4, Line, OctahedronBufferGeometry, TorusBufferGeometry, SphereBufferGeometry, BoxBufferGeometry, PlaneBufferGeometry, CylinderBufferGeometry, BufferGeometry, Float32BufferAttribute, OrthographicCamera, PerspectiveCamera
+} from 'three';
+import {
+	ControlsHelper
+} from './ControlsHelper';
 
 export const CircleGeometry = function ( radius, arc ) {
 

@@ -1,5 +1,9 @@
-import { Mesh, Line, BoxBufferGeometry, CylinderBufferGeometry, BufferGeometry } from 'three';
-import { ControlsHelper, ControlsHelperGeometrySpec } from './ControlsHelper';
+import {
+	Mesh, Line, BoxBufferGeometry, CylinderBufferGeometry, BufferGeometry
+} from 'three';
+import {
+	ControlsHelper, ControlsHelperGeometrySpec
+} from './ControlsHelper';
 
 export declare const CircleGeometry: ( radius: number, arc: number ) => BufferGeometry;
 
