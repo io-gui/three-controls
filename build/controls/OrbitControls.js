@@ -1,5 +1,6 @@
 import { MOUSE, TOUCH, Vector3, Quaternion, Spherical, PerspectiveCamera, OrthographicCamera } from 'three';
-import { Controls, CHANGE_EVENT, START_EVENT, END_EVENT } from './Controls';
+import { CHANGE_EVENT, START_EVENT, END_EVENT } from './Controls';
+import { CameraControls } from './CameraControls';
 
 
 // This set of controls performs orbiting, dollying ( zooming ), and panning.
@@ -17,7 +18,7 @@ const _offset = new Vector3();
 const _movement = new Vector3();
 const PI2 = Math.PI * 2;
 
-class OrbitControls extends Controls {
+class OrbitControls extends CameraControls {
 
 	constructor( camera, domElement ) {
 

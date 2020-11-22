@@ -218,6 +218,7 @@ export function ControlsMixin<T extends Constructor<any>>( base: T ) {
       if ( this._simulatedPointer ) {
         this._simulatedPointer.clearMovement();
         this._simulatedPointer = null;
+        this.stopAnimation( this._onPointerSimulation as Callback );
       }
       this.domElement.focus ? this.domElement.focus() : window.focus();
       this.domElement.setPointerCapture( event.pointerId );
@@ -279,8 +280,9 @@ export function ControlsMixin<T extends Constructor<any>>( base: T ) {
         if ( pointer.canvas.movement.length() > EPS ) {
           this.onTrackedPointerMove( pointer, [pointer], pointer as CenterPointerTracker );
         } else {
-          this.onTrackedPointerUp( pointer, [] );
           this._simulatedPointer = null
+          this.onTrackedPointerUp( pointer, [] );
+          this.stopAnimation( this._onPointerSimulation as Callback );
         }
       } else {
         this.stopAnimation( this._onPointerSimulation as Callback );

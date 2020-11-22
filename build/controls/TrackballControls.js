@@ -1,5 +1,6 @@
 import { MOUSE, Vector2, Vector3, Quaternion, PerspectiveCamera, OrthographicCamera } from 'three';
-import { Controls, CHANGE_EVENT, START_EVENT, END_EVENT } from './Controls';
+import { CHANGE_EVENT, START_EVENT, END_EVENT } from './Controls';
+import { CameraControls } from './CameraControls';
 
 const STATE = { NONE: - 1, ROTATE: 0, ZOOM: 1, PAN: 2 };
 const _eye = new Vector3();
@@ -16,7 +17,7 @@ const _cameraUpDirection = new Vector3();
 const _cameraSidewaysDirection = new Vector3();
 const _moveDirection = new Vector3();
 
-class TrackballControls extends Controls {
+class TrackballControls extends CameraControls {
 
 	constructor( camera, domElement ) {
 

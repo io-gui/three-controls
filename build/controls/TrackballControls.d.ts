@@ -1,7 +1,8 @@
 import { MOUSE, PerspectiveCamera, OrthographicCamera } from 'three';
-import { Controls, Pointer } from './Controls';
+import { PointerTracker } from './Controls';
+import { CameraControls } from './CameraControls';
 
-declare class TrackballControls extends Controls {
+declare class TrackballControls extends CameraControls {
 
 	rotateSpeed: number;
 	zoomSpeed: number;
@@ -21,9 +22,9 @@ declare class TrackballControls extends Controls {
 	constructor( camera: PerspectiveCamera | OrthographicCamera, domElement: HTMLElement );
 	_onContextMenu( event: Event ): void;
 	_onWheel( event: WheelEvent ): void;
-	onTrackedPointerDown( pointer: Pointer, pointers: Pointer[] ): void;
-	onTrackedPointerMove( pointer: Pointer, pointers: Pointer[] ): void;
-	onTrackedPointerUp( pointer: Pointer, pointers: Pointer[] ): void;
+	onTrackedPointerDown( pointer: PointerTracker, pointers: PointerTracker[] ): void;
+	onTrackedPointerMove( pointer: PointerTracker, pointers: PointerTracker[] ): void;
+	onTrackedPointerUp( pointer: PointerTracker, pointers: PointerTracker[] ): void;
 	onTrackedKeyChange( code: number, codes: number[] ): void;
 	_rotateCamera(): void;
 	_zoomCamera(): void;

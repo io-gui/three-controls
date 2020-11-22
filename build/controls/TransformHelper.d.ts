@@ -21,11 +21,9 @@ export declare const scaleHelperGeometrySpec: [Mesh | Line, ControlsHelperGeomet
 
 export declare class TransformHelper extends ControlsHelper {
 
-	readonly isTransformHelper = true;
-	type: string;
+	static readonly isTransformHelper = true;
+	static readonly type = "TransformHelper";
 	enabled: boolean;
-	activeMode: 'translate' | 'rotate' | 'scale' | '';
-	activeAxis: 'X' | 'Y' | 'Z' | 'XY' | 'YZ' | 'XZ' | 'XYZ' | 'XYZE' | 'E' | '';
 	size: number;
 	showX: boolean;
 	showY: boolean;
@@ -33,7 +31,7 @@ export declare class TransformHelper extends ControlsHelper {
 	showTranslate: boolean;
 	showRotate: boolean;
 	showScale: boolean;
-	sizeAttenuation: number;
+	protected _sizeAttenuation: number;
 	constructor();
 	updateHandle( handle: Mesh ): void;
 	updateMatrixWorld(): void;

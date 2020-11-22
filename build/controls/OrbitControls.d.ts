@@ -1,7 +1,8 @@
 import { MOUSE, TOUCH, Vector3, Spherical, PerspectiveCamera, OrthographicCamera } from 'three';
-import { Controls, Pointer, CenterPointer, Callback } from './Controls';
+import { PointerTracker, Callback } from './Controls';
+import { CameraControls } from './CameraControls';
 
-declare class OrbitControls extends Controls {
+declare class OrbitControls extends CameraControls {
 
 	minDistance: number;
 	maxDistance: number;
@@ -47,16 +48,16 @@ declare class OrbitControls extends Controls {
 	_onContextMenu( event: Event ): void;
 	_onWheel( event: WheelEvent ): void;
 	_onKeyDown( event: KeyboardEvent ): void;
-	onTrackedPointerDown( pointer: Pointer, pointers: Pointer[] ): void;
-	onTrackedPointerMove( pointer: Pointer, pointers: Pointer[], center: CenterPointer ): void;
-	onTrackedPointerUp( pointer: Pointer, pointers: Pointer[] ): void;
-	_pointerDolly( pointer: Pointer ): void;
-	_twoPointerDolly( pointers: Pointer[] ): void;
+	onTrackedPointerDown( pointer: PointerTracker, pointers: PointerTracker[] ): void;
+	onTrackedPointerMove( pointer: PointerTracker, pointers: PointerTracker[], center: PointerTracker ): void;
+	onTrackedPointerUp( pointer: PointerTracker, pointers: PointerTracker[] ): void;
+	_pointerDolly( pointer: PointerTracker ): void;
+	_twoPointerDolly( pointers: PointerTracker[] ): void;
 	_applyDollyMovement( dollyMovement: number ): void;
-	_pointerPan( pointer: Pointer ): void;
+	_pointerPan( pointer: PointerTracker ): void;
 	_keydownPan( deltaX: number, deltaY: number ): void;
 	_applyPanMovement( movement: Vector3 ): void;
-	_pointerRotate( pointer: Pointer ): void;
+	_pointerRotate( pointer: PointerTracker ): void;
 	_autoRotateChanged(): void;
 	_autoRotateAnimation( deltaTime: number ): void;
 	_applyRotateMovement( movement: Vector3 ): void;

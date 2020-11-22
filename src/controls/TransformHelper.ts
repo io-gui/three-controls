@@ -1,4 +1,4 @@
-import { Quaternion, Mesh, Euler, Vector3, Vector4, Matrix4, Line, MeshBasicMaterial, Color, OctahedronBufferGeometry,
+import { Quaternion, Mesh, Euler, Vector3, Vector4, Matrix4, Line, OctahedronBufferGeometry,
   TorusBufferGeometry, SphereBufferGeometry, BoxBufferGeometry, PlaneBufferGeometry, CylinderBufferGeometry,
   BufferGeometry, Float32BufferAttribute, OrthographicCamera, PerspectiveCamera } from 'three';
 
@@ -234,32 +234,32 @@ export const translateHelperGeometrySpec: [ Mesh | Line, ControlsHelperGeometryS
       color: new Vector4( 1, 1, 1, PICKER_ALPHA ),
     }
   ], [
-    new Mesh( new PlaneBufferGeometry( 0.5, 0.5 ) ),
+    new Mesh( new PlaneBufferGeometry( 0.4, 0.4 ) ),
     {
       type: 'translate',
       axis: 'XY',
       tag: 'picker',
       color: new Vector4( 1, 1, 1, PICKER_ALPHA ),
-      position: new Vector3( 0.25, 0.25, 0),
+      position: new Vector3( 0.2, 0.2, 0),
     }
   ], [
-    new Mesh( new PlaneBufferGeometry( 0.5, 0.5 ) ),
+    new Mesh( new PlaneBufferGeometry( 0.4, 0.4 ) ),
     {
       type: 'translate',
       axis: 'YZ',
       tag: 'picker',
       color: new Vector4( 1, 1, 1, PICKER_ALPHA ),
-      position: new Vector3( 0, 0.25, 0.25 ),
+      position: new Vector3( 0, 0.2, 0.2 ),
       rotation: new Euler( 0, Math.PI / 2, 0 ),
     }
   ], [
-    new Mesh( new PlaneBufferGeometry( 0.5, 0.5 ) ),
+    new Mesh( new PlaneBufferGeometry( 0.4, 0.4 ) ),
     {
       type: 'translate',
       axis: 'XZ',
       tag: 'picker',
       color: new Vector4( 1, 1, 1, PICKER_ALPHA ),
-      position: new Vector3( 0.25, 0, 0.25 ),
+      position: new Vector3( 0.2, 0, 0.2 ),
       rotation: new Euler( - Math.PI / 2, 0, 0 ),
     }
   ],
@@ -659,8 +659,6 @@ export class TransformHelper extends ControlsHelper {
   showTranslate = true;
   showRotate = true;
   showScale = true;
-  activeMode: 'translate' | 'rotate' | 'scale' | '' = '';
-  activeAxis: 'X' | 'Y' | 'Z' | 'XY' | 'YZ' | 'XZ' | 'XYZ' | 'XYZE' | 'E' | '' = '';
 
   protected _sizeAttenuation = 1;
 
@@ -695,37 +693,6 @@ export class TransformHelper extends ControlsHelper {
     if ( handleType === 'translate' && !this.showTranslate ) handle.visible = false;
     if ( handleType === 'rotate' && !this.showRotate ) handle.visible = false;
     if ( handleType === 'scale' && !this.showScale ) handle.visible = false;
-
-    if ( handleTag !== 'picker' ) {
-
-      const material = handle.material as MeshBasicMaterial;
-
-      material.userData.opacity = material.userData.opacity || material.opacity;
-      material.userData.color = material.userData.color || material.color.clone();
-
-      material.color.copy( material.userData.color );
-      material.opacity = material.userData.opacity;
-
-      // highlight selected axis
-      if ( ! this.enabled || (this.activeMode && handleType !== this.activeMode ) ) {
-        material.opacity = material.userData.opacity * 0.125;
-        material.color.lerp( new Color( 1, 1, 1 ), 0.5 );
-      } else if ( this.activeAxis ) {
-        if ( handleAxis === this.activeAxis ) {
-          material.opacity = 1.0;
-          material.color.lerp( new Color( 1, 1, 1 ), 0.5 );
-        } else if ( this.activeAxis.split( '' ).some( function ( a ) {
-          return handleAxis === a;
-        } ) ) {
-          material.opacity = 1.0;
-          material.color.lerp( new Color( 1, 1, 1 ), 0.5 );
-        } else {
-          material.opacity = material.userData.opacity * 0.125;
-          material.color.lerp( new Color( 1, 1, 1 ), 0.5 );
-        }
-      }
-
-    }
 
     if ( handleType === 'rotate' ) {
 

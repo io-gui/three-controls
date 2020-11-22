@@ -1,4 +1,4 @@
-import { Vector2, Vector3, Quaternion, Plane, Intersection, Object3D, PerspectiveCamera, OrthographicCamera, Event as ThreeEvent } from 'three';
+import { Vector2, Vector3, Plane, Intersection, Object3D, PerspectiveCamera, OrthographicCamera, Event as ThreeEvent } from 'three';
 
 export declare type Callback = ( callbackValue?: any ) => void;
 
@@ -45,23 +45,15 @@ export declare function ControlsMixin<T extends Constructor<any>>( base: T ): {
 		[x: string]: any;
 		camera: PerspectiveCamera | OrthographicCamera;
 		domElement: HTMLElement;
-		target: Vector3;
-		lookAtTarget: boolean;
 		enabled: boolean;
 		enableDamping: boolean;
 		dampingFactor: number;
-		_simulatedPointer: Pointer | null;
-		_hover: Pointer | null;
-		_center: CenterPointer | null;
-		_pointers: Pointer[];
+		_hoverPointer: PointerTracker | null;
+		_centerPointer: CenterPointerTracker | null;
+		_simulatedPointer: PointerTracker | null;
+		_pointers: PointerTracker[];
 		_animations: Callback[];
 		_keys: number[];
-		_resetQuaternion: Quaternion;
-		_resetPosition: Vector3;
-		_resetUp: Vector3;
-		_resetTarget: Vector3;
-		_resetZoom: number;
-		_resetFocus: number;
 		_changeDispatched: boolean;
 		observeProperty( propertyKey: keyof Controls, onChangeFunc: Callback, onChangeToFalsyFunc?: Callback | undefined ): void;
 		startAnimation( callback: Callback ): void;
@@ -69,10 +61,6 @@ export declare function ControlsMixin<T extends Constructor<any>>( base: T ): {
 		_connect(): void;
 		_disconnect(): void;
 		dispose(): void;
-		saveState(): void;
-		reset(): void;
-		saveCameraState(): void;
-		resetCameraState(): void;
 		addEventListener( type: string, listener: Callback ): void;
 		dispatchEvent( event: ThreeEvent | Event ): void;
 		_preventDefault( event: Event ): void;
@@ -89,10 +77,10 @@ export declare function ControlsMixin<T extends Constructor<any>>( base: T ): {
 		_onPointerOut( event: PointerEvent ): void;
 		_onKeyDown( event: KeyboardEvent ): void;
 		_onKeyUp( event: KeyboardEvent ): void;
-		onTrackedPointerDown( _pointer: Pointer, _pointers: Pointer[] ): void;
-		onTrackedPointerMove( _pointer: Pointer, _pointers: Pointer[], _center: CenterPointer ): void;
-		onTrackedPointerHover( _pointer: Pointer, _pointers: Pointer[] ): void;
-		onTrackedPointerUp( _pointer: Pointer, _pointers: Pointer[] ): void;
+		onTrackedPointerDown( _pointer: PointerTracker, _pointers: PointerTracker[] ): void;
+		onTrackedPointerMove( _pointer: PointerTracker, _pointers: PointerTracker[], _centerPointer: CenterPointerTracker ): void;
+		onTrackedPointerHover( _pointer: PointerTracker, _pointers: PointerTracker[] ): void;
+		onTrackedPointerUp( _pointer: PointerTracker, _pointers: PointerTracker[] ): void;
 		onTrackedKeyDown( code: number, codes: number[] ): void;
 		onTrackedKeyUp( code: number, codes: number[] ): void;
 		onTrackedKeyChange( code: number, codes: number[] ): void;
@@ -114,14 +102,14 @@ export declare class Controls extends Controls_base {
 
 declare class Pointer2D {
 
-	start: Vector2;
-	current: Vector2;
-	previous: Vector2;
-	movement: Vector2;
-	offset: Vector2;
+	readonly start: Vector2;
+	readonly current: Vector2;
+	readonly previous: Vector2;
+	readonly movement: Vector2;
+	readonly offset: Vector2;
 	constructor( x: number, y: number );
 	set( x: number, y: number ): this;
-	clear(): void;
+	clear(): this;
 	add( pointer: Pointer2D ): this;
 	copy( pointer: Pointer2D ): this;
 	divideScalar( value: number ): this;
@@ -131,14 +119,14 @@ declare class Pointer2D {
 }
 declare class Pointer3D {
 
-	start: Vector3;
-	current: Vector3;
-	previous: Vector3;
-	movement: Vector3;
-	offset: Vector3;
+	readonly start: Vector3;
+	readonly current: Vector3;
+	readonly previous: Vector3;
+	readonly movement: Vector3;
+	readonly offset: Vector3;
 	constructor( x: number, y: number, z: number );
 	set( x: number, y: number, z: number ): this;
-	clear(): void;
+	clear(): this;
 	add( pointer: Pointer3D ): this;
 	divideScalar( value: number ): this;
 	projectOnPlane( viewPointer: Pointer2D, camera: PerspectiveCamera | OrthographicCamera, center: Vector3, planeNormal: Vector3, avoidGrazingAngles?: boolean ): this;
@@ -150,38 +138,39 @@ declare class Pointer3D {
  * Keeps track of pointer movements and handles coordinate conversions to various 2D and 3D spaces.
  * It handles pointer raycasting to various 3D planes at camera's target position.
  */
-export declare class Pointer {
+export declare class PointerTracker {
 
-	domElement: HTMLElement;
-	pointerId: number;
-	type: string;
-	buttons: number;
-	button: number;
-	altKey: boolean;
-	ctrlKey: boolean;
-	metaKey: boolean;
-	shiftKey: boolean;
+	get button(): number;
+	get buttons(): number;
+	get altKey(): boolean;
+	get ctrlKey(): boolean;
+	get metaKey(): boolean;
+	get shiftKey(): boolean;
+	get domElement(): HTMLElement;
+	get pointerId(): number;
+	get type(): string;
 	isSimulated: boolean;
-	canvas: Pointer2D;
-	view: Pointer2D;
-	private _camera;
+	readonly canvas: Pointer2D;
+	readonly view: Pointer2D;
 	protected _projected: Pointer3D;
+	private _camera;
+	private _pointerEvent;
 	constructor( pointerEvent: PointerEvent, camera: PerspectiveCamera | OrthographicCamera );
-	projectOnPlane( planeCenter: Vector3, planeNormal: Vector3 ): Pointer3D;
 	update( pointerEvent: PointerEvent, camera: PerspectiveCamera | OrthographicCamera ): void;
-	applyDamping( dampingFactor: number, deltaTime: number ): void;
+	simmulateDamping( dampingFactor: number, deltaTime: number ): void;
+	projectOnPlane( planeCenter: Vector3, planeNormal: Vector3, avoidGrazingAngles?: boolean ): Pointer3D;
 	intersectObjects( objects: Object3D[] ): Intersection[];
 	intersectPlane( plane: Plane ): Vector3;
-	_clearMovement(): void;
+	clearMovement(): void;
 
 }
 
-export declare class CenterPointer extends Pointer {
+declare class CenterPointerTracker extends PointerTracker {
 
-	_pointers: Pointer[];
+	private _pointers;
 	constructor( pointerEvent: PointerEvent, camera: PerspectiveCamera | OrthographicCamera );
 	projectOnPlane( planeCenter: Vector3, planeNormal: Vector3 ): Pointer3D;
-	updateCenter( pointers: Pointer[] ): void;
+	updateCenter( pointers: PointerTracker[] ): void;
 
 }
 
