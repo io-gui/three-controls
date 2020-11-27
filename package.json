@@ -2,6 +2,7 @@
   "name": "@io-gui/three-controls",
   "version": "1.0.2",
   "main": "index.js",
+  "type":"module",
   "files": [
     "src",
     "build",
@@ -10,10 +11,12 @@
   ],
   "scripts": {
     "lint:dev": "eslint src --fix",
-    "lint": "eslint build -c three.eslint.json --no-ignore build --fix",
+    "lint": "eslint build -c ./config/eslint.three.json --no-ignore build --fix",
     "clean": "rm -rf build",
-    "build:dev": "yarn clean && tsc -w & sleep 5; yarn rollup -c -w --environment SOUCEMAPS",
-    "build": "yarn clean && tsc --declarationMap false --sourceMap false && yarn lint && yarn rollup -c" 
+    "tsc": "tsc --declarationMap false --sourceMap false --p ./config/tsconfig.json",
+    "tsc:dev": "tsc -w  --p ./config/tsconfig.json",
+    "build": "yarn clean && yarn tsc && yarn lint && yarn rollup -c ./config/rollup.config.js",
+    "build:dev": "yarn clean && yarn tsc:dev & sleep 5; yarn rollup -c ./config/rollup.config.js -w --environment DEV"
   },
   "sideEffects": false,
   "publishConfig": {
@@ -34,38 +37,6 @@
     "url": "https://github.com/io-gui/three-controls/issues"
   },
   "homepage": "https://github.com/io-gui/three.js-controls",
-  "eslintConfig": {
-    "env": {
-      "browser": true
-    },
-    "parser": "@typescript-eslint/parser",
-    "parserOptions": {
-      "project": "./tsconfig.json"
-    },
-    "plugins": [
-      "@typescript-eslint"
-    ],
-    "extends": [
-      "eslint:recommended",
-      "plugin:@typescript-eslint/eslint-recommended",
-      "plugin:@typescript-eslint/recommended"
-    ],
-    "rules": {
-      "@typescript-eslint/explicit-module-boundary-types": "off",
-      "@typescript-eslint/consistent-type-assertions": "error",
-      "@typescript-eslint/no-use-before-define": "warn",
-      "@typescript-eslint/no-floating-promises": "warn",
-      "@typescript-eslint/no-explicit-any": "off",
-      "no-unused-labels": "off",
-      "no-var": "error",
-      "eqeqeq": "error"
-    }
-  },
-  "eslintIgnore": [
-    "build",
-    "src/controls/_*.ts",
-    "index.js"
-  ],
   "devDependencies": {
     "@rollup/plugin-alias": "^3.1.1",
     "@typescript-eslint/eslint-plugin": "^4.4.0",

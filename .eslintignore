@@ -1,0 +1,4 @@
+/build/**
+/config/**
+/src/_*.ts
+/index.js

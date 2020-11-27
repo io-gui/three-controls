@@ -1,9 +1,11 @@
 {
   "parser": "@typescript-eslint/parser",
   "parserOptions": {
-    "project": "./three.tsconfig.json"
+    "project": "./config/tsconfig.three.json"
   },
-  "plugins": ["@typescript-eslint"],
+  "plugins": [
+    "@typescript-eslint"
+  ],
   "extends": [
     "mdcs"
   ],
@@ -25,10 +27,6 @@
       { "blankLine": "always", "prev": "*", "next": ["if", "case", "switch"] },
       { "blankLine": "always", "next": ["switch"], "prev": "*" }
     ],
-    "object-curly-newline": ["error", {
-      "ImportDeclaration": "always",
-      "ExportDeclaration": { "multiline": true, "minProperties": 3 }
-    }],
     "lines-around-comment": ["error", { "beforeBlockComment": true, "beforeLineComment": true }],
     "@typescript-eslint/no-unused-vars": 1,
     "@typescript-eslint/indent": [
