@@ -1,17 +1,13 @@
 import { Vector2, Vector3, Plane, Intersection, Object3D, PerspectiveCamera, OrthographicCamera, Raycaster, Ray, EventDispatcher, Event as ThreeEvent, MathUtils, WebXRManager } from 'three';
 
-/* eslint-disable @typescript-eslint/no-use-before-define */
-
-// Common reusable types
 export type Callback = ( callbackValue?: any ) => void;
 
-// Common reusable events
 export const CONTROL_CHANGE_EVENT: ThreeEvent = { type: 'change' };
 export const CONTROL_START_EVENT: ThreeEvent = { type: 'start' };
 export const CONTROL_END_EVENT: ThreeEvent = { type: 'end' };
 export const CONTROL_DISPOSE_EVENT: ThreeEvent = { type: 'dispose' };
 
-type Constructor<TBase extends any> = new ( ...args: any[] ) => TBase;
+type Constructor = new ( ...args: any[] ) => any;
 
 /**
  * `ControlsMixin`: Generic mixin for interactive threejs viewport controls.
@@ -40,8 +36,8 @@ type Constructor<TBase extends any> = new ( ...args: any[] ) => TBase;
  * - Takes care of the event listener cleanup when `dipose()` method is called.
  * - Emits lyfecycle events: "enabled", "disabled", "dispose"
  */
-export function ControlsMixin<T extends Constructor<any>>( base: T ) {
-  class MixinClass extends base {
+export function ControlsMixin<Super extends Constructor>( superClass: Super ) {
+  class MixinClass extends superClass {
     // Public API
     camera: PerspectiveCamera | OrthographicCamera;
     domElement: HTMLElement;
@@ -59,7 +55,6 @@ export function ControlsMixin<T extends Constructor<any>>( base: T ) {
     _keys: number[] = [];
     //
     _changeDispatched = false;
-
     constructor( ...args: any[] ) {
       super( ...args );
 
@@ -182,22 +177,11 @@ export function ControlsMixin<T extends Constructor<any>>( base: T ) {
     }
     _connectXR() {
       if (this.xr?.isPresenting) {
-        // console.log( this.xr );
-        this._controller1 = this.xr.getController( 0 );
-        // this._controller1.addEventListener('connected')
-        // controller1.addEventListener( 'selectstart', onSelectStart );
-        // controller1.addEventListener( 'selectend', onSelectEnd );
-        // scene.add( controller1 );
-
-        this._controller2 = this.xr.getController( 1 );
-        // controller2.addEventListener( 'selectstart', onSelectStart );
-        // controller2.addEventListener( 'selectend', onSelectEnd );
-        // scene.add( controller2 );
-        console.log(this._controller1, this._controller2);
+        // TODO
       }
     }
     _disconnectXR() {
-      console.log();
+       // TODO
     }
     // Disables controls and triggers internal _disconnect method to stop animations, diconnects listeners and clears pointer arrays. Dispatches 'dispose' event.
     dispose() {
@@ -499,7 +483,6 @@ class RayPointer {
   }
 }
 
-
 // Keeps pointer movement data in 3D space projected onto a plane.
 class ProjectedPointer {
   // TODO: optional grazing fix
@@ -527,7 +510,7 @@ class ProjectedPointer {
     return this;
   }
   projectOnPlane( ray: RayPointer, plane: Plane, minGrazingAngle = 20 ): this {
-    // Avoid projecting onto a plane at grazing angles by projecting from an offset/rotated camera that prevents plane horizon from intersecting the camera fustum. 
+    // Avoid projecting onto a plane at grazing angles 
     const _rayStart = new Ray().copy( ray.start );
     const _rayCurrent = new Ray().copy( ray.current );
     const _rayPrevious = new Ray().copy( ray.previous );
@@ -539,24 +522,20 @@ class ProjectedPointer {
     const angleStart =  Math.PI / 2 - _rayStart.direction.angleTo( plane.normal );
     const angleCurrent =  Math.PI / 2 - _rayCurrent.direction.angleTo( plane.normal );
 
+    // Grazing angle avoidance algorithm which prevents extreme transformation changes when principal transformation axis is sharply aligned with the camera.
     if ( minGrazingAngle && Math.abs( angleCurrent ) < Math.abs( angleStart ) ) {
-
       const minAngle = MathUtils.DEG2RAD * minGrazingAngle;
-
       const correctionAngle = Math.abs( angleStart ) > minAngle ? 0 : ( - angleStart + ( angleStart >= 0 ? minAngle : - minAngle ) );
-
       this._axis.copy( _rayStart.direction ).cross( plane.normal ).normalize();
-  
       this._raycaster.set( _rayStart.origin, _rayStart.direction );
       this._raycaster.ray.intersectPlane( plane, this._intersection );
-  
+
       _rayStart.origin.sub( this._intersection ).applyAxisAngle( this._axis, correctionAngle ).add( this._intersection );
       _rayStart.direction.applyAxisAngle( this._axis, correctionAngle );
       _rayCurrent.origin.sub( this._intersection ).applyAxisAngle( this._axis, correctionAngle ).add( this._intersection );
       _rayCurrent.direction.applyAxisAngle( this._axis, correctionAngle );
       _rayPrevious.origin.sub( this._intersection ).applyAxisAngle( this._axis, correctionAngle ).add( this._intersection );
       _rayPrevious.direction.applyAxisAngle( this._axis, correctionAngle );
-
     }
 
     this._raycaster.set( _rayStart.origin, _rayStart.direction );

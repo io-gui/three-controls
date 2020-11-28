@@ -102,6 +102,7 @@ class TrackballControls extends CameraControls {
     _zoomMagnitude.set( 0, 0 );
     _panMagnitude.set( 0, 0, 0 );
     _eye.set( 0, 0, 1 ).applyQuaternion( this.camera.quaternion ).normalize()
+    this._plane.setFromNormalAndCoplanarPoint( _eye, this.target );
 
     const button = pointers[ 0 ].button;
     switch ( pointers.length ) {
@@ -111,7 +112,7 @@ class TrackballControls extends CameraControls {
         } else if ( ( button === this.mouseButtons.MIDDLE || this._keyState === STATE.ZOOM ) && ! this.noZoom ) {
           _zoomMagnitude.y = pointers[ 0 ].view.movement.y * this.zoomSpeed;
         } else if ( ( button === this.mouseButtons.RIGHT || this._keyState === STATE.PAN ) && ! this.noPan ) {
-          _panMagnitude.copy( pointers[ 0 ].projectOnPlane( this.target, _eye ).movement ).multiplyScalar( this.panSpeed );
+          _panMagnitude.copy( pointers[ 0 ].projectOnPlane( this._plane ).movement ).multiplyScalar( this.panSpeed );
         }
         break;
 
@@ -119,8 +120,8 @@ class TrackballControls extends CameraControls {
         _zoomMagnitude.y = pointers[ 0 ].view.current.distanceTo( pointers[ 1 ].view.current );
         _zoomMagnitude.y -= pointers[ 0 ].view.previous.distanceTo( pointers[ 1 ].view.previous );
         _zoomMagnitude.y *= this.zoomSpeed;
-        _panMagnitude.copy( pointers[ 0 ].projectOnPlane( this.target, _eye ).movement );
-        _panMagnitude.add( pointers[ 1 ].projectOnPlane( this.target, _eye ).movement );
+        _panMagnitude.copy( pointers[ 0 ].projectOnPlane( this._plane ).movement );
+        _panMagnitude.add( pointers[ 1 ].projectOnPlane( this._plane ).movement );
         _panMagnitude.multiplyScalar( this.panSpeed * 0.5 );
         break;
     }

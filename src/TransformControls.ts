@@ -1,7 +1,7 @@
 import { Mesh, MeshBasicMaterial, Object3D, Quaternion, Vector3, Color, Matrix4, Plane, PerspectiveCamera, OrthographicCamera, Intersection } from 'three';
 
 import { ControlsMixin, PointerTracker, CONTROL_CHANGE_EVENT, CONTROL_START_EVENT, CONTROL_END_EVENT } from './Controls';
-import { TransformHelper, UNIT } from './TransformHelper';
+import { TransformHelper } from './TransformHelper';
 
 export const TRANSFORM_CONTROL_CHANGE_EVENT = { type: 'transform-changed' };
 
@@ -97,7 +97,7 @@ class TransformControls extends ControlsMixin( TransformHelper as any ) {
   private readonly _dirY = new Vector3( 0, 1, 0 );
   private readonly _dirZ = new Vector3( 0, 0, 1 );
   private readonly _dirVector = new Vector3();
-  private readonly _identityQuaternion = new Quaternion();
+  private readonly _identityQuaternion = Object.freeze( new Quaternion() );
   private readonly _plane = new Plane();
 
   constructor ( camera: PerspectiveCamera | OrthographicCamera, domElement: HTMLElement ) {
@@ -443,8 +443,8 @@ class TransformControls extends ControlsMixin( TransformHelper as any ) {
         this._rotationAxis.copy( this._offset ).cross( this.eye ).normalize();
         this._rotationAngle = this._offset.dot( this._tempVector.copy( this._rotationAxis ).cross( this.eye ) ) * ROTATION_SPEED;
       } else if ( axis === 'X' || axis === 'Y' || axis === 'Z' ) {
-        this._rotationAxis.copy( UNIT[ axis as 'X' | 'Y' | 'Z' ] );
-        this._tempVector.copy( UNIT[ axis as 'X' | 'Y' | 'Z' ] );
+        this._rotationAxis.copy( this[ 'UNIT' + axis ] );
+        this._tempVector.copy( this[ 'UNIT' + axis ] );
         if ( space === 'local' ) {
           this._tempVector.applyQuaternion( this._worldQuaternion );
         }

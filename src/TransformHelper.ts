@@ -4,7 +4,7 @@ import { Quaternion, Mesh, Euler, Vector3, Vector4, Matrix4, Line, OctahedronBuf
 
 import { ControlsHelper, ControlsHelperGeometrySpec } from './ControlsHelper';
 
-export const CircleGeometry = function ( radius: number, arc: number ) {
+const CircleGeometry = function ( radius: number, arc: number ) {
   const geometry = new BufferGeometry( );
   const vertices = [];
   for ( let i = 0; i <= 64 * arc; ++ i ) {
@@ -14,29 +14,22 @@ export const CircleGeometry = function ( radius: number, arc: number ) {
   return geometry;
 };
 
-export const scaleHandleGeometry = new BoxBufferGeometry( 0.125, 0.125, 0.125 );
+const scaleHandleGeometry = new BoxBufferGeometry( 0.125, 0.125, 0.125 );
 
-export const arrowGeometry = new CylinderBufferGeometry( 0, 0.05, 0.2, 12, 1, false );
+const arrowGeometry = new CylinderBufferGeometry( 0, 0.05, 0.2, 12, 1, false );
 
-export const lineGeometry = new BufferGeometry();
+const lineGeometry = new BufferGeometry();
 lineGeometry.setAttribute( 'position', new Float32BufferAttribute( [ 0, 0, 0,  1, 0, 0 ], 3 ) );
 
-export const squareLineGeometry = new BufferGeometry();
+const squareLineGeometry = new BufferGeometry();
 squareLineGeometry.setAttribute( 'position', new Float32BufferAttribute( [  -1, -1, 0, -1, 1, 0, 1, 1, 0, 1, -1, 0, -1, -1, 0 ], 3 ) );
 
-export const cornerLineGeometry = new BufferGeometry();
+const cornerLineGeometry = new BufferGeometry();
 cornerLineGeometry.setAttribute( 'position', new Float32BufferAttribute( [  0, -1, 0, 0, 0, 0, 1, 0, 0 ], 3 ) );
-
-export const UNIT = {
-  0: Object.freeze(new Vector3( 0, 0, 0 )),
-  X: Object.freeze(new Vector3( 1, 0, 0 )),
-  Y: Object.freeze(new Vector3( 0, 1, 0 )),
-  Z: Object.freeze(new Vector3( 0, 0, 1 ))
-};
 
 const PICKER_DEBUG_ALPHA = 0.0;
 
-export const translateHelperGeometrySpec: [ Mesh | Line, ControlsHelperGeometrySpec ][] = [
+const translateHelperGeometrySpec: [ Mesh | Line, ControlsHelperGeometrySpec ][] = [
   [
     new Mesh( arrowGeometry ),
     {
@@ -259,7 +252,7 @@ export const translateHelperGeometrySpec: [ Mesh | Line, ControlsHelperGeometryS
   ],
 ];
 
-export const rotateHelperGeometrySpec: [ Mesh | Line, ControlsHelperGeometrySpec ][] = [
+const rotateHelperGeometrySpec: [ Mesh | Line, ControlsHelperGeometrySpec ][] = [
   [
     new Line( CircleGeometry( 0.9, 0.5 ) ),
     {
@@ -381,7 +374,7 @@ export const rotateHelperGeometrySpec: [ Mesh | Line, ControlsHelperGeometrySpec
   ]
 ];
 
-export const scaleHelperGeometrySpec: [ Mesh | Line, ControlsHelperGeometrySpec ][] = [
+const scaleHelperGeometrySpec: [ Mesh | Line, ControlsHelperGeometrySpec ][] = [
   [
     new Mesh( new BoxBufferGeometry( 0.125, 0.125, 0.125 ) ),
     {
@@ -656,6 +649,11 @@ export class TransformHelper extends ControlsHelper {
   PLANE_HIDE_TRESHOLD = 0.9;
   AXIS_FLIP_TRESHOLD = 0.0;
 
+  protected readonly UNIT0 = Object.freeze(new Vector3( 0, 0, 0 ));
+  protected readonly UNITX = Object.freeze(new Vector3( 1, 0, 0 ));
+  protected readonly UNITY = Object.freeze(new Vector3( 0, 1, 0 ));
+  protected readonly UNITZ = Object.freeze(new Vector3( 0, 0, 1 ));
+
   protected _sizeAttenuation = 1;
   protected readonly _cameraPosition = new Vector3();
   protected readonly _position = new Vector3();
@@ -704,25 +702,25 @@ export class TransformHelper extends ControlsHelper {
       // Hide handle pointing straight towards the camera
 
       if ( handleAxis.search( 'E' ) !== - 1 ) {
-        this._tempQuaternion2.setFromRotationMatrix( this._tempMatrix.lookAt( eye, UNIT[0], UNIT.Y ) );
+        this._tempQuaternion2.setFromRotationMatrix( this._tempMatrix.lookAt( eye, this.UNIT0, this.UNITY ) );
         handle.quaternion.copy(this.quaternion).invert();
         handle.quaternion.multiply( this._tempQuaternion2 );
       }
       if ( handleAxis === 'X' ) {
         this._tempQuaternion2.identity();
-        this._tempQuaternion.setFromAxisAngle( UNIT.X, Math.atan2( - this._dirVector.y, this._dirVector.z ) );
+        this._tempQuaternion.setFromAxisAngle( this.UNITX, Math.atan2( - this._dirVector.y, this._dirVector.z ) );
         this._tempQuaternion.multiplyQuaternions( this._tempQuaternion2, this._tempQuaternion );
         handle.quaternion.copy( this._tempQuaternion );
       }
       if ( handleAxis === 'Y' ) {
         this._tempQuaternion2.identity();
-        this._tempQuaternion.setFromAxisAngle( UNIT.Y, Math.atan2( this._dirVector.x, this._dirVector.z ) );
+        this._tempQuaternion.setFromAxisAngle( this.UNITY, Math.atan2( this._dirVector.x, this._dirVector.z ) );
         this._tempQuaternion.multiplyQuaternions( this._tempQuaternion2, this._tempQuaternion );
         handle.quaternion.copy( this._tempQuaternion );
       }
       if ( handleAxis === 'Z' ) {
         this._tempQuaternion2.identity();
-        this._tempQuaternion.setFromAxisAngle( UNIT.Z, Math.atan2( this._dirVector.y, this._dirVector.x ) );
+        this._tempQuaternion.setFromAxisAngle( this.UNITZ, Math.atan2( this._dirVector.y, this._dirVector.x ) );
         this._tempQuaternion.multiplyQuaternions( this._tempQuaternion2, this._tempQuaternion );
         handle.quaternion.copy( this._tempQuaternion );
       }
@@ -732,7 +730,7 @@ export class TransformHelper extends ControlsHelper {
       // Flip handle to prevent occlusion by other handles
 
       if ( handleAxis.search( 'X' ) !== - 1 ) {
-        if ( this._dirVector.copy( UNIT.X ).applyQuaternion( quaternion ).dot( eye ) < this.AXIS_FLIP_TRESHOLD ) {
+        if ( this._dirVector.copy( this.UNITX ).applyQuaternion( quaternion ).dot( eye ) < this.AXIS_FLIP_TRESHOLD ) {
           if ( handleTag === 'fwd' ) {
             handle.visible = false;
           } else {
@@ -743,7 +741,7 @@ export class TransformHelper extends ControlsHelper {
         }
       }
       if ( handleAxis.search( 'Y' ) !== - 1 ) {
-        if ( this._dirVector.copy( UNIT.Y ).applyQuaternion( quaternion ).dot( eye ) < this.AXIS_FLIP_TRESHOLD ) {
+        if ( this._dirVector.copy( this.UNITY ).applyQuaternion( quaternion ).dot( eye ) < this.AXIS_FLIP_TRESHOLD ) {
           if ( handleTag === 'fwd' ) {
             handle.visible = false;
           } else {
@@ -754,7 +752,7 @@ export class TransformHelper extends ControlsHelper {
         }
       }
       if ( handleAxis.search( 'Z' ) !== - 1 ) {
-        if ( this._dirVector.copy( UNIT.Z ).applyQuaternion( quaternion ).dot( eye ) < this.AXIS_FLIP_TRESHOLD ) {
+        if ( this._dirVector.copy( this.UNITZ ).applyQuaternion( quaternion ).dot( eye ) < this.AXIS_FLIP_TRESHOLD ) {
           if ( handleTag === 'fwd' ) {
             handle.visible = false;
           } else {
@@ -777,22 +775,22 @@ export class TransformHelper extends ControlsHelper {
     const hide_treshold = this.AXIS_HIDE_TRESHOLD * ( handleType === 'scale' ? this.AXIS_HIDE_TRESHOLD * 0.95 : this.AXIS_HIDE_TRESHOLD );
     const plane_hide_treshold = this.AXIS_HIDE_TRESHOLD * ( handleType === 'scale' ? this.PLANE_HIDE_TRESHOLD * 0.95 : this.PLANE_HIDE_TRESHOLD );
 
-    if ( hideAllignedToX && Math.abs( this._dirVector.copy( UNIT.X ).applyQuaternion( quaternion ).dot( eye ) ) > hide_treshold ) {
+    if ( hideAllignedToX && Math.abs( this._dirVector.copy( this.UNITX ).applyQuaternion( quaternion ).dot( eye ) ) > hide_treshold ) {
         handle.visible = false;
     }
-    if ( hideAllignedToY && Math.abs( this._dirVector.copy( UNIT.Y ).applyQuaternion( quaternion ).dot( eye ) ) > hide_treshold ) {
+    if ( hideAllignedToY && Math.abs( this._dirVector.copy( this.UNITY ).applyQuaternion( quaternion ).dot( eye ) ) > hide_treshold ) {
         handle.visible = false;
     }
-    if ( hideAllignedToZ && Math.abs( this._dirVector.copy( UNIT.Z ).applyQuaternion( quaternion ).dot( eye ) ) > hide_treshold ) {
+    if ( hideAllignedToZ && Math.abs( this._dirVector.copy( this.UNITZ ).applyQuaternion( quaternion ).dot( eye ) ) > hide_treshold ) {
         handle.visible = false;
     }
-    if ( hideAllignedToXY && Math.abs( this._dirVector.copy( UNIT.Z ).applyQuaternion( quaternion ).dot( eye ) ) < ( 1 - plane_hide_treshold ) ) {
+    if ( hideAllignedToXY && Math.abs( this._dirVector.copy( this.UNITZ ).applyQuaternion( quaternion ).dot( eye ) ) < ( 1 - plane_hide_treshold ) ) {
         handle.visible = false;
     }
-    if ( hideAllignedToYZ && Math.abs( this._dirVector.copy( UNIT.X ).applyQuaternion( quaternion ).dot( eye ) ) < ( 1 - plane_hide_treshold ) ) {
+    if ( hideAllignedToYZ && Math.abs( this._dirVector.copy( this.UNITX ).applyQuaternion( quaternion ).dot( eye ) ) < ( 1 - plane_hide_treshold ) ) {
         handle.visible = false;
     }
-    if ( hideAllignedToXZ && Math.abs( this._dirVector.copy( UNIT.Y ).applyQuaternion( quaternion ).dot( eye ) ) < ( 1 - plane_hide_treshold ) ) {
+    if ( hideAllignedToXZ && Math.abs( this._dirVector.copy( this.UNITY ).applyQuaternion( quaternion ).dot( eye ) ) < ( 1 - plane_hide_treshold ) ) {
         handle.visible = false;
     }
 

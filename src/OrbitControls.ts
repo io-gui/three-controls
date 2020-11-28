@@ -220,8 +220,9 @@ class OrbitControls extends CameraControls {
   }
 
   _twoPointerDolly( pointers: PointerTracker[] ): void {
-    const dist0 = pointers[  0  ].projectOnPlane( this.target, _eye ).current.distanceTo( pointers[  1  ].projectOnPlane( this.target, _eye ).current );
-    const dist1 = pointers[  0  ].projectOnPlane( this.target, _eye ).previous.distanceTo( pointers[  1  ].projectOnPlane( this.target, _eye ).previous );
+    this._plane.setFromNormalAndCoplanarPoint( _eye, this.target );
+    const dist0 = pointers[  0  ].projectOnPlane( this._plane ).current.distanceTo( pointers[  1  ].projectOnPlane( this._plane ).current );
+    const dist1 = pointers[  0  ].projectOnPlane( this._plane ).previous.distanceTo( pointers[  1  ].projectOnPlane( this._plane ).previous );
     this._applyDollyMovement( dist0 - dist1 );
   }
 
@@ -241,9 +242,11 @@ class OrbitControls extends CameraControls {
 
   _pointerPan( pointer: PointerTracker ): void {
     if ( this.screenSpacePanning ) {
-      this._applyPanMovement( pointer.projectOnPlane( this.target, _eye ).movement );
+      this._plane.setFromNormalAndCoplanarPoint( _eye, this.target );
+      this._applyPanMovement( pointer.projectOnPlane( this._plane ).movement );
     } else {
-      this._applyPanMovement( pointer.projectOnPlane( this.target, _unitY ).movement );
+      this._plane.setFromNormalAndCoplanarPoint( _unitY, this.target );
+      this._applyPanMovement( pointer.projectOnPlane( this._plane ).movement );
     }
   }
 

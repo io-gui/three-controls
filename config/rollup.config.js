@@ -108,10 +108,10 @@ const makeConfig = ( filename, externals = [] ) => {
         ]
       },
       plugins: [
-        dts(),
         alias({entries: [
           { find: 'three', replacement: '../../../src/Three' }
         ]}),
+        dts(),
       ],
       external: ['../../../src/Three', ...externals ],
     },

@@ -72,7 +72,8 @@ export class DragControls extends Controls {
     const _selectedObject = _selectedObjects[id];
     if ( _selectedObject ) {
       _eye.set( 0, 0, 1 ).applyQuaternion( this.camera.quaternion ).normalize()
-      _selectedObject.position.add( pointer.projectOnPlane( _target, _eye ).movement );
+      this._plane.setFromNormalAndCoplanarPoint( _eye, _target );
+      _selectedObject.position.add( pointer.projectOnPlane( this._plane ).movement );
       this.dispatchEvent({ type: 'drag', object: _selectedObject });
     }
   }

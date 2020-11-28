@@ -85,7 +85,6 @@ export class ControlsHelper extends Mesh {
   updateMatrixWorld() {
     super.updateMatrixWorld();
     this._position.setFromMatrixPosition( this.matrixWorld );
-    this.camera.matrixWorld.decompose( this._cameraPosition, this._cameraQuaternion, this._cameraScale ); 
     if ( this.camera instanceof PerspectiveCamera ) {
       this.eye.copy( this._cameraPosition ).sub( this._position ).normalize();
     } else if ( this.camera instanceof OrthographicCamera ) {
