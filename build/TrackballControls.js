@@ -1,12 +1,6 @@
-import {
-	MOUSE, Vector2, Vector3, Quaternion, PerspectiveCamera, OrthographicCamera
-} from 'three';
-import {
-	CHANGE_EVENT, START_EVENT, END_EVENT
-} from './Controls';
-import {
-	CameraControls
-} from './CameraControls';
+import { MOUSE, Vector2, Vector3, Quaternion, PerspectiveCamera, OrthographicCamera } from 'three';
+import { CONTROL_CHANGE_EVENT, CONTROL_START_EVENT, CONTROL_END_EVENT } from './Controls';
+import { CameraControls } from './CameraControls';
 
 const STATE = { NONE: - 1, ROTATE: 0, ZOOM: 1, PAN: 2 };
 const _eye = new Vector3();
@@ -124,7 +118,7 @@ class TrackballControls extends CameraControls {
 
 		if ( pointers.length === 1 ) {
 
-			this.dispatchEvent( START_EVENT );
+			this.dispatchEvent( CONTROL_START_EVENT );
 
 		}
 
@@ -135,6 +129,7 @@ class TrackballControls extends CameraControls {
 		_zoomMagnitude.set( 0, 0 );
 		_panMagnitude.set( 0, 0, 0 );
 		_eye.set( 0, 0, 1 ).applyQuaternion( this.camera.quaternion ).normalize();
+		this._plane.setFromNormalAndCoplanarPoint( _eye, this.target );
 		const button = pointers[ 0 ].button;
 
 		switch ( pointers.length ) {
@@ -150,7 +145,7 @@ class TrackballControls extends CameraControls {
 
 				} else if ( ( button === this.mouseButtons.RIGHT || this._keyState === STATE.PAN ) && ! this.noPan ) {
 
-					_panMagnitude.copy( pointers[ 0 ].projectOnPlane( this.target, _eye ).movement ).multiplyScalar( this.panSpeed );
+					_panMagnitude.copy( pointers[ 0 ].projectOnPlane( this._plane ).movement ).multiplyScalar( this.panSpeed );
 
 				}
 
@@ -160,8 +155,8 @@ class TrackballControls extends CameraControls {
 				_zoomMagnitude.y = pointers[ 0 ].view.current.distanceTo( pointers[ 1 ].view.current );
 				_zoomMagnitude.y -= pointers[ 0 ].view.previous.distanceTo( pointers[ 1 ].view.previous );
 				_zoomMagnitude.y *= this.zoomSpeed;
-				_panMagnitude.copy( pointers[ 0 ].projectOnPlane( this.target, _eye ).movement );
-				_panMagnitude.add( pointers[ 1 ].projectOnPlane( this.target, _eye ).movement );
+				_panMagnitude.copy( pointers[ 0 ].projectOnPlane( this._plane ).movement );
+				_panMagnitude.add( pointers[ 1 ].projectOnPlane( this._plane ).movement );
 				_panMagnitude.multiplyScalar( this.panSpeed * 0.5 );
 				break;
 
@@ -180,14 +175,14 @@ class TrackballControls extends CameraControls {
 
 		this.camera.position.addVectors( this.target, _eye );
 		this.camera.lookAt( this.target );
-		this.dispatchEvent( CHANGE_EVENT );
+		this.dispatchEvent( CONTROL_CHANGE_EVENT );
 
 	}
 	onTrackedPointerUp( pointer, pointers ) {
 
 		if ( pointers.length === 0 ) {
 
-			this.dispatchEvent( END_EVENT );
+			this.dispatchEvent( CONTROL_END_EVENT );
 
 		}
 

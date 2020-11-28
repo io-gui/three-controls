@@ -1,9 +1,5 @@
-import {
-	MOUSE, TOUCH
-} from 'three';
-import {
-	OrbitControls
-} from './OrbitControls';
+import { MOUSE, TOUCH } from 'three';
+import { OrbitControls } from './OrbitControls';
 
 
 // This set of controls performs orbiting, dollying ( zooming ), and panning.

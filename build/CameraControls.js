@@ -1,9 +1,5 @@
-import {
-	Vector3, Quaternion, PerspectiveCamera
-} from 'three';
-import {
-	Controls, CHANGE_EVENT
-} from './Controls';
+import { Vector3, Quaternion, PerspectiveCamera } from 'three';
+import { Controls, CONTROL_CHANGE_EVENT } from './Controls';
 
 
 // Internal variables
@@ -86,7 +82,7 @@ export class CameraControls extends Controls {
 			if ( this.enabled && this.lookAtTarget )
 				this.camera.lookAt( target );
 
-			this.dispatchEvent( CHANGE_EVENT );
+			this.dispatchEvent( CONTROL_CHANGE_EVENT );
 			return target;
 
 		};
@@ -98,7 +94,7 @@ export class CameraControls extends Controls {
 			if ( this.enabled && this.lookAtTarget )
 				this.camera.lookAt( target );
 
-			this.dispatchEvent( CHANGE_EVENT );
+			this.dispatchEvent( CONTROL_CHANGE_EVENT );
 			return target;
 
 		};
@@ -108,7 +104,7 @@ export class CameraControls extends Controls {
 			if ( this.enabled && this.lookAtTarget )
 				this.camera.lookAt( target );
 
-			this.dispatchEvent( CHANGE_EVENT );
+			this.dispatchEvent( CONTROL_CHANGE_EVENT );
 
 		} );
 
@@ -147,7 +143,7 @@ export class CameraControls extends Controls {
 		}
 
 		this.camera.updateProjectionMatrix();
-		this.dispatchEvent( CHANGE_EVENT );
+		this.dispatchEvent( CONTROL_CHANGE_EVENT );
 
 	}
 

@@ -1,12 +1,6 @@
-import {
-	MOUSE, TOUCH, Vector3, Quaternion, Spherical, PerspectiveCamera, OrthographicCamera
-} from 'three';
-import {
-	CHANGE_EVENT, START_EVENT, END_EVENT
-} from './Controls';
-import {
-	CameraControls
-} from './CameraControls';
+import { MOUSE, TOUCH, Vector3, Quaternion, Spherical, PerspectiveCamera, OrthographicCamera } from 'three';
+import { CONTROL_CHANGE_EVENT, CONTROL_START_EVENT, CONTROL_END_EVENT } from './Controls';
+import { CameraControls } from './CameraControls';
 
 
 // This set of controls performs orbiting, dollying ( zooming ), and panning.
@@ -202,7 +196,7 @@ class OrbitControls extends CameraControls {
 
 		if ( pointers.length === 1 ) {
 
-			this.dispatchEvent( START_EVENT );
+			this.dispatchEvent( CONTROL_START_EVENT );
 
 		}
 
@@ -299,7 +293,7 @@ class OrbitControls extends CameraControls {
 
 		if ( pointers.length === 0 ) {
 
-			this.dispatchEvent( END_EVENT );
+			this.dispatchEvent( CONTROL_END_EVENT );
 			this._interacting = false;
 
 		}
@@ -314,8 +308,9 @@ class OrbitControls extends CameraControls {
 	}
 	_twoPointerDolly( pointers ) {
 
-		const dist0 = pointers[ 0 ].projectOnPlane( this.target, _eye ).current.distanceTo( pointers[ 1 ].projectOnPlane( this.target, _eye ).current );
-		const dist1 = pointers[ 0 ].projectOnPlane( this.target, _eye ).previous.distanceTo( pointers[ 1 ].projectOnPlane( this.target, _eye ).previous );
+		this._plane.setFromNormalAndCoplanarPoint( _eye, this.target );
+		const dist0 = pointers[ 0 ].projectOnPlane( this._plane ).current.distanceTo( pointers[ 1 ].projectOnPlane( this._plane ).current );
+		const dist1 = pointers[ 0 ].projectOnPlane( this._plane ).previous.distanceTo( pointers[ 1 ].projectOnPlane( this._plane ).previous );
 		this._applyDollyMovement( dist0 - dist1 );
 
 	}
@@ -334,18 +329,20 @@ class OrbitControls extends CameraControls {
 		_offset.setFromSpherical( this._spherical );
 		this.camera.position.copy( this.target ).add( _offset );
 		this.camera.lookAt( this.target );
-		this.dispatchEvent( CHANGE_EVENT );
+		this.dispatchEvent( CONTROL_CHANGE_EVENT );
 
 	}
 	_pointerPan( pointer ) {
 
 		if ( this.screenSpacePanning ) {
 
-			this._applyPanMovement( pointer.projectOnPlane( this.target, _eye ).movement );
+			this._plane.setFromNormalAndCoplanarPoint( _eye, this.target );
+			this._applyPanMovement( pointer.projectOnPlane( this._plane ).movement );
 
 		} else {
 
-			this._applyPanMovement( pointer.projectOnPlane( this.target, _unitY ).movement );
+			this._plane.setFromNormalAndCoplanarPoint( _unitY, this.target );
+			this._applyPanMovement( pointer.projectOnPlane( this._plane ).movement );
 
 		}
 
@@ -399,7 +396,7 @@ class OrbitControls extends CameraControls {
 		_offset.copy( movement ).multiplyScalar( this.panSpeed );
 		this.target.sub( _offset );
 		this.camera.position.sub( _offset );
-		this.dispatchEvent( CHANGE_EVENT );
+		this.dispatchEvent( CONTROL_CHANGE_EVENT );
 
 	}
 	_pointerRotate( pointer ) {
@@ -492,7 +489,7 @@ class OrbitControls extends CameraControls {
 		_offset.applyQuaternion( _quatInverse );
 		this.camera.position.copy( this.target ).add( _offset );
 		this.camera.lookAt( this.target );
-		this.dispatchEvent( CHANGE_EVENT );
+		this.dispatchEvent( CONTROL_CHANGE_EVENT );
 
 	}
 

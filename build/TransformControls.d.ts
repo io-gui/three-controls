@@ -1,27 +1,15 @@
-import {
-	Mesh, Object3D, Vector3, PerspectiveCamera, OrthographicCamera
-} from 'three';
-import {
-	PointerTracker
-} from './Controls';
+import { Mesh, Object3D, Vector3, PerspectiveCamera, OrthographicCamera } from 'three';
+import { PointerTracker } from './Controls';
+
+export declare const TRANSFORM_CONTROL_CHANGE_EVENT: {
+	type: string;
+};
 
 declare const TransformControls_base: any;
 declare class TransformControls extends TransformControls_base {
 
 	static readonly isTransformControls = true;
 	static readonly type = "TransformControls";
-	camera: PerspectiveCamera | OrthographicCamera;
-	domElement: HTMLElement;
-	enabled: boolean;
-	enableDamping: boolean;
-	dampingFactor: number;
-	size: number;
-	showX: boolean;
-	showY: boolean;
-	showZ: boolean;
-	showTranslate: boolean;
-	showRotate: boolean;
-	showScale: boolean;
 	object?: Object3D;
 	dragging: boolean;
 	space: string;
@@ -30,8 +18,18 @@ declare class TransformControls extends TransformControls_base {
 	translationSnap: number;
 	rotationSnap: number;
 	scaleSnap: number;
-	avoidGrazingAngles: boolean;
-	needsAnimation: boolean;
+	minGrazingAngle: number;
+	FADE_EPS: number;
+	FADE_FACTOR: number;
+	private _needsAnimationFrame;
+	private readonly _pointStart;
+	private readonly _pointEnd;
+	private readonly _offset;
+	private readonly _startNorm;
+	private readonly _endNorm;
+	private readonly _startMatrix;
+	private readonly _endMatrix;
+	private readonly _offsetMatrix;
 	private readonly _cameraPosition;
 	private readonly _cameraQuaternion;
 	private readonly _cameraScale;
@@ -52,6 +50,15 @@ declare class TransformControls extends TransformControls_base {
 	private readonly _scaleStart;
 	private readonly _rotationAxis;
 	private _rotationAngle;
+	private readonly _tempVector;
+	private readonly _tempQuaternion;
+	private readonly _targetColor;
+	private readonly _dirX;
+	private readonly _dirY;
+	private readonly _dirZ;
+	private readonly _dirVector;
+	private readonly _identityQuaternion;
+	private readonly _plane;
 	constructor( camera: PerspectiveCamera | OrthographicCamera, domElement: HTMLElement );
 	onNeedsAnimationChanged(): void;
 	updateHandleMaterial( handle: Mesh ): void;

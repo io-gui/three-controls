@@ -1,9 +1,5 @@
-import {
-	Vector3, PerspectiveCamera, OrthographicCamera
-} from 'three';
-import {
-	Controls
-} from './Controls';
+import { Vector3, PerspectiveCamera, OrthographicCamera } from 'three';
+import { Controls } from './Controls';
 
 
 /**

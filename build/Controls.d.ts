@@ -1,18 +1,16 @@
-import {
-	Vector2, Vector3, Plane, Intersection, Object3D, PerspectiveCamera, OrthographicCamera, Event as ThreeEvent
-} from 'three';
+import { Vector2, Vector3, Plane, Intersection, Object3D, PerspectiveCamera, OrthographicCamera, Ray, Event as ThreeEvent, WebXRManager } from 'three';
 
 export declare type Callback = ( callbackValue?: any ) => void;
 
-export declare const CHANGE_EVENT: ThreeEvent;
+export declare const CONTROL_CHANGE_EVENT: ThreeEvent;
 
-export declare const START_EVENT: ThreeEvent;
+export declare const CONTROL_START_EVENT: ThreeEvent;
 
-export declare const END_EVENT: ThreeEvent;
+export declare const CONTROL_END_EVENT: ThreeEvent;
 
-export declare const DISPOSE_EVENT: ThreeEvent;
+export declare const CONTROL_DISPOSE_EVENT: ThreeEvent;
 
-declare type Constructor<TBase extends any> = new ( ...args: any[] ) => TBase;
+declare type Constructor = new ( ...args: any[] ) => any;
 
 
 /**
@@ -42,26 +40,30 @@ declare type Constructor<TBase extends any> = new ( ...args: any[] ) => TBase;
  * - Takes care of the event listener cleanup when `dipose()` method is called.
  * - Emits lyfecycle events: "enabled", "disabled", "dispose"
  */
-export declare function ControlsMixin<T extends Constructor<any>>( base: T ): {
+export declare function ControlsMixin<Super extends Constructor>( superClass: Super ): {
 	new ( ...args: any[] ): {
 		[x: string]: any;
 		camera: PerspectiveCamera | OrthographicCamera;
 		domElement: HTMLElement;
 		enabled: boolean;
+		xr: WebXRManager | null;
 		enableDamping: boolean;
 		dampingFactor: number;
 		_hoverPointer: PointerTracker | null;
 		_centerPointer: CenterPointerTracker | null;
 		_simulatedPointer: PointerTracker | null;
 		_pointers: PointerTracker[];
+		_xrControllers: PointerTracker[];
 		_animations: Callback[];
 		_keys: number[];
 		_changeDispatched: boolean;
-		observeProperty( propertyKey: keyof Controls, onChangeFunc: Callback, onChangeToFalsyFunc?: Callback | undefined ): void;
+		observeProperty( propertyKey: string | number, onChangeFunc: Callback, onChangeToFalsyFunc?: Callback | undefined ): void;
 		startAnimation( callback: Callback ): void;
 		stopAnimation( callback: Callback ): void;
 		_connect(): void;
 		_disconnect(): void;
+		_connectXR(): void;
+		_disconnectXR(): void;
 		dispose(): void;
 		addEventListener( type: string, listener: Callback ): void;
 		dispatchEvent( event: ThreeEvent | Event ): void;
@@ -87,7 +89,7 @@ export declare function ControlsMixin<T extends Constructor<any>>( base: T ): {
 		onTrackedKeyUp( code: number, codes: number[] ): void;
 		onTrackedKeyChange( code: number, codes: number[] ): void;
 	};
-} & T;
+} & Super;
 
 declare const Controls_base: any;
 
@@ -102,36 +104,59 @@ export declare class Controls extends Controls_base {
 
 }
 
-declare class Pointer2D {
+declare class CanvasPointer {
 
 	readonly start: Vector2;
 	readonly current: Vector2;
 	readonly previous: Vector2;
-	readonly movement: Vector2;
-	readonly offset: Vector2;
-	constructor( x: number, y: number );
+	private readonly _movement;
+	private readonly _offset;
+	get movement(): Vector2;
+	get offset(): Vector2;
+	constructor( x?: number, y?: number );
 	set( x: number, y: number ): this;
-	clear(): this;
-	add( pointer: Pointer2D ): this;
-	copy( pointer: Pointer2D ): this;
-	divideScalar( value: number ): this;
 	update( x: number, y: number ): this;
-	convertToViewSpace( domElement: HTMLElement ): this;
 
 }
-declare class Pointer3D {
+declare class ViewPointer {
+
+	readonly start: Vector2;
+	readonly current: Vector2;
+	readonly previous: Vector2;
+	private readonly _movement;
+	private readonly _offset;
+	private readonly _viewOffset;
+	private readonly _viewMultiplier;
+	get movement(): Vector2;
+	get offset(): Vector2;
+	constructor( x?: number, y?: number );
+	set( x: number, y: number ): this;
+	update( canvasPointer: CanvasPointer, domElement: HTMLElement ): this;
+
+}
+declare class RayPointer {
+
+	readonly start: Ray;
+	readonly current: Ray;
+	readonly previous: Ray;
+	update( camera: PerspectiveCamera | OrthographicCamera, viewPointer: ViewPointer ): this;
+
+}
+declare class ProjectedPointer {
 
 	readonly start: Vector3;
 	readonly current: Vector3;
 	readonly previous: Vector3;
-	readonly movement: Vector3;
-	readonly offset: Vector3;
-	constructor( x: number, y: number, z: number );
+	private readonly _movement;
+	private readonly _offset;
+	private readonly _intersection;
+	private readonly _axis;
+	private readonly _raycaster;
+	get movement(): Vector3;
+	get offset(): Vector3;
+	constructor( x?: number, y?: number, z?: number );
 	set( x: number, y: number, z: number ): this;
-	clear(): this;
-	add( pointer: Pointer3D ): this;
-	divideScalar( value: number ): this;
-	projectOnPlane( viewPointer: Pointer2D, camera: PerspectiveCamera | OrthographicCamera, center: Vector3, planeNormal: Vector3, avoidGrazingAngles?: boolean ): this;
+	projectOnPlane( ray: RayPointer, plane: Plane, minGrazingAngle?: number ): this;
 
 }
 
@@ -152,15 +177,19 @@ export declare class PointerTracker {
 	get pointerId(): number;
 	get type(): string;
 	isSimulated: boolean;
-	readonly canvas: Pointer2D;
-	readonly view: Pointer2D;
-	protected _projected: Pointer3D;
+	readonly canvas: CanvasPointer;
+	readonly view: ViewPointer;
+	readonly ray: RayPointer;
+	protected _projected: ProjectedPointer;
 	private _camera;
 	private _pointerEvent;
+	private readonly _intersection;
+	private readonly _raycaster;
+	private readonly _intersectedObjects;
 	constructor( pointerEvent: PointerEvent, camera: PerspectiveCamera | OrthographicCamera );
 	update( pointerEvent: PointerEvent, camera: PerspectiveCamera | OrthographicCamera ): void;
 	simmulateDamping( dampingFactor: number, deltaTime: number ): void;
-	projectOnPlane( planeCenter: Vector3, planeNormal: Vector3, avoidGrazingAngles?: boolean ): Pointer3D;
+	projectOnPlane( plane: Plane, minGrazingAngle?: number ): ProjectedPointer;
 	intersectObjects( objects: Object3D[] ): Intersection[];
 	intersectPlane( plane: Plane ): Vector3;
 	clearMovement(): void;
@@ -171,7 +200,7 @@ declare class CenterPointerTracker extends PointerTracker {
 
 	private _pointers;
 	constructor( pointerEvent: PointerEvent, camera: PerspectiveCamera | OrthographicCamera );
-	projectOnPlane( planeCenter: Vector3, planeNormal: Vector3 ): Pointer3D;
+	projectOnPlane( plane: Plane, minGrazingAngle?: number ): ProjectedPointer;
 	updateCenter( pointers: PointerTracker[] ): void;
 
 }

@@ -1,6 +1,4 @@
-import {
-	Vector3, Mesh, Line, PerspectiveCamera, DoubleSide, LineBasicMaterial, MeshBasicMaterial,
-} from 'three';
+import { Vector3, Quaternion, Mesh, Line, PerspectiveCamera, OrthographicCamera, DoubleSide, LineBasicMaterial, MeshBasicMaterial } from 'three';
 
 export const gizmoMaterial = new MeshBasicMaterial( {
 	depthTest: false,
@@ -20,9 +18,6 @@ export const gizmoLineMaterial = new LineBasicMaterial( {
 	toneMapped: false
 } );
 
-const _cameraPosition = new Vector3();
-const _position = new Vector3();
-
 export class ControlsHelper extends Mesh {
 
 	constructor( gizmoMap ) {
@@ -30,6 +25,10 @@ export class ControlsHelper extends Mesh {
 		super();
 		this.camera = new PerspectiveCamera();
 		this.eye = new Vector3();
+		this._cameraPosition = new Vector3();
+		this._cameraQuaternion = new Quaternion();
+		this._cameraScale = new Vector3();
+		this._position = new Vector3();
 
 
 		//
@@ -93,9 +92,17 @@ export class ControlsHelper extends Mesh {
 	updateMatrixWorld() {
 
 		super.updateMatrixWorld();
-		_position.setFromMatrixPosition( this.matrixWorld );
-		_cameraPosition.setFromMatrixPosition( this.camera.matrixWorld );
-		this.eye.copy( _cameraPosition ).sub( _position ).normalize();
+		this._position.setFromMatrixPosition( this.matrixWorld );
+
+		if ( this.camera instanceof PerspectiveCamera ) {
+
+			this.eye.copy( this._cameraPosition ).sub( this._position ).normalize();
+
+		} else if ( this.camera instanceof OrthographicCamera ) {
+
+			this.eye.set( 0, 0, 1 ).applyQuaternion( this._cameraQuaternion );
+
+		}
 
 	}
 
