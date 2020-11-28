@@ -1,5 +1,5 @@
 import { Vector3, Quaternion, PerspectiveCamera, OrthographicCamera } from 'three';
-import { Controls, CHANGE_EVENT } from './Controls';
+import { Controls, CONTROL_CHANGE_EVENT } from './Controls';
 
 // Internal variables
 const cameraTargets = new WeakMap();
@@ -69,18 +69,18 @@ export class CameraControls extends Controls {
     target.set = ( x: number, y: number, z: number ) => {
       Vector3.prototype.set.call( target, x, y, z );
       if ( this.enabled && this.lookAtTarget ) this.camera.lookAt( target );
-      this.dispatchEvent( CHANGE_EVENT );
+      this.dispatchEvent( CONTROL_CHANGE_EVENT );
       return target;
     }
     target.copy = ( value: Vector3 ) => {
       Vector3.prototype.copy.call( target, value );
       if ( this.enabled && this.lookAtTarget ) this.camera.lookAt( target );
-      this.dispatchEvent( CHANGE_EVENT );
+      this.dispatchEvent( CONTROL_CHANGE_EVENT );
       return target;
     }
     setTimeout( () => {
       if ( this.enabled && this.lookAtTarget ) this.camera.lookAt( target );
-      this.dispatchEvent( CHANGE_EVENT );
+      this.dispatchEvent( CONTROL_CHANGE_EVENT );
     } );
   }
   // Saves camera state for later reset.
@@ -105,7 +105,7 @@ export class CameraControls extends Controls {
       this.camera.focus = this._resetFocus;
     }
     this.camera.updateProjectionMatrix();
-    this.dispatchEvent( CHANGE_EVENT );
+    this.dispatchEvent( CONTROL_CHANGE_EVENT );
   }
   // Deprecation warning.
   saveState() {

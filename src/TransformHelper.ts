@@ -27,20 +27,14 @@ squareLineGeometry.setAttribute( 'position', new Float32BufferAttribute( [  -1, 
 export const cornerLineGeometry = new BufferGeometry();
 cornerLineGeometry.setAttribute( 'position', new Float32BufferAttribute( [  0, -1, 0, 0, 0, 0, 1, 0, 0 ], 3 ) );
 
-const zeroVector = new Vector3( 0, 0, 0 );
-const lookAtMatrix = new Matrix4();
-const alignVector = new Vector3( 0, 1, 0 );
-const tempQuaternion = new Quaternion();
-const tempQuaternion2 = new Quaternion();
-const unitX = new Vector3( 1, 0, 0 );
-const unitY = new Vector3( 0, 1, 0 );
-const unitZ = new Vector3( 0, 0, 1 );
+export const UNIT = {
+  0: Object.freeze(new Vector3( 0, 0, 0 )),
+  X: Object.freeze(new Vector3( 1, 0, 0 )),
+  Y: Object.freeze(new Vector3( 0, 1, 0 )),
+  Z: Object.freeze(new Vector3( 0, 0, 1 ))
+};
 
-// Hide translate and scale axis facing the camera
-const AXIS_HIDE_TRESHOLD = 0.99;
-const PLANE_HIDE_TRESHOLD = 0.9;
-const AXIS_FLIP_TRESHOLD = 0.0;
-const PICKER_ALPHA = 0.0;
+const PICKER_DEBUG_ALPHA = 0.0;
 
 export const translateHelperGeometrySpec: [ Mesh | Line, ControlsHelperGeometrySpec ][] = [
   [
@@ -201,7 +195,7 @@ export const translateHelperGeometrySpec: [ Mesh | Line, ControlsHelperGeometryS
       type: 'translate',
       axis: 'X',
       tag: 'picker',
-      color: new Vector4( 1, 1, 1, PICKER_ALPHA ),
+      color: new Vector4( 1, 1, 1, PICKER_DEBUG_ALPHA ),
       position: new Vector3( 0.6, 0, 0 ),
       rotation: new Euler( Math.PI / 4, 0, - Math.PI / 2 ),
     }
@@ -211,7 +205,7 @@ export const translateHelperGeometrySpec: [ Mesh | Line, ControlsHelperGeometryS
       type: 'translate',
       axis: 'Y',
       tag: 'picker',
-      color: new Vector4( 1, 1, 1, PICKER_ALPHA ),
+      color: new Vector4( 1, 1, 1, PICKER_DEBUG_ALPHA ),
       position: new Vector3( 0, 0.6, 0),
       rotation: new Euler( 0, Math.PI / 4, 0 ),
     }
@@ -221,7 +215,7 @@ export const translateHelperGeometrySpec: [ Mesh | Line, ControlsHelperGeometryS
       type: 'translate',
       axis: 'Z',
       tag: 'picker',
-      color: new Vector4( 1, 1, 1, PICKER_ALPHA ),
+      color: new Vector4( 1, 1, 1, PICKER_DEBUG_ALPHA ),
       position: new Vector3( 0, 0, 0.6 ),
       rotation: new Euler( Math.PI / 2, Math.PI / 4, 0 ),
     }
@@ -231,7 +225,7 @@ export const translateHelperGeometrySpec: [ Mesh | Line, ControlsHelperGeometryS
       type: 'translate',
       axis: 'XYZ',
       tag: 'picker',
-      color: new Vector4( 1, 1, 1, PICKER_ALPHA ),
+      color: new Vector4( 1, 1, 1, PICKER_DEBUG_ALPHA ),
     }
   ], [
     new Mesh( new PlaneBufferGeometry( 0.4, 0.4 ) ),
@@ -239,7 +233,7 @@ export const translateHelperGeometrySpec: [ Mesh | Line, ControlsHelperGeometryS
       type: 'translate',
       axis: 'XY',
       tag: 'picker',
-      color: new Vector4( 1, 1, 1, PICKER_ALPHA ),
+      color: new Vector4( 1, 1, 1, PICKER_DEBUG_ALPHA ),
       position: new Vector3( 0.2, 0.2, 0),
     }
   ], [
@@ -248,7 +242,7 @@ export const translateHelperGeometrySpec: [ Mesh | Line, ControlsHelperGeometryS
       type: 'translate',
       axis: 'YZ',
       tag: 'picker',
-      color: new Vector4( 1, 1, 1, PICKER_ALPHA ),
+      color: new Vector4( 1, 1, 1, PICKER_DEBUG_ALPHA ),
       position: new Vector3( 0, 0.2, 0.2 ),
       rotation: new Euler( 0, Math.PI / 2, 0 ),
     }
@@ -258,7 +252,7 @@ export const translateHelperGeometrySpec: [ Mesh | Line, ControlsHelperGeometryS
       type: 'translate',
       axis: 'XZ',
       tag: 'picker',
-      color: new Vector4( 1, 1, 1, PICKER_ALPHA ),
+      color: new Vector4( 1, 1, 1, PICKER_DEBUG_ALPHA ),
       position: new Vector3( 0.2, 0, 0.2 ),
       rotation: new Euler( - Math.PI / 2, 0, 0 ),
     }
@@ -340,7 +334,7 @@ export const rotateHelperGeometrySpec: [ Mesh | Line, ControlsHelperGeometrySpec
       type: 'rotate',
       axis: 'X',
       tag: 'picker',
-      color: new Vector4( 1, 1, 1, PICKER_ALPHA ),
+      color: new Vector4( 1, 1, 1, PICKER_DEBUG_ALPHA ),
       position: new Vector3( 0, 0, 0 ),
       rotation: new Euler( 0, - Math.PI / 2, - Math.PI / 2 ),
       scale: new Vector3( 1, 1, 0.3 ),
@@ -351,7 +345,7 @@ export const rotateHelperGeometrySpec: [ Mesh | Line, ControlsHelperGeometrySpec
       type: 'rotate',
       axis: 'Y',
       tag: 'picker',
-      color: new Vector4( 1, 1, 1, PICKER_ALPHA ),
+      color: new Vector4( 1, 1, 1, PICKER_DEBUG_ALPHA ),
       position: new Vector3( 0, 0, 0 ),
       rotation: new Euler( Math.PI / 2, 0, 0 ),
       scale: new Vector3( 1, 1, 0.3 ),
@@ -362,7 +356,7 @@ export const rotateHelperGeometrySpec: [ Mesh | Line, ControlsHelperGeometrySpec
       type: 'rotate',
       axis: 'Z',
       tag: 'picker',
-      color: new Vector4( 1, 1, 1, PICKER_ALPHA ),
+      color: new Vector4( 1, 1, 1, PICKER_DEBUG_ALPHA ),
       position: new Vector3( 0, 0, 0 ),
       rotation: new Euler( 0, 0, - Math.PI / 2 ),
       scale: new Vector3( 1, 1, 0.3 ),
@@ -373,7 +367,7 @@ export const rotateHelperGeometrySpec: [ Mesh | Line, ControlsHelperGeometrySpec
       type: 'rotate',
       axis: 'E',
       tag: 'picker',
-      color: new Vector4( 1, 1, 1, PICKER_ALPHA ),
+      color: new Vector4( 1, 1, 1, PICKER_DEBUG_ALPHA ),
     }
   ], [
     new Mesh( new SphereBufferGeometry( 1.3, 12, 2, 0, Math.PI * 2, 0, Math.PI / 2 ) ),
@@ -381,7 +375,7 @@ export const rotateHelperGeometrySpec: [ Mesh | Line, ControlsHelperGeometrySpec
       type: 'rotate',
       axis: 'XYZE',
       tag: 'picker',
-      color: new Vector4( 1, 1, 1, PICKER_ALPHA ),
+      color: new Vector4( 1, 1, 1, PICKER_DEBUG_ALPHA ),
       rotation: new Euler( - Math.PI / 2, 0, 0 ),
     }
   ]
@@ -557,7 +551,7 @@ export const scaleHelperGeometrySpec: [ Mesh | Line, ControlsHelperGeometrySpec 
       type: 'scale',
       axis: 'X',
       tag: 'picker',
-      color: new Vector4( 1, 1, 1, PICKER_ALPHA ),
+      color: new Vector4( 1, 1, 1, PICKER_DEBUG_ALPHA ),
       position: new Vector3( 0.7, 0, 0 ),
       rotation: new Euler( Math.PI / 4, 0, - Math.PI / 2 ),
     }
@@ -567,7 +561,7 @@ export const scaleHelperGeometrySpec: [ Mesh | Line, ControlsHelperGeometrySpec 
       type: 'scale',
       axis: 'Y',
       tag: 'picker',
-      color: new Vector4( 1, 1, 1, PICKER_ALPHA ),
+      color: new Vector4( 1, 1, 1, PICKER_DEBUG_ALPHA ),
       position: new Vector3( 0, 0.7, 0),
       rotation: new Euler( 0, Math.PI / 4, 0 ),
     }
@@ -577,7 +571,7 @@ export const scaleHelperGeometrySpec: [ Mesh | Line, ControlsHelperGeometrySpec 
       type: 'scale',
       axis: 'Z',
       tag: 'picker',
-      color: new Vector4( 1, 1, 1, PICKER_ALPHA ),
+      color: new Vector4( 1, 1, 1, PICKER_DEBUG_ALPHA ),
       position: new Vector3( 0, 0, 0.7 ),
       rotation: new Euler( Math.PI / 2, Math.PI / 4, 0 ),
     }
@@ -587,7 +581,7 @@ export const scaleHelperGeometrySpec: [ Mesh | Line, ControlsHelperGeometrySpec 
       type: 'scale',
       axis: 'XY',
       tag: 'picker',
-      color: new Vector4( 1, 1, 1, PICKER_ALPHA ),
+      color: new Vector4( 1, 1, 1, PICKER_DEBUG_ALPHA ),
       position: new Vector3( 0.85, 0.85, 0 ),
       scale: new Vector3( 4, 4, 0.6 ),
     }
@@ -597,7 +591,7 @@ export const scaleHelperGeometrySpec: [ Mesh | Line, ControlsHelperGeometrySpec 
       type: 'scale',
       axis: 'YZ',
       tag: 'picker',
-      color: new Vector4( 1, 1, 1, PICKER_ALPHA ),
+      color: new Vector4( 1, 1, 1, PICKER_DEBUG_ALPHA ),
       position: new Vector3( 0, 0.85, 0.85 ),
       scale: new Vector3( 0.6, 4, 4 ),
     }
@@ -607,7 +601,7 @@ export const scaleHelperGeometrySpec: [ Mesh | Line, ControlsHelperGeometrySpec 
       type: 'scale',
       axis: 'XZ',
       tag: 'picker',
-      color: new Vector4( 1, 1, 1, PICKER_ALPHA ),
+      color: new Vector4( 1, 1, 1, PICKER_DEBUG_ALPHA ),
       position: new Vector3( 0.85, 0, 0.85 ),
       scale: new Vector3( 4, 0.6, 4 ),
     }
@@ -617,7 +611,7 @@ export const scaleHelperGeometrySpec: [ Mesh | Line, ControlsHelperGeometrySpec 
       type: 'scale',
       axis: 'XYZX',
       tag: 'picker',
-      color: new Vector4( 1, 1, 1, PICKER_ALPHA ),
+      color: new Vector4( 1, 1, 1, PICKER_DEBUG_ALPHA ),
       position: new Vector3( 1.1, 0, 0 ),
       rotation: new Euler( Math.PI / 4, 0, - Math.PI / 2 ),
     }
@@ -627,7 +621,7 @@ export const scaleHelperGeometrySpec: [ Mesh | Line, ControlsHelperGeometrySpec 
       type: 'scale',
       axis: 'XYZY',
       tag: 'picker',
-      color: new Vector4( 1, 1, 1, PICKER_ALPHA ),
+      color: new Vector4( 1, 1, 1, PICKER_DEBUG_ALPHA ),
       position: new Vector3( 0, 1.1, 0),
       rotation: new Euler( 0, Math.PI / 4, 0 ),
     }
@@ -637,15 +631,12 @@ export const scaleHelperGeometrySpec: [ Mesh | Line, ControlsHelperGeometrySpec 
       type: 'scale',
       axis: 'XYZZ',
       tag: 'picker',
-      color: new Vector4( 1, 1, 1, PICKER_ALPHA ),
+      color: new Vector4( 1, 1, 1, PICKER_DEBUG_ALPHA ),
       position: new Vector3( 0, 0, 1.1 ),
       rotation: new Euler( Math.PI / 2, Math.PI / 4, 0 ),
     }
   ], 
 ];
-
-const _cameraPosition = new Vector3();
-const _position = new Vector3();
 
 export class TransformHelper extends ControlsHelper {
   static readonly isTransformHelper = true;
@@ -660,7 +651,19 @@ export class TransformHelper extends ControlsHelper {
   showRotate = true;
   showScale = true;
 
+  // Hide translate and scale axis facing the camera
+  AXIS_HIDE_TRESHOLD = 0.99;
+  PLANE_HIDE_TRESHOLD = 0.9;
+  AXIS_FLIP_TRESHOLD = 0.0;
+
   protected _sizeAttenuation = 1;
+  protected readonly _cameraPosition = new Vector3();
+  protected readonly _position = new Vector3();
+
+  private readonly _tempMatrix = new Matrix4();
+  private readonly _dirVector = new Vector3( 0, 1, 0 );
+  private readonly _tempQuaternion = new Quaternion();
+  private readonly _tempQuaternion2 = new Quaternion();
 
   constructor() {
     super( [
@@ -696,32 +699,32 @@ export class TransformHelper extends ControlsHelper {
 
     if ( handleType === 'rotate' ) {
 
-      alignVector.copy( eye ).applyQuaternion( tempQuaternion.copy( quaternion ).invert() );
+      this._dirVector.copy( eye ).applyQuaternion( this._tempQuaternion.copy( quaternion ).invert() );
 
       // Hide handle pointing straight towards the camera
 
       if ( handleAxis.search( 'E' ) !== - 1 ) {
-        tempQuaternion2.setFromRotationMatrix( lookAtMatrix.lookAt( eye, zeroVector, unitY ) );
+        this._tempQuaternion2.setFromRotationMatrix( this._tempMatrix.lookAt( eye, UNIT[0], UNIT.Y ) );
         handle.quaternion.copy(this.quaternion).invert();
-        handle.quaternion.multiply( tempQuaternion2 );
+        handle.quaternion.multiply( this._tempQuaternion2 );
       }
       if ( handleAxis === 'X' ) {
-        tempQuaternion2.identity();
-        tempQuaternion.setFromAxisAngle( unitX, Math.atan2( - alignVector.y, alignVector.z ) );
-        tempQuaternion.multiplyQuaternions( tempQuaternion2, tempQuaternion );
-        handle.quaternion.copy( tempQuaternion );
+        this._tempQuaternion2.identity();
+        this._tempQuaternion.setFromAxisAngle( UNIT.X, Math.atan2( - this._dirVector.y, this._dirVector.z ) );
+        this._tempQuaternion.multiplyQuaternions( this._tempQuaternion2, this._tempQuaternion );
+        handle.quaternion.copy( this._tempQuaternion );
       }
       if ( handleAxis === 'Y' ) {
-        tempQuaternion2.identity();
-        tempQuaternion.setFromAxisAngle( unitY, Math.atan2( alignVector.x, alignVector.z ) );
-        tempQuaternion.multiplyQuaternions( tempQuaternion2, tempQuaternion );
-        handle.quaternion.copy( tempQuaternion );
+        this._tempQuaternion2.identity();
+        this._tempQuaternion.setFromAxisAngle( UNIT.Y, Math.atan2( this._dirVector.x, this._dirVector.z ) );
+        this._tempQuaternion.multiplyQuaternions( this._tempQuaternion2, this._tempQuaternion );
+        handle.quaternion.copy( this._tempQuaternion );
       }
       if ( handleAxis === 'Z' ) {
-        tempQuaternion2.identity();
-        tempQuaternion.setFromAxisAngle( unitZ, Math.atan2( alignVector.y, alignVector.x ) );
-        tempQuaternion.multiplyQuaternions( tempQuaternion2, tempQuaternion );
-        handle.quaternion.copy( tempQuaternion );
+        this._tempQuaternion2.identity();
+        this._tempQuaternion.setFromAxisAngle( UNIT.Z, Math.atan2( this._dirVector.y, this._dirVector.x ) );
+        this._tempQuaternion.multiplyQuaternions( this._tempQuaternion2, this._tempQuaternion );
+        handle.quaternion.copy( this._tempQuaternion );
       }
 
     } else {
@@ -729,7 +732,7 @@ export class TransformHelper extends ControlsHelper {
       // Flip handle to prevent occlusion by other handles
 
       if ( handleAxis.search( 'X' ) !== - 1 ) {
-        if ( alignVector.copy( unitX ).applyQuaternion( quaternion ).dot( eye ) < AXIS_FLIP_TRESHOLD ) {
+        if ( this._dirVector.copy( UNIT.X ).applyQuaternion( quaternion ).dot( eye ) < this.AXIS_FLIP_TRESHOLD ) {
           if ( handleTag === 'fwd' ) {
             handle.visible = false;
           } else {
@@ -740,7 +743,7 @@ export class TransformHelper extends ControlsHelper {
         }
       }
       if ( handleAxis.search( 'Y' ) !== - 1 ) {
-        if ( alignVector.copy( unitY ).applyQuaternion( quaternion ).dot( eye ) < AXIS_FLIP_TRESHOLD ) {
+        if ( this._dirVector.copy( UNIT.Y ).applyQuaternion( quaternion ).dot( eye ) < this.AXIS_FLIP_TRESHOLD ) {
           if ( handleTag === 'fwd' ) {
             handle.visible = false;
           } else {
@@ -751,7 +754,7 @@ export class TransformHelper extends ControlsHelper {
         }
       }
       if ( handleAxis.search( 'Z' ) !== - 1 ) {
-        if ( alignVector.copy( unitZ ).applyQuaternion( quaternion ).dot( eye ) < AXIS_FLIP_TRESHOLD ) {
+        if ( this._dirVector.copy( UNIT.Z ).applyQuaternion( quaternion ).dot( eye ) < this.AXIS_FLIP_TRESHOLD ) {
           if ( handleTag === 'fwd' ) {
             handle.visible = false;
           } else {
@@ -771,25 +774,25 @@ export class TransformHelper extends ControlsHelper {
     const hideAllignedToYZ = handleAxis === 'YZ' || ( handleType === 'rotate' && handleAxis === 'X' && ( this.showTranslate || this.showScale ) );
     const hideAllignedToXZ = handleAxis === 'XZ' || ( handleType === 'rotate' && handleAxis === 'Y' && ( this.showTranslate || this.showScale ) );
 
-    const hide_treshold = AXIS_HIDE_TRESHOLD * ( handleType === 'scale' ? AXIS_HIDE_TRESHOLD * 0.95 : AXIS_HIDE_TRESHOLD );
-    const plane_hide_treshold = AXIS_HIDE_TRESHOLD * ( handleType === 'scale' ? PLANE_HIDE_TRESHOLD * 0.95 : PLANE_HIDE_TRESHOLD );
+    const hide_treshold = this.AXIS_HIDE_TRESHOLD * ( handleType === 'scale' ? this.AXIS_HIDE_TRESHOLD * 0.95 : this.AXIS_HIDE_TRESHOLD );
+    const plane_hide_treshold = this.AXIS_HIDE_TRESHOLD * ( handleType === 'scale' ? this.PLANE_HIDE_TRESHOLD * 0.95 : this.PLANE_HIDE_TRESHOLD );
 
-    if ( hideAllignedToX && Math.abs( alignVector.copy( unitX ).applyQuaternion( quaternion ).dot( eye ) ) > hide_treshold ) {
+    if ( hideAllignedToX && Math.abs( this._dirVector.copy( UNIT.X ).applyQuaternion( quaternion ).dot( eye ) ) > hide_treshold ) {
         handle.visible = false;
     }
-    if ( hideAllignedToY && Math.abs( alignVector.copy( unitY ).applyQuaternion( quaternion ).dot( eye ) ) > hide_treshold ) {
+    if ( hideAllignedToY && Math.abs( this._dirVector.copy( UNIT.Y ).applyQuaternion( quaternion ).dot( eye ) ) > hide_treshold ) {
         handle.visible = false;
     }
-    if ( hideAllignedToZ && Math.abs( alignVector.copy( unitZ ).applyQuaternion( quaternion ).dot( eye ) ) > hide_treshold ) {
+    if ( hideAllignedToZ && Math.abs( this._dirVector.copy( UNIT.Z ).applyQuaternion( quaternion ).dot( eye ) ) > hide_treshold ) {
         handle.visible = false;
     }
-    if ( hideAllignedToXY && Math.abs( alignVector.copy( unitZ ).applyQuaternion( quaternion ).dot( eye ) ) < ( 1 - plane_hide_treshold ) ) {
+    if ( hideAllignedToXY && Math.abs( this._dirVector.copy( UNIT.Z ).applyQuaternion( quaternion ).dot( eye ) ) < ( 1 - plane_hide_treshold ) ) {
         handle.visible = false;
     }
-    if ( hideAllignedToYZ && Math.abs( alignVector.copy( unitX ).applyQuaternion( quaternion ).dot( eye ) ) < ( 1 - plane_hide_treshold ) ) {
+    if ( hideAllignedToYZ && Math.abs( this._dirVector.copy( UNIT.X ).applyQuaternion( quaternion ).dot( eye ) ) < ( 1 - plane_hide_treshold ) ) {
         handle.visible = false;
     }
-    if ( hideAllignedToXZ && Math.abs( alignVector.copy( unitY ).applyQuaternion( quaternion ).dot( eye ) ) < ( 1 - plane_hide_treshold ) ) {
+    if ( hideAllignedToXZ && Math.abs( this._dirVector.copy( UNIT.Y ).applyQuaternion( quaternion ).dot( eye ) ) < ( 1 - plane_hide_treshold ) ) {
         handle.visible = false;
     }
 
@@ -797,14 +800,11 @@ export class TransformHelper extends ControlsHelper {
   updateMatrixWorld() {
     super.updateMatrixWorld();
 
-    _position.setFromMatrixPosition( this.matrixWorld );
-    _cameraPosition.setFromMatrixPosition( this.camera.matrixWorld );
-
     this._sizeAttenuation = 1;
     if ( this.camera instanceof OrthographicCamera ) {
       this._sizeAttenuation = ( this.camera.top - this.camera.bottom ) / this.camera.zoom;
     } else if ( this.camera instanceof PerspectiveCamera ) {
-      this._sizeAttenuation = _position.distanceTo( _cameraPosition ) * Math.min( 1.9 * Math.tan( Math.PI * this.camera.fov / 360 ) / this.camera.zoom, 7 );
+      this._sizeAttenuation = this._position.distanceTo( this._cameraPosition ) * Math.min( 1.9 * Math.tan( Math.PI * this.camera.fov / 360 ) / this.camera.zoom, 7 );
     }
 
     for ( let i = 0; i < this.children.length; i ++ ) {

@@ -1,45 +1,9 @@
-import { Mesh, MeshBasicMaterial, Object3D, Quaternion, Vector3, Color, Matrix4, PerspectiveCamera, OrthographicCamera, Intersection } from 'three';
+import { Mesh, MeshBasicMaterial, Object3D, Quaternion, Vector3, Color, Matrix4, Plane, PerspectiveCamera, OrthographicCamera, Intersection } from 'three';
 
-import { ControlsMixin, PointerTracker, CHANGE_EVENT, START_EVENT, END_EVENT } from './Controls';
-import { TransformHelper } from './TransformHelper';
+import { ControlsMixin, PointerTracker, CONTROL_CHANGE_EVENT, CONTROL_START_EVENT, CONTROL_END_EVENT } from './Controls';
+import { TransformHelper, UNIT } from './TransformHelper';
 
-const EPS = 0.001;
-const FADE_FACTOR = 0.15;
-
-const _unitX = new Vector3( 1, 0, 0 );
-const _unitY = new Vector3( 0, 1, 0 );
-const _unitZ = new Vector3( 0, 0, 1 );
-const _dirVector = new Vector3();
-const _identityQuaternion = new Quaternion();
-
-const _targetColor = new Color();
-let _targetOpacity = 0;
-
-const lerp = ( x: number, y: number, a: number ) => {
-  return x * (1 - a) + y * a;
-}
-const equals = ( c1: Color, c2: Color ) => {
-  return Math.abs( c1.r - c2.r ) < EPS && Math.abs( c1.g - c2.g ) < EPS && Math.abs( c1.b - c2.b ) < EPS;
-}
-
-const _tempVector = new Vector3();
-const _tempVector2 = new Vector3();
-const _tempQuaternion = new Quaternion();
-const _unit = {
-  X: new Vector3( 1, 0, 0 ),
-  Y: new Vector3( 0, 1, 0 ),
-  Z: new Vector3( 0, 0, 1 )
-};
-
-const _pointStart = new Vector3();
-const _pointEnd = new Vector3();
-const _offset = new Vector3();
-const _startNorm = new Vector3();
-const _endNorm = new Vector3();
-
-const _startMatrix = new Matrix4();
-const _endMatrix = new Matrix4();
-const _offsetMatrix = new Matrix4();
+export const TRANSFORM_CONTROL_CHANGE_EVENT = { type: 'transform-changed' };
 
 function getFirstIntersection(intersections: Intersection[], includeInvisible: boolean ): Intersection | null {
   for ( let i = 0; i < intersections.length; i ++ ) {
@@ -59,8 +23,8 @@ class TransformControls extends ControlsMixin( TransformHelper as any ) {
   camera: PerspectiveCamera | OrthographicCamera;
   domElement: HTMLElement;
   enabled = true;
-  enableDamping = true;
-  dampingFactor = 0.2;
+  enableDamping = false;
+  dampingFactor = 0.05;
 
   // TransformHelper API
 
@@ -83,9 +47,22 @@ class TransformControls extends ControlsMixin( TransformHelper as any ) {
   translationSnap = 0;
   rotationSnap = 0;
   scaleSnap = 0;
-  avoidGrazingAngles = true;
+  minGrazingAngle = 30;
 
-  needsAnimation = false;
+  FADE_EPS = 0.001;
+  FADE_FACTOR = 0.15;
+
+  private _needsAnimationFrame = false;
+
+  private readonly _pointStart = new Vector3();
+  private readonly _pointEnd = new Vector3();
+  private readonly _offset = new Vector3();
+  private readonly _startNorm = new Vector3();
+  private readonly _endNorm = new Vector3();
+
+  private readonly _startMatrix = new Matrix4();
+  private readonly _endMatrix = new Matrix4();
+  private readonly _offsetMatrix = new Matrix4();
 
   private readonly _cameraPosition = new Vector3();
   private readonly _cameraQuaternion = new Quaternion();
@@ -112,6 +89,16 @@ class TransformControls extends ControlsMixin( TransformHelper as any ) {
 
   private readonly _rotationAxis = new Vector3();
   private _rotationAngle = 0;
+
+  private readonly _tempVector = new Vector3();
+  private readonly _tempQuaternion = new Quaternion();
+  private readonly _targetColor = new Color();
+  private readonly _dirX = new Vector3( 1, 0, 0 );
+  private readonly _dirY = new Vector3( 0, 1, 0 );
+  private readonly _dirZ = new Vector3( 0, 0, 1 );
+  private readonly _dirVector = new Vector3();
+  private readonly _identityQuaternion = new Quaternion();
+  private readonly _plane = new Plane();
 
   constructor ( camera: PerspectiveCamera | OrthographicCamera, domElement: HTMLElement ) {
     super( camera, domElement );
@@ -141,7 +128,7 @@ class TransformControls extends ControlsMixin( TransformHelper as any ) {
     this.observeProperty( 'showTranslate' );
     this.observeProperty( 'showRotate' );
     this.observeProperty( 'showScale' );
-    this.observeProperty( 'needsAnimation', this.onNeedsAnimationChanged );
+    this.observeProperty( '_needsAnimationFrame', this.onNeedsAnimationChanged );
 
     // Deprecation warnings
     Object.defineProperty( this, 'mode', {
@@ -151,11 +138,11 @@ class TransformControls extends ControlsMixin( TransformHelper as any ) {
     });
   }
   onNeedsAnimationChanged() {
-    // console.log(this.needsAnimation);
+    // console.log(this._needsAnimationFrame);
     cancelAnimationFrame(this._animFrame);
-    if (this.needsAnimation) this._animFrame = requestAnimationFrame(()=>{
-      this.dispatchEvent(CHANGE_EVENT);
-      this.needsAnimation = false;
+    if (this._needsAnimationFrame) this._animFrame = requestAnimationFrame(()=>{
+      this.dispatchEvent(CONTROL_CHANGE_EVENT);
+      this._needsAnimationFrame = false;
     });
   }
 
@@ -163,6 +150,13 @@ class TransformControls extends ControlsMixin( TransformHelper as any ) {
     const handleType = handle.userData.type;
     const handleAxis = handle.userData.axis;
     const handleTag = handle.userData.tag;
+
+    const lerp = ( x: number, y: number, a: number ) => {
+      return x * (1 - a) + y * a;
+    }
+    const equals = ( c1: Color, c2: Color ) => {
+      return Math.abs( c1.r - c2.r ) < this.FADE_EPS && Math.abs( c1.g - c2.g ) < this.FADE_EPS && Math.abs( c1.b - c2.b ) < this.FADE_EPS;
+    }
 
     if ( handleTag !== 'picker' ) {
 
@@ -186,24 +180,24 @@ class TransformControls extends ControlsMixin( TransformHelper as any ) {
         }
       }
 
-      _targetColor.copy( material.color );
-      _targetOpacity = material.opacity;
+      this._targetColor.copy( material.color );
+      let _targetOpacity = material.opacity;
 
       if ( highlight === 0 ) {
-        _targetColor.lerp( material.userData.color, FADE_FACTOR );
-        _targetOpacity = lerp( _targetOpacity, material.userData.opacity, FADE_FACTOR );
+        this._targetColor.lerp( material.userData.color, this.FADE_FACTOR );
+        _targetOpacity = lerp( _targetOpacity, material.userData.opacity, this.FADE_FACTOR );
       } else if ( highlight === -1 ) {
-        _targetOpacity = lerp( _targetOpacity, material.userData.opacity * 0.125, FADE_FACTOR );
-        _targetColor.lerp( material.userData.highlightColor, FADE_FACTOR );
+        _targetOpacity = lerp( _targetOpacity, material.userData.opacity * 0.125, this.FADE_FACTOR );
+        this._targetColor.lerp( material.userData.highlightColor, this.FADE_FACTOR );
       } else if ( highlight === 1 ) {
-        _targetOpacity = lerp( _targetOpacity, material.userData.highlightOpacity, FADE_FACTOR );
-        _targetColor.lerp( material.userData.highlightColor, FADE_FACTOR );
+        _targetOpacity = lerp( _targetOpacity, material.userData.highlightOpacity, this.FADE_FACTOR );
+        this._targetColor.lerp( material.userData.highlightColor, this.FADE_FACTOR );
       }
 
-      if ( !equals( material.color, _targetColor ) || !(Math.abs( material.opacity - _targetOpacity ) < EPS) ) {
-        material.color.copy( _targetColor );
+      if ( !equals( material.color, this._targetColor ) || !(Math.abs( material.opacity - _targetOpacity ) < this.FADE_EPS) ) {
+        material.color.copy( this._targetColor );
         material.opacity = _targetOpacity;
-        this.needsAnimation = true;
+        this._needsAnimationFrame = true;
       }
     }
   }
@@ -227,56 +221,55 @@ class TransformControls extends ControlsMixin( TransformHelper as any ) {
       this._parentQuaternionInv.copy( this._parentQuaternion ).invert();
       this._worldQuaternionInv.copy( this._worldQuaternion ).invert();
     }
-    this.camera.updateMatrixWorld();
     this.camera.matrixWorld.decompose( this._cameraPosition, this._cameraQuaternion, this._cameraScale ); 
     this.eye.copy( this._cameraPosition ).sub( this._worldPosition ).normalize();
     this.position.copy( this._worldPosition );
-    this.quaternion.copy( this.space === 'local' ? this._worldQuaternion : _identityQuaternion );
+    this.quaternion.copy( this.space === 'local' ? this._worldQuaternion : this._identityQuaternion );
     super.updateMatrixWorld();
   }
 
   getPlaneNormal(): Vector3 {
-    _unitX.set( 1, 0, 0 ).applyQuaternion( this.space === 'local' ? this._worldQuaternion : _identityQuaternion );
-    _unitY.set( 0, 1, 0 ).applyQuaternion( this.space === 'local' ? this._worldQuaternion : _identityQuaternion );
-    _unitZ.set( 0, 0, 1 ).applyQuaternion( this.space === 'local' ? this._worldQuaternion : _identityQuaternion );
+    this._dirX.set( 1, 0, 0 ).applyQuaternion( this.space === 'local' ? this._worldQuaternion : this._identityQuaternion );
+    this._dirY.set( 0, 1, 0 ).applyQuaternion( this.space === 'local' ? this._worldQuaternion : this._identityQuaternion );
+    this._dirZ.set( 0, 0, 1 ).applyQuaternion( this.space === 'local' ? this._worldQuaternion : this._identityQuaternion );
     // Align the plane for current transform mode, axis and space.
     switch ( this.activeMode ) {
       case 'translate':
       case 'scale':
         switch ( this.activeAxis ) {
           case 'X':
-            _dirVector.set( 0, 0, 1 ).applyQuaternion( this.camera.quaternion ).normalize().cross( _unitX ).cross( _unitX );
+            this._dirVector.set( 0, 0, 1 ).applyQuaternion( this.camera.quaternion ).normalize().cross( this._dirX ).cross( this._dirX );
             break;
           case 'Y':
-            _dirVector.set( 0, 0, 1 ).applyQuaternion( this.camera.quaternion ).normalize().cross( _unitY ).cross( _unitY );
+            this._dirVector.set( 0, 0, 1 ).applyQuaternion( this.camera.quaternion ).normalize().cross( this._dirY ).cross( this._dirY );
             break;
             case 'Z':
-            _dirVector.set( 0, 0, 1 ).applyQuaternion( this.camera.quaternion ).normalize().cross( _unitZ ).cross( _unitZ );
+            this._dirVector.set( 0, 0, 1 ).applyQuaternion( this.camera.quaternion ).normalize().cross( this._dirZ ).cross( this._dirZ );
             break;
           case 'XY':
-            _dirVector.copy( _unitZ );
+            this._dirVector.copy( this._dirZ );
             break;
           case 'YZ':
-            _dirVector.copy( _unitX );
+            this._dirVector.copy( this._dirX );
             break;
           case 'XZ':
-            _dirVector.copy( _unitY );
+            this._dirVector.copy( this._dirY );
             break;
           case 'XYZ':
           case 'XYZX':
           case 'XYZY':
           case 'XYZZ':
           case 'E':
-            _dirVector.set( 0, 0, 1 ).applyQuaternion( this.camera.quaternion ).normalize();
+            this._dirVector.set( 0, 0, 1 ).applyQuaternion( this.camera.quaternion ).normalize();
             break;
         }
         break;
       case 'rotate':
       default:
         // special case for rotate
-        _dirVector.set( 0, 0, 1 ).applyQuaternion( this.camera.quaternion ).normalize();
+        this._dirVector.set( 0, 0, 1 ).applyQuaternion( this.camera.quaternion ).normalize();
     }
-    return _dirVector;
+    return this._dirVector;
   }
 
   onTrackedPointerHover( pointer: PointerTracker ): void {
@@ -327,8 +320,10 @@ class TransformControls extends ControlsMixin( TransformHelper as any ) {
       this.object.matrixWorld.decompose( this._worldPositionStart, this._worldQuaternionStart, this._worldScaleStart );
 
       this.dragging = true
-      _startMatrix.copy( this.object.matrix );
-      this.dispatchEvent( Object.assign( { object: this.object }, START_EVENT ) );
+      this._startMatrix.copy( this.object.matrix );
+      this.dispatchEvent( Object.assign( { object: this.object }, CONTROL_START_EVENT ) );
+      // TODO: Deprecate
+      this.dispatchEvent( { type: 'mouseDown'} );
     }
   }
 
@@ -343,34 +338,35 @@ class TransformControls extends ControlsMixin( TransformHelper as any ) {
       space = 'world';
     }
     if ( !object || axis === '' || this.dragging === false || pointer.button !== 0 ) return;
-    const intersection = pointer.projectOnPlane( _tempVector.copy( this._worldPosition ), this.getPlaneNormal(), this.avoidGrazingAngles );
+    this._plane.setFromNormalAndCoplanarPoint( this.getPlaneNormal(), this._worldPosition );
+    const intersection = pointer.projectOnPlane( this._plane, this.minGrazingAngle );
 
     if ( !intersection ) return; // TODO: handle intersection miss
 
-    _pointStart.copy( intersection.start ).sub( this._worldPositionStart );
-    _pointEnd.copy( intersection.current ).sub( this._worldPositionStart );
+    this._pointStart.copy( intersection.start ).sub( this._worldPositionStart );
+    this._pointEnd.copy( intersection.current ).sub( this._worldPositionStart );
 
     if ( mode === 'translate' ) {
       // Apply translate
-      _offset.copy( _pointEnd ).sub( _pointStart );
+      this._offset.copy( this._pointEnd ).sub( this._pointStart );
       if ( space === 'local' ) {
-        _offset.applyQuaternion( this._quaternionStartInv );
+        this._offset.applyQuaternion( this._quaternionStartInv );
       }
 
-      if ( axis.indexOf( 'X' ) === - 1 ) _offset.x = 0
-      if ( axis.indexOf( 'Y' ) === - 1 ) _offset.y = 0
-      if ( axis.indexOf( 'Z' ) === - 1 ) _offset.z = 0;
+      if ( axis.indexOf( 'X' ) === - 1 ) this._offset.x = 0
+      if ( axis.indexOf( 'Y' ) === - 1 ) this._offset.y = 0
+      if ( axis.indexOf( 'Z' ) === - 1 ) this._offset.z = 0;
 
       if ( space === 'local' ) {
-        _offset.applyQuaternion( this._quaternionStart ).divide( this._parentScale );
+        this._offset.applyQuaternion( this._quaternionStart ).divide( this._parentScale );
       } else {
-        _offset.applyQuaternion( this._parentQuaternionInv ).divide( this._parentScale );
+        this._offset.applyQuaternion( this._parentQuaternionInv ).divide( this._parentScale );
       }
-      object.position.copy( _offset ).add( this._positionStart );
+      object.position.copy( this._offset ).add( this._positionStart );
       // Apply translation snap
       if ( this.translationSnap ) {
         if ( space === 'local' ) {
-          object.position.applyQuaternion( _tempQuaternion.copy( this._quaternionStart ).invert() );
+          object.position.applyQuaternion( this._tempQuaternion.copy( this._quaternionStart ).invert() );
           if ( axis.search( 'X' ) !== - 1 ) {
             object.position.x = Math.round( object.position.x / this.translationSnap ) * this.translationSnap;
           }
@@ -384,7 +380,7 @@ class TransformControls extends ControlsMixin( TransformHelper as any ) {
         }
         if ( space === 'world' ) {
           if ( object.parent ) {
-            object.position.add( _tempVector.setFromMatrixPosition( object.parent.matrixWorld ) );
+            object.position.add( this._parentPosition );
           }
           if ( axis.search( 'X' ) !== - 1 ) {
             object.position.x = Math.round( object.position.x / this.translationSnap ) * this.translationSnap;
@@ -396,33 +392,33 @@ class TransformControls extends ControlsMixin( TransformHelper as any ) {
             object.position.z = Math.round( object.position.z / this.translationSnap ) * this.translationSnap;
           }
           if ( object.parent ) {
-            object.position.sub( _tempVector.setFromMatrixPosition( object.parent.matrixWorld ) );
+            object.position.sub( this._parentPosition );
           }
         }
       }
     } else if ( mode === 'scale' ) {
       if ( axis.search( 'XYZ' ) !== - 1 ) {
-        let d = _pointEnd.length() / _pointStart.length();
-        if ( _pointEnd.dot( _pointStart ) < 0 ) d *= - 1;
-        _tempVector2.set( d, d, d );
+        let d = this._pointEnd.length() / this._pointStart.length();
+        if ( this._pointEnd.dot( this._pointStart ) < 0 ) d *= - 1;
+        this._offset.set( d, d, d );
       } else {
-        _tempVector.copy( _pointStart );
-        _tempVector2.copy( _pointEnd );
-        _tempVector.applyQuaternion( this._worldQuaternionInv );
-        _tempVector2.applyQuaternion( this._worldQuaternionInv );
-        _tempVector2.divide( _tempVector );
+        this._tempVector.copy( this._pointStart );
+        this._offset.copy( this._pointEnd );
+        this._tempVector.applyQuaternion( this._worldQuaternionInv );
+        this._offset.applyQuaternion( this._worldQuaternionInv );
+        this._offset.divide( this._tempVector );
         if ( axis.search( 'X' ) === - 1 ) {
-          _tempVector2.x = 1;
+          this._offset.x = 1;
         }
         if ( axis.search( 'Y' ) === - 1 ) {
-          _tempVector2.y = 1;
+          this._offset.y = 1;
         }
         if ( axis.search( 'Z' ) === - 1 ) {
-          _tempVector2.z = 1;
+          this._offset.z = 1;
         }
       }
       // Apply scale
-      object.scale.copy( this._scaleStart ).multiply( _tempVector2 );
+      object.scale.copy( this._scaleStart ).multiply( this._offset );
       if ( this.scaleSnap ) {
         if ( axis.search( 'X' ) !== - 1 ) {
           object.scale.x = Math.round( object.scale.x / this.scaleSnap ) * this.scaleSnap || this.scaleSnap;
@@ -435,46 +431,52 @@ class TransformControls extends ControlsMixin( TransformHelper as any ) {
         }
       }
     } else if ( mode === 'rotate' ) {
-      _offset.copy( _pointEnd ).sub( _pointStart );
-      const ROTATION_SPEED = 20 / this._worldPosition.distanceTo( _tempVector.setFromMatrixPosition( this.camera.matrixWorld ) );
+      this._offset.copy( this._pointEnd ).sub( this._pointStart );
+      const ROTATION_SPEED = 20 / this._worldPosition.distanceTo( this._cameraPosition );
       if ( axis === 'E' ) {
         this._rotationAxis.copy( this.eye );
-        this._rotationAngle = _pointEnd.angleTo( _pointStart );
-        _startNorm.copy( _pointStart ).normalize();
-        _endNorm.copy( _pointEnd ).normalize();
-        this._rotationAngle *= ( _endNorm.cross( _startNorm ).dot( this.eye ) < 0 ? 1 : - 1 );
+        this._rotationAngle = this._pointEnd.angleTo( this._pointStart );
+        this._startNorm.copy( this._pointStart ).normalize();
+        this._endNorm.copy( this._pointEnd ).normalize();
+        this._rotationAngle *= ( this._endNorm.cross( this._startNorm ).dot( this.eye ) < 0 ? 1 : - 1 );
       } else if ( axis === 'XYZE' ) {
-        this._rotationAxis.copy( _offset ).cross( this.eye ).normalize();
-        this._rotationAngle = _offset.dot( _tempVector.copy( this._rotationAxis ).cross( this.eye ) ) * ROTATION_SPEED;
+        this._rotationAxis.copy( this._offset ).cross( this.eye ).normalize();
+        this._rotationAngle = this._offset.dot( this._tempVector.copy( this._rotationAxis ).cross( this.eye ) ) * ROTATION_SPEED;
       } else if ( axis === 'X' || axis === 'Y' || axis === 'Z' ) {
-        this._rotationAxis.copy( _unit[ axis as 'X' | 'Y' | 'Z' ] );
-        _tempVector.copy( _unit[ axis as 'X' | 'Y' | 'Z' ] );
+        this._rotationAxis.copy( UNIT[ axis as 'X' | 'Y' | 'Z' ] );
+        this._tempVector.copy( UNIT[ axis as 'X' | 'Y' | 'Z' ] );
         if ( space === 'local' ) {
-          _tempVector.applyQuaternion( this._worldQuaternion );
+          this._tempVector.applyQuaternion( this._worldQuaternion );
         }
-        this._rotationAngle = _offset.dot( _tempVector.cross( this.eye ).normalize() ) * ROTATION_SPEED;
+        this._rotationAngle = this._offset.dot( this._tempVector.cross( this.eye ).normalize() ) * ROTATION_SPEED;
       }
       // Apply rotation snap
       if ( this.rotationSnap ) this._rotationAngle = Math.round( this._rotationAngle / this.rotationSnap ) * this.rotationSnap;
       // Apply rotat
       if ( space === 'local' && axis !== 'E' && axis !== 'XYZE' ) {
         object.quaternion.copy( this._quaternionStart );
-        object.quaternion.multiply( _tempQuaternion.setFromAxisAngle( this._rotationAxis, this._rotationAngle ) ).normalize();
+        object.quaternion.multiply( this._tempQuaternion.setFromAxisAngle( this._rotationAxis, this._rotationAngle ) ).normalize();
       } else {
         this._rotationAxis.applyQuaternion( this._parentQuaternionInv );
-        object.quaternion.copy( _tempQuaternion.setFromAxisAngle( this._rotationAxis, this._rotationAngle ) );
+        object.quaternion.copy( this._tempQuaternion.setFromAxisAngle( this._rotationAxis, this._rotationAngle ) );
         object.quaternion.multiply( this._quaternionStart ).normalize();
       }
     }
-    this.dispatchEvent( CHANGE_EVENT );
+    this.updateMatrixWorld();
+    this.dispatchEvent( CONTROL_CHANGE_EVENT );
+    this._endMatrix.copy( object.matrix );
+    this._offsetMatrix.copy( this._startMatrix ).invert().multiply( this._endMatrix );
+    this.dispatchEvent( Object.assign( { object: this.object, startMatrix: this._startMatrix, currentMatrix: this._endMatrix }, TRANSFORM_CONTROL_CHANGE_EVENT ) );
   }
 
   onTrackedPointerUp( pointer: PointerTracker ): void {
     if ( pointer.button > 0 || !this.object ) return;
     if ( this.dragging ) { // this.activeAxis !== '' ?
-      _endMatrix.copy( this.object.matrix );
-      _offsetMatrix.copy( _startMatrix ).invert().multiply( _endMatrix );
-      this.dispatchEvent( Object.assign( { object: this.object, startMatrix: _startMatrix, endMatrix: _endMatrix }, END_EVENT ) );
+      this._endMatrix.copy( this.object.matrix );
+      this._offsetMatrix.copy( this._startMatrix ).invert().multiply( this._endMatrix );
+      this.dispatchEvent( Object.assign( { object: this.object, startMatrix: this._startMatrix, endMatrix: this._endMatrix }, CONTROL_END_EVENT ) );
+      // TODO: Deprecate
+      this.dispatchEvent( { type: 'mouseUp'} );
     }
     this.dragging = false
     this.activeAxis = '';
@@ -538,12 +540,12 @@ class TransformControls extends ControlsMixin( TransformHelper as any ) {
       return;
     }
     if ( type === 'objectChange' ) {
-      console.warn( `You are using deprecated "${type}" event. Use "change" event instead.` );
+      console.warn( `You are using deprecated "${type}" event. Use "transform-changed" event instead.` );
+      super.addEventListener( 'transform-changed', listener );
       return;
     }
     super.addEventListener( type, listener );
   }
-
 }
 
 export { TransformControls };

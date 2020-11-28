@@ -1,5 +1,5 @@
 import { MOUSE, TOUCH, Vector3, Quaternion, Spherical, PerspectiveCamera, OrthographicCamera } from 'three';
-import { PointerTracker, Callback, CHANGE_EVENT, START_EVENT, END_EVENT } from './Controls';
+import { PointerTracker, Callback, CONTROL_CHANGE_EVENT, CONTROL_START_EVENT, CONTROL_END_EVENT } from './Controls';
 import { CameraControls } from './CameraControls';
 
 // This set of controls performs orbiting, dollying ( zooming ), and panning.
@@ -155,7 +155,7 @@ class OrbitControls extends CameraControls {
 
   onTrackedPointerDown( pointer: PointerTracker, pointers: PointerTracker[] ): void {
     if ( pointers.length === 1 ) {
-      this.dispatchEvent( START_EVENT );
+      this.dispatchEvent( CONTROL_START_EVENT );
     }
   }
 
@@ -208,7 +208,7 @@ class OrbitControls extends CameraControls {
 
   onTrackedPointerUp( pointer: PointerTracker, pointers: PointerTracker[] ): void {
     if ( pointers.length === 0 ) {
-      this.dispatchEvent( END_EVENT );
+      this.dispatchEvent( CONTROL_END_EVENT );
       this._interacting = false;
     }
   }
@@ -236,7 +236,7 @@ class OrbitControls extends CameraControls {
     _offset.setFromSpherical( this._spherical );
     this.camera.position.copy( this.target ).add( _offset );
     this.camera.lookAt( this.target );
-    this.dispatchEvent( CHANGE_EVENT );
+    this.dispatchEvent( CONTROL_CHANGE_EVENT );
   }
 
   _pointerPan( pointer: PointerTracker ): void {
@@ -278,7 +278,7 @@ class OrbitControls extends CameraControls {
     _offset.copy( movement ).multiplyScalar( this.panSpeed );
     this.target.sub( _offset );
     this.camera.position.sub( _offset );
-    this.dispatchEvent( CHANGE_EVENT );
+    this.dispatchEvent( CONTROL_CHANGE_EVENT );
   }
 
   _pointerRotate( pointer: PointerTracker ): void {
@@ -339,7 +339,7 @@ class OrbitControls extends CameraControls {
     _offset.applyQuaternion( _quatInverse );
     this.camera.position.copy( this.target ).add( _offset );
     this.camera.lookAt( this.target );
-    this.dispatchEvent( CHANGE_EVENT );
+    this.dispatchEvent( CONTROL_CHANGE_EVENT );
   }
 
  }
