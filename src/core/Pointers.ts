@@ -1,4 +1,4 @@
-import { Vector2, Vector3, Plane, Intersection, Object3D, PerspectiveCamera, OrthographicCamera, Raycaster, Ray, MathUtils } from 'three';
+import { Vector2, Vector3, Plane, Intersection, Object3D, Camera, PerspectiveCamera, OrthographicCamera, Raycaster, Ray, MathUtils } from 'three';
 
 // Keeps pointer movement data in 2D space
 class Pointer2D {
@@ -305,12 +305,12 @@ export class PointerTracker {
 }
 
 // Virtual "center" pointer tracker for multi-touch gestures.
-// TODO: test.
+// TODO: test!
 export class CenterPointerTracker extends PointerTracker {
   // Array of pointers to calculate centers from
   private _pointers: PointerTracker[] = [];
   private readonly _projected = new Pointer3D();
-  constructor( pointerEvent: PointerEvent, camera: PerspectiveCamera | OrthographicCamera ) {
+  constructor( pointerEvent: PointerEvent, camera: Camera ) {
     super( pointerEvent, camera );
     // Set center pointer read-only "type" and "pointerId" properties.
     Object.defineProperties( this, {

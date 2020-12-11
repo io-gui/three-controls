@@ -1,6 +1,6 @@
-import { Plane, Object3D, PerspectiveCamera, OrthographicCamera, Event as ThreeEvent, WebXRManager } from 'three';
+import { Plane, Object3D, Event as ThreeEvent, WebXRManager, PerspectiveCamera, OrthographicCamera } from 'three';
 import { PointerTracker, CenterPointerTracker } from './Pointers';
-import { Base, Callback, EVENT } from './Base';
+import { Base, Callback, Camera, EVENT } from './Base';
 
 /**
  * `Controls`: Generic class for interactive threejs viewport controls. It solves some of the most common and complex problems in threejs control designs.
@@ -30,32 +30,21 @@ import { Base, Callback, EVENT } from './Base';
  */
 export class Controls extends Base {
   // Public API
-  camera: PerspectiveCamera | OrthographicCamera;
-  domElement: HTMLElement;
   enabled = true;
   xr: WebXRManager | null = null;
   enableDamping = false;
   dampingFactor = 0.05;
   // Tracked pointers and keys
-  _hoverPointer: PointerTracker | null = null;
-  _centerPointer: CenterPointerTracker | null = null;
-  _simulatedPointer: PointerTracker | null = null;
-  _pointers: PointerTracker[] = [];
-  _xrControllers: Object3D[] = [];
-  _xrPointers: PointerTracker[] = [];
-  _keys: number[] = [];
+  private _hoverPointer: PointerTracker | null = null;
+  private _centerPointer: CenterPointerTracker | null = null;
+  private _simulatedPointer: PointerTracker | null = null;
+  private _pointers: PointerTracker[] = [];
+  private _xrControllers: Object3D[] = [];
+  private _xrPointers: PointerTracker[] = [];
+  private _keys: number[] = [];
   protected readonly _plane = new Plane();
-  constructor( camera: PerspectiveCamera | OrthographicCamera, domElement: HTMLElement ) {
+  constructor( camera?: Camera, domElement?: HTMLElement ) {
     super();
-
-    this.camera = camera;
-    this.domElement = domElement;
-
-    // Runtime contructor arguments check 
-    if ( this.camera === undefined ) console.warn( 'THREE.Controls: "camera" parameter is now mandatory!' );
-    if ( !( this.camera instanceof PerspectiveCamera ) && !( this.camera instanceof OrthographicCamera ) ) console.warn( 'THREE.Controls: Unsupported camera type!' );
-    if ( this.domElement === undefined ) console.warn( 'THREE.Controls: "domElement" parameter is now mandatory!' );
-    if ( this.domElement === document as unknown ) console.error( 'THREE.Controls: "domElement" should be "renderer.domElement"!' );
 
     // Bind handler functions
     this._preventDefault = this._preventDefault.bind( this );
@@ -83,7 +72,15 @@ export class Controls extends Base {
     this.observeProperty( 'enabled', this._connect, this._disconnect );
     this.observeProperty( 'xr', this._connectXR, this._disconnectXR );
 
-    this._connect();
+    if ( camera && domElement ) {
+      if ( !( camera instanceof PerspectiveCamera ) && !( camera instanceof OrthographicCamera ) ) console.warn( 'THREE.Controls: Unsupported camera type!' );
+      if ( domElement === document as unknown ) console.error( 'THREE.Controls: "domElement" cannot be document!' );
+      this.registerViewport( camera, domElement );
+    }
+  }
+  registerViewport(camera: Camera, domElement: HTMLElement) {
+    super.registerViewport(camera, domElement);
+    if (this.enabled) this._connect();
   }
   _connect() {
     this.domElement.addEventListener( 'contextmenu', this._onContextMenu, false );
@@ -230,7 +227,7 @@ export class Controls extends Base {
     const pointers = this._pointers;
     const index = pointers.findIndex( pointer => pointer.pointerId === event.pointerId );
     let pointer = pointers[index];
-    if ( pointer ) {
+    if ( pointer && this.camera ) {
       pointer.update( event, this.camera );
       const x = Math.abs( pointer.view.current.x );
       const y = Math.abs( pointer.view.current.y );

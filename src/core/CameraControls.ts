@@ -9,9 +9,7 @@ const cameraTargets = new WeakMap();
  * `CameraControls`: Generic superclass for interactive camera controls.
  */
 export class CameraControls extends Controls {
-  eye = new Vector3();
   target = new Vector3();
-  lookAtTarget = true;
   // Internal utility variables
   private readonly _resetQuaternion = new Quaternion();
   private readonly _resetPosition = new Vector3();
@@ -24,11 +22,6 @@ export class CameraControls extends Controls {
 
     // Save initial camera state
     this.saveCameraState();
-
-    const eye = new Vector3();
-    Object.defineProperty( this, 'eye', {
-      get: () => eye.set( 0, 0, 1 ).applyQuaternion( this.camera.quaternion ).normalize()
-    });
 
     // Camera target used for camera controls and pointer view -> world space conversion. 
     const target = cameraTargets.get( this.camera ) || cameraTargets.set( this.camera, new Vector3() ).get( this.camera );
@@ -44,18 +37,18 @@ export class CameraControls extends Controls {
     });
     target.set = ( x: number, y: number, z: number ) => {
       Vector3.prototype.set.call( target, x, y, z );
-      if ( this.enabled && this.lookAtTarget ) this.camera.lookAt( target );
+      if ( this.enabled ) this.camera.lookAt( target );
       this.dispatchEvent( EVENT.CHANGE );
       return target;
     }
     target.copy = ( value: Vector3 ) => {
       Vector3.prototype.copy.call( target, value );
-      if ( this.enabled && this.lookAtTarget ) this.camera.lookAt( target );
+      if ( this.enabled ) this.camera.lookAt( target );
       this.dispatchEvent( EVENT.CHANGE );
       return target;
     }
     setTimeout( () => {
-      if ( this.enabled && this.lookAtTarget ) this.camera.lookAt( target );
+      if ( this.enabled ) this.camera.lookAt( target );
       this.dispatchEvent( EVENT.CHANGE );
     } );
   }

@@ -1,6 +1,6 @@
 import { Vector3, Object3D, Intersection, PerspectiveCamera, OrthographicCamera, Event as ThreeEvent } from 'three';
-import { PointerTracker } from './core/Controls';
-import { ObjectControls } from './core/ObjectControls';
+import { PointerTracker } from './core/Pointers';
+import { Controls } from './core/Controls';
 
 let _intersections: Intersection[];
 const _hoveredObjects: Record<string, Object3D> = {};
@@ -8,7 +8,7 @@ const _selectedObjects: Record<string, Object3D> = {};
 const _eye = new Vector3();
 const _target = new Vector3();
 
-export class DragControls extends ObjectControls {
+export class DragControls extends Controls {
   // Public API
   objects: Object3D[];
   transformGroup = false;
@@ -20,20 +20,6 @@ export class DragControls extends ObjectControls {
     this.addEventListener( 'enabled-changed', ( event: ThreeEvent ) => {
       if ( !event.value ) this.domElement.style.cursor = '';
     } );
-
-    // Deprecation warnings
-    this.getObjects = function() {
-      console.warn( 'THREE.DragControls: getObjects() is deprecated. Use `objects` property instead.' );
-      return this.objects;
-    }
-    this.activate = function() {
-      this.enabled = true;
-      console.warn( 'THREE.DragControls: activate() is deprecated. Set `enabled` property to `false` instead.' );
-    }
-    this.deactivate = function() {
-      this.enabled = false;
-      console.warn( 'THREE.DragControls: activate() is deprecated. Set `enabled` property to `true` instead.' );
-    }
   }
 
   onTrackedPointerHover( pointer: PointerTracker ): void {
@@ -94,5 +80,19 @@ export class DragControls extends ObjectControls {
       }
     }
     if ( pointers.length === 0 ) this.domElement.style.cursor = Object.keys( _hoveredObjects ).length ? 'pointer' : 'auto';
+  }
+
+  // Deprecation warnings
+  getObjects() {
+    console.warn( 'THREE.DragControls: getObjects() is deprecated. Use `objects` property instead.' );
+    return this.objects;
+  }
+  activate() {
+    this.enabled = true;
+    console.warn( 'THREE.DragControls: activate() is deprecated. Set `enabled` property to `false` instead.' );
+  }
+  deactivate() {
+    this.enabled = false;
+    console.warn( 'THREE.DragControls: activate() is deprecated. Set `enabled` property to `true` instead.' );
   }
 }

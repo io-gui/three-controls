@@ -1,4 +1,5 @@
-import { Vector3, Vector4, Euler, Quaternion, WebGLRenderer, Scene, Mesh, Line, Camera, PerspectiveCamera, OrthographicCamera, DoubleSide, LineBasicMaterial, MeshBasicMaterial } from 'three';
+import { Vector3, Vector4, Euler, Mesh, Line, DoubleSide, LineBasicMaterial, MeshBasicMaterial } from 'three';
+import { Base } from './Base';
 
 export const helperMaterial = new MeshBasicMaterial( {
   depthTest: false,
@@ -30,15 +31,7 @@ export interface HelperGeometrySpec {
   tag?: string,
 }
 
-export class Helper extends Mesh {
-  camera: PerspectiveCamera | OrthographicCamera = new PerspectiveCamera();
-  eye = new Vector3();
-  protected readonly _cameraPosition = new Vector3();
-  protected readonly _cameraQuaternion = new Quaternion();
-  protected readonly _cameraScale = new Vector3();
-  protected readonly _position = new Vector3();
-  protected readonly _quaternion = new Quaternion();
-  protected readonly _scale = new Vector3();
+export class Helper extends Base {
   constructor( helperMap?: [ Mesh | Line, HelperGeometrySpec ][] ) {
     super();
     if ( helperMap ) {
@@ -78,19 +71,6 @@ export class Helper extends Mesh {
 
         this.add( object );
       }
-    }
-  }
-  onBeforeRender = (renderer: WebGLRenderer, scene: Scene, camera: Camera) => {
-    this.camera = camera as PerspectiveCamera | OrthographicCamera;
-  }
-  updateMatrixWorld() {
-    super.updateMatrixWorld();
-    this.matrixWorld.decompose( this._position, this._quaternion, this._scale );
-    this.camera.matrixWorld.decompose( this._cameraPosition, this._cameraQuaternion, this._cameraScale ); 
-    if ( this.camera instanceof PerspectiveCamera ) {
-      this.eye.copy( this._cameraPosition ).sub( this._position ).normalize();
-    } else if ( this.camera instanceof OrthographicCamera ) {
-      this.eye.set( 0, 0, 1 ).applyQuaternion( this._cameraQuaternion );
     }
   }
 }

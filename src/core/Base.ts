@@ -1,6 +1,9 @@
+import { Vector3, Quaternion, WebGLRenderer, Scene, PerspectiveCamera, OrthographicCamera } from 'three';
+
 import { Mesh, Event as ThreeEvent } from 'three';
 
 export type Callback = ( callbackValue?: any ) => void;
+export type Camera = PerspectiveCamera | OrthographicCamera;
 
 export const EVENT: Record<string, ThreeEvent> = {
   CHANGE: { type: 'change' },
@@ -13,7 +16,18 @@ export const EVENT: Record<string, ThreeEvent> = {
  * `Base`: Base class for Objects with observable properties, change events and animation.
  */
 export class Base extends Mesh {
+  camera?: Camera;
+  domElement?: HTMLElement;
+  eye = new Vector3();
+  frustumCulled = false;
   protected needsAnimationFrame = false;
+  protected readonly _cameraPosition = new Vector3();
+  protected readonly _cameraQuaternion = new Quaternion();
+  protected readonly _cameraScale = new Vector3();
+  protected readonly _cameraOffset = new Vector3();
+  protected readonly _position = new Vector3();
+  protected readonly _quaternion = new Quaternion();
+  protected readonly _scale = new Vector3();
   private readonly _listeners: Record<string, Array<( event: Event ) => void>>;
   private readonly _animations: Callback[] = [];
   private _animationFrame = 0;
@@ -75,6 +89,7 @@ export class Base extends Mesh {
     if ( index !== -1 ) this._animations.splice( index, 1 );
     AnimationManagerSingleton.remove( callback );
   }
+  // Stops all animations.
   stopAllAnimation(): void {
     for ( let i = 0; i < this._animations.length; i++ ) {
       this.stopAnimation( this._animations[i] );
@@ -85,6 +100,28 @@ export class Base extends Mesh {
     if ( this._listeners && this._listeners[event.type] && this._listeners[event.type].length ) {
       Object.defineProperty( event, 'target', { writable: true });
       super.dispatchEvent( event );
+    }
+  }
+  onBeforeRender = (renderer: WebGLRenderer, scene: Scene, camera: Camera) => {
+    if ( this.camera !== camera || this.domElement !== renderer.domElement ) {
+      this.registerViewport(camera, renderer.domElement);
+    }
+  }
+  registerViewport(camera: Camera, domElement: HTMLElement) {
+    this.camera = camera;
+    this.domElement = domElement
+  }
+  updateMatrixWorld() {
+    super.updateMatrixWorld();
+    this.matrixWorld.decompose( this._position, this._quaternion, this._scale );
+    if ( this.camera ) {
+      this.camera.matrixWorld.decompose( this._cameraPosition, this._cameraQuaternion, this._cameraScale ); 
+      this._cameraOffset.copy( this._cameraPosition ).sub( this._position );
+      if ( this.camera instanceof OrthographicCamera ) {
+        this.eye.set( 0, 0, 1 ).applyQuaternion( this._cameraQuaternion );
+      } else {
+        this.eye.copy( this._cameraOffset ).normalize();
+      }
     }
   }
 }

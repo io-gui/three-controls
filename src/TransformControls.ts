@@ -3,7 +3,7 @@ import { Mesh, MeshBasicMaterial, Object3D, Quaternion, Vector3, Color, Matrix4,
 import { PointerTracker } from './core/Pointers';
 import { EVENT } from './core/Base';
 
-import { ObjectControls } from './core/ObjectControls';
+import { Controls } from './core/Controls';
 import { TransformHelper } from './TransformHelper';
 export { TransformHelper } from './TransformHelper';
 
@@ -18,17 +18,9 @@ function getFirstIntersection(intersections: Intersection[], includeInvisible: b
   return null;
 }
 
-class TransformControls extends ObjectControls {
+class TransformControls extends Controls {
   static readonly isTransformControls = true;
   static readonly type = 'TransformControls';
-
-  // Controls API
-
-  camera: PerspectiveCamera | OrthographicCamera;
-  domElement: HTMLElement;
-  enabled = true;
-  enableDamping = false;
-  dampingFactor = 0.05;
 
   // TransformHelper API
 
@@ -66,10 +58,6 @@ class TransformControls extends ObjectControls {
   private readonly _endMatrix = new Matrix4();
   private readonly _offsetMatrix = new Matrix4();
 
-  private readonly _cameraPosition = new Vector3();
-  private readonly _cameraQuaternion = new Quaternion();
-  private readonly _cameraScale = new Vector3();
-
   private readonly _parentPosition = new Vector3();
   private readonly _parentQuaternion = new Quaternion();
   private readonly _parentQuaternionInv = new Quaternion();
@@ -104,8 +92,8 @@ class TransformControls extends ObjectControls {
   private _helper = new TransformHelper();
   protected readonly _plane = new Plane();
 
-  constructor ( camera: PerspectiveCamera | OrthographicCamera, domElement: HTMLElement ) {
-    super( camera, domElement );
+  constructor () {
+    super();
 
     this.add( this._helper );
 
@@ -209,15 +197,23 @@ class TransformControls extends ObjectControls {
       this._parentQuaternionInv.copy( this._parentQuaternion ).invert();
       this._worldQuaternionInv.copy( this._worldQuaternion ).invert();
     }
-    this.camera.matrixWorld.decompose( this._cameraPosition, this._cameraQuaternion, this._cameraScale ); 
-    this.eye.copy( this._cameraPosition ).sub( this._worldPosition ).normalize();
     this.position.copy( this._worldPosition );
     this.quaternion.copy( this.space === 'local' ? this._worldQuaternion : this._identityQuaternion );
+
+    // Se helper visibility properties.
+    this._helper.size = this.size;
+    this._helper.showX = this.showX;
+    this._helper.showY = this.showY;
+    this._helper.showZ = this.showZ;
+    this._helper.showTranslate = this.showTranslate;
+    this._helper.showRotate = this.showRotate;
+    this._helper.showScale = this.showScale;
+
+    super.updateMatrixWorld();
 
     for ( let i = 0; i < this._helper.children.length; i ++ ) {
       this.updateHandle( this._helper.children[ i ] as Mesh );
     }
-    super.updateMatrixWorld();
   }
 
   getPlaneNormal(): Vector3 {
