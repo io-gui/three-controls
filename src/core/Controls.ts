@@ -1,4 +1,4 @@
-import { Vector2, Vector3, Plane, Intersection, Object3D, PerspectiveCamera, OrthographicCamera, Raycaster, Ray, EventDispatcher, Event as ThreeEvent, MathUtils, WebXRManager } from 'three';
+import { Vector2, Vector3, Plane, Intersection, Object3D, Mesh, PerspectiveCamera, OrthographicCamera, Raycaster, Ray, EventDispatcher, Event as ThreeEvent, MathUtils, WebXRManager } from 'three';
 
 export type Callback = ( callbackValue?: any ) => void;
 
@@ -10,8 +10,7 @@ export const CONTROL_DISPOSE_EVENT: ThreeEvent = { type: 'dispose' };
 type Constructor = new ( ...args: any[] ) => any;
 
 /**
- * `ControlsMixin`: Generic mixin for interactive threejs viewport controls.
- * It solves some of the most common and complex problems in threejs control designs.
+ * `ControlsMixin`: Generic mixin for interactive threejs viewport controls. It solves some of the most common and complex problems in threejs control designs.
  * 
  * ### Pointer Tracking ###
  *
@@ -50,11 +49,15 @@ export function ControlsMixin<Super extends Constructor>( superClass: Super ) {
     _centerPointer: CenterPointerTracker | null = null;
     _simulatedPointer: PointerTracker | null = null;
     _pointers: PointerTracker[] = [];
-    _xrControllers: PointerTracker[] = [];
+    _xrControllers: Object3D[] = [];
+    _xrPointers: PointerTracker[] = [];
     _animations: Callback[] = [];
     _keys: number[] = [];
     //
     _changeDispatched = false;
+    _animationFrame = 0;
+    _needsAnimationFrame = false;
+    // Internal utility variables
     constructor( ...args: any[] ) {
       super( ...args );
 
@@ -86,11 +89,15 @@ export function ControlsMixin<Super extends Constructor>( superClass: Super ) {
       this._disconnect = this._disconnect.bind( this );
       this._connectXR = this._connectXR.bind( this );
       this._disconnectXR = this._disconnectXR.bind( this );
+      this._onXRControllerDown = this._onXRControllerDown.bind( this );
+      this._onXRControllerMove = this._onXRControllerMove.bind( this );
+      this._onXRControllerUp = this._onXRControllerUp.bind( this );
+      this.onNeedsAnimationChanged = this.onNeedsAnimationChanged.bind(this);
 
       this.observeProperty( 'enabled', this._connect, this._disconnect );
       this.observeProperty( 'xr', this._connectXR, this._disconnectXR );
+      this.observeProperty( '_needsAnimationFrame', this.onNeedsAnimationChanged );
 
-      // Perform initial `connect()`
       this._connect();
     }
     // Adds property observing mechanism via getter/setter functions. Also emits '[property]-changed' event.
@@ -117,6 +124,15 @@ export function ControlsMixin<Super extends Constructor>( superClass: Super ) {
         }
       });
     }
+    // TODO: consider making this work with WebXR context animaiton frame?
+    onNeedsAnimationChanged() {
+      cancelAnimationFrame(this._animationFrame);
+      if (this._needsAnimationFrame) this._animationFrame = requestAnimationFrame( () => {
+        this.dispatchEvent(CONTROL_CHANGE_EVENT);
+        this._needsAnimationFrame = false;
+        this._animationFrame = 0;
+      } );
+    }
     // Adds animation callback to animation loop.
     startAnimation( callback: Callback ) {
       const index = this._animations.findIndex( animation => animation === callback );
@@ -129,7 +145,6 @@ export function ControlsMixin<Super extends Constructor>( superClass: Super ) {
       if ( index !== -1 ) this._animations.splice( index, 1 );
       AnimationManagerSingleton.remove( callback );
     }
-    // Internal lyfecycle method
     _connect() {
       this.domElement.addEventListener( 'contextmenu', this._onContextMenu, false );
       this.domElement.addEventListener( 'wheel', this._onWheel, {capture: false, passive: false });
@@ -145,12 +160,8 @@ export function ControlsMixin<Super extends Constructor>( superClass: Super ) {
       this.domElement.addEventListener( 'pointerup', this._onPointerUp, false );
       this.domElement.addEventListener( 'keydown', this._onKeyDown, false );
       this.domElement.addEventListener( 'keyup', this._onKeyUp, false );
-      // make sure element can receive keys.
-      if ( this.domElement.tabIndex === - 1 ) {
-        this.domElement.tabIndex = 0;
-      }
+      if ( this.xr ) this._connectXR();
     }
-    // Internal lyfecycle method
     _disconnect() {
       this.domElement.removeEventListener( 'contextmenu', this._onContextMenu, false );
       this.domElement.removeEventListener( 'wheel', this._onWheel);
@@ -163,6 +174,7 @@ export function ControlsMixin<Super extends Constructor>( superClass: Super ) {
       this.domElement.removeEventListener( 'pointerup', this._onPointerUp, false );
       this.domElement.removeEventListener( 'keydown', this._onKeyDown, false );
       this.domElement.removeEventListener( 'keyup', this._onKeyUp, false );
+      this._disconnectXR();
       // Release all captured pointers
       for ( let i = 0; i < this._pointers.length; i++ ) {
         this.domElement.releasePointerCapture( this._pointers[i].pointerId );
@@ -176,13 +188,64 @@ export function ControlsMixin<Super extends Constructor>( superClass: Super ) {
       this._keys.length = 0;
     }
     _connectXR() {
-      if (this.xr?.isPresenting) {
-        // TODO
+      if (this.xr) {
+        this._xrControllers = [
+          this.xr.getController( 0 ),
+          this.xr.getController( 1 )
+        ];
+        this._xrControllers[ 0 ].addEventListener( 'selectstart', this._onXRControllerDown );
+        this._xrControllers[ 0 ].addEventListener( 'change', this._onXRControllerMove );
+        this._xrControllers[ 0 ].addEventListener( 'selectend', this._onXRControllerUp );
+        this._xrControllers[ 1 ].addEventListener( 'selectstart', this._onXRControllerDown );
+        this._xrControllers[ 1 ].addEventListener( 'change', this._onXRControllerMove );
+        this._xrControllers[ 1 ].addEventListener( 'selectend', this._onXRControllerUp );
+
+        const event = {
+          target: this.domElement,
+          type: 'XRController',
+          clientX: this.domElement.clientWidth / 2,
+          clientY: this.domElement.clientHeight / 2,
+        }
+        this._xrPointers = [
+          new PointerTracker( Object.assign( { pointerId: 0 }, event ) as unknown as PointerEvent, this._xrControllers[ 0 ] ),
+          new PointerTracker( Object.assign( { pointerId: 1 }, event ) as unknown as PointerEvent, this._xrControllers[ 1 ] ),
+        ]
       }
     }
     _disconnectXR() {
-       // TODO
+      if (this._xrControllers.length) {
+        this._xrControllers[ 0 ].removeEventListener( 'selectstart', this._onXRControllerDown );
+        this._xrControllers[ 0 ].removeEventListener( 'change', this._onXRControllerMove );
+        this._xrControllers[ 0 ].removeEventListener( 'selectend', this._onXRControllerUp );
+        this._xrControllers[ 1 ].removeEventListener( 'selectstart', this._onXRControllerDown );
+        this._xrControllers[ 1 ].removeEventListener( 'change', this._onXRControllerMove );
+        this._xrControllers[ 1 ].removeEventListener( 'selectend', this._onXRControllerUp );
+      }
     }
+    _onXRControllerMove( controllerEvent: ThreeEvent ) {
+      const index = this._xrControllers.indexOf( controllerEvent.target );
+      const xrPointer = this._xrPointers[ index ];
+      xrPointer.updateByXRController( controllerEvent.target );
+      if ( xrPointer.buttons ) {
+        this.onTrackedPointerMove( xrPointer, [ xrPointer ], xrPointer as CenterPointerTracker );
+      } else {
+        this.onTrackedPointerHover( xrPointer, [ xrPointer ] );
+      }
+    }
+    _onXRControllerDown( controllerEvent: ThreeEvent ) {
+      const index = this._xrControllers.indexOf( controllerEvent.target );
+      const xrPointer = this._xrPointers[ index ];
+      xrPointer.buttons = 1;
+      xrPointer.setByXRController( controllerEvent.target );
+      this.onTrackedPointerDown( xrPointer, [ xrPointer ] );
+    }
+    _onXRControllerUp( controllerEvent: ThreeEvent ) {
+      const index = this._xrControllers.indexOf( controllerEvent.target );
+      const xrPointer = this._xrPointers[ index ];
+      xrPointer.buttons = 0;
+      this.onTrackedPointerUp( xrPointer, [ xrPointer ] );
+    }
+
     // Disables controls and triggers internal _disconnect method to stop animations, diconnects listeners and clears pointer arrays. Dispatches 'dispose' event.
     dispose() {
       this.enabled = false;
@@ -271,16 +334,13 @@ export function ControlsMixin<Super extends Constructor>( superClass: Super ) {
         pointer = this._hoverPointer = new PointerTracker( event, this.camera );
         this.onTrackedPointerHover( pointer, [pointer] );
       }
-      // Fix MovementX/Y for Safari
-      Object.defineProperty( event, 'movementX', {writable: true, value: pointer.canvas.movement.x });
-      Object.defineProperty( event, 'movementY', {writable: true, value: pointer.canvas.movement.y });
       this.dispatchEvent( event );
     }
     _onPointerSimulation( timeDelta: number ) {
       if ( this._simulatedPointer ) {
         const pointer = this._simulatedPointer;
         pointer.simmulateDamping( this.dampingFactor, timeDelta );
-        if ( pointer.canvas.movement.length() > 0.05 ) {
+        if ( pointer.view.movement.length() > 0.00005 ) {
           this.onTrackedPointerMove( pointer, [pointer], pointer as CenterPointerTracker );
         } else {
           this._simulatedPointer = null
@@ -337,7 +397,6 @@ export function ControlsMixin<Super extends Constructor>( superClass: Super ) {
     _onPointerEnter( event: PointerEvent ) {
       this.dispatchEvent( event );
     }
-
     _onPointerOut( event: PointerEvent ) {
       this.dispatchEvent( event );
     }
@@ -383,16 +442,16 @@ export function ControlsMixin<Super extends Constructor>( superClass: Super ) {
 
 /**
  * `Controls`: Generic superclass for interactive viewport controls.
- * `ControlsMixin` applied to `EventDispatcher`.
  */
-export class Controls extends ControlsMixin( EventDispatcher as any ) {
+export class Controls extends ControlsMixin( Mesh as any ) {
+  protected readonly _plane = new Plane();
   constructor( camera: PerspectiveCamera | OrthographicCamera, domElement: HTMLElement ) {
     super( camera, domElement );
   }
 }
 
-// Keeps pointer movement data in 2D canvas space ( pixels )
-class CanvasPointer {
+// Keeps pointer movement data in 2D view space
+class Pointer2D {
   readonly start: Vector2 = new Vector2();
   readonly current: Vector2 = new Vector2();
   readonly previous: Vector2 = new Vector2();
@@ -418,82 +477,19 @@ class CanvasPointer {
     this.current.set( x, y );
     return this;
   }
-}
-
-// Keeps pointer movement data in 2D view space ( -1, 1 )
-class ViewPointer {
-  readonly start: Vector2 = new Vector2();
-  readonly current: Vector2 = new Vector2();
-  readonly previous: Vector2 = new Vector2();
-  private readonly _movement: Vector2 = new Vector2();
-  private readonly _offset: Vector2 = new Vector2();
-  private readonly _viewOffset = Object.freeze( new Vector2( 1, -1 ) );
-  private readonly _viewMultiplier = new Vector2();
-  get movement(): Vector2 {
-    return this._movement.copy( this.current ).sub( this.previous );
-  }
-  get offset(): Vector2 {
-    return this._offset.copy( this.current ).sub( this.start );
-  }
-  constructor( x = 0, y = 0 ) {
-    this.set( x, y );
-  }
-  set( x: number, y: number ): this {
-    this.start.set( x, y );
-    this.current.set( x, y );
-    this.previous.set( x, y );
-    return this;
-  }
-  // Converts pointer coordinates from "canvas" space ( pixels ) to "view" space ( -1, 1 ).
-  update( canvasPointer: CanvasPointer, domElement: HTMLElement ): this {
-    this.start.copy( canvasPointer.start );
-    this.current.copy( canvasPointer.current );
-    this.previous.copy( canvasPointer.previous );
-    this._viewMultiplier.set( domElement.clientWidth / 2, - 1 * domElement.clientHeight / 2 );
-    this.start.divide( this._viewMultiplier ).sub( this._viewOffset );
-    this.current.divide( this._viewMultiplier ).sub( this._viewOffset );
-    this.previous.divide( this._viewMultiplier ).sub( this._viewOffset );
+  updateByDamping( damping: number ): this {
+    this.update( this.current.x + this.movement.x * damping, this.current.y + this.movement.y * damping );
     return this;
   }
 }
 
-// Keeps pointer movement data in 6D space (Origin + Direction)
-class RayPointer {
-  // TODO: optional grazing fix
-  readonly start: Ray = new Ray();
-  readonly current: Ray = new Ray();
-  readonly previous: Ray = new Ray();
-  update( camera: PerspectiveCamera | OrthographicCamera, viewPointer: ViewPointer ): this {
-    if ( camera instanceof PerspectiveCamera ) {
-      this.start.origin.setFromMatrixPosition( camera.matrixWorld );
-      this.start.direction.set( viewPointer.start.x, viewPointer.start.y, 0.5 ).unproject( camera ).sub( this.start.origin ).normalize();
-      this.current.origin.setFromMatrixPosition( camera.matrixWorld );
-      this.current.direction.set( viewPointer.current.x, viewPointer.current.y, 0.5 ).unproject( camera ).sub( this.current.origin ).normalize();
-      this.previous.origin.setFromMatrixPosition( camera.matrixWorld );
-      this.previous.direction.set( viewPointer.previous.x, viewPointer.previous.y, 0.5 ).unproject( camera ).sub( this.previous.origin ).normalize();
-    } else if ( camera instanceof OrthographicCamera ) {
-      this.start.origin.set( viewPointer.start.x, viewPointer.start.y, ( camera.near + camera.far ) / ( camera.near - camera.far ) ).unproject( camera );
-      this.start.direction.set( 0, 0, - 1 ).transformDirection( camera.matrixWorld );
-      this.current.origin.set( viewPointer.current.x, viewPointer.current.y, ( camera.near + camera.far ) / ( camera.near - camera.far ) ).unproject( camera );
-      this.current.direction.set( 0, 0, - 1 ).transformDirection( camera.matrixWorld );
-      this.previous.origin.set( viewPointer.previous.x, viewPointer.previous.y, ( camera.near + camera.far ) / ( camera.near - camera.far ) ).unproject( camera );
-      this.previous.direction.set( 0, 0, - 1 ).transformDirection( camera.matrixWorld );
-    }
-    return this;
-  }
-}
-
-// Keeps pointer movement data in 3D space projected onto a plane.
-class ProjectedPointer {
-  // TODO: optional grazing fix
+// Keeps pointer movement data in 3D space
+class Pointer3D {
   readonly start: Vector3 = new Vector3();
   readonly current: Vector3 = new Vector3();
   readonly previous: Vector3 = new Vector3();
   private readonly _movement: Vector3 = new Vector3();
   private readonly _offset: Vector3 = new Vector3();
-  private readonly _intersection = new Vector3();
-  private readonly _axis = new Vector3();
-  private readonly _raycaster = new Raycaster();
   get movement(): Vector3 {
     return this._movement.copy( this.current ).sub( this.previous );
   }
@@ -509,11 +505,98 @@ class ProjectedPointer {
     this.previous.set( x, y, z );
     return this;
   }
-  projectOnPlane( ray: RayPointer, plane: Plane, minGrazingAngle = 20 ): this {
+  update( x: number, y: number, z: number ): this {
+    this.previous.copy( this.current );
+    this.current.set( x, y, z );
+    return this;
+  }
+  updateByDamping( damping: number ): this {
+    this.update( this.current.x + this.movement.x * damping, this.current.y + this.movement.y * damping, this.current.z + this.movement.z * damping );
+    return this;
+  }
+}
+
+// Keeps pointer movement data in 6D space (Origin + Direction)
+class Pointer6D {
+  readonly start: Ray = new Ray();
+  readonly current: Ray = new Ray();
+  readonly previous: Ray = new Ray();
+  private readonly _movement: Ray = new Ray();
+  private readonly _offset: Ray = new Ray();
+  get movement(): Ray {
+    this._movement.origin.copy( this.current.origin ).sub( this.previous.origin );
+    this._movement.direction.copy( this.current.direction ).sub( this.previous.direction );
+    return this._movement;
+  }
+  get offset(): Ray {
+    this._offset.origin.copy( this.current.origin ).sub( this.start.origin );
+    this._offset.direction.copy( this.current.direction ).sub( this.start.direction );
+    return this._offset;
+  }
+  private readonly _intersection = new Vector3();
+  private readonly _origin = new Vector3();
+  private readonly _direction = new Vector3();
+  private readonly _axis = new Vector3();
+  private readonly _raycaster = new Raycaster();
+  private readonly _projected = new Pointer3D();
+  constructor( origin = new Vector3(), direction = new Vector3() ) {
+    this.set( origin, direction );
+  }
+  set( origin: Vector3, direction: Vector3 ): this {
+    this.start.set( origin, direction );
+    this.current.set( origin, direction );
+    this.previous.set( origin, direction );
+    return this;
+  }
+  update( origin: Vector3, direction: Vector3 ) {
+    this.previous.copy( this.current );
+    this.current.set( origin, direction );
+  }
+  updateByViewPointer( camera: PerspectiveCamera | OrthographicCamera | Object3D, viewPointer: Pointer2D ): this {
+    if ( camera instanceof PerspectiveCamera ) {
+      this.start.origin.setFromMatrixPosition( camera.matrixWorld );
+      this.start.direction.set( viewPointer.start.x, viewPointer.start.y, 0.5 ).unproject( camera ).sub( this.start.origin ).normalize();
+      this.current.origin.setFromMatrixPosition( camera.matrixWorld );
+      this.current.direction.set( viewPointer.current.x, viewPointer.current.y, 0.5 ).unproject( camera ).sub( this.current.origin ).normalize();
+      this.previous.origin.setFromMatrixPosition( camera.matrixWorld );
+      this.previous.direction.set( viewPointer.previous.x, viewPointer.previous.y, 0.5 ).unproject( camera ).sub( this.previous.origin ).normalize();
+    } else if ( camera instanceof OrthographicCamera ) {
+      this.start.origin.set( viewPointer.start.x, viewPointer.start.y, ( camera.near + camera.far ) / ( camera.near - camera.far ) ).unproject( camera );
+      this.start.direction.set( 0, 0, - 1 ).transformDirection( camera.matrixWorld );
+      this.current.origin.set( viewPointer.current.x, viewPointer.current.y, ( camera.near + camera.far ) / ( camera.near - camera.far ) ).unproject( camera );
+      this.current.direction.set( 0, 0, - 1 ).transformDirection( camera.matrixWorld );
+      this.previous.origin.set( viewPointer.previous.x, viewPointer.previous.y, ( camera.near + camera.far ) / ( camera.near - camera.far ) ).unproject( camera );
+      this.previous.direction.set( 0, 0, - 1 ).transformDirection( camera.matrixWorld );
+    } else {
+      // console.error( 'Pointer6D: updateByViewPointer() requires camera of type PerspectiveCamera | OrthographicCamera!' );
+      this.start.origin.setFromMatrixPosition( camera.matrixWorld );
+      this.start.direction.set( 0, 0, - 1 ).transformDirection( camera.matrixWorld );
+      this.current.origin.setFromMatrixPosition( camera.matrixWorld );
+      this.current.direction.set( 0, 0, - 1 ).transformDirection( camera.matrixWorld );
+      this.previous.origin.setFromMatrixPosition( camera.matrixWorld );
+      this.previous.direction.set( 0, 0, - 1 ).transformDirection( camera.matrixWorld );
+    }
+    return this;
+  }
+  updateByDamping( damping: number ): this {
+    this._origin.set(
+      this.current.origin.x + this.movement.origin.x * damping,
+      this.current.origin.y + this.movement.origin.y * damping,
+      this.current.origin.z + this.movement.origin.z * damping
+    );
+    this._direction.set(
+      this.current.direction.x + this.movement.direction.x * damping,
+      this.current.direction.y + this.movement.direction.y * damping,
+      this.current.direction.z + this.movement.direction.z * damping
+    );
+    this.update( this._origin, this._direction );
+    return this;
+  }
+  projectOnPlane( plane: Plane, minGrazingAngle = 30 ): Pointer3D {
     // Avoid projecting onto a plane at grazing angles 
-    const _rayStart = new Ray().copy( ray.start );
-    const _rayCurrent = new Ray().copy( ray.current );
-    const _rayPrevious = new Ray().copy( ray.previous );
+    const _rayStart = new Ray().copy( this.start );
+    const _rayCurrent = new Ray().copy( this.current );
+    const _rayPrevious = new Ray().copy( this.previous );
 
     _rayStart.direction.normalize();
     _rayCurrent.direction.normalize();
@@ -539,12 +622,13 @@ class ProjectedPointer {
     }
 
     this._raycaster.set( _rayStart.origin, _rayStart.direction );
-    this._raycaster.ray.intersectPlane( plane, this.start );
+    this._raycaster.ray.intersectPlane( plane, this._projected.start );
     this._raycaster.set( _rayCurrent.origin, _rayCurrent.direction );
-    this._raycaster.ray.intersectPlane( plane, this.current );
+    this._raycaster.ray.intersectPlane( plane, this._projected.current );
     this._raycaster.set( _rayPrevious.origin, _rayPrevious.direction );
-    this._raycaster.ray.intersectPlane( plane, this.previous );
-    return this;
+    this._raycaster.ray.intersectPlane( plane, this._projected.previous );
+
+    return this._projected;
   }
 }
 
@@ -554,73 +638,59 @@ class ProjectedPointer {
  */
 export class PointerTracker {
   get button(): number {
-    switch (this._pointerEvent.buttons) {
-      case 1:
-        return 0;
-      case 2:
-        return 2;
-      case 4:
-        return 1;
-      default:
-        return -1;
+    switch (this.buttons) {
+      case 1: return 0;
+      case 2: return 2;
+      case 4: return 1;
+      default: return -1;
     }
   }
-  get buttons(): number {
-    return this._pointerEvent.buttons;
-  }
-  get altKey(): boolean {
-    return this._pointerEvent.altKey;
-  }
-  get ctrlKey(): boolean {
-    return this._pointerEvent.ctrlKey;
-  }
-  get metaKey(): boolean {
-    return this._pointerEvent.metaKey;
-  }
-  get shiftKey(): boolean {
-    return this._pointerEvent.shiftKey;
-  }
-  get domElement(): HTMLElement {
-    return this._pointerEvent.target as HTMLElement;
-  }
-  get pointerId(): number {
-    return this._pointerEvent.pointerId;
-  }
-  get type(): string {
-    return this._pointerEvent.type;
-  }
+  buttons = 0;
+  altKey = false;
+  ctrlKey = false;
+  metaKey = false;
+  shiftKey = false;
+  domElement: HTMLElement;
+  pointerId: number;
+  type: string;
   // Used to distinguish a special "simulated" pointer used to actuate inertial gestures with damping.
   isSimulated = false;
-  // 2D pointer with coordinates in canvas-space ( pixels )
-  readonly canvas: CanvasPointer = new CanvasPointer();
   // 2D pointer with coordinates in view-space ( [-1...1] range )
-  readonly view: ViewPointer = new ViewPointer();
+  readonly view: Pointer2D = new Pointer2D();
   // 6D pointer with coordinates in world-space ( origin, direction )
-  readonly ray: RayPointer = new RayPointer();
-  // 3D pointer with coordinates in 3D-space from ray projected onto a plane facing x-axis.
-  protected _projected: ProjectedPointer = new ProjectedPointer();
-  private _camera: PerspectiveCamera | OrthographicCamera;
-  private _pointerEvent: PointerEvent;
-  private readonly _intersection: Vector3 = new Vector3();
+  readonly ray: Pointer6D = new Pointer6D();
+
+  protected _camera: PerspectiveCamera | OrthographicCamera | Object3D;
+  private readonly _viewCoord = new Vector2();
+  private readonly _intersection = new Vector3();
   private readonly _raycaster = new Raycaster();
   private readonly _intersectedObjects: Array<Intersection> = [];
-  constructor( pointerEvent: PointerEvent, camera: PerspectiveCamera | OrthographicCamera ) {
+  private readonly _viewOffset = Object.freeze( new Vector2( 1, -1 ) );
+  private readonly _viewMultiplier = new Vector2();
+  private readonly _origin = new Vector3();
+  private readonly _direction = new Vector3();
+  constructor( pointerEvent: PointerEvent, camera: PerspectiveCamera | OrthographicCamera | Object3D ) {
+    this.buttons = pointerEvent.buttons;
+    this.altKey = pointerEvent.altKey;
+    this.ctrlKey = pointerEvent.ctrlKey;
+    this.metaKey = pointerEvent.metaKey;
+    this.shiftKey = pointerEvent.shiftKey;
+    this.domElement = pointerEvent.target as HTMLElement;
+    this.pointerId = pointerEvent.pointerId;
+    this.type = pointerEvent.type;
+
     this._camera = camera;
-    this._pointerEvent = pointerEvent;
-    // Set canvas-space pointer from PointerEvent data.
+
+    // Get view-space pointer coords from PointerEvent data and domElement size.
     const rect = this.domElement.getBoundingClientRect();
-    this.canvas.set( pointerEvent.clientX - rect.left, pointerEvent.clientY - rect.top );
-    const view = new ViewPointer();
-    const ray = new RayPointer();
-    Object.defineProperty( this, 'view', {
-      get: () => view.update( this.canvas, this.domElement )
-    });
-    Object.defineProperty( this, 'ray', {
-      get: () => ray.update( this._camera, this.view )
-    });
+    this._viewCoord.set( pointerEvent.clientX - rect.left, pointerEvent.clientY - rect.top );
+    this._viewMultiplier.set( this.domElement.clientWidth / 2, - 1 * this.domElement.clientHeight / 2 );
+    this._viewCoord.divide( this._viewMultiplier ).sub( this._viewOffset );
+    this.view.set( this._viewCoord.x, this._viewCoord.y );
+    this.ray.updateByViewPointer( camera, this.view );
   }
   // Updates the pointer with the lastest pointerEvent and camera.
-  update( pointerEvent: PointerEvent, camera: PerspectiveCamera | OrthographicCamera ) {
+  update( pointerEvent: PointerEvent, camera: PerspectiveCamera | OrthographicCamera | Object3D ) {
     debug: {
       if ( this.pointerId !== pointerEvent.pointerId ) {
         console.error( 'Invalid pointerId!' );
@@ -628,9 +698,25 @@ export class PointerTracker {
       }
     }
     this._camera = camera;
-    this._pointerEvent = pointerEvent;
+    // Get view-space pointer coords from PointerEvent data and domElement size.
     const rect = this.domElement.getBoundingClientRect();
-    this.canvas.update( pointerEvent.clientX - rect.left, pointerEvent.clientY - rect.top );
+    this._viewCoord.set( pointerEvent.clientX - rect.left, pointerEvent.clientY - rect.top );
+    this._viewMultiplier.set( this.domElement.clientWidth / 2, - 1 * this.domElement.clientHeight / 2 );
+    this._viewCoord.divide( this._viewMultiplier ).sub( this._viewOffset );
+    this.view.update( this._viewCoord.x, this._viewCoord.y );
+    this.ray.updateByViewPointer( camera, this.view );
+  }
+  setByXRController( controller: Object3D ) {
+    this._viewCoord.set( 0, 0 )
+    this.view.set( this._viewCoord.x, this._viewCoord.y );
+    this.ray.updateByViewPointer( this._camera, this.view );
+  }
+  updateByXRController( controller: Object3D ) {
+    this._viewCoord.set( this.domElement.clientWidth / 2, this.domElement.clientHeight / 2 );
+    this.view.update( this._viewCoord.x, this._viewCoord.y );
+    this._origin.setFromMatrixPosition( controller.matrixWorld );
+    this._direction.set( 0, 0, - 1 ).transformDirection( controller.matrixWorld );
+    this.ray.update( this._origin, this._direction );
   }
   // Simmulates inertial movement by applying damping to previous movement. For special **simmulated** pointer only!
   simmulateDamping( dampingFactor: number, deltaTime: number ): void {
@@ -641,29 +727,30 @@ export class PointerTracker {
     }
     if ( !this.isSimulated ) return;
     const damping = Math.pow( 1 - dampingFactor, deltaTime * 60 / 1000 );
-    this.canvas.update( this.canvas.current.x + this.canvas.movement.x * damping, this.canvas.current.y + this.canvas.movement.y * damping );
+    this.view.updateByDamping( damping );
+    this.ray.updateByViewPointer( this._camera, this.view );
   }
   // Projects tracked pointer onto a plane object-space.
-  projectOnPlane( plane: Plane, minGrazingAngle?: number ): ProjectedPointer {
-    return this._projected.projectOnPlane( this.ray, plane, minGrazingAngle );
+  projectOnPlane( plane: Plane, minGrazingAngle?: number ): Pointer3D {
+    return this.ray.projectOnPlane( plane, minGrazingAngle );
   }
   // Intersects specified objects with **current** view-space pointer vector.
   intersectObjects( objects: Object3D[] ): Intersection[] {
-    this._raycaster.setFromCamera( this.view.current, this._camera );
+    this._raycaster.set( this.ray.current.origin, this.ray.current.direction );
     this._intersectedObjects.length = 0;
     this._raycaster.intersectObjects( objects, true, this._intersectedObjects );
     return this._intersectedObjects;
   }
   // Intersects specified plane with **current** view-space pointer vector.
   intersectPlane( plane: Plane ): Vector3 {
-    this._raycaster.setFromCamera( this.view.current, this._camera );
+    this._raycaster.set( this.ray.current.origin, this.ray.current.direction );
     this._raycaster.ray.intersectPlane( plane, this._intersection );
     return this._intersection;
   }
   // Clears pointer movement
   clearMovement(): void {
-    this.canvas.previous.copy( this.canvas.current );
-    this.canvas.movement.set( 0, 0 );
+    this.view.previous.copy( this.view.current );
+    this.ray.previous.copy( this.ray.current );
   }
 }
 
@@ -671,6 +758,7 @@ export class PointerTracker {
 class CenterPointerTracker extends PointerTracker {
   // Array of pointers to calculate centers from
   private _pointers: PointerTracker[] = [];
+  private readonly _projected = new Pointer3D();
   constructor( pointerEvent: PointerEvent, camera: PerspectiveCamera | OrthographicCamera ) {
     super( pointerEvent, camera );
     // Set center pointer read-only "type" and "pointerId" properties.
@@ -678,27 +766,7 @@ class CenterPointerTracker extends PointerTracker {
       type: { value: 'virtual' },
       pointerId: { value: -1 },
     })
-    // Reusable pointer variables.
-    const canvas = new CanvasPointer();
-    const view = new ViewPointer();
-    // Getter for center pointer converted to canvas space.
-    Object.defineProperty( this, 'canvas', {
-      get: () => {
-        canvas.set( 0, 0 );
-        for ( let i = 0; i < this._pointers.length; i++ ) {
-          canvas.start.add( this._pointers[i].canvas.start );
-          canvas.current.add( this._pointers[i].canvas.current );
-          canvas.previous.add( this._pointers[i].canvas.previous );
-        }
-        if ( this._pointers.length > 1 ) {
-          canvas.start.divideScalar( this._pointers.length );
-          canvas.current.divideScalar( this._pointers.length );
-          canvas.previous.divideScalar( this._pointers.length );
-        }
-        return canvas;
-      }
-    });
-    // Getter for center pointer converted to view space.
+    const view = new Pointer2D();
     Object.defineProperty( this, 'view', {
       get: () => {
         view.set( 0, 0 );
@@ -715,8 +783,15 @@ class CenterPointerTracker extends PointerTracker {
         return view;
       }
     });
+    const ray = new Pointer6D();
+    Object.defineProperty( this, 'ray', {
+      get: () => {
+        ray.updateByViewPointer( this._camera, this.view );
+        return ray;
+      }
+    });
   }
-  projectOnPlane( plane: Plane, minGrazingAngle?: number ): ProjectedPointer {
+  projectOnPlane( plane: Plane, minGrazingAngle?: number ): Pointer3D {
     this._projected.set( 0, 0, 0 );
     for ( let i = 0; i < this._pointers.length; i++ ) {
       const projected = this._pointers[i].projectOnPlane( plane, minGrazingAngle );
@@ -731,7 +806,6 @@ class CenterPointerTracker extends PointerTracker {
     }
     return this._projected;
   }
-  // Updates the internal array of pointers necessary to calculate the centers.
   updateCenter( pointers: PointerTracker[] ): void {
     this._pointers = pointers;
   }

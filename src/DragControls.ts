@@ -1,5 +1,6 @@
 import { Vector3, Object3D, Intersection, PerspectiveCamera, OrthographicCamera, Event as ThreeEvent } from 'three';
-import { Controls, PointerTracker } from './Controls';
+import { PointerTracker } from './core/Controls';
+import { ObjectControls } from './core/ObjectControls';
 
 let _intersections: Intersection[];
 const _hoveredObjects: Record<string, Object3D> = {};
@@ -7,7 +8,7 @@ const _selectedObjects: Record<string, Object3D> = {};
 const _eye = new Vector3();
 const _target = new Vector3();
 
-export class DragControls extends Controls {
+export class DragControls extends ObjectControls {
   // Public API
   objects: Object3D[];
   transformGroup = false;
@@ -71,7 +72,7 @@ export class DragControls extends Controls {
     const id = String( pointer.pointerId );
     const _selectedObject = _selectedObjects[id];
     if ( _selectedObject ) {
-      _eye.set( 0, 0, 1 ).applyQuaternion( this.camera.quaternion ).normalize()
+      _eye.set( 0, 0, 1 ).applyQuaternion( this.camera.quaternion ).normalize();
       this._plane.setFromNormalAndCoplanarPoint( _eye, _target );
       _selectedObject.position.add( pointer.projectOnPlane( this._plane ).movement );
       this.dispatchEvent({ type: 'drag', object: _selectedObject });

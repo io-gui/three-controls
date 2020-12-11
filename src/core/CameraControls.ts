@@ -5,39 +5,10 @@ import { Controls, CONTROL_CHANGE_EVENT } from './Controls';
 const cameraTargets = new WeakMap();
 
 /**
- * `ControlsMixin`: Generic mixin for interactive threejs viewport controls.
- * It solves some of the most common and complex problems in threejs control designs.
- * 
- * ### Pointer Tracking ###
- *
- * - Captures most relevant pointer and keyboard events and fixes some platform-specific bugs and discrepancies.
- * - Serves as a proxy dispatcher for pointer and keyboard events:
- *   "contextmenu", "wheel", "pointerdown", "pointermove", "pointerup", "pointerleave", "pointerover", "pointerenter", "pointerout", "pointercancel", "keydown", "keyup"
- * - Tracks active pointer gestures and evokes pointer event handler functions with tracked pointer data:
- *   `onTrackedPointerDown`, `onTrackedPointerMove`, `onTrackedPointerHover`, `onTrackedPointerUp`
- * - Enables inertial behaviours via simmulated pointer with framerate-independent damping.
- * - Tracks active key presses and evokes key event handler functions with currently pressed key data:
- *   `onTrackedKeyDown`, `onTrackedKeyUp`, `onTrackedKeyChange`
- *
- * ### Internal Update and Animation Loop ###
- * 
- * - Removes the necessity to call `.update()` method externally from external animation loop for damping calculations.
- * - Developers can start and stop per-frame function invocations via `private startAnimation( callback )` and `stopAnimation( callback )`.
- * 
- * ### Controls Livecycle ###
- * 
- * - Adds/removes event listeners during lifecycle and on `enabled` property change.
- * - Stops current animations when `enabled` property is set to `false`.
- * - Takes care of the event listener cleanup when `dipose()` method is called.
- * - Emits lyfecycle events: "enabled", "disabled", "dispose"
- */
-
-
-/**
- * `Controls`: Generic superclass for interactive viewport controls.
- * `ControlsMixin` applied to `EventDispatcher`.
+ * `CameraControls`: Generic superclass for interactive camera controls.
  */
 export class CameraControls extends Controls {
+  eye = new Vector3();
   target = new Vector3();
   lookAtTarget = true;
   // Internal utility variables
@@ -53,9 +24,13 @@ export class CameraControls extends Controls {
     // Save initial camera state
     this.saveCameraState();
 
+    const eye = new Vector3();
+    Object.defineProperty( this, 'eye', {
+      get: () => eye.set( 0, 0, 1 ).applyQuaternion( this.camera.quaternion ).normalize()
+    });
+
     // Camera target used for camera controls and pointer view -> world space conversion. 
     const target = cameraTargets.get( this.camera ) || cameraTargets.set( this.camera, new Vector3() ).get( this.camera );
-
     // TODO encode target in camera matrix + focus?
     // Optional target/lookAt eg. Dragcontrols, TransformControls
     Object.defineProperty( this, 'target', {

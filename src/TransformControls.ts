@@ -1,6 +1,6 @@
 import { Mesh, MeshBasicMaterial, Object3D, Quaternion, Vector3, Color, Matrix4, Plane, PerspectiveCamera, OrthographicCamera, Intersection } from 'three';
 
-import { ControlsMixin, PointerTracker, CONTROL_CHANGE_EVENT, CONTROL_START_EVENT, CONTROL_END_EVENT } from './Controls';
+import { ControlsMixin, PointerTracker, CONTROL_CHANGE_EVENT, CONTROL_START_EVENT, CONTROL_END_EVENT } from './core/Controls';
 import { TransformHelper } from './TransformHelper';
 
 export const TRANSFORM_CONTROL_CHANGE_EVENT = { type: 'transform-changed' };
@@ -14,6 +14,7 @@ function getFirstIntersection(intersections: Intersection[], includeInvisible: b
   return null;
 }
 
+// class TransformControls extends ControlsMixin( TransformHelper as any ) {
 class TransformControls extends ControlsMixin( TransformHelper as any ) {
   static readonly isTransformControls = true;
   static readonly type = 'TransformControls';
@@ -51,8 +52,6 @@ class TransformControls extends ControlsMixin( TransformHelper as any ) {
 
   FADE_EPS = 0.001;
   FADE_FACTOR = 0.15;
-
-  private _needsAnimationFrame = false;
 
   private readonly _pointStart = new Vector3();
   private readonly _pointEnd = new Vector3();
@@ -113,8 +112,6 @@ class TransformControls extends ControlsMixin( TransformHelper as any ) {
     // Setting the defined property will automatically trigger change event
     // Defined properties are passed down to gizmo and plane
 
-    this.onNeedsAnimationChanged = this.onNeedsAnimationChanged.bind(this);
-
     this.observeProperty( 'camera' );
     this.observeProperty( 'object' );
     this.observeProperty( 'activeAxis' );
@@ -128,7 +125,6 @@ class TransformControls extends ControlsMixin( TransformHelper as any ) {
     this.observeProperty( 'showTranslate' );
     this.observeProperty( 'showRotate' );
     this.observeProperty( 'showScale' );
-    this.observeProperty( '_needsAnimationFrame', this.onNeedsAnimationChanged );
 
     // Deprecation warnings
     Object.defineProperty( this, 'mode', {
@@ -137,15 +133,6 @@ class TransformControls extends ControlsMixin( TransformHelper as any ) {
       }
     });
   }
-  onNeedsAnimationChanged() {
-    // console.log(this._needsAnimationFrame);
-    cancelAnimationFrame(this._animFrame);
-    if (this._needsAnimationFrame) this._animFrame = requestAnimationFrame(()=>{
-      this.dispatchEvent(CONTROL_CHANGE_EVENT);
-      this._needsAnimationFrame = false;
-    });
-  }
-
   updateHandleMaterial( handle: Mesh ): void {
     const handleType = handle.userData.type;
     const handleAxis = handle.userData.axis;

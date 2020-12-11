@@ -1,6 +1,6 @@
 import { MOUSE, TOUCH, Vector3, Quaternion, Spherical, PerspectiveCamera, OrthographicCamera } from 'three';
-import { PointerTracker, Callback, CONTROL_CHANGE_EVENT, CONTROL_START_EVENT, CONTROL_END_EVENT } from './Controls';
-import { CameraControls } from './CameraControls';
+import { PointerTracker, Callback, CONTROL_CHANGE_EVENT, CONTROL_START_EVENT, CONTROL_END_EVENT } from './core/Controls';
+import { CameraControls } from './core/CameraControls';
 
 // This set of controls performs orbiting, dollying ( zooming ), and panning.
 // Unlike TrackballControls, it maintains the "up" direction camera.up ( +Y by default ).
@@ -10,14 +10,11 @@ import { CameraControls } from './CameraControls';
 //    Pan - right mouse, or left mouse + ctrl/meta/shiftKey, or arrow keys / touch: two-finger move
 
 // so camera.up is the orbit axis
-const _eye = new Vector3();
 const _unitY = new Vector3(0, 1, 0);
 const _quat = new Quaternion();
 const _quatInverse = new Quaternion();
 const _offset = new Vector3();
 const _movement = new Vector3();
-
-const PI2 = Math.PI * 2;
 
 class OrbitControls extends CameraControls {
   // Public API
@@ -60,9 +57,9 @@ class OrbitControls extends CameraControls {
   touches = { ONE: TOUCH.ROTATE, TWO: TOUCH.DOLLY_PAN };
 
   // Internal utility variables
-  _spherical = new Spherical();
-  _autoRotationMagnitude = 0;
-  _interacting = false;
+  private readonly _spherical = new Spherical();
+  private _autoRotationMagnitude = 0;
+  private _interacting = false;
 
   constructor( camera: PerspectiveCamera | OrthographicCamera, domElement: HTMLElement ) {
 
@@ -162,7 +159,6 @@ class OrbitControls extends CameraControls {
   onTrackedPointerMove( pointer: PointerTracker, pointers: PointerTracker[], center: PointerTracker ): void {
     let button = -1;
     this._interacting = !pointer.isSimulated;
-    _eye.set( 0, 0, 1 ).applyQuaternion( this.camera.quaternion ).normalize()
     switch ( pointers.length ) {
       case 1: // 1 pointer
         switch ( pointer.button ) {
@@ -213,14 +209,12 @@ class OrbitControls extends CameraControls {
     }
   }
 
-  // Internal helper functions
-
   _pointerDolly( pointer: PointerTracker ): void {
-    this._applyDollyMovement( pointer.canvas.movement.y );
+    this._applyDollyMovement( pointer.view.movement.y * 1000 );
   }
 
   _twoPointerDolly( pointers: PointerTracker[] ): void {
-    this._plane.setFromNormalAndCoplanarPoint( _eye, this.target );
+    this._plane.setFromNormalAndCoplanarPoint( this.eye, this.target );
     const dist0 = pointers[  0  ].projectOnPlane( this._plane ).current.distanceTo( pointers[  1  ].projectOnPlane( this._plane ).current );
     const dist1 = pointers[  0  ].projectOnPlane( this._plane ).previous.distanceTo( pointers[  1  ].projectOnPlane( this._plane ).previous );
     this._applyDollyMovement( dist0 - dist1 );
@@ -242,7 +236,7 @@ class OrbitControls extends CameraControls {
 
   _pointerPan( pointer: PointerTracker ): void {
     if ( this.screenSpacePanning ) {
-      this._plane.setFromNormalAndCoplanarPoint( _eye, this.target );
+      this._plane.setFromNormalAndCoplanarPoint( this.eye, this.target );
       this._applyPanMovement( pointer.projectOnPlane( this._plane ).movement );
     } else {
       this._plane.setFromNormalAndCoplanarPoint( _unitY, this.target );
@@ -323,6 +317,7 @@ class OrbitControls extends CameraControls {
     // restrict theta to be between desired limits
     let min = this.minAzimuthAngle;
     let max = this.maxAzimuthAngle;
+    const PI2 = Math.PI * 2;
     if ( isFinite( min ) && isFinite( max ) ) {
       if ( min < - Math.PI ) min += PI2; else if ( min > Math.PI ) min -= PI2;
       if ( max < - Math.PI ) max += PI2; else if ( max > Math.PI ) max -= PI2;

@@ -796,7 +796,11 @@ export class TransformHelper extends ControlsHelper {
 
   }
   updateMatrixWorld() {
-    super.updateMatrixWorld();
+    if ( this.camera instanceof PerspectiveCamera ) {
+      this.eye.copy( this._cameraPosition ).sub( this._position ).normalize();
+    } else if ( this.camera instanceof OrthographicCamera ) {
+      this.eye.set( 0, 0, 1 ).applyQuaternion( this._cameraQuaternion );
+    }
 
     this._sizeAttenuation = 1;
     if ( this.camera instanceof OrthographicCamera ) {
@@ -808,5 +812,6 @@ export class TransformHelper extends ControlsHelper {
     for ( let i = 0; i < this.children.length; i ++ ) {
       this.updateHandle( this.children[ i ] as Mesh );
     }
+    super.updateMatrixWorld();
   }
 }
