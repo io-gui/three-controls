@@ -1,6 +1,7 @@
 import { MOUSE, TOUCH, Vector3, Quaternion, Spherical, PerspectiveCamera, OrthographicCamera } from 'three';
-import { PointerTracker, Callback, CONTROL_CHANGE_EVENT, CONTROL_START_EVENT, CONTROL_END_EVENT } from './core/Controls';
 import { CameraControls } from './core/CameraControls';
+import { PointerTracker } from './core/Pointers';
+import { Callback, EVENT } from './core/Base';
 
 // This set of controls performs orbiting, dollying ( zooming ), and panning.
 // Unlike TrackballControls, it maintains the "up" direction camera.up ( +Y by default ).
@@ -84,9 +85,6 @@ class OrbitControls extends CameraControls {
         this.dampingFactor = value;
       }
     });
-    this.update = function() {
-      console.warn( 'THREE.OrbitControls: update() has been deprecated.' );
-    };
   }
 
   // Public methods
@@ -152,7 +150,7 @@ class OrbitControls extends CameraControls {
 
   onTrackedPointerDown( pointer: PointerTracker, pointers: PointerTracker[] ): void {
     if ( pointers.length === 1 ) {
-      this.dispatchEvent( CONTROL_START_EVENT );
+      this.dispatchEvent( EVENT.START );
     }
   }
 
@@ -204,7 +202,7 @@ class OrbitControls extends CameraControls {
 
   onTrackedPointerUp( pointer: PointerTracker, pointers: PointerTracker[] ): void {
     if ( pointers.length === 0 ) {
-      this.dispatchEvent( CONTROL_END_EVENT );
+      this.dispatchEvent( EVENT.END );
       this._interacting = false;
     }
   }
@@ -231,7 +229,7 @@ class OrbitControls extends CameraControls {
     _offset.setFromSpherical( this._spherical );
     this.camera.position.copy( this.target ).add( _offset );
     this.camera.lookAt( this.target );
-    this.dispatchEvent( CONTROL_CHANGE_EVENT );
+    this.dispatchEvent( EVENT.CHANGE );
   }
 
   _pointerPan( pointer: PointerTracker ): void {
@@ -275,7 +273,7 @@ class OrbitControls extends CameraControls {
     _offset.copy( movement ).multiplyScalar( this.panSpeed );
     this.target.sub( _offset );
     this.camera.position.sub( _offset );
-    this.dispatchEvent( CONTROL_CHANGE_EVENT );
+    this.dispatchEvent( EVENT.CHANGE );
   }
 
   _pointerRotate( pointer: PointerTracker ): void {
@@ -337,7 +335,12 @@ class OrbitControls extends CameraControls {
     _offset.applyQuaternion( _quatInverse );
     this.camera.position.copy( this.target ).add( _offset );
     this.camera.lookAt( this.target );
-    this.dispatchEvent( CONTROL_CHANGE_EVENT );
+    this.dispatchEvent( EVENT.CHANGE );
+  }
+
+  // Deprecation warning
+  update() {
+    console.warn( 'THREE.OrbitControls: update() has been deprecated.' );
   }
 
  }

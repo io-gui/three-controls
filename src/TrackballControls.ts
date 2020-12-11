@@ -1,6 +1,7 @@
 import { MOUSE, Vector2, Vector3, Quaternion, PerspectiveCamera, OrthographicCamera } from 'three';
-import { PointerTracker, CONTROL_CHANGE_EVENT, CONTROL_START_EVENT, CONTROL_END_EVENT } from './core/Controls';
-import { ObjectControls } from './core/ObjectControls';
+import { CameraControls } from './core/CameraControls';
+import { PointerTracker } from './core/Pointers';
+import { EVENT } from './core/Base';
 
 const STATE = { NONE: - 1, ROTATE: 0, ZOOM: 1, PAN: 2 };
 
@@ -21,7 +22,7 @@ const _cameraUpDirection = new Vector3();
 const _cameraSidewaysDirection = new Vector3();
 const _moveDirection = new Vector3();
 
-class TrackballControls extends ObjectControls {
+class TrackballControls extends CameraControls {
   // Public API
   rotateSpeed = 1.0;
   zoomSpeed = 1.2;
@@ -53,12 +54,6 @@ class TrackballControls extends ObjectControls {
         this.dampingFactor = value;
       }
     });
-    this.update = () => {
-      console.warn( 'THREE.TrackballControls: update() has been deprecated.' );
-    }
-    this.handleResize = () => {
-      console.warn( 'THREE.TrackballControls: handleResize() has been deprecated.' );
-    }
   }
 
   // Event handlers
@@ -93,7 +88,7 @@ class TrackballControls extends ObjectControls {
 
   onTrackedPointerDown( pointer: PointerTracker, pointers: PointerTracker[] ): void {
     if ( pointers.length === 1 ) {
-      this.dispatchEvent( CONTROL_START_EVENT );
+      this.dispatchEvent( EVENT.START );
     }
   }
 
@@ -133,12 +128,12 @@ class TrackballControls extends ObjectControls {
 
     this.camera.position.addVectors( this.target, _eye );
     this.camera.lookAt( this.target );
-    this.dispatchEvent( CONTROL_CHANGE_EVENT );
+    this.dispatchEvent( EVENT.CHANGE );
   }
 
   onTrackedPointerUp( pointer: PointerTracker, pointers: PointerTracker[] ): void {
     if ( pointers.length === 0 ) {
-      this.dispatchEvent( CONTROL_END_EVENT );
+      this.dispatchEvent( EVENT.END );
     }
   }
 
@@ -202,6 +197,13 @@ class TrackballControls extends ObjectControls {
     this.target.sub( _panMagnitude );
   }
 
+  // Deprecation warnings
+  update() {
+    console.warn( 'THREE.TrackballControls: update() has been deprecated.' );
+  }
+  handleResize() {
+    console.warn( 'THREE.TrackballControls: handleResize() has been deprecated.' );
+  }
  }
 
 export { TrackballControls };

@@ -1,6 +1,6 @@
 import { Vector3, Vector4, Euler, Quaternion, WebGLRenderer, Scene, Mesh, Line, Camera, PerspectiveCamera, OrthographicCamera, DoubleSide, LineBasicMaterial, MeshBasicMaterial } from 'three';
 
-export const gizmoMaterial = new MeshBasicMaterial( {
+export const helperMaterial = new MeshBasicMaterial( {
   depthTest: false,
   depthWrite: false,
   transparent: true,
@@ -9,7 +9,7 @@ export const gizmoMaterial = new MeshBasicMaterial( {
   toneMapped: false
 } );
 
-export const gizmoLineMaterial = new LineBasicMaterial( {
+export const helperLineMaterial = new LineBasicMaterial( {
   depthTest: false,
   depthWrite: false,
   transparent: true,
@@ -18,7 +18,7 @@ export const gizmoLineMaterial = new LineBasicMaterial( {
   toneMapped: false
 } );
 
-export interface ControlsHelperGeometrySpec {
+export interface HelperGeometrySpec {
   type: string,
   axis: string,
   color: Vector4,
@@ -30,38 +30,40 @@ export interface ControlsHelperGeometrySpec {
   tag?: string,
 }
 
-export class ControlsHelper extends Mesh {
+export class Helper extends Mesh {
   camera: PerspectiveCamera | OrthographicCamera = new PerspectiveCamera();
   eye = new Vector3();
   protected readonly _cameraPosition = new Vector3();
   protected readonly _cameraQuaternion = new Quaternion();
   protected readonly _cameraScale = new Vector3();
   protected readonly _position = new Vector3();
-  constructor( gizmoMap?: [ Mesh | Line, ControlsHelperGeometrySpec ][] ) {
+  protected readonly _quaternion = new Quaternion();
+  protected readonly _scale = new Vector3();
+  constructor( helperMap?: [ Mesh | Line, HelperGeometrySpec ][] ) {
     super();
-    if ( gizmoMap ) {
-      for ( let i = gizmoMap.length; i --; ) {
+    if ( helperMap ) {
+      for ( let i = helperMap.length; i --; ) {
 
-        const object = gizmoMap[ i ][ 0 ].clone();
-        const gizmoSpec = gizmoMap[ i ][ 1 ];
+        const object = helperMap[ i ][ 0 ].clone();
+        const helperSpec = helperMap[ i ][ 1 ];
 
         if (object instanceof Mesh) {
-          object.material = gizmoMaterial.clone();
+          object.material = helperMaterial.clone();
         } else if (object instanceof Line) {
-          object.material = gizmoLineMaterial.clone();
+          object.material = helperLineMaterial.clone();
         }
-        (object.material as MeshBasicMaterial).color.setRGB( gizmoSpec.color.x, gizmoSpec.color.y, gizmoSpec.color.z );
-        (object.material as MeshBasicMaterial).opacity = gizmoSpec.color.w;
+        (object.material as MeshBasicMaterial).color.setRGB( helperSpec.color.x, helperSpec.color.y, helperSpec.color.z );
+        (object.material as MeshBasicMaterial).opacity = helperSpec.color.w;
 
-        object.name = gizmoSpec.type + '-' + gizmoSpec.axis + gizmoSpec.tag || '';
+        object.name = helperSpec.type + '-' + helperSpec.axis + helperSpec.tag || '';
         object.userData = {
-          type: gizmoSpec.type,
-          axis: gizmoSpec.axis,
-          tag: gizmoSpec.tag,
+          type: helperSpec.type,
+          axis: helperSpec.axis,
+          tag: helperSpec.tag,
         };
-        if ( gizmoSpec.position ) object.position.copy( gizmoSpec.position );
-        if ( gizmoSpec.rotation ) object.rotation.copy( gizmoSpec.rotation );
-        if ( gizmoSpec.scale ) object.scale.copy( gizmoSpec.scale );
+        if ( helperSpec.position ) object.position.copy( helperSpec.position );
+        if ( helperSpec.rotation ) object.rotation.copy( helperSpec.rotation );
+        if ( helperSpec.scale ) object.scale.copy( helperSpec.scale );
 
         object.updateMatrix();
 
@@ -78,13 +80,13 @@ export class ControlsHelper extends Mesh {
       }
     }
   }
-  //
   onBeforeRender = (renderer: WebGLRenderer, scene: Scene, camera: Camera) => {
     this.camera = camera as PerspectiveCamera | OrthographicCamera;
   }
   updateMatrixWorld() {
     super.updateMatrixWorld();
-    this._position.setFromMatrixPosition( this.matrixWorld );
+    this.matrixWorld.decompose( this._position, this._quaternion, this._scale );
+    this.camera.matrixWorld.decompose( this._cameraPosition, this._cameraQuaternion, this._cameraScale ); 
     if ( this.camera instanceof PerspectiveCamera ) {
       this.eye.copy( this._cameraPosition ).sub( this._position ).normalize();
     } else if ( this.camera instanceof OrthographicCamera ) {

@@ -2,7 +2,7 @@ import { Quaternion, Mesh, Euler, Vector3, Vector4, Matrix4, Line, OctahedronBuf
   TorusBufferGeometry, SphereBufferGeometry, BoxBufferGeometry, PlaneBufferGeometry, CylinderBufferGeometry,
   BufferGeometry, Float32BufferAttribute, OrthographicCamera, PerspectiveCamera } from 'three';
 
-import { ControlsHelper, ControlsHelperGeometrySpec } from './ControlsHelper';
+import { Helper, HelperGeometrySpec } from './core/Helper';
 
 const CircleGeometry = function ( radius: number, arc: number ) {
   const geometry = new BufferGeometry( );
@@ -29,7 +29,7 @@ cornerLineGeometry.setAttribute( 'position', new Float32BufferAttribute( [  0, -
 
 const PICKER_DEBUG_ALPHA = 0.0;
 
-const translateHelperGeometrySpec: [ Mesh | Line, ControlsHelperGeometrySpec ][] = [
+const translateHelperGeometrySpec: [ Mesh | Line, HelperGeometrySpec ][] = [
   [
     new Mesh( arrowGeometry ),
     {
@@ -252,7 +252,7 @@ const translateHelperGeometrySpec: [ Mesh | Line, ControlsHelperGeometrySpec ][]
   ],
 ];
 
-const rotateHelperGeometrySpec: [ Mesh | Line, ControlsHelperGeometrySpec ][] = [
+const rotateHelperGeometrySpec: [ Mesh | Line, HelperGeometrySpec ][] = [
   [
     new Line( CircleGeometry( 0.9, 0.5 ) ),
     {
@@ -374,7 +374,7 @@ const rotateHelperGeometrySpec: [ Mesh | Line, ControlsHelperGeometrySpec ][] = 
   ]
 ];
 
-const scaleHelperGeometrySpec: [ Mesh | Line, ControlsHelperGeometrySpec ][] = [
+const scaleHelperGeometrySpec: [ Mesh | Line, HelperGeometrySpec ][] = [
   [
     new Mesh( new BoxBufferGeometry( 0.125, 0.125, 0.125 ) ),
     {
@@ -631,11 +631,11 @@ const scaleHelperGeometrySpec: [ Mesh | Line, ControlsHelperGeometrySpec ][] = [
   ], 
 ];
 
-export class TransformHelper extends ControlsHelper {
+export class TransformHelper extends Helper {
   static readonly isTransformHelper = true;
   static readonly type = 'TransformHelper';
 
-  enabled = false;
+  enabled = true;
   size = 1;
   showX = true;
   showY = true;
@@ -795,7 +795,11 @@ export class TransformHelper extends ControlsHelper {
     }
 
   }
+
+  
   updateMatrixWorld() {
+    super.updateMatrixWorld();
+
     if ( this.camera instanceof PerspectiveCamera ) {
       this.eye.copy( this._cameraPosition ).sub( this._position ).normalize();
     } else if ( this.camera instanceof OrthographicCamera ) {

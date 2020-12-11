@@ -1,9 +1,13 @@
 import { Mesh, MeshBasicMaterial, Object3D, Quaternion, Vector3, Color, Matrix4, Plane, PerspectiveCamera, OrthographicCamera, Intersection } from 'three';
 
-import { ControlsMixin, PointerTracker, CONTROL_CHANGE_EVENT, CONTROL_START_EVENT, CONTROL_END_EVENT } from './core/Controls';
-import { TransformHelper } from './TransformHelper';
+import { PointerTracker } from './core/Pointers';
+import { EVENT } from './core/Base';
 
-export const TRANSFORM_CONTROL_CHANGE_EVENT = { type: 'transform-changed' };
+import { ObjectControls } from './core/ObjectControls';
+import { TransformHelper } from './TransformHelper';
+export { TransformHelper } from './TransformHelper';
+
+export const TRANSFORM_CHANGE_EVENT = { type: 'transform-changed' };
 
 function getFirstIntersection(intersections: Intersection[], includeInvisible: boolean ): Intersection | null {
   for ( let i = 0; i < intersections.length; i ++ ) {
@@ -14,8 +18,7 @@ function getFirstIntersection(intersections: Intersection[], includeInvisible: b
   return null;
 }
 
-// class TransformControls extends ControlsMixin( TransformHelper as any ) {
-class TransformControls extends ControlsMixin( TransformHelper as any ) {
+class TransformControls extends ObjectControls {
   static readonly isTransformControls = true;
   static readonly type = 'TransformControls';
 
@@ -97,20 +100,19 @@ class TransformControls extends ControlsMixin( TransformHelper as any ) {
   private readonly _dirZ = new Vector3( 0, 0, 1 );
   private readonly _dirVector = new Vector3();
   private readonly _identityQuaternion = Object.freeze( new Quaternion() );
-  private readonly _plane = new Plane();
+
+  private _helper = new TransformHelper();
+  protected readonly _plane = new Plane();
 
   constructor ( camera: PerspectiveCamera | OrthographicCamera, domElement: HTMLElement ) {
     super( camera, domElement );
 
-    this.visible = false;
-    this.camera = camera;
-    this.domElement = domElement;
+    this.add( this._helper );
 
     /* eslint-disable @typescript-eslint/no-use-before-define */
 
     // Define properties with getters/setter
     // Setting the defined property will automatically trigger change event
-    // Defined properties are passed down to gizmo and plane
 
     this.observeProperty( 'camera' );
     this.observeProperty( 'object' );
@@ -184,13 +186,12 @@ class TransformControls extends ControlsMixin( TransformHelper as any ) {
       if ( !equals( material.color, this._targetColor ) || !(Math.abs( material.opacity - _targetOpacity ) < this.FADE_EPS) ) {
         material.color.copy( this._targetColor );
         material.opacity = _targetOpacity;
-        this._needsAnimationFrame = true;
+        this.needsAnimationFrame = true;
       }
     }
   }
   updateHandle( handle: Mesh ) {
     this.updateHandleMaterial( handle );
-    super.updateHandle( handle );
     if ( handle.userData.type === 'scale' && this.space === 'world') {
       if ( ['XYZX', 'XYZY', 'XYZZ'].indexOf( handle.userData.axis ) === -1 ) handle.visible = false;
     }
@@ -212,6 +213,10 @@ class TransformControls extends ControlsMixin( TransformHelper as any ) {
     this.eye.copy( this._cameraPosition ).sub( this._worldPosition ).normalize();
     this.position.copy( this._worldPosition );
     this.quaternion.copy( this.space === 'local' ? this._worldQuaternion : this._identityQuaternion );
+
+    for ( let i = 0; i < this._helper.children.length; i ++ ) {
+      this.updateHandle( this._helper.children[ i ] as Mesh );
+    }
     super.updateMatrixWorld();
   }
 
@@ -261,7 +266,7 @@ class TransformControls extends ControlsMixin( TransformHelper as any ) {
 
   onTrackedPointerHover( pointer: PointerTracker ): void {
     if ( !this.object || this.dragging === true ) return;
-    const pickers = this.children.filter((child: Object3D) => {
+    const pickers = this._helper.children.filter((child: Object3D) => {
       return child.userData.tag === 'picker';
     });
     const intersect = getFirstIntersection(pointer.intersectObjects(pickers), false);
@@ -308,7 +313,7 @@ class TransformControls extends ControlsMixin( TransformHelper as any ) {
 
       this.dragging = true
       this._startMatrix.copy( this.object.matrix );
-      this.dispatchEvent( Object.assign( { object: this.object }, CONTROL_START_EVENT ) );
+      this.dispatchEvent( Object.assign( { object: this.object }, EVENT.START ) );
       // TODO: Deprecate
       this.dispatchEvent( { type: 'mouseDown'} );
     }
@@ -450,10 +455,10 @@ class TransformControls extends ControlsMixin( TransformHelper as any ) {
       }
     }
     this.updateMatrixWorld();
-    this.dispatchEvent( CONTROL_CHANGE_EVENT );
+    this.dispatchEvent( EVENT.CHANGE );
     this._endMatrix.copy( object.matrix );
     this._offsetMatrix.copy( this._startMatrix ).invert().multiply( this._endMatrix );
-    this.dispatchEvent( Object.assign( { object: this.object, startMatrix: this._startMatrix, currentMatrix: this._endMatrix }, TRANSFORM_CONTROL_CHANGE_EVENT ) );
+    this.dispatchEvent( Object.assign( { object: this.object, startMatrix: this._startMatrix, currentMatrix: this._endMatrix }, TRANSFORM_CHANGE_EVENT ) );
   }
 
   onTrackedPointerUp( pointer: PointerTracker ): void {
@@ -461,7 +466,7 @@ class TransformControls extends ControlsMixin( TransformHelper as any ) {
     if ( this.dragging ) { // this.activeAxis !== '' ?
       this._endMatrix.copy( this.object.matrix );
       this._offsetMatrix.copy( this._startMatrix ).invert().multiply( this._endMatrix );
-      this.dispatchEvent( Object.assign( { object: this.object, startMatrix: this._startMatrix, endMatrix: this._endMatrix }, CONTROL_END_EVENT ) );
+      this.dispatchEvent( Object.assign( { object: this.object, startMatrix: this._startMatrix, endMatrix: this._endMatrix }, EVENT.END ) );
       // TODO: Deprecate
       this.dispatchEvent( { type: 'mouseUp'} );
     }

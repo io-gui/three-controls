@@ -3,7 +3,7 @@ import { Vector3, Color, Quaternion, Matrix4, BufferGeometry, Float32BufferAttri
 } from 'three';
 
 import { BufferGeometryUtils } from './_BufferGeometryUtils.js';
-import { ControlsHelperGeometrySpec } from '../ControlsHelper.js';
+import { HelperGeometrySpec } from '../Helper.js';
 
 // Reusable utility variables
 const _position = new Vector3();
@@ -24,7 +24,7 @@ export const colors = {
 };
 
 export class HelperGeometry extends BufferGeometry {
-  constructor(chunks: [BufferGeometry, ControlsHelperGeometrySpec][]) {
+  constructor(chunks: [BufferGeometry, HelperGeometrySpec][]) {
     super();
 
     this.index = new Uint16BufferAttribute([], 1);
