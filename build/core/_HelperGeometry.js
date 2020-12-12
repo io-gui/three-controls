@@ -1,159 +1,225 @@
 import { Vector3, Color, Quaternion, Matrix4, BufferGeometry, Float32BufferAttribute, Uint16BufferAttribute, UniformsUtils, FrontSide, ShaderMaterial, DataTexture, RGBAFormat, FloatType, NearestFilter } from 'three';
 import { BufferGeometryUtils } from './_BufferGeometryUtils.js';
+
+
 // Reusable utility variables
 const _position = new Vector3();
 const _quaternion = new Quaternion();
 const _scale = new Vector3();
 const _matrix = new Matrix4();
+
 export const colors = {
-    'white': [1, 1, 1],
-    'whiteTransparent': [1, 1, 1, 0.25],
-    'gray': [0.75, 0.75, 0.75],
-    'red': [1, 0.3, 0.2],
-    'green': [0.2, 1, 0.2],
-    'blue': [0.2, 0.3, 1],
-    'cyan': [0.2, 1, 1],
-    'magenta': [1, 0.3, 1],
-    'yellow': [1, 1, 0.2],
+	'white': [ 1, 1, 1 ],
+	'whiteTransparent': [ 1, 1, 1, 0.25 ],
+	'gray': [ 0.75, 0.75, 0.75 ],
+	'red': [ 1, 0.3, 0.2 ],
+	'green': [ 0.2, 1, 0.2 ],
+	'blue': [ 0.2, 0.3, 1 ],
+	'cyan': [ 0.2, 1, 1 ],
+	'magenta': [ 1, 0.3, 1 ],
+	'yellow': [ 1, 1, 0.2 ],
 };
+
 export class HelperGeometry extends BufferGeometry {
-    constructor(chunks) {
-        super();
-        this.index = new Uint16BufferAttribute([], 1);
-        this.setAttribute('position', new Float32BufferAttribute([], 3));
-        this.setAttribute('uv', new Float32BufferAttribute([], 2));
-        this.setAttribute('color', new Float32BufferAttribute([], 4));
-        this.setAttribute('normal', new Float32BufferAttribute([], 3));
-        this.setAttribute('outline', new Float32BufferAttribute([], 1));
-        const chunkGeometries = [];
-        for (let i = chunks.length; i--;) {
-            const chunk = chunks[i];
-            const chunkGeo = chunk[0].clone();
-            chunkGeometries.push(chunkGeo);
-            const chunkProp = chunk[1] || {};
-            const color = chunkProp.color || [];
-            const thickness = (chunkProp.thickness || -0) / 2;
-            const outlineThickness = chunkProp.outlineThickness !== undefined ? chunkProp.outlineThickness : 1;
-            _position.set(0, 0, 0);
-            _quaternion.set(0, 0, 0, 1);
-            _scale.set(1, 1, 1);
-            if (chunkProp.position)
-                _position.copy(chunkProp.position);
-            if (chunkProp.rotation)
-                _quaternion.setFromEuler(chunkProp.rotation);
-            if (chunkProp.scale)
-                _scale.copy(chunkProp.scale);
-            _matrix.compose(_position, _quaternion, _scale);
-            chunkGeo.applyMatrix4(_matrix);
-            // TODO: investigate proper indexing!
-            if (chunkGeo.index === null) {
-                const indices = [];
-                for (let j = 0; j < chunkGeo.attributes.position.count - 2; j += 3) {
-                    indices.push(j + 0);
-                    indices.push(j + 1);
-                    indices.push(j + 2);
-                }
-                chunkGeo.index = new Uint16BufferAttribute(indices, 1);
-            }
-            const vertCount = chunkGeo.attributes.position.count;
-            if (!chunkGeo.attributes.color) {
-                chunkGeo.setAttribute('color', new Float32BufferAttribute(new Array(vertCount * 4), 4));
-            }
-            const colorArray = chunkGeo.attributes.color.array;
-            for (let j = 0; j < vertCount; j++) {
-                const r = j * 4 + 0;
-                colorArray[r] = color.x !== undefined ? color.x : colorArray[r];
-                const g = j * 4 + 1;
-                colorArray[g] = color.y !== undefined ? color.y : colorArray[g];
-                const b = j * 4 + 2;
-                colorArray[b] = color.z !== undefined ? color.z : colorArray[b];
-                const a = j * 4 + 3;
-                colorArray[a] = color.w !== undefined ? color.w : colorArray[a] || 1;
-            }
-            // Duplicate geometry and add outline attribute
-            //TODO: enable outline overwrite (needs to know if is outline or not in combined geometry)
-            if (!chunkGeo.attributes.outline) {
-                const outlineArray = [];
-                for (let j = 0; j < vertCount; j++) {
-                    outlineArray[j] = -thickness;
-                }
-                chunkGeo.setAttribute('outline', new Float32BufferAttribute(outlineArray, 1));
-                BufferGeometryUtils.mergeBufferGeometries([chunkGeo, chunkGeo], false, chunkGeo);
-                // chunkGeo.merge(chunkGeo);
-                const outlineArray2 = chunkGeo.attributes.outline.array;
-                if (outlineThickness) {
-                    for (let j = 0; j < vertCount; j++) {
-                        outlineArray2[(vertCount + j)] = outlineThickness + thickness;
-                    }
-                }
-                const array = chunkGeo.index.array;
-                for (let j = array.length / 2; j < array.length; j += 3) {
-                    const a = array[j + 1];
-                    const b = array[j + 2];
-                    array[j + 1] = b;
-                    array[j + 2] = a;
-                }
-            }
-            const outlineArray2 = chunkGeo.attributes.outline.array;
-            for (let j = 0; j < chunkGeo.attributes.outline.array.length; j++) {
-                if (chunkGeo.attributes.outline.array[j] < 0) {
-                    if (chunkProp.thickness !== undefined)
-                        outlineArray2[j] = -thickness;
-                }
-                else {
-                    if (chunkProp.outlineThickness !== undefined)
-                        outlineArray2[j] = outlineThickness + thickness;
-                }
-            }
-            // this.merge(chunkGeo);
-        }
-        BufferGeometryUtils.mergeBufferGeometries(chunkGeometries, false, this);
-    }
+
+	constructor( chunks ) {
+
+		super();
+		this.index = new Uint16BufferAttribute( [], 1 );
+		this.setAttribute( 'position', new Float32BufferAttribute( [], 3 ) );
+		this.setAttribute( 'uv', new Float32BufferAttribute( [], 2 ) );
+		this.setAttribute( 'color', new Float32BufferAttribute( [], 4 ) );
+		this.setAttribute( 'normal', new Float32BufferAttribute( [], 3 ) );
+		this.setAttribute( 'outline', new Float32BufferAttribute( [], 1 ) );
+		const chunkGeometries = [];
+
+		for ( let i = chunks.length; i --; ) {
+
+			const chunk = chunks[ i ];
+			const chunkGeo = chunk[ 0 ].clone();
+			chunkGeometries.push( chunkGeo );
+			const chunkProp = chunk[ 1 ] || {};
+			const color = chunkProp.color || [];
+			const thickness = ( chunkProp.thickness || - 0 ) / 2;
+			const outlineThickness = chunkProp.outlineThickness !== undefined ? chunkProp.outlineThickness : 1;
+			_position.set( 0, 0, 0 );
+			_quaternion.set( 0, 0, 0, 1 );
+			_scale.set( 1, 1, 1 );
+
+			if ( chunkProp.position )
+				_position.copy( chunkProp.position );
+
+			if ( chunkProp.rotation )
+				_quaternion.setFromEuler( chunkProp.rotation );
+
+			if ( chunkProp.scale )
+				_scale.copy( chunkProp.scale );
+
+			_matrix.compose( _position, _quaternion, _scale );
+			chunkGeo.applyMatrix4( _matrix );
+
+
+			// TODO: investigate proper indexing!
+			if ( chunkGeo.index === null ) {
+
+				const indices = [];
+
+				for ( let j = 0; j < chunkGeo.attributes.position.count - 2; j += 3 ) {
+
+					indices.push( j + 0 );
+					indices.push( j + 1 );
+					indices.push( j + 2 );
+
+				}
+
+				chunkGeo.index = new Uint16BufferAttribute( indices, 1 );
+
+			}
+
+			const vertCount = chunkGeo.attributes.position.count;
+
+			if ( ! chunkGeo.attributes.color ) {
+
+				chunkGeo.setAttribute( 'color', new Float32BufferAttribute( new Array( vertCount * 4 ), 4 ) );
+
+			}
+
+			const colorArray = chunkGeo.attributes.color.array;
+
+			for ( let j = 0; j < vertCount; j ++ ) {
+
+				const r = j * 4 + 0;
+				colorArray[ r ] = color.x !== undefined ? color.x : colorArray[ r ];
+				const g = j * 4 + 1;
+				colorArray[ g ] = color.y !== undefined ? color.y : colorArray[ g ];
+				const b = j * 4 + 2;
+				colorArray[ b ] = color.z !== undefined ? color.z : colorArray[ b ];
+				const a = j * 4 + 3;
+				colorArray[ a ] = color.w !== undefined ? color.w : colorArray[ a ] || 1;
+
+			}
+
+
+			// Duplicate geometry and add outline attribute
+			//TODO: enable outline overwrite (needs to know if is outline or not in combined geometry)
+			if ( ! chunkGeo.attributes.outline ) {
+
+				const outlineArray = [];
+
+				for ( let j = 0; j < vertCount; j ++ ) {
+
+					outlineArray[ j ] = - thickness;
+
+				}
+
+				chunkGeo.setAttribute( 'outline', new Float32BufferAttribute( outlineArray, 1 ) );
+				BufferGeometryUtils.mergeBufferGeometries( [ chunkGeo, chunkGeo ], false, chunkGeo );
+
+				// chunkGeo.merge(chunkGeo);
+				const outlineArray2 = chunkGeo.attributes.outline.array;
+
+				if ( outlineThickness ) {
+
+					for ( let j = 0; j < vertCount; j ++ ) {
+
+						outlineArray2[ ( vertCount + j ) ] = outlineThickness + thickness;
+
+					}
+
+				}
+
+				const array = chunkGeo.index.array;
+
+				for ( let j = array.length / 2; j < array.length; j += 3 ) {
+
+					const a = array[ j + 1 ];
+					const b = array[ j + 2 ];
+					array[ j + 1 ] = b;
+					array[ j + 2 ] = a;
+
+				}
+
+			}
+
+			const outlineArray2 = chunkGeo.attributes.outline.array;
+
+			for ( let j = 0; j < chunkGeo.attributes.outline.array.length; j ++ ) {
+
+				if ( chunkGeo.attributes.outline.array[ j ] < 0 ) {
+
+					if ( chunkProp.thickness !== undefined )
+						outlineArray2[ j ] = - thickness;
+
+				} else {
+
+					if ( chunkProp.outlineThickness !== undefined )
+						outlineArray2[ j ] = outlineThickness + thickness;
+
+				}
+
+			}
+
+			// this.merge(chunkGeo);
+
+		}
+
+		BufferGeometryUtils.mergeBufferGeometries( chunkGeometries, false, this );
+
+	}
+
 }
+
 export class HelperMaterial extends ShaderMaterial {
-    constructor(props = {
-        color: new Color(0xffffff),
-        opacity: 1,
-        depthBias: 0,
-        highlight: 0
-    }) {
-        super();
-        this.depthTest = true;
-        this.depthWrite = true;
-        this.transparent = false;
-        this.side = FrontSide;
-        this.color = new Color();
-        this.opacity = 1;
-        this.depthBias = 0;
-        this.highlight = 0;
-        this.resolution = new Vector3();
-        const data = new Float32Array([
-            1.0 / 17.0, 0, 0, 0, 9.0 / 17.0, 0, 0, 0, 3.0 / 17.0, 0, 0, 0, 11.0 / 17.0, 0, 0, 0,
-            13.0 / 17.0, 0, 0, 0, 5.0 / 17.0, 0, 0, 0, 15.0 / 17.0, 0, 0, 0, 7.0 / 17.0, 0, 0, 0,
-            4.0 / 17.0, 0, 0, 0, 12.0 / 17.0, 0, 0, 0, 2.0 / 17.0, 0, 0, 0, 10.0 / 17.0, 0, 0, 0,
-            16.0 / 17.0, 0, 0, 0, 8.0 / 17.0, 0, 0, 0, 14.0 / 17.0, 0, 0, 0, 6.0 / 17.0, 0, 0, 0,
-        ]);
-        const texture = new DataTexture(data, 4, 4, RGBAFormat, FloatType);
-        texture.magFilter = NearestFilter;
-        texture.minFilter = NearestFilter;
-        const color = props.color || new Color(0xffffff);
-        const opacity = props.opacity !== undefined ? props.opacity : 1;
-        this.color.copy(color);
-        this.opacity = opacity;
-        this.depthBias = props.depthBias || 0;
-        this.highlight = props.highlight || 0;
-        this.resolution.set(window.innerWidth, window.innerHeight, window.devicePixelRatio);
-        this.uniforms = UniformsUtils.merge([this.uniforms, {
-                "uColor": { value: this.color },
-                "uOpacity": { value: this.opacity },
-                "uDepthBias": { value: this.depthBias },
-                "uHighlight": { value: this.highlight },
-                "uResolution": { value: this.resolution },
-                "tDitherMatrix": { value: texture },
-            }]);
-        this.uniforms.tDitherMatrix.value = texture;
-        texture.needsUpdate = true;
-        this.vertexShader = /* glsl */ `
+
+	constructor( props = {
+		color: new Color( 0xffffff ),
+		opacity: 1,
+		depthBias: 0,
+		highlight: 0
+	} ) {
+
+		super();
+		this.depthTest = true;
+		this.depthWrite = true;
+		this.transparent = false;
+		this.side = FrontSide;
+		this.color = new Color();
+		this.opacity = 1;
+		this.depthBias = 0;
+		this.highlight = 0;
+		this.resolution = new Vector3();
+
+		const data = new Float32Array( [
+			1.0 / 17.0, 0, 0, 0, 9.0 / 17.0, 0, 0, 0, 3.0 / 17.0, 0, 0, 0, 11.0 / 17.0, 0, 0, 0,
+			13.0 / 17.0, 0, 0, 0, 5.0 / 17.0, 0, 0, 0, 15.0 / 17.0, 0, 0, 0, 7.0 / 17.0, 0, 0, 0,
+			4.0 / 17.0, 0, 0, 0, 12.0 / 17.0, 0, 0, 0, 2.0 / 17.0, 0, 0, 0, 10.0 / 17.0, 0, 0, 0,
+			16.0 / 17.0, 0, 0, 0, 8.0 / 17.0, 0, 0, 0, 14.0 / 17.0, 0, 0, 0, 6.0 / 17.0, 0, 0, 0,
+		] );
+
+		const texture = new DataTexture( data, 4, 4, RGBAFormat, FloatType );
+		texture.magFilter = NearestFilter;
+		texture.minFilter = NearestFilter;
+		const color = props.color || new Color( 0xffffff );
+		const opacity = props.opacity !== undefined ? props.opacity : 1;
+		this.color.copy( color );
+		this.opacity = opacity;
+		this.depthBias = props.depthBias || 0;
+		this.highlight = props.highlight || 0;
+		this.resolution.set( window.innerWidth, window.innerHeight, window.devicePixelRatio );
+
+		this.uniforms = UniformsUtils.merge( [ this.uniforms, {
+			"uColor": { value: this.color },
+			"uOpacity": { value: this.opacity },
+			"uDepthBias": { value: this.depthBias },
+			"uHighlight": { value: this.highlight },
+			"uResolution": { value: this.resolution },
+			"tDitherMatrix": { value: texture },
+		} ] );
+
+		this.uniforms.tDitherMatrix.value = texture;
+		texture.needsUpdate = true;
+
+		this.vertexShader = /* glsl */ `
 
       attribute vec4 color;
       attribute float outline;
@@ -202,7 +268,8 @@ export class HelperMaterial extends ShaderMaterial {
         gl_Position = pos;
       }
     `;
-        this.fragmentShader = /* glsl */ `
+
+		this.fragmentShader = /* glsl */ `
       uniform vec3 uColor;
       uniform float uOpacity;
       uniform float uHighlight;
@@ -237,15 +304,21 @@ export class HelperMaterial extends ShaderMaterial {
         if (opacity < ditherPattern.r) discard;
       }
     `;
-    }
-    changed() {
-        if (this.uniforms) {
-            this.uniforms.uColor.value = this.color;
-            this.uniforms.uOpacity.value = this.opacity;
-            this.uniforms.uDepthBias.value = this.depthBias;
-            this.uniforms.uHighlight.value = this.highlight;
-            this.uniforms.uResolution.value = this.resolution;
-            this.uniformsNeedUpdate = true;
-        }
-    }
+
+	}
+	changed() {
+
+		if ( this.uniforms ) {
+
+			this.uniforms.uColor.value = this.color;
+			this.uniforms.uOpacity.value = this.opacity;
+			this.uniforms.uDepthBias.value = this.depthBias;
+			this.uniforms.uHighlight.value = this.highlight;
+			this.uniforms.uResolution.value = this.resolution;
+			this.uniformsNeedUpdate = true;
+
+		}
+
+	}
+
 }

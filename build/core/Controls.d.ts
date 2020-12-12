@@ -1,6 +1,8 @@
 import { Plane, Event as ThreeEvent } from 'three';
 import { PointerTracker, CenterPointerTracker } from './Pointers';
 import { Base, Callback, Viewport } from './Base';
+
+
 /**
  * `Controls`: Generic class for interactive threejs viewport controls. It solves some of the most common and complex problems in threejs control designs.
  *
@@ -28,49 +30,51 @@ import { Base, Callback, Viewport } from './Base';
  * - Emits lyfecycle events: "enabled", "disabled", "dispose"
  */
 export declare class Controls extends Base {
-    enabled: boolean;
-    enableDamping: boolean;
-    dampingFactor: number;
-    private _hoverPointer;
-    private _centerPointer;
-    private _simulatedPointer;
-    private _pointers;
-    private _xrControllers;
-    private _xrPointers;
-    private _keys;
-    protected readonly _plane: Plane;
-    constructor();
-    enabledChanged(value: boolean): void;
-    xrChanged(value: boolean): void;
-    viewportChanged(newViewport: Viewport, oldViewport: Viewport): void;
-    _connect(): void;
-    _disconnect(): void;
-    _connectXR(): void;
-    _disconnectXR(): void;
-    _onXRControllerMove(controllerEvent: ThreeEvent): void;
-    _onXRControllerDown(controllerEvent: ThreeEvent): void;
-    _onXRControllerUp(controllerEvent: ThreeEvent): void;
-    dispose(): void;
-    addEventListener(type: string, listener: Callback): void;
-    _preventDefault(event: Event): void;
-    _onContextMenu(event: Event): void;
-    _onWheel(event: WheelEvent): void;
-    _onPointerDown(event: PointerEvent): void;
-    _onPointerMove(event: PointerEvent): void;
-    _onPointerSimulation(timeDelta: number): void;
-    _onPointerUp(event: PointerEvent): void;
-    _onPointerLeave(event: PointerEvent): void;
-    _onPointerCancel(event: PointerEvent): void;
-    _onPointerOver(event: PointerEvent): void;
-    _onPointerEnter(event: PointerEvent): void;
-    _onPointerOut(event: PointerEvent): void;
-    _onKeyDown(event: KeyboardEvent): void;
-    _onKeyUp(event: KeyboardEvent): void;
-    onTrackedPointerDown(_pointer: PointerTracker, _pointers: PointerTracker[]): void;
-    onTrackedPointerMove(_pointer: PointerTracker, _pointers: PointerTracker[], _centerPointer: CenterPointerTracker): void;
-    onTrackedPointerHover(_pointer: PointerTracker, _pointers: PointerTracker[]): void;
-    onTrackedPointerUp(_pointer: PointerTracker, _pointers: PointerTracker[]): void;
-    onTrackedKeyDown(code: number, codes: number[]): void;
-    onTrackedKeyUp(code: number, codes: number[]): void;
-    onTrackedKeyChange(code: number, codes: number[]): void;
+
+	enabled: boolean;
+	enableDamping: boolean;
+	dampingFactor: number;
+	private _hoverPointer;
+	private _centerPointer;
+	private _simulatedPointer;
+	private _pointers;
+	private _xrControllers;
+	private _xrPointers;
+	private _keys;
+	protected readonly _plane: Plane;
+	constructor();
+	enabledChanged( value: boolean ): void;
+	xrChanged( value: boolean ): void;
+	viewportChanged( newViewport: Viewport, oldViewport: Viewport ): void;
+	_connect(): void;
+	_disconnect(): void;
+	_connectXR(): void;
+	_disconnectXR(): void;
+	_onXRControllerMove( controllerEvent: ThreeEvent ): void;
+	_onXRControllerDown( controllerEvent: ThreeEvent ): void;
+	_onXRControllerUp( controllerEvent: ThreeEvent ): void;
+	dispose(): void;
+	addEventListener( type: string, listener: Callback ): void;
+	_preventDefault( event: Event ): void;
+	_onContextMenu( event: Event ): void;
+	_onWheel( event: WheelEvent ): void;
+	_onPointerDown( event: PointerEvent ): void;
+	_onPointerMove( event: PointerEvent ): void;
+	_onPointerSimulation( timeDelta: number ): void;
+	_onPointerUp( event: PointerEvent ): void;
+	_onPointerLeave( event: PointerEvent ): void;
+	_onPointerCancel( event: PointerEvent ): void;
+	_onPointerOver( event: PointerEvent ): void;
+	_onPointerEnter( event: PointerEvent ): void;
+	_onPointerOut( event: PointerEvent ): void;
+	_onKeyDown( event: KeyboardEvent ): void;
+	_onKeyUp( event: KeyboardEvent ): void;
+	onTrackedPointerDown( _pointer: PointerTracker, _pointers: PointerTracker[] ): void;
+	onTrackedPointerMove( _pointer: PointerTracker, _pointers: PointerTracker[], _centerPointer: CenterPointerTracker ): void;
+	onTrackedPointerHover( _pointer: PointerTracker, _pointers: PointerTracker[] ): void;
+	onTrackedPointerUp( _pointer: PointerTracker, _pointers: PointerTracker[] ): void;
+	onTrackedKeyDown( code: number, codes: number[] ): void;
+	onTrackedKeyUp( code: number, codes: number[] ): void;
+	onTrackedKeyChange( code: number, codes: number[] ): void;
+
 }
