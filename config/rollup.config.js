@@ -26,6 +26,19 @@ function singleImportPaths() {
   };
 }
 
+function replace(matchString, replacementString) {
+  return {
+    name: "replace",
+    renderChunk( code ) {
+      code = code.replace( matchString, replacementString );
+      return {
+        code: code,
+        map: null
+      };
+    }
+  };
+}
+
 function demodularize() {
   return {
     name: "demodularize",
@@ -87,14 +100,10 @@ const makeConfig = ( filename, externals = [] ) => {
         format: 'es',
         sourcemap: isDev,
         plugins: [
+          replace("'three'", "'../../../build/three.module.js'"),
           isDev ? null : singleImportPaths(),
         ]
       },
-      plugins: [
-        alias({entries: [
-          { find: 'three', replacement: '../../../build/three.module.js' }
-        ]}),
-      ],
       external: ['../../../build/three.module.js', ...externals ],
     },
     {
@@ -104,13 +113,11 @@ const makeConfig = ( filename, externals = [] ) => {
         format: "es",
         sourcemap: isDev,
         plugins: [
+          replace("'three'", "'../../../build/three.module.js'"),
           isDev ? null : singleImportPaths(),
         ]
       },
       plugins: [
-        alias({entries: [
-          { find: 'three', replacement: '../../../src/Three' }
-        ]}),
         dts(),
       ],
       external: ['../../../src/Three', ...externals ],
@@ -131,8 +138,8 @@ const makeConfig = ( filename, externals = [] ) => {
 
 export default [
   ...makeConfig( 'TransformControls.js' ),
-  // ...makeConfig( 'TrackballControls.js' ),
-  // ...makeConfig( 'OrbitControls.js' ),
-  // ...makeConfig( 'DragControls.js' ),
-  // ...makeConfig( 'MapControls.js', [ './OrbitControls' ] ),
+  ...makeConfig( 'TrackballControls.js' ),
+  ...makeConfig( 'OrbitControls.js' ),
+  ...makeConfig( 'DragControls.js' ),
+  ...makeConfig( 'MapControls.js', [ './OrbitControls' ] ),
 ];

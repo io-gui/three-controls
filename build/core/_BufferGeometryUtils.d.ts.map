@@ -1,0 +1,1 @@
+{"version":3,"file":"_BufferGeometryUtils.d.ts","sourceRoot":"","sources":["../../src/core/_BufferGeometryUtils.ts"],"names":[],"mappings":"AAAA,OAAO,EAAmB,cAAc,EAAE,eAAe,EAAE,MAAM,OAAO,CAAC;AAEzE;;GAEG;AAEH,eAAO,MAAM,mBAAmB;gCAEO,cAAc;IAoLpD;;;MAGE;wCAC4C,cAAc,EAAE;IAyJ9D;;;MAGE;wCAC4C,eAAe,EAAE,KAAI,eAAe,GAAG,IAAI;CAyCzF,CAAC"}

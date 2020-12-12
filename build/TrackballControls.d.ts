@@ -1,35 +1,40 @@
-import { MOUSE, PerspectiveCamera, OrthographicCamera } from 'three';
-import { PointerTracker } from './Controls';
-import { CameraControls } from './CameraControls';
-
+import { MOUSE } from 'three';
+import { CameraControls } from './core/CameraControls';
+import { PointerTracker } from './core/Pointers';
+import { AnyCameraType } from './core/Base';
 declare class TrackballControls extends CameraControls {
-
-	rotateSpeed: number;
-	zoomSpeed: number;
-	panSpeed: number;
-	noRotate: boolean;
-	noZoom: boolean;
-	noPan: boolean;
-	minDistance: number;
-	maxDistance: number;
-	keys: number[];
-	mouseButtons: {
-		LEFT: MOUSE;
-		MIDDLE: MOUSE;
-		RIGHT: MOUSE;
-	};
-	_keyState: number;
-	constructor( camera: PerspectiveCamera | OrthographicCamera, domElement: HTMLElement );
-	_onContextMenu( event: Event ): void;
-	_onWheel( event: WheelEvent ): void;
-	onTrackedPointerDown( pointer: PointerTracker, pointers: PointerTracker[] ): void;
-	onTrackedPointerMove( pointer: PointerTracker, pointers: PointerTracker[] ): void;
-	onTrackedPointerUp( pointer: PointerTracker, pointers: PointerTracker[] ): void;
-	onTrackedKeyChange( code: number, codes: number[] ): void;
-	_rotateCamera(): void;
-	_zoomCamera(): void;
-	_panCamera(): void;
-
+    rotateSpeed: number;
+    zoomSpeed: number;
+    panSpeed: number;
+    noRotate: boolean;
+    noZoom: boolean;
+    noPan: boolean;
+    minDistance: number;
+    maxDistance: number;
+    keys: number[];
+    mouseButtons: {
+        LEFT: MOUSE;
+        MIDDLE: MOUSE;
+        RIGHT: MOUSE;
+    };
+    private _keyState;
+    private _offset;
+    private _rotationMagnitude;
+    private _zoomMagnitude;
+    private _panMagnitude;
+    private _rotateAxis;
+    private _rotateQuaternion;
+    private _cameraUpDirection;
+    private _cameraSidewaysDirection;
+    private _moveDirection;
+    constructor(camera: AnyCameraType, domElement: HTMLElement);
+    _onContextMenu(event: Event): void;
+    _onWheel(event: WheelEvent): void;
+    onTrackedPointerDown(pointer: PointerTracker, pointers: PointerTracker[]): void;
+    onTrackedPointerMove(pointer: PointerTracker, pointers: PointerTracker[]): void;
+    onTrackedPointerUp(pointer: PointerTracker, pointers: PointerTracker[]): void;
+    onTrackedKeyChange(code: number, codes: number[]): void;
+    update(): void;
+    handleResize(): void;
 }
-
 export { TrackballControls };

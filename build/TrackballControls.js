@@ -1,285 +1,184 @@
 import { MOUSE, Vector2, Vector3, Quaternion, PerspectiveCamera, OrthographicCamera } from 'three';
-import { CONTROL_CHANGE_EVENT, CONTROL_START_EVENT, CONTROL_END_EVENT } from './Controls';
-import { CameraControls } from './CameraControls';
-
-const STATE = { NONE: - 1, ROTATE: 0, ZOOM: 1, PAN: 2 };
-const _eye = new Vector3();
-const _rotationMagnitude = new Vector2();
-const _zoomMagnitude = new Vector2();
-const _panMagnitude = new Vector3();
-
+import { CameraControls } from './core/CameraControls';
+import { EVENT } from './core/Base';
+const STATE = { NONE: -1, ROTATE: 0, ZOOM: 1, PAN: 2 };
 // TODO: make sure events are always fired in right order ( start > change > end )
-// Temp variables
-const _axis = new Vector3();
-const _quaternion = new Quaternion();
-const _eyeDirection = new Vector3();
-const _cameraUpDirection = new Vector3();
-const _cameraSidewaysDirection = new Vector3();
-const _moveDirection = new Vector3();
-
 class TrackballControls extends CameraControls {
-
-	constructor( camera, domElement ) {
-
-		super( camera, domElement );
-
-		// Public API
-		this.rotateSpeed = 1.0;
-		this.zoomSpeed = 1.2;
-		this.panSpeed = 1.0;
-		this.noRotate = false;
-		this.noZoom = false;
-		this.noPan = false;
-		this.minDistance = 0;
-		this.maxDistance = Infinity;
-		this.keys = [ 65 /*A*/, 83 /*S*/, 68 /*D*/];
-		this.mouseButtons = { LEFT: MOUSE.ROTATE, MIDDLE: MOUSE.DOLLY, RIGHT: MOUSE.PAN };
-
-		// Internal utility variables
-		this._keyState = STATE.NONE;
-
-
-		// Deprecation warnings
-		Object.defineProperty( this, 'staticMoving', {
-			set: value => {
-
-				console.warn( `THREE.TrackballControls: "staticMoving" has been renamed to "enableDamping".` );
-				this.enableDamping = ! value;
-
-			}
-		} );
-
-		Object.defineProperty( this, 'dynamicDampingFactor', {
-			set: value => {
-
-				console.warn( 'THREE.TrackballControls: "dynamicDampingFactor" is now "dampingFactor"!' );
-				this.dampingFactor = value;
-
-			}
-		} );
-
-		this.update = () => {
-
-			console.warn( 'THREE.TrackballControls: update() has been deprecated.' );
-
-		};
-
-		this.handleResize = () => {
-
-			console.warn( 'THREE.TrackballControls: handleResize() has been deprecated.' );
-
-		};
-
-	}
-
-	// Event handlers
-	_onContextMenu( event ) {
-
-		super._onContextMenu( event );
-		event.preventDefault();
-
-	}
-	_onWheel( event ) {
-
-		super._onWheel( event );
-
-		if ( this.noZoom === true )
-			return;
-
-		event.preventDefault();
-		event.stopPropagation();
-
-		switch ( event.deltaMode ) {
-
-			case 2:
-
-				// Zoom in pages
-				_zoomMagnitude.y -= event.deltaY * 0.025 * this.zoomSpeed;
-				break;
-
-			case 1:
-
-				// Zoom in lines
-				_zoomMagnitude.y -= event.deltaY * 0.01 * this.zoomSpeed;
-				break;
-
-			default:
-
-				// undefined, 0, assume pixels
-				_zoomMagnitude.y -= event.deltaY * 0.00025 * this.zoomSpeed;
-				break;
-
-		}
-
-	}
-
-	// Tracked pointer handlers
-	onTrackedPointerDown( pointer, pointers ) {
-
-		if ( pointers.length === 1 ) {
-
-			this.dispatchEvent( CONTROL_START_EVENT );
-
-		}
-
-	}
-	onTrackedPointerMove( pointer, pointers ) {
-
-		_rotationMagnitude.set( 0, 0 );
-		_zoomMagnitude.set( 0, 0 );
-		_panMagnitude.set( 0, 0, 0 );
-		_eye.set( 0, 0, 1 ).applyQuaternion( this.camera.quaternion ).normalize();
-		this._plane.setFromNormalAndCoplanarPoint( _eye, this.target );
-		const button = pointers[ 0 ].button;
-
-		switch ( pointers.length ) {
-
-			case 1: // 1 pointer
-				if ( ( button === this.mouseButtons.LEFT || this._keyState === STATE.ROTATE ) && ! this.noRotate ) {
-
-					_rotationMagnitude.set( pointers[ 0 ].view.movement.x, pointers[ 0 ].view.movement.y ).multiplyScalar( this.rotateSpeed );
-
-				} else if ( ( button === this.mouseButtons.MIDDLE || this._keyState === STATE.ZOOM ) && ! this.noZoom ) {
-
-					_zoomMagnitude.y = pointers[ 0 ].view.movement.y * this.zoomSpeed;
-
-				} else if ( ( button === this.mouseButtons.RIGHT || this._keyState === STATE.PAN ) && ! this.noPan ) {
-
-					_panMagnitude.copy( pointers[ 0 ].projectOnPlane( this._plane ).movement ).multiplyScalar( this.panSpeed );
-
-				}
-
-				break;
-
-			default: // 2 or more pointers
-				_zoomMagnitude.y = pointers[ 0 ].view.current.distanceTo( pointers[ 1 ].view.current );
-				_zoomMagnitude.y -= pointers[ 0 ].view.previous.distanceTo( pointers[ 1 ].view.previous );
-				_zoomMagnitude.y *= this.zoomSpeed;
-				_panMagnitude.copy( pointers[ 0 ].projectOnPlane( this._plane ).movement );
-				_panMagnitude.add( pointers[ 1 ].projectOnPlane( this._plane ).movement );
-				_panMagnitude.multiplyScalar( this.panSpeed * 0.5 );
-				break;
-
-		}
-
-		_eye.subVectors( this.camera.position, this.target );
-
-		if ( ! this.noRotate )
-			this._rotateCamera();
-
-		if ( ! this.noZoom )
-			this._zoomCamera();
-
-		if ( ! this.noPan )
-			this._panCamera();
-
-		this.camera.position.addVectors( this.target, _eye );
-		this.camera.lookAt( this.target );
-		this.dispatchEvent( CONTROL_CHANGE_EVENT );
-
-	}
-	onTrackedPointerUp( pointer, pointers ) {
-
-		if ( pointers.length === 0 ) {
-
-			this.dispatchEvent( CONTROL_END_EVENT );
-
-		}
-
-	}
-	onTrackedKeyChange( code, codes ) {
-
-		if ( codes.length > 0 ) {
-
-			if ( codes[ 0 ] === this.keys[ STATE.ROTATE ] && ! this.noRotate ) {
-
-				this._keyState = STATE.ROTATE;
-
-			} else if ( codes[ 0 ] === this.keys[ STATE.ZOOM ] && ! this.noZoom ) {
-
-				this._keyState = STATE.ZOOM;
-
-			} else if ( codes[ 0 ] === this.keys[ STATE.PAN ] && ! this.noPan ) {
-
-				this._keyState = STATE.PAN;
-
-			}
-
-		} else {
-
-			this._keyState = STATE.NONE;
-
-		}
-
-	}
-
-	// Internal helper functions
-	_rotateCamera() {
-
-		const angle = _rotationMagnitude.length();
-
-		if ( angle ) {
-
-			_eye.copy( this.camera.position ).sub( this.target );
-			_eyeDirection.copy( _eye ).normalize();
-			_cameraUpDirection.copy( this.camera.up ).normalize();
-			_cameraSidewaysDirection.crossVectors( _cameraUpDirection, _eyeDirection ).normalize();
-			_cameraUpDirection.setLength( _rotationMagnitude.y );
-			_cameraSidewaysDirection.setLength( _rotationMagnitude.x );
-			_moveDirection.copy( _cameraUpDirection.add( _cameraSidewaysDirection ) );
-			_axis.crossVectors( _moveDirection, _eye ).normalize();
-			_quaternion.setFromAxisAngle( _axis, angle );
-			_eye.applyQuaternion( _quaternion );
-			this.camera.up.applyQuaternion( _quaternion );
-
-		}
-
-	}
-	_zoomCamera() {
-
-		const factor = 1.0 - _zoomMagnitude.y;
-
-		if ( factor !== 1.0 && factor > 0.0 ) {
-
-			if ( this.camera instanceof PerspectiveCamera ) {
-
-				_eye.multiplyScalar( factor );
-
-
-				// Clamp min/max
-				if ( _eye.lengthSq() < this.minDistance * this.minDistance ) {
-
-					this.camera.position.addVectors( this.target, _eye.setLength( this.minDistance ) );
-					_zoomMagnitude.y = 0;
-
-				} else if ( _eye.lengthSq() > this.maxDistance * this.maxDistance ) {
-
-					this.camera.position.addVectors( this.target, _eye.setLength( this.maxDistance ) );
-					_zoomMagnitude.y = 0;
-
-				}
-
-			} else if ( this.camera instanceof OrthographicCamera ) {
-
-				this.camera.zoom /= factor;
-				this.camera.updateProjectionMatrix();
-
-			} else {
-
-				console.warn( 'THREE.TrackballControls: Unsupported camera type' );
-
-			}
-
-		}
-
-	}
-	_panCamera() {
-
-		this.camera.position.sub( _panMagnitude );
-		this.target.sub( _panMagnitude );
-
-	}
-
+    constructor(camera, domElement) {
+        super(camera, domElement);
+        // Public API
+        this.rotateSpeed = 1.0;
+        this.zoomSpeed = 1.2;
+        this.panSpeed = 1.0;
+        this.noRotate = false;
+        this.noZoom = false;
+        this.noPan = false;
+        this.minDistance = 0;
+        this.maxDistance = Infinity;
+        this.keys = [65 /*A*/, 83 /*S*/, 68 /*D*/];
+        this.mouseButtons = { LEFT: MOUSE.ROTATE, MIDDLE: MOUSE.DOLLY, RIGHT: MOUSE.PAN };
+        // Internal utility variables
+        this._keyState = STATE.NONE;
+        this._offset = new Vector3();
+        this._rotationMagnitude = new Vector2();
+        this._zoomMagnitude = new Vector2();
+        this._panMagnitude = new Vector3();
+        this._rotateAxis = new Vector3();
+        this._rotateQuaternion = new Quaternion();
+        this._cameraUpDirection = new Vector3();
+        this._cameraSidewaysDirection = new Vector3();
+        this._moveDirection = new Vector3();
+        // Deprecation warnings
+        Object.defineProperty(this, 'staticMoving', {
+            set: value => {
+                console.warn(`THREE.TrackballControls: "staticMoving" has been renamed to "enableDamping".`);
+                this.enableDamping = !value;
+            }
+        });
+        Object.defineProperty(this, 'dynamicDampingFactor', {
+            set: value => {
+                console.warn('THREE.TrackballControls: "dynamicDampingFactor" is now "dampingFactor"!');
+                this.dampingFactor = value;
+            }
+        });
+    }
+    // Event handlers
+    _onContextMenu(event) {
+        super._onContextMenu(event);
+        event.preventDefault();
+    }
+    _onWheel(event) {
+        super._onWheel(event);
+        if (this.noZoom === true)
+            return;
+        event.preventDefault();
+        event.stopPropagation();
+        switch (event.deltaMode) {
+            case 2:
+                // Zoom in pages
+                this._zoomMagnitude.y -= event.deltaY * 0.025 * this.zoomSpeed;
+                break;
+            case 1:
+                // Zoom in lines
+                this._zoomMagnitude.y -= event.deltaY * 0.01 * this.zoomSpeed;
+                break;
+            default:
+                // undefined, 0, assume pixels
+                this._zoomMagnitude.y -= event.deltaY * 0.00025 * this.zoomSpeed;
+                break;
+        }
+    }
+    // Tracked pointer handlers
+    onTrackedPointerDown(pointer, pointers) {
+        if (pointers.length === 1) {
+            this.dispatchEvent(EVENT.START);
+        }
+    }
+    onTrackedPointerMove(pointer, pointers) {
+        this._rotationMagnitude.set(0, 0);
+        this._zoomMagnitude.set(0, 0);
+        this._panMagnitude.set(0, 0, 0);
+        this._plane.setFromNormalAndCoplanarPoint(this.eye, this.position);
+        const button = pointers[0].button;
+        const camera = this.viewport.camera;
+        switch (pointers.length) {
+            case 1: // 1 pointer
+                if ((button === this.mouseButtons.LEFT || this._keyState === STATE.ROTATE) && !this.noRotate) {
+                    this._rotationMagnitude.set(pointers[0].view.movement.x, pointers[0].view.movement.y).multiplyScalar(this.rotateSpeed);
+                }
+                else if ((button === this.mouseButtons.MIDDLE || this._keyState === STATE.ZOOM) && !this.noZoom) {
+                    this._zoomMagnitude.y = pointers[0].view.movement.y * this.zoomSpeed;
+                }
+                else if ((button === this.mouseButtons.RIGHT || this._keyState === STATE.PAN) && !this.noPan) {
+                    this._panMagnitude.copy(pointers[0].projectOnPlane(this._plane).movement).multiplyScalar(this.panSpeed);
+                }
+                break;
+            default: // 2 or more pointers
+                this._zoomMagnitude.y = pointers[0].view.current.distanceTo(pointers[1].view.current);
+                this._zoomMagnitude.y -= pointers[0].view.previous.distanceTo(pointers[1].view.previous);
+                this._zoomMagnitude.y *= this.zoomSpeed;
+                this._panMagnitude.copy(pointers[0].projectOnPlane(this._plane).movement);
+                this._panMagnitude.add(pointers[1].projectOnPlane(this._plane).movement);
+                this._panMagnitude.multiplyScalar(this.panSpeed * 0.5);
+                break;
+        }
+        this._offset.copy(this._cameraOffset);
+        if (!camera)
+            return;
+        if (!this.noRotate) {
+            const angle = this._rotationMagnitude.length();
+            if (angle) {
+                this._cameraUpDirection.copy(camera.up).normalize();
+                this._cameraSidewaysDirection.crossVectors(this._cameraUpDirection, this.eye).normalize();
+                this._cameraUpDirection.setLength(this._rotationMagnitude.y);
+                this._cameraSidewaysDirection.setLength(this._rotationMagnitude.x);
+                this._moveDirection.copy(this._cameraUpDirection.add(this._cameraSidewaysDirection));
+                this._rotateAxis.crossVectors(this._moveDirection, this.eye).normalize();
+                this._rotateQuaternion.setFromAxisAngle(this._rotateAxis, angle);
+                this._offset.applyQuaternion(this._rotateQuaternion);
+                camera.up.applyQuaternion(this._rotateQuaternion);
+            }
+        }
+        if (!this.noZoom) {
+            const factor = 1.0 - this._zoomMagnitude.y;
+            if (factor !== 1.0 && factor > 0.0) {
+                if (camera instanceof PerspectiveCamera) {
+                    this._offset.multiplyScalar(factor);
+                    // Clamp min/max
+                    if (this._offset.lengthSq() < this.minDistance * this.minDistance) {
+                        camera.position.addVectors(this.position, this._offset.setLength(this.minDistance));
+                        this._zoomMagnitude.y = 0;
+                    }
+                    else if (this._offset.lengthSq() > this.maxDistance * this.maxDistance) {
+                        camera.position.addVectors(this.position, this._offset.setLength(this.maxDistance));
+                        this._zoomMagnitude.y = 0;
+                    }
+                }
+                else if (camera instanceof OrthographicCamera) {
+                    camera.zoom /= factor;
+                    camera.updateProjectionMatrix();
+                }
+                else {
+                    console.warn('THREE.TrackballControls: Unsupported camera type');
+                }
+            }
+        }
+        ;
+        if (!this.noPan) {
+            camera.position.sub(this._panMagnitude);
+            this.position.sub(this._panMagnitude);
+        }
+        camera.position.addVectors(this.position, this._offset);
+        camera.lookAt(this.position);
+        this.dispatchEvent(EVENT.CHANGE);
+    }
+    onTrackedPointerUp(pointer, pointers) {
+        if (pointers.length === 0) {
+            this.dispatchEvent(EVENT.END);
+        }
+    }
+    onTrackedKeyChange(code, codes) {
+        if (codes.length > 0) {
+            if (codes[0] === this.keys[STATE.ROTATE] && !this.noRotate) {
+                this._keyState = STATE.ROTATE;
+            }
+            else if (codes[0] === this.keys[STATE.ZOOM] && !this.noZoom) {
+                this._keyState = STATE.ZOOM;
+            }
+            else if (codes[0] === this.keys[STATE.PAN] && !this.noPan) {
+                this._keyState = STATE.PAN;
+            }
+        }
+        else {
+            this._keyState = STATE.NONE;
+        }
+    }
+    // Deprecation warnings
+    update() {
+        console.warn('THREE.TrackballControls: update() has been deprecated.');
+    }
+    handleResize() {
+        console.warn('THREE.TrackballControls: handleResize() has been deprecated.');
+    }
 }
-
 export { TrackballControls };

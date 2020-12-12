@@ -1,79 +1,49 @@
-import { Vector3, Quaternion, PerspectiveCamera, OrthographicCamera } from 'three';
+import { Vector2, Vector3, Vector4, Quaternion, PerspectiveCamera, OrthographicCamera } from 'three';
 import { Controls } from './Controls';
-import { EVENT } from './Base';
+import { EVENT, AnyCameraType, Viewport } from './Base';
 
-// Internal variables
-const cameraTargets = new WeakMap();
+const STATES = new WeakMap();
 
 /**
  * `CameraControls`: Generic superclass for interactive camera controls.
  */
 export class CameraControls extends Controls {
-  target = new Vector3();
-  // Internal utility variables
-  private readonly _resetQuaternion = new Quaternion();
-  private readonly _resetPosition = new Vector3();
-  private readonly _resetUp = new Vector3();
-  private readonly _resetTarget = new Vector3();
-  private _resetZoom = 1;
-  private _resetFocus = 1;
-  constructor( camera: PerspectiveCamera | OrthographicCamera, domElement: HTMLElement ) {
-    super( camera, domElement );
-
-    // Save initial camera state
-    this.saveCameraState();
-
-    // Camera target used for camera controls and pointer view -> world space conversion. 
-    const target = cameraTargets.get( this.camera ) || cameraTargets.set( this.camera, new Vector3() ).get( this.camera );
-    // TODO encode target in camera matrix + focus?
-    // Optional target/lookAt eg. Dragcontrols, TransformControls
-    Object.defineProperty( this, 'target', {
-      get: () => {
-        return target;
-      },
-      set: ( value ) => {
-        target.copy( value );
-      }
-    });
-    target.set = ( x: number, y: number, z: number ) => {
-      Vector3.prototype.set.call( target, x, y, z );
-      if ( this.enabled ) this.camera.lookAt( target );
-      this.dispatchEvent( EVENT.CHANGE );
-      return target;
+  viewport: Viewport;
+  frustumCulled = false;
+  constructor( camera: AnyCameraType, domElement: HTMLElement ) {
+    super();
+    if ( camera && !(camera instanceof PerspectiveCamera) && !(camera instanceof OrthographicCamera) ) {
+      console.error(`THREE.CameraControls: Unsuported camera type: ${camera.constructor.name}`);
     }
-    target.copy = ( value: Vector3 ) => {
-      Vector3.prototype.copy.call( target, value );
-      if ( this.enabled ) this.camera.lookAt( target );
-      this.dispatchEvent( EVENT.CHANGE );
-      return target;
+    if ( domElement && !(domElement instanceof HTMLElement) ) {
+      console.error(`THREE.CameraControls: Unsuported domElement: ${domElement}`);
     }
-    setTimeout( () => {
-      if ( this.enabled ) this.camera.lookAt( target );
-      this.dispatchEvent( EVENT.CHANGE );
-    } );
+    this.viewport = {
+      domElement: domElement,
+      camera: camera,
+    }
+  }
+  viewportChanged( newViewport: Viewport, oldViewport: Viewport ) {
+    super.viewportChanged( newViewport, oldViewport );
+    if ( oldViewport && oldViewport.camera ) {
+      const oldState = STATES.get( oldViewport.camera ) || new CameraState( oldViewport.camera, this );
+      STATES.set( oldViewport.camera, oldState.update( oldViewport.camera, this ) );
+    }
+    const newState = STATES.get( newViewport.camera ) || new CameraState( newViewport.camera, this );
+    STATES.set( newViewport.camera, newState.apply( newViewport.camera, this ) );
+    this.dispatchEvent( EVENT.CHANGE );
   }
   // Saves camera state for later reset.
   saveCameraState() {
-    this._resetQuaternion.copy( this.camera.quaternion );
-    this._resetPosition.copy( this.camera.position );
-    this._resetUp.copy( this.camera.up );
-    this._resetTarget.copy( this.target );
-    this._resetZoom = this.camera.zoom;
-    if ( this.camera instanceof PerspectiveCamera ) {
-      this._resetFocus = this.camera.focus;
-    }
+    const camera = this.viewport.camera as AnyCameraType;
+    const state = STATES.get( camera ) || new CameraState( camera, this );
+    STATES.set( camera, state.update( camera, this ) );
   }
   // Resets camera state from saved reset state.
   resetCameraState() {
-    this.camera.quaternion.copy( this._resetQuaternion );
-    this.camera.position.copy( this._resetPosition );
-    this.camera.up.copy( this._resetUp );
-    this.target.copy( this._resetTarget );
-    this.camera.zoom = this._resetZoom;
-    if ( this.camera instanceof PerspectiveCamera ) {
-      this.camera.focus = this._resetFocus;
-    }
-    this.camera.updateProjectionMatrix();
+    const camera = this.viewport.camera as AnyCameraType;
+    const state = STATES.get( camera ) || new CameraState( camera, this );
+    STATES.set( camera, state.apply( camera, this ) );
     this.dispatchEvent( EVENT.CHANGE );
   }
   // Deprecation warning.
@@ -85,5 +55,52 @@ export class CameraControls extends Controls {
   reset() {
     console.warn( 'THREE.Controls: "reset" is now "resetCameraState"!' );
     this.resetCameraState();
+  }
+}
+
+class CameraState {
+  private readonly quaternion = new Quaternion();
+  private readonly position = new Vector3();
+  private readonly up = new Vector3();
+  private readonly target = new Vector3();
+  private readonly lens = new Vector2();
+  private readonly bounds = new Vector4();
+  constructor( camera: AnyCameraType, controls: CameraControls ) {
+    this.update( camera, controls );
+  }
+  update( camera: AnyCameraType, controls: CameraControls ): this {
+    this.quaternion.copy( camera.quaternion );
+    this.position.copy( camera.position );
+    this.up.copy( camera.up );
+    this.target.copy( controls.position );
+    if ( camera instanceof PerspectiveCamera ) {
+      this.lens.set( camera.zoom, camera.focus );
+    }
+    if ( camera instanceof OrthographicCamera ) {
+      this.lens.set( camera.zoom, 0 );
+      this.bounds.set( camera.top, camera.right, camera.bottom, camera.left );
+    }
+    return this;
+  }
+  apply( camera: AnyCameraType, controls: CameraControls ): this {
+    camera.quaternion.copy( this.quaternion );
+    camera.position.copy( this.position );
+    camera.up.copy( this.up );
+    controls.position.copy( this.target );
+    camera.lookAt( controls.position );
+    if ( camera instanceof PerspectiveCamera ) {
+      camera.zoom = this.lens.x;
+      camera.focus = this.lens.y;
+      camera.updateProjectionMatrix();
+    }
+    if ( camera instanceof OrthographicCamera ) {
+      camera.zoom = this.lens.x;
+      camera.top = this.bounds.x;
+      camera.right = this.bounds.y;
+      camera.bottom = this.bounds.z;
+      camera.left = this.bounds.w;
+      camera.updateProjectionMatrix();
+    }
+    return this;
   }
 }

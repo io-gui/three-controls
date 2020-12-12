@@ -14,11 +14,11 @@ export class DragControls extends Controls {
   transformGroup = false;
 
   constructor( objects: Object3D[], camera: PerspectiveCamera | OrthographicCamera, domElement: HTMLElement ) {
-    super( camera, domElement );
+    super();
     this.objects = objects;
 
     this.addEventListener( 'enabled-changed', ( event: ThreeEvent ) => {
-      if ( !event.value ) this.domElement.style.cursor = '';
+      if ( !event.value ) this.viewport!.domElement.style.cursor = '';
     } );
   }
 
@@ -30,25 +30,25 @@ export class DragControls extends Controls {
       const object = _intersections[0].object;
       if ( _hoveredObject !== object ) {
         if ( _hoveredObject ) this.dispatchEvent({ type: 'hoveroff', object: _hoveredObject });
-        this.domElement.style.cursor = 'pointer';
+        this.viewport.domElement.style.cursor = 'pointer';
         this.dispatchEvent({ type: 'hoveron', object: object });
         _hoveredObjects[id] = object;
       }
     } else if ( _hoveredObject ) {
       this.dispatchEvent({ type: 'hoveroff', object: _hoveredObject });
-      this.domElement.style.cursor = 'auto';
+      this.viewport.domElement.style.cursor = 'auto';
       delete _hoveredObjects[id];
     }
   }
 
   onTrackedPointerDown( pointer: PointerTracker ): void {
     const id = String( pointer.pointerId );
-    this.domElement.style.cursor = 'move';
+    this.viewport.domElement.style.cursor = 'move';
     _intersections = pointer.intersectObjects( this.objects );
     if ( _intersections.length > 0 ) {
       const object = ( this.transformGroup === true ) ? this.objects[0] : _intersections[0].object;
       _target.setFromMatrixPosition( object.matrixWorld );
-      this.domElement.style.cursor = 'move';
+      this.viewport.domElement.style.cursor = 'move';
       this.dispatchEvent({ type: 'dragstart', object: object });
       _selectedObjects[id] = object
     }
@@ -58,7 +58,7 @@ export class DragControls extends Controls {
     const id = String( pointer.pointerId );
     const _selectedObject = _selectedObjects[id];
     if ( _selectedObject ) {
-      _eye.set( 0, 0, 1 ).applyQuaternion( this.camera.quaternion ).normalize();
+      _eye.set( 0, 0, 1 ).applyQuaternion( this.viewport.camera.quaternion ).normalize();
       this._plane.setFromNormalAndCoplanarPoint( _eye, _target );
       _selectedObject.position.add( pointer.projectOnPlane( this._plane ).movement );
       this.dispatchEvent({ type: 'drag', object: _selectedObject });
@@ -79,7 +79,7 @@ export class DragControls extends Controls {
         delete _hoveredObjects[idx];
       }
     }
-    if ( pointers.length === 0 ) this.domElement.style.cursor = Object.keys( _hoveredObjects ).length ? 'pointer' : 'auto';
+    if ( pointers.length === 0 ) this.viewport.domElement.style.cursor = Object.keys( _hoveredObjects ).length ? 'pointer' : 'auto';
   }
 
   // Deprecation warnings

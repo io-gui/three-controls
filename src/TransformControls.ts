@@ -1,7 +1,7 @@
-import { Mesh, MeshBasicMaterial, Object3D, Quaternion, Vector3, Color, Matrix4, Plane, PerspectiveCamera, OrthographicCamera, Intersection } from 'three';
+import { Mesh, MeshBasicMaterial, Object3D, Quaternion, Vector3, Color, Matrix4, Plane, Intersection } from 'three';
 
 import { PointerTracker } from './core/Pointers';
-import { EVENT } from './core/Base';
+import { EVENT, UNIT } from './core/Base';
 
 import { Controls } from './core/Controls';
 import { TransformHelper } from './TransformHelper';
@@ -37,6 +37,7 @@ class TransformControls extends Controls {
   object?: Object3D;
 
   dragging = false;
+  active = false;
   space = 'world';
   activeMode: 'translate' | 'rotate' | 'scale' | '' = '';
   activeAxis: 'X' | 'Y' | 'Z' | 'XY' | 'YZ' | 'XZ' | 'XYZ' | 'XYZE' | 'XYZX' | 'XYZY' | 'XYZZ' | 'E' | '' = '';
@@ -89,6 +90,7 @@ class TransformControls extends Controls {
   private readonly _dirVector = new Vector3();
   private readonly _identityQuaternion = Object.freeze( new Quaternion() );
 
+  // TODO: improve
   private _helper = new TransformHelper();
   protected readonly _plane = new Plane();
 
@@ -102,12 +104,12 @@ class TransformControls extends Controls {
     // Define properties with getters/setter
     // Setting the defined property will automatically trigger change event
 
-    this.observeProperty( 'camera' );
     this.observeProperty( 'object' );
     this.observeProperty( 'activeAxis' );
     this.observeProperty( 'activeMode' );
     this.observeProperty( 'space', );
     this.observeProperty( 'size' );
+    this.observeProperty( 'active' );
     this.observeProperty( 'dragging' );
     this.observeProperty( 'showX' );
     this.observeProperty( 'showY' );
@@ -198,7 +200,7 @@ class TransformControls extends Controls {
       this._worldQuaternionInv.copy( this._worldQuaternion ).invert();
     }
     this.position.copy( this._worldPosition );
-    this.quaternion.copy( this.space === 'local' ? this._worldQuaternion : this._identityQuaternion );
+    this._helper.quaternion.copy( this.space === 'local' ? this._worldQuaternion : this._identityQuaternion );
 
     // Se helper visibility properties.
     this._helper.size = this.size;
@@ -221,18 +223,19 @@ class TransformControls extends Controls {
     this._dirY.set( 0, 1, 0 ).applyQuaternion( this.space === 'local' ? this._worldQuaternion : this._identityQuaternion );
     this._dirZ.set( 0, 0, 1 ).applyQuaternion( this.space === 'local' ? this._worldQuaternion : this._identityQuaternion );
     // Align the plane for current transform mode, axis and space.
+    const cameraQuaternion = this.viewport?.camera.quaternion || this._identityQuaternion;
     switch ( this.activeMode ) {
       case 'translate':
       case 'scale':
         switch ( this.activeAxis ) {
           case 'X':
-            this._dirVector.set( 0, 0, 1 ).applyQuaternion( this.camera.quaternion ).normalize().cross( this._dirX ).cross( this._dirX );
+            this._dirVector.set( 0, 0, 1 ).applyQuaternion( cameraQuaternion ).normalize().cross( this._dirX ).cross( this._dirX );
             break;
           case 'Y':
-            this._dirVector.set( 0, 0, 1 ).applyQuaternion( this.camera.quaternion ).normalize().cross( this._dirY ).cross( this._dirY );
+            this._dirVector.set( 0, 0, 1 ).applyQuaternion( cameraQuaternion ).normalize().cross( this._dirY ).cross( this._dirY );
             break;
             case 'Z':
-            this._dirVector.set( 0, 0, 1 ).applyQuaternion( this.camera.quaternion ).normalize().cross( this._dirZ ).cross( this._dirZ );
+            this._dirVector.set( 0, 0, 1 ).applyQuaternion( cameraQuaternion ).normalize().cross( this._dirZ ).cross( this._dirZ );
             break;
           case 'XY':
             this._dirVector.copy( this._dirZ );
@@ -248,20 +251,20 @@ class TransformControls extends Controls {
           case 'XYZY':
           case 'XYZZ':
           case 'E':
-            this._dirVector.set( 0, 0, 1 ).applyQuaternion( this.camera.quaternion ).normalize();
+            this._dirVector.set( 0, 0, 1 ).applyQuaternion( cameraQuaternion ).normalize();
             break;
         }
         break;
       case 'rotate':
       default:
         // special case for rotate
-        this._dirVector.set( 0, 0, 1 ).applyQuaternion( this.camera.quaternion ).normalize();
+        this._dirVector.set( 0, 0, 1 ).applyQuaternion( cameraQuaternion ).normalize();
     }
     return this._dirVector;
   }
 
   onTrackedPointerHover( pointer: PointerTracker ): void {
-    if ( !this.object || this.dragging === true ) return;
+    if ( !this.object || this.active === true ) return;
     const pickers = this._helper.children.filter((child: Object3D) => {
       return child.userData.tag === 'picker';
     });
@@ -282,9 +285,13 @@ class TransformControls extends Controls {
     // Simulates hover before down on touchscreen
     this.onTrackedPointerHover( pointer );
     // TODO: Unhack! This enables axis reset/interrupt when simulated pointer is driving gesture with inertia.
-    if ( this.activeAxis === '' ) this.dragging = false;
+    if ( this.activeAxis === '' ) {
+      this.active = false;
+      this.dragging = false;
+    }
 
     if ( !this.object || this.dragging === true || pointer.button !== 0 ) return;
+
     if ( this.activeAxis !== '' ) {
 
       let space = this.space;
@@ -307,7 +314,8 @@ class TransformControls extends Controls {
       this._scaleStart.copy( this.object.scale );
       this.object.matrixWorld.decompose( this._worldPositionStart, this._worldQuaternionStart, this._worldScaleStart );
 
-      this.dragging = true
+      this.dragging = true;
+      this.active = true;
       this._startMatrix.copy( this.object.matrix );
       this.dispatchEvent( Object.assign( { object: this.object }, EVENT.START ) );
       // TODO: Deprecate
@@ -325,7 +333,8 @@ class TransformControls extends Controls {
     } else if ( axis === 'E' || axis === 'XYZE' || axis === 'XYZ' ) {
       space = 'world';
     }
-    if ( !object || axis === '' || this.dragging === false || pointer.button !== 0 ) return;
+    if ( pointer.isSimulated ) this.dragging = false;
+    if ( !object || axis === '' || this.active === false || pointer.button !== 0 ) return;
     this._plane.setFromNormalAndCoplanarPoint( this.getPlaneNormal(), this._worldPosition );
     const intersection = pointer.projectOnPlane( this._plane, this.minGrazingAngle );
 
@@ -431,8 +440,8 @@ class TransformControls extends Controls {
         this._rotationAxis.copy( this._offset ).cross( this.eye ).normalize();
         this._rotationAngle = this._offset.dot( this._tempVector.copy( this._rotationAxis ).cross( this.eye ) ) * ROTATION_SPEED;
       } else if ( axis === 'X' || axis === 'Y' || axis === 'Z' ) {
-        this._rotationAxis.copy( this[ 'UNIT' + axis ] );
-        this._tempVector.copy( this[ 'UNIT' + axis ] );
+        this._rotationAxis.copy( UNIT[ axis ] );
+        this._tempVector.copy( UNIT[ axis ] );
         if ( space === 'local' ) {
           this._tempVector.applyQuaternion( this._worldQuaternion );
         }
@@ -451,6 +460,7 @@ class TransformControls extends Controls {
       }
     }
     this.updateMatrixWorld();
+
     this.dispatchEvent( EVENT.CHANGE );
     this._endMatrix.copy( object.matrix );
     this._offsetMatrix.copy( this._startMatrix ).invert().multiply( this._endMatrix );
@@ -459,14 +469,15 @@ class TransformControls extends Controls {
 
   onTrackedPointerUp( pointer: PointerTracker ): void {
     if ( pointer.button > 0 || !this.object ) return;
-    if ( this.dragging ) { // this.activeAxis !== '' ?
+    if ( this.active ) { // this.activeAxis !== '' ?
       this._endMatrix.copy( this.object.matrix );
       this._offsetMatrix.copy( this._startMatrix ).invert().multiply( this._endMatrix );
       this.dispatchEvent( Object.assign( { object: this.object, startMatrix: this._startMatrix, endMatrix: this._endMatrix }, EVENT.END ) );
       // TODO: Deprecate
       this.dispatchEvent( { type: 'mouseUp'} );
     }
-    this.dragging = false
+    this.active = false;
+    this.dragging = false;
     this.activeAxis = '';
   }
   dispose() {

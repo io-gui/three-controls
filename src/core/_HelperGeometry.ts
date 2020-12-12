@@ -3,7 +3,7 @@ import { Vector3, Color, Quaternion, Matrix4, BufferGeometry, Float32BufferAttri
 } from 'three';
 
 import { BufferGeometryUtils } from './_BufferGeometryUtils.js';
-import { HelperGeometrySpec } from '../Helper.js';
+import { HelperGeometrySpec } from './Helper.js';
 
 // Reusable utility variables
 const _position = new Vector3();

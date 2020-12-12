@@ -1,9 +1,13 @@
-import { Vector3, Quaternion, WebGLRenderer, Scene, PerspectiveCamera, OrthographicCamera } from 'three';
+import { Vector3, Quaternion, WebGLRenderer, Scene, PerspectiveCamera, OrthographicCamera, Camera, WebXRManager } from 'three';
 
 import { Mesh, Event as ThreeEvent } from 'three';
 
-export type Callback = ( callbackValue?: any ) => void;
-export type Camera = PerspectiveCamera | OrthographicCamera;
+export type Callback = ( callbackValue?: any, callbackOldValue?: any ) => void;
+export type AnyCameraType = Camera | PerspectiveCamera | OrthographicCamera;
+export type Viewport = {
+  camera: AnyCameraType,
+  domElement: HTMLElement
+}
 
 export const EVENT: Record<string, ThreeEvent> = {
   CHANGE: { type: 'change' },
@@ -12,14 +16,20 @@ export const EVENT: Record<string, ThreeEvent> = {
   DISPOSE: { type: 'dispose' },
 };
 
+export const UNIT = {
+  ZERO: Object.freeze(new Vector3( 0, 0, 0 )),
+  X: Object.freeze(new Vector3( 1, 0, 0 )),
+  Y: Object.freeze(new Vector3( 0, 1, 0 )),
+  Z: Object.freeze(new Vector3( 0, 0, 1 )),
+}
+
 /**
  * `Base`: Base class for Objects with observable properties, change events and animation.
  */
 export class Base extends Mesh {
-  camera?: Camera;
-  domElement?: HTMLElement;
+  viewport: Viewport = {} as Viewport;
+  xr?: WebXRManager;
   eye = new Vector3();
-  frustumCulled = false;
   protected needsAnimationFrame = false;
   protected readonly _cameraPosition = new Vector3();
   protected readonly _cameraQuaternion = new Quaternion();
@@ -28,22 +38,34 @@ export class Base extends Mesh {
   protected readonly _position = new Vector3();
   protected readonly _quaternion = new Quaternion();
   protected readonly _scale = new Vector3();
-  private readonly _listeners: Record<string, Array<( event: Event ) => void>>;
   private readonly _animations: Callback[] = [];
   private _animationFrame = 0;
-  private _changeDispatched = false;
+  protected _changeDispatched = false;
   constructor() {
     super();
-    this._onNeedsAnimationChanged = this._onNeedsAnimationChanged.bind( this );
     this._onAnimationFrame = this._onAnimationFrame.bind( this );
-    this.observeProperty( 'needsAnimationFrame', this._onNeedsAnimationChanged );
+
+    this.onBeforeRender = ( renderer: WebGLRenderer, scene: Scene, camera: Camera ) => {
+      this.xr = renderer.xr;
+      if ( this.viewport.camera !== camera || this.viewport.domElement !== renderer.domElement ) {
+        this.viewport = {
+          camera: camera,
+          domElement: renderer.domElement,
+        }
+      }
+    }
+
+    this.observeProperty( 'needsAnimationFrame' );
+    this.needsAnimationFrame = true;
   }
   /**
    * Adds property observing mechanism via getter and setter.
    * Also emits '[property]-changed' event and cummulative 'change' event on next rAF.
    */
-  observeProperty( propertyKey: string, onChangeFunc?: Callback, onChangeToFalsyFunc?: Callback ): void {
-    let value: any = this[ propertyKey ];
+  observeProperty( propertyKey: string ): void {
+    let value: any = this[ propertyKey as keyof Base ];
+    let callback = this[ propertyKey + 'Changed' as keyof Base ] as Callback;
+    if (callback) callback = callback.bind( this );
     Object.defineProperty( this, propertyKey, {
       get() {
         return value;
@@ -51,8 +73,8 @@ export class Base extends Mesh {
       set( newValue: any ) {
         const oldValue = value;
         value = newValue;
-        if ( oldValue !== undefined && newValue !== oldValue ) {
-          ( newValue || !onChangeToFalsyFunc ) ? (onChangeFunc && onChangeFunc()) : onChangeToFalsyFunc();
+        if ( newValue !== oldValue ) {
+          callback && callback(newValue, oldValue);
           this.dispatchEvent({ type: propertyKey + '-changed', value: newValue, oldValue: oldValue });
           if ( !this._changeDispatched ) {
             this._changeDispatched = true;
@@ -66,7 +88,7 @@ export class Base extends Mesh {
     });
   }
   // TODO: consider making this work with WebXR context animaiton frame?
-  private _onNeedsAnimationChanged(): void {
+  protected needsAnimationFrameChanged(): void {
     cancelAnimationFrame(this._animationFrame);
     if (this.needsAnimationFrame) {
       this._animationFrame = requestAnimationFrame( this._onAnimationFrame );
@@ -90,34 +112,23 @@ export class Base extends Mesh {
     AnimationManagerSingleton.remove( callback );
   }
   // Stops all animations.
-  stopAllAnimation(): void {
+  stopAllAnimations(): void {
     for ( let i = 0; i < this._animations.length; i++ ) {
       this.stopAnimation( this._animations[i] );
     }
   }
-  // EventDispatcher.dispatchEvent with added ability to dispatch native DOM Events.
-  dispatchEvent( event: ThreeEvent | Event ): void {
-    if ( this._listeners && this._listeners[event.type] && this._listeners[event.type].length ) {
-      Object.defineProperty( event, 'target', { writable: true });
-      super.dispatchEvent( event );
-    }
-  }
-  onBeforeRender = (renderer: WebGLRenderer, scene: Scene, camera: Camera) => {
-    if ( this.camera !== camera || this.domElement !== renderer.domElement ) {
-      this.registerViewport(camera, renderer.domElement);
-    }
-  }
-  registerViewport(camera: Camera, domElement: HTMLElement) {
-    this.camera = camera;
-    this.domElement = domElement
+  dispose() {
+    if ( this.parent ) this.parent.remove( this );
+    this.stopAllAnimations();
+    this.dispatchEvent( EVENT.DISPOSE );
   }
   updateMatrixWorld() {
     super.updateMatrixWorld();
     this.matrixWorld.decompose( this._position, this._quaternion, this._scale );
-    if ( this.camera ) {
-      this.camera.matrixWorld.decompose( this._cameraPosition, this._cameraQuaternion, this._cameraScale ); 
+    if ( this.viewport.camera ) {
+      this.viewport.camera.matrixWorld.decompose( this._cameraPosition, this._cameraQuaternion, this._cameraScale ); 
       this._cameraOffset.copy( this._cameraPosition ).sub( this._position );
-      if ( this.camera instanceof OrthographicCamera ) {
+      if ( this.viewport.camera instanceof OrthographicCamera ) {
         this.eye.set( 0, 0, 1 ).applyQuaternion( this._cameraQuaternion );
       } else {
         this.eye.copy( this._cameraOffset ).normalize();

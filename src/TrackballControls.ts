@@ -1,26 +1,11 @@
 import { MOUSE, Vector2, Vector3, Quaternion, PerspectiveCamera, OrthographicCamera } from 'three';
 import { CameraControls } from './core/CameraControls';
 import { PointerTracker } from './core/Pointers';
-import { EVENT } from './core/Base';
+import { EVENT, AnyCameraType } from './core/Base';
 
 const STATE = { NONE: - 1, ROTATE: 0, ZOOM: 1, PAN: 2 };
 
-const _eye = new Vector3();
-
-const _rotationMagnitude = new Vector2();
-const _zoomMagnitude = new Vector2();
-const _panMagnitude = new Vector3();
-
 // TODO: make sure events are always fired in right order ( start > change > end )
-
-// Temp variables
-
-const _axis = new Vector3();
-const _quaternion = new Quaternion();
-const _eyeDirection = new Vector3();
-const _cameraUpDirection = new Vector3();
-const _cameraSidewaysDirection = new Vector3();
-const _moveDirection = new Vector3();
 
 class TrackballControls extends CameraControls {
   // Public API
@@ -37,8 +22,17 @@ class TrackballControls extends CameraControls {
 
   // Internal utility variables
   private _keyState = STATE.NONE;
+  private _offset = new Vector3();
+  private _rotationMagnitude = new Vector2();
+  private _zoomMagnitude = new Vector2();
+  private _panMagnitude = new Vector3();
+  private _rotateAxis = new Vector3();
+  private _rotateQuaternion = new Quaternion();
+  private _cameraUpDirection = new Vector3();
+  private _cameraSidewaysDirection = new Vector3();
+  private _moveDirection = new Vector3();
 
-  constructor( camera: PerspectiveCamera | OrthographicCamera, domElement: HTMLElement ) {
+  constructor( camera: AnyCameraType, domElement: HTMLElement ) {
     super( camera, domElement );
 
     // Deprecation warnings
@@ -71,15 +65,15 @@ class TrackballControls extends CameraControls {
     switch ( event.deltaMode ) {
       case 2:
         // Zoom in pages
-        _zoomMagnitude.y -= event.deltaY * 0.025 * this.zoomSpeed;
+        this._zoomMagnitude.y -= event.deltaY * 0.025 * this.zoomSpeed;
         break;
       case 1:
         // Zoom in lines
-        _zoomMagnitude.y -= event.deltaY * 0.01 * this.zoomSpeed;
+        this._zoomMagnitude.y -= event.deltaY * 0.01 * this.zoomSpeed;
         break;
       default:
         // undefined, 0, assume pixels
-        _zoomMagnitude.y -= event.deltaY * 0.00025 * this.zoomSpeed;
+        this._zoomMagnitude.y -= event.deltaY * 0.00025 * this.zoomSpeed;
         break;
     }
   }
@@ -93,41 +87,81 @@ class TrackballControls extends CameraControls {
   }
 
   onTrackedPointerMove( pointer: PointerTracker, pointers: PointerTracker[] ): void {
-    _rotationMagnitude.set( 0, 0 );
-    _zoomMagnitude.set( 0, 0 );
-    _panMagnitude.set( 0, 0, 0 );
-    _eye.set( 0, 0, 1 ).applyQuaternion( this.camera.quaternion ).normalize()
-    this._plane.setFromNormalAndCoplanarPoint( _eye, this.target );
+    this._rotationMagnitude.set( 0, 0 );
+    this._zoomMagnitude.set( 0, 0 );
+    this._panMagnitude.set( 0, 0, 0 );
+    this._plane.setFromNormalAndCoplanarPoint( this.eye, this.position );
 
     const button = pointers[ 0 ].button;
+    const camera = this.viewport.camera;
+
     switch ( pointers.length ) {
       case 1: // 1 pointer
         if ( ( button === this.mouseButtons.LEFT || this._keyState === STATE.ROTATE ) && ! this.noRotate ) {
-          _rotationMagnitude.set( pointers[ 0 ].view.movement.x, pointers[ 0 ].view.movement.y ).multiplyScalar( this.rotateSpeed );
+          this._rotationMagnitude.set( pointers[ 0 ].view.movement.x, pointers[ 0 ].view.movement.y ).multiplyScalar( this.rotateSpeed );
         } else if ( ( button === this.mouseButtons.MIDDLE || this._keyState === STATE.ZOOM ) && ! this.noZoom ) {
-          _zoomMagnitude.y = pointers[ 0 ].view.movement.y * this.zoomSpeed;
+          this._zoomMagnitude.y = pointers[ 0 ].view.movement.y * this.zoomSpeed;
         } else if ( ( button === this.mouseButtons.RIGHT || this._keyState === STATE.PAN ) && ! this.noPan ) {
-          _panMagnitude.copy( pointers[ 0 ].projectOnPlane( this._plane ).movement ).multiplyScalar( this.panSpeed );
+          this._panMagnitude.copy( pointers[ 0 ].projectOnPlane( this._plane ).movement ).multiplyScalar( this.panSpeed );
         }
         break;
 
       default: // 2 or more pointers
-        _zoomMagnitude.y = pointers[ 0 ].view.current.distanceTo( pointers[ 1 ].view.current );
-        _zoomMagnitude.y -= pointers[ 0 ].view.previous.distanceTo( pointers[ 1 ].view.previous );
-        _zoomMagnitude.y *= this.zoomSpeed;
-        _panMagnitude.copy( pointers[ 0 ].projectOnPlane( this._plane ).movement );
-        _panMagnitude.add( pointers[ 1 ].projectOnPlane( this._plane ).movement );
-        _panMagnitude.multiplyScalar( this.panSpeed * 0.5 );
+        this._zoomMagnitude.y = pointers[ 0 ].view.current.distanceTo( pointers[ 1 ].view.current );
+        this._zoomMagnitude.y -= pointers[ 0 ].view.previous.distanceTo( pointers[ 1 ].view.previous );
+        this._zoomMagnitude.y *= this.zoomSpeed;
+        this._panMagnitude.copy( pointers[ 0 ].projectOnPlane( this._plane ).movement );
+        this._panMagnitude.add( pointers[ 1 ].projectOnPlane( this._plane ).movement );
+        this._panMagnitude.multiplyScalar( this.panSpeed * 0.5 );
         break;
     }
-    _eye.subVectors( this.camera.position, this.target );
 
-    if ( ! this.noRotate ) this._rotateCamera();
-    if ( ! this.noZoom ) this._zoomCamera();
-    if ( ! this.noPan ) this._panCamera();
+    this._offset.copy( this._cameraOffset );
 
-    this.camera.position.addVectors( this.target, _eye );
-    this.camera.lookAt( this.target );
+    if ( ! camera ) return; 
+
+    if ( ! this.noRotate ) {
+      const angle = this._rotationMagnitude.length();
+      if ( angle ) {
+        this._cameraUpDirection.copy( camera.up ).normalize();
+        this._cameraSidewaysDirection.crossVectors( this._cameraUpDirection, this.eye ).normalize();
+        this._cameraUpDirection.setLength( this._rotationMagnitude.y );
+        this._cameraSidewaysDirection.setLength( this._rotationMagnitude.x );
+        this._moveDirection.copy( this._cameraUpDirection.add( this._cameraSidewaysDirection ) );
+        this._rotateAxis.crossVectors( this._moveDirection, this.eye ).normalize();
+        this._rotateQuaternion.setFromAxisAngle( this._rotateAxis, angle );
+        this._offset.applyQuaternion( this._rotateQuaternion );
+        camera.up.applyQuaternion( this._rotateQuaternion );
+      }
+    }
+    if ( ! this.noZoom ) {
+      const factor = 1.0 - this._zoomMagnitude.y;
+      if ( factor !== 1.0 && factor > 0.0 ) {
+        if ( camera instanceof PerspectiveCamera ) {
+          this._offset.multiplyScalar( factor );
+          // Clamp min/max
+          if ( this._offset.lengthSq() < this.minDistance * this.minDistance ) {
+            camera.position.addVectors( this.position, this._offset.setLength( this.minDistance ) );
+            this._zoomMagnitude.y = 0;
+          } else if ( this._offset.lengthSq() > this.maxDistance * this.maxDistance ) {
+            camera.position.addVectors( this.position, this._offset.setLength( this.maxDistance ) );
+            this._zoomMagnitude.y = 0;
+          }
+        } else if ( camera instanceof OrthographicCamera ) {
+          camera.zoom /= factor;
+          camera.updateProjectionMatrix();
+        } else {
+          console.warn( 'THREE.TrackballControls: Unsupported camera type' );
+        }
+      }
+    };
+    if ( ! this.noPan ) {
+      camera.position.sub( this._panMagnitude );
+      this.position.sub( this._panMagnitude );
+    }
+
+    camera.position.addVectors( this.position, this._offset );
+    camera.lookAt( this.position );
     this.dispatchEvent( EVENT.CHANGE );
   }
 
@@ -149,52 +183,6 @@ class TrackballControls extends CameraControls {
     } else {
       this._keyState = STATE.NONE;
     }
-  }
-
-  // Internal helper functions
-
-  _rotateCamera(): void {
-    const angle = _rotationMagnitude.length();
-    if ( angle ) {
-      _eye.copy( this.camera.position ).sub( this.target );
-      _eyeDirection.copy( _eye ).normalize();
-      _cameraUpDirection.copy( this.camera.up ).normalize();
-      _cameraSidewaysDirection.crossVectors( _cameraUpDirection, _eyeDirection ).normalize();
-      _cameraUpDirection.setLength( _rotationMagnitude.y );
-      _cameraSidewaysDirection.setLength( _rotationMagnitude.x );
-      _moveDirection.copy( _cameraUpDirection.add( _cameraSidewaysDirection ) );
-      _axis.crossVectors( _moveDirection, _eye ).normalize();
-      _quaternion.setFromAxisAngle( _axis, angle );
-      _eye.applyQuaternion( _quaternion );
-      this.camera.up.applyQuaternion( _quaternion );
-    }
-  }
-
-  _zoomCamera(): void {
-    const factor = 1.0 - _zoomMagnitude.y;
-    if ( factor !== 1.0 && factor > 0.0 ) {
-      if ( this.camera instanceof PerspectiveCamera ) {
-        _eye.multiplyScalar( factor );
-        // Clamp min/max
-        if ( _eye.lengthSq() < this.minDistance * this.minDistance ) {
-          this.camera.position.addVectors( this.target, _eye.setLength( this.minDistance ) );
-          _zoomMagnitude.y = 0;
-        } else if ( _eye.lengthSq() > this.maxDistance * this.maxDistance ) {
-          this.camera.position.addVectors( this.target, _eye.setLength( this.maxDistance ) );
-          _zoomMagnitude.y = 0;
-        }
-      } else if ( this.camera instanceof OrthographicCamera ) {
-        this.camera.zoom /= factor;
-        this.camera.updateProjectionMatrix();
-      } else {
-        console.warn( 'THREE.TrackballControls: Unsupported camera type' );
-      }
-    }
-  }
-
-  _panCamera(): void {
-    this.camera.position.sub( _panMagnitude );
-    this.target.sub( _panMagnitude );
   }
 
   // Deprecation warnings

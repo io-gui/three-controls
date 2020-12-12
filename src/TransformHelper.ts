@@ -2,6 +2,7 @@ import { Quaternion, Mesh, Euler, Vector3, Vector4, Matrix4, Line, OctahedronBuf
   TorusBufferGeometry, SphereBufferGeometry, BoxBufferGeometry, PlaneBufferGeometry, CylinderBufferGeometry,
   BufferGeometry, Float32BufferAttribute, OrthographicCamera, PerspectiveCamera } from 'three';
 
+import { UNIT } from './core/Base';
 import { Helper, HelperGeometrySpec } from './core/Helper';
 
 const CircleGeometry = function ( radius: number, arc: number ) {
@@ -649,11 +650,6 @@ export class TransformHelper extends Helper {
   PLANE_HIDE_TRESHOLD = 0.9;
   AXIS_FLIP_TRESHOLD = 0.0;
 
-  protected readonly UNIT0 = Object.freeze(new Vector3( 0, 0, 0 ));
-  protected readonly UNITX = Object.freeze(new Vector3( 1, 0, 0 ));
-  protected readonly UNITY = Object.freeze(new Vector3( 0, 1, 0 ));
-  protected readonly UNITZ = Object.freeze(new Vector3( 0, 0, 1 ));
-
   protected _sizeAttenuation = 1;
   protected readonly _cameraPosition = new Vector3();
   protected readonly _position = new Vector3();
@@ -702,25 +698,25 @@ export class TransformHelper extends Helper {
       // Hide handle pointing straight towards the camera
 
       if ( handleAxis.search( 'E' ) !== - 1 ) {
-        this._tempQuaternion2.setFromRotationMatrix( this._tempMatrix.lookAt( eye, this.UNIT0, this.UNITY ) );
+        this._tempQuaternion2.setFromRotationMatrix( this._tempMatrix.lookAt( eye, UNIT.ZERO, UNIT.Y ) );
         handle.quaternion.copy(this.quaternion).invert();
         handle.quaternion.multiply( this._tempQuaternion2 );
       }
       if ( handleAxis === 'X' ) {
         this._tempQuaternion2.identity();
-        this._tempQuaternion.setFromAxisAngle( this.UNITX, Math.atan2( - this._dirVector.y, this._dirVector.z ) );
+        this._tempQuaternion.setFromAxisAngle( UNIT.X, Math.atan2( - this._dirVector.y, this._dirVector.z ) );
         this._tempQuaternion.multiplyQuaternions( this._tempQuaternion2, this._tempQuaternion );
         handle.quaternion.copy( this._tempQuaternion );
       }
       if ( handleAxis === 'Y' ) {
         this._tempQuaternion2.identity();
-        this._tempQuaternion.setFromAxisAngle( this.UNITY, Math.atan2( this._dirVector.x, this._dirVector.z ) );
+        this._tempQuaternion.setFromAxisAngle( UNIT.Y, Math.atan2( this._dirVector.x, this._dirVector.z ) );
         this._tempQuaternion.multiplyQuaternions( this._tempQuaternion2, this._tempQuaternion );
         handle.quaternion.copy( this._tempQuaternion );
       }
       if ( handleAxis === 'Z' ) {
         this._tempQuaternion2.identity();
-        this._tempQuaternion.setFromAxisAngle( this.UNITZ, Math.atan2( this._dirVector.y, this._dirVector.x ) );
+        this._tempQuaternion.setFromAxisAngle( UNIT.Z, Math.atan2( this._dirVector.y, this._dirVector.x ) );
         this._tempQuaternion.multiplyQuaternions( this._tempQuaternion2, this._tempQuaternion );
         handle.quaternion.copy( this._tempQuaternion );
       }
@@ -730,7 +726,7 @@ export class TransformHelper extends Helper {
       // Flip handle to prevent occlusion by other handles
 
       if ( handleAxis.search( 'X' ) !== - 1 ) {
-        if ( this._dirVector.copy( this.UNITX ).applyQuaternion( quaternion ).dot( eye ) < this.AXIS_FLIP_TRESHOLD ) {
+        if ( this._dirVector.copy( UNIT.X ).applyQuaternion( quaternion ).dot( eye ) < this.AXIS_FLIP_TRESHOLD ) {
           if ( handleTag === 'fwd' ) {
             handle.visible = false;
           } else {
@@ -741,7 +737,7 @@ export class TransformHelper extends Helper {
         }
       }
       if ( handleAxis.search( 'Y' ) !== - 1 ) {
-        if ( this._dirVector.copy( this.UNITY ).applyQuaternion( quaternion ).dot( eye ) < this.AXIS_FLIP_TRESHOLD ) {
+        if ( this._dirVector.copy( UNIT.Y ).applyQuaternion( quaternion ).dot( eye ) < this.AXIS_FLIP_TRESHOLD ) {
           if ( handleTag === 'fwd' ) {
             handle.visible = false;
           } else {
@@ -752,7 +748,7 @@ export class TransformHelper extends Helper {
         }
       }
       if ( handleAxis.search( 'Z' ) !== - 1 ) {
-        if ( this._dirVector.copy( this.UNITZ ).applyQuaternion( quaternion ).dot( eye ) < this.AXIS_FLIP_TRESHOLD ) {
+        if ( this._dirVector.copy( UNIT.Z ).applyQuaternion( quaternion ).dot( eye ) < this.AXIS_FLIP_TRESHOLD ) {
           if ( handleTag === 'fwd' ) {
             handle.visible = false;
           } else {
@@ -775,22 +771,22 @@ export class TransformHelper extends Helper {
     const hide_treshold = this.AXIS_HIDE_TRESHOLD * ( handleType === 'scale' ? this.AXIS_HIDE_TRESHOLD * 0.95 : this.AXIS_HIDE_TRESHOLD );
     const plane_hide_treshold = this.AXIS_HIDE_TRESHOLD * ( handleType === 'scale' ? this.PLANE_HIDE_TRESHOLD * 0.95 : this.PLANE_HIDE_TRESHOLD );
 
-    if ( hideAllignedToX && Math.abs( this._dirVector.copy( this.UNITX ).applyQuaternion( quaternion ).dot( eye ) ) > hide_treshold ) {
+    if ( hideAllignedToX && Math.abs( this._dirVector.copy( UNIT.X ).applyQuaternion( quaternion ).dot( eye ) ) > hide_treshold ) {
         handle.visible = false;
     }
-    if ( hideAllignedToY && Math.abs( this._dirVector.copy( this.UNITY ).applyQuaternion( quaternion ).dot( eye ) ) > hide_treshold ) {
+    if ( hideAllignedToY && Math.abs( this._dirVector.copy( UNIT.Y ).applyQuaternion( quaternion ).dot( eye ) ) > hide_treshold ) {
         handle.visible = false;
     }
-    if ( hideAllignedToZ && Math.abs( this._dirVector.copy( this.UNITZ ).applyQuaternion( quaternion ).dot( eye ) ) > hide_treshold ) {
+    if ( hideAllignedToZ && Math.abs( this._dirVector.copy( UNIT.Z ).applyQuaternion( quaternion ).dot( eye ) ) > hide_treshold ) {
         handle.visible = false;
     }
-    if ( hideAllignedToXY && Math.abs( this._dirVector.copy( this.UNITZ ).applyQuaternion( quaternion ).dot( eye ) ) < ( 1 - plane_hide_treshold ) ) {
+    if ( hideAllignedToXY && Math.abs( this._dirVector.copy( UNIT.Z ).applyQuaternion( quaternion ).dot( eye ) ) < ( 1 - plane_hide_treshold ) ) {
         handle.visible = false;
     }
-    if ( hideAllignedToYZ && Math.abs( this._dirVector.copy( this.UNITX ).applyQuaternion( quaternion ).dot( eye ) ) < ( 1 - plane_hide_treshold ) ) {
+    if ( hideAllignedToYZ && Math.abs( this._dirVector.copy( UNIT.X ).applyQuaternion( quaternion ).dot( eye ) ) < ( 1 - plane_hide_treshold ) ) {
         handle.visible = false;
     }
-    if ( hideAllignedToXZ && Math.abs( this._dirVector.copy( this.UNITY ).applyQuaternion( quaternion ).dot( eye ) ) < ( 1 - plane_hide_treshold ) ) {
+    if ( hideAllignedToXZ && Math.abs( this._dirVector.copy( UNIT.Y ).applyQuaternion( quaternion ).dot( eye ) ) < ( 1 - plane_hide_treshold ) ) {
         handle.visible = false;
     }
 
@@ -799,18 +795,19 @@ export class TransformHelper extends Helper {
   
   updateMatrixWorld() {
     super.updateMatrixWorld();
+    const camera = this.viewport?.camera;
 
-    if ( this.camera instanceof PerspectiveCamera ) {
+    if ( camera instanceof PerspectiveCamera ) {
       this.eye.copy( this._cameraPosition ).sub( this._position ).normalize();
-    } else if ( this.camera instanceof OrthographicCamera ) {
+    } else if ( camera instanceof OrthographicCamera ) {
       this.eye.set( 0, 0, 1 ).applyQuaternion( this._cameraQuaternion );
     }
 
     this._sizeAttenuation = 1;
-    if ( this.camera instanceof OrthographicCamera ) {
-      this._sizeAttenuation = ( this.camera.top - this.camera.bottom ) / this.camera.zoom;
-    } else if ( this.camera instanceof PerspectiveCamera ) {
-      this._sizeAttenuation = this._position.distanceTo( this._cameraPosition ) * Math.min( 1.9 * Math.tan( Math.PI * this.camera.fov / 360 ) / this.camera.zoom, 7 );
+    if ( camera instanceof OrthographicCamera ) {
+      this._sizeAttenuation = ( camera.top - camera.bottom ) / camera.zoom;
+    } else if ( camera instanceof PerspectiveCamera ) {
+      this._sizeAttenuation = this._position.distanceTo( this._cameraPosition ) * Math.min( 1.9 * Math.tan( Math.PI * camera.fov / 360 ) / camera.zoom, 7 );
     }
 
     for ( let i = 0; i < this.children.length; i ++ ) {
