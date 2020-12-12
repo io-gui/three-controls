@@ -55,28 +55,28 @@ class TransformControls extends Controls {
   private readonly _startNorm = new Vector3();
   private readonly _endNorm = new Vector3();
 
-  private readonly _startMatrix = new Matrix4();
-  private readonly _endMatrix = new Matrix4();
-  private readonly _offsetMatrix = new Matrix4();
+  private readonly _transformMatrixStart = new Matrix4();
+  private readonly _transformMatrixEnd = new Matrix4();
+  private readonly _trandformMatrixOffset = new Matrix4();
 
-  private readonly _parentPosition = new Vector3();
-  private readonly _parentQuaternion = new Quaternion();
-  private readonly _parentQuaternionInv = new Quaternion();
-  private readonly _parentScale = new Vector3();
+  private readonly _parentWorldPosition = new Vector3();
+  private readonly _parentWorldQuaternion = new Quaternion();
+  private readonly _parentWorldQuaternionInv = new Quaternion();
+  private readonly _parentWorldScale = new Vector3();
 
-  private readonly _worldPositionStart = new Vector3();
-  private readonly _worldQuaternionStart = new Quaternion();
-  private readonly _worldScaleStart = new Vector3();
+  private readonly _objectWorldPositionStart = new Vector3();
+  private readonly _objectWorldQuaternionStart = new Quaternion();
+  private readonly _objectWorldScaleStart = new Vector3();
 
-  private readonly _worldPosition = new Vector3();
-  private readonly _worldQuaternion = new Quaternion();
-  private readonly _worldQuaternionInv = new Quaternion();
-  private readonly _worldScale = new Vector3();
+  private readonly _objectWorldPosition = new Vector3();
+  private readonly _objectWorldQuaternion = new Quaternion();
+  private readonly _objectWorldQuaternionInv = new Quaternion();
+  private readonly _objectWorldScale = new Vector3();
 
-  private readonly _positionStart = new Vector3();
-  private readonly _quaternionStart = new Quaternion();
-  private readonly _quaternionStartInv = new Quaternion();
-  private readonly _scaleStart = new Vector3();
+  private readonly _objectPositionStart = new Vector3();
+  private readonly _objectQuaternionStart = new Quaternion();
+  private readonly _objectQuaternionStartInv = new Quaternion();
+  private readonly _objectScaleStart = new Vector3();
 
   private readonly _rotationAxis = new Vector3();
   private _rotationAngle = 0;
@@ -193,14 +193,14 @@ class TransformControls extends Controls {
       if ( this.object.parent === null ) {
         console.error( 'TransformControls: The attached 3D object must be a part of the scene graph.' );
       } else {
-        this.object.parent.matrixWorld.decompose( this._parentPosition, this._parentQuaternion, this._parentScale );
+        this.object.parent.matrixWorld.decompose( this._parentWorldPosition, this._parentWorldQuaternion, this._parentWorldScale );
       }
-      this.object.matrixWorld.decompose( this._worldPosition, this._worldQuaternion, this._worldScale );
-      this._parentQuaternionInv.copy( this._parentQuaternion ).invert();
-      this._worldQuaternionInv.copy( this._worldQuaternion ).invert();
+      this.object.matrixWorld.decompose( this._objectWorldPosition, this._objectWorldQuaternion, this._objectWorldScale );
+      this._parentWorldQuaternionInv.copy( this._parentWorldQuaternion ).invert();
+      this._objectWorldQuaternionInv.copy( this._objectWorldQuaternion ).invert();
     }
-    this.position.copy( this._worldPosition );
-    this._helper.quaternion.copy( this.space === 'local' ? this._worldQuaternion : this._identityQuaternion );
+    this.position.copy( this._objectWorldPosition );
+    this._helper.quaternion.copy( this.space === 'local' ? this._objectWorldQuaternion : this._identityQuaternion );
 
     // Se helper visibility properties.
     this._helper.size = this.size;
@@ -219,9 +219,9 @@ class TransformControls extends Controls {
   }
 
   getPlaneNormal(): Vector3 {
-    this._dirX.set( 1, 0, 0 ).applyQuaternion( this.space === 'local' ? this._worldQuaternion : this._identityQuaternion );
-    this._dirY.set( 0, 1, 0 ).applyQuaternion( this.space === 'local' ? this._worldQuaternion : this._identityQuaternion );
-    this._dirZ.set( 0, 0, 1 ).applyQuaternion( this.space === 'local' ? this._worldQuaternion : this._identityQuaternion );
+    this._dirX.set( 1, 0, 0 ).applyQuaternion( this.space === 'local' ? this._objectWorldQuaternion : this._identityQuaternion );
+    this._dirY.set( 0, 1, 0 ).applyQuaternion( this.space === 'local' ? this._objectWorldQuaternion : this._identityQuaternion );
+    this._dirZ.set( 0, 0, 1 ).applyQuaternion( this.space === 'local' ? this._objectWorldQuaternion : this._identityQuaternion );
     // Align the plane for current transform mode, axis and space.
     const cameraQuaternion = this.viewport?.camera.quaternion || this._identityQuaternion;
     switch ( this.activeMode ) {
@@ -308,15 +308,15 @@ class TransformControls extends Controls {
       }
       this.object.updateMatrixWorld();
       if ( this.object.parent ) this.object.parent.updateMatrixWorld();
-      this._positionStart.copy( this.object.position );
-      this._quaternionStart.copy( this.object.quaternion );
-      this._quaternionStartInv.copy( this.object.quaternion ).invert();
-      this._scaleStart.copy( this.object.scale );
-      this.object.matrixWorld.decompose( this._worldPositionStart, this._worldQuaternionStart, this._worldScaleStart );
+      this._objectPositionStart.copy( this.object.position );
+      this._objectQuaternionStart.copy( this.object.quaternion );
+      this._objectQuaternionStartInv.copy( this.object.quaternion ).invert();
+      this._objectScaleStart.copy( this.object.scale );
+      this.object.matrixWorld.decompose( this._objectWorldPositionStart, this._objectWorldQuaternionStart, this._objectWorldScaleStart );
 
       this.dragging = true;
       this.active = true;
-      this._startMatrix.copy( this.object.matrix );
+      this._transformMatrixStart.copy( this.object.matrix );
       this.dispatchEvent( Object.assign( { object: this.object }, EVENT.START ) );
       // TODO: Deprecate
       this.dispatchEvent( { type: 'mouseDown'} );
@@ -335,19 +335,19 @@ class TransformControls extends Controls {
     }
     if ( pointer.isSimulated ) this.dragging = false;
     if ( !object || axis === '' || this.active === false || pointer.button !== 0 ) return;
-    this._plane.setFromNormalAndCoplanarPoint( this.getPlaneNormal(), this._worldPosition );
+    this._plane.setFromNormalAndCoplanarPoint( this.getPlaneNormal(), this._objectWorldPosition );
     const intersection = pointer.projectOnPlane( this._plane, this.minGrazingAngle );
 
     if ( !intersection ) return; // TODO: handle intersection miss
 
-    this._pointStart.copy( intersection.start ).sub( this._worldPositionStart );
-    this._pointEnd.copy( intersection.current ).sub( this._worldPositionStart );
+    this._pointStart.copy( intersection.start ).sub( this._objectWorldPositionStart );
+    this._pointEnd.copy( intersection.current ).sub( this._objectWorldPositionStart );
 
     if ( mode === 'translate' ) {
       // Apply translate
       this._offset.copy( this._pointEnd ).sub( this._pointStart );
       if ( space === 'local' ) {
-        this._offset.applyQuaternion( this._quaternionStartInv );
+        this._offset.applyQuaternion( this._objectQuaternionStartInv );
       }
 
       if ( axis.indexOf( 'X' ) === - 1 ) this._offset.x = 0
@@ -355,15 +355,15 @@ class TransformControls extends Controls {
       if ( axis.indexOf( 'Z' ) === - 1 ) this._offset.z = 0;
 
       if ( space === 'local' ) {
-        this._offset.applyQuaternion( this._quaternionStart ).divide( this._parentScale );
+        this._offset.applyQuaternion( this._objectQuaternionStart ).divide( this._parentWorldScale );
       } else {
-        this._offset.applyQuaternion( this._parentQuaternionInv ).divide( this._parentScale );
+        this._offset.applyQuaternion( this._parentWorldQuaternionInv ).divide( this._parentWorldScale );
       }
-      object.position.copy( this._offset ).add( this._positionStart );
+      object.position.copy( this._offset ).add( this._objectPositionStart );
       // Apply translation snap
       if ( this.translationSnap ) {
         if ( space === 'local' ) {
-          object.position.applyQuaternion( this._tempQuaternion.copy( this._quaternionStart ).invert() );
+          object.position.applyQuaternion( this._tempQuaternion.copy( this._objectQuaternionStart ).invert() );
           if ( axis.search( 'X' ) !== - 1 ) {
             object.position.x = Math.round( object.position.x / this.translationSnap ) * this.translationSnap;
           }
@@ -373,11 +373,11 @@ class TransformControls extends Controls {
           if ( axis.search( 'Z' ) !== - 1 ) {
             object.position.z = Math.round( object.position.z / this.translationSnap ) * this.translationSnap;
           }
-          object.position.applyQuaternion( this._quaternionStart );
+          object.position.applyQuaternion( this._objectQuaternionStart );
         }
         if ( space === 'world' ) {
           if ( object.parent ) {
-            object.position.add( this._parentPosition );
+            object.position.add( this._parentWorldPosition );
           }
           if ( axis.search( 'X' ) !== - 1 ) {
             object.position.x = Math.round( object.position.x / this.translationSnap ) * this.translationSnap;
@@ -389,7 +389,7 @@ class TransformControls extends Controls {
             object.position.z = Math.round( object.position.z / this.translationSnap ) * this.translationSnap;
           }
           if ( object.parent ) {
-            object.position.sub( this._parentPosition );
+            object.position.sub( this._parentWorldPosition );
           }
         }
       }
@@ -401,8 +401,8 @@ class TransformControls extends Controls {
       } else {
         this._tempVector.copy( this._pointStart );
         this._offset.copy( this._pointEnd );
-        this._tempVector.applyQuaternion( this._worldQuaternionInv );
-        this._offset.applyQuaternion( this._worldQuaternionInv );
+        this._tempVector.applyQuaternion( this._objectWorldQuaternionInv );
+        this._offset.applyQuaternion( this._objectWorldQuaternionInv );
         this._offset.divide( this._tempVector );
         if ( axis.search( 'X' ) === - 1 ) {
           this._offset.x = 1;
@@ -415,7 +415,7 @@ class TransformControls extends Controls {
         }
       }
       // Apply scale
-      object.scale.copy( this._scaleStart ).multiply( this._offset );
+      object.scale.copy( this._objectScaleStart ).multiply( this._offset );
       if ( this.scaleSnap ) {
         if ( axis.search( 'X' ) !== - 1 ) {
           object.scale.x = Math.round( object.scale.x / this.scaleSnap ) * this.scaleSnap || this.scaleSnap;
@@ -429,7 +429,7 @@ class TransformControls extends Controls {
       }
     } else if ( mode === 'rotate' ) {
       this._offset.copy( this._pointEnd ).sub( this._pointStart );
-      const ROTATION_SPEED = 20 / this._worldPosition.distanceTo( this._cameraPosition );
+      const ROTATION_SPEED = 20 / this._objectWorldPosition.distanceTo( this._cameraPosition );
       if ( axis === 'E' ) {
         this._rotationAxis.copy( this.eye );
         this._rotationAngle = this._pointEnd.angleTo( this._pointStart );
@@ -443,7 +443,7 @@ class TransformControls extends Controls {
         this._rotationAxis.copy( UNIT[ axis ] );
         this._tempVector.copy( UNIT[ axis ] );
         if ( space === 'local' ) {
-          this._tempVector.applyQuaternion( this._worldQuaternion );
+          this._tempVector.applyQuaternion( this._objectWorldQuaternion );
         }
         this._rotationAngle = this._offset.dot( this._tempVector.cross( this.eye ).normalize() ) * ROTATION_SPEED;
       }
@@ -451,28 +451,28 @@ class TransformControls extends Controls {
       if ( this.rotationSnap ) this._rotationAngle = Math.round( this._rotationAngle / this.rotationSnap ) * this.rotationSnap;
       // Apply rotat
       if ( space === 'local' && axis !== 'E' && axis !== 'XYZE' ) {
-        object.quaternion.copy( this._quaternionStart );
+        object.quaternion.copy( this._objectQuaternionStart );
         object.quaternion.multiply( this._tempQuaternion.setFromAxisAngle( this._rotationAxis, this._rotationAngle ) ).normalize();
       } else {
-        this._rotationAxis.applyQuaternion( this._parentQuaternionInv );
+        this._rotationAxis.applyQuaternion( this._parentWorldQuaternionInv );
         object.quaternion.copy( this._tempQuaternion.setFromAxisAngle( this._rotationAxis, this._rotationAngle ) );
-        object.quaternion.multiply( this._quaternionStart ).normalize();
+        object.quaternion.multiply( this._objectQuaternionStart ).normalize();
       }
     }
     this.updateMatrixWorld();
 
     this.dispatchEvent( EVENT.CHANGE );
-    this._endMatrix.copy( object.matrix );
-    this._offsetMatrix.copy( this._startMatrix ).invert().multiply( this._endMatrix );
-    this.dispatchEvent( Object.assign( { object: this.object, startMatrix: this._startMatrix, currentMatrix: this._endMatrix }, TRANSFORM_CHANGE_EVENT ) );
+    this._transformMatrixEnd.copy( object.matrix );
+    this._trandformMatrixOffset.copy( this._transformMatrixStart ).invert().multiply( this._transformMatrixEnd );
+    this.dispatchEvent( Object.assign( { object: this.object, startMatrix: this._transformMatrixStart, currentMatrix: this._transformMatrixEnd }, TRANSFORM_CHANGE_EVENT ) );
   }
 
   onTrackedPointerUp( pointer: PointerTracker ): void {
     if ( pointer.button > 0 || !this.object ) return;
     if ( this.active ) { // this.activeAxis !== '' ?
-      this._endMatrix.copy( this.object.matrix );
-      this._offsetMatrix.copy( this._startMatrix ).invert().multiply( this._endMatrix );
-      this.dispatchEvent( Object.assign( { object: this.object, startMatrix: this._startMatrix, endMatrix: this._endMatrix }, EVENT.END ) );
+      this._transformMatrixEnd.copy( this.object.matrix );
+      this._trandformMatrixOffset.copy( this._transformMatrixStart ).invert().multiply( this._transformMatrixEnd );
+      this.dispatchEvent( Object.assign( { object: this.object, startMatrix: this._transformMatrixStart, endMatrix: this._transformMatrixEnd }, EVENT.END ) );
       // TODO: Deprecate
       this.dispatchEvent( { type: 'mouseUp'} );
     }

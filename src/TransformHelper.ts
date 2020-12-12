@@ -795,10 +795,10 @@ export class TransformHelper extends Helper {
   
   updateMatrixWorld() {
     super.updateMatrixWorld();
-    const camera = this.viewport?.camera;
+    const camera = this.camera;
 
     if ( camera instanceof PerspectiveCamera ) {
-      this.eye.copy( this._cameraPosition ).sub( this._position ).normalize();
+      this.eye.copy( this._cameraPosition ).sub( this._worldPosition ).normalize();
     } else if ( camera instanceof OrthographicCamera ) {
       this.eye.set( 0, 0, 1 ).applyQuaternion( this._cameraQuaternion );
     }
@@ -807,7 +807,7 @@ export class TransformHelper extends Helper {
     if ( camera instanceof OrthographicCamera ) {
       this._sizeAttenuation = ( camera.top - camera.bottom ) / camera.zoom;
     } else if ( camera instanceof PerspectiveCamera ) {
-      this._sizeAttenuation = this._position.distanceTo( this._cameraPosition ) * Math.min( 1.9 * Math.tan( Math.PI * camera.fov / 360 ) / camera.zoom, 7 );
+      this._sizeAttenuation = this._worldPosition.distanceTo( this._cameraPosition ) * Math.min( 1.9 * Math.tan( Math.PI * camera.fov / 360 ) / camera.zoom, 7 );
     }
 
     for ( let i = 0; i < this.children.length; i ++ ) {

@@ -1,6 +1,12 @@
-import { Plane, Object3D, Event as ThreeEvent } from 'three';
+import { Plane, Object3D, Scene, Camera, Event as ThreeEvent, WebXRManager, WebGLRenderer } from 'three';
 import { PointerTracker, CenterPointerTracker } from './Pointers';
-import { Base, Callback, Viewport } from './Base';
+import { Base, Callback, AnyCameraType } from './Base';
+
+export type Viewport = {
+  camera: AnyCameraType,
+  domElement: HTMLElement
+}
+
 
 /**
  * `Controls`: Generic class for interactive threejs viewport controls. It solves some of the most common and complex problems in threejs control designs.
@@ -29,6 +35,8 @@ import { Base, Callback, Viewport } from './Base';
  * - Emits lyfecycle events: "enabled", "disabled", "dispose"
  */
 export class Controls extends Base {
+  viewport: Viewport = {} as Viewport;
+  xr?: WebXRManager;
   // Public API
   enabled = true;
   enableDamping = false;
@@ -44,6 +52,17 @@ export class Controls extends Base {
   protected readonly _plane = new Plane();
   constructor() {
     super();
+
+    this.onBeforeRender = ( renderer: WebGLRenderer, scene: Scene, camera: Camera ) => {
+      this.xr = renderer.xr;
+      if ( this.camera !== camera ) this.camera = camera;
+      if ( this.viewport.camera !== camera || this.viewport.domElement !== renderer.domElement ) {
+        this.viewport = {
+          camera: camera,
+          domElement: renderer.domElement,
+        }
+      }
+    }
 
     // Bind handler functions
     this._preventDefault = this._preventDefault.bind( this );
@@ -122,7 +141,7 @@ export class Controls extends Base {
     this._keys.length = 0;
   }
   _connectXR() {
-    if ( this.xr && this.viewport ) {
+    if ( this.xr && this.viewport.domElement ) {
       this._xrControllers = [
         this.xr.getController( 0 ),
         this.xr.getController( 1 )
