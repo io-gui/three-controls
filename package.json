@@ -13,8 +13,8 @@
     "lint:dev": "eslint src --fix",
     "lint": "eslint build -c ./config/eslint.three.json --no-ignore build --fix",
     "clean": "rm -rf build",
-    "tsc": "tsc --declarationMap false --sourceMap false --p ./config/tsconfig.json",
-    "tsc:dev": "tsc -w  --p ./config/tsconfig.json",
+    "tsc": "tsc --declarationMap false --sourceMap false --p ./tsconfig.json",
+    "tsc:dev": "tsc -w  --p ./tsconfig.json",
     "build": "yarn clean && yarn tsc && yarn lint && yarn rollup -c ./config/rollup.config.js",
     "build:dev": "yarn clean && yarn tsc:dev & sleep 5; yarn rollup -c ./config/rollup.config.js -w --environment DEV"
   },
