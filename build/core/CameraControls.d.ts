@@ -1,5 +1,5 @@
 import { Controls } from './Controls';
-import { AnyCameraType, Viewport } from './Base';
+import { AnyCameraType } from './Base';
 
 
 /**
@@ -7,10 +7,9 @@ import { AnyCameraType, Viewport } from './Base';
  */
 export declare class CameraControls extends Controls {
 
-	viewport: Viewport;
 	frustumCulled: boolean;
 	constructor( camera: AnyCameraType, domElement: HTMLElement );
-	viewportChanged( newViewport: Viewport, oldViewport: Viewport ): void;
+	cameraChanged( newCamera: AnyCameraType, oldCamera?: AnyCameraType ): void;
 	saveCameraState(): void;
 	resetCameraState(): void;
 	saveState(): void;

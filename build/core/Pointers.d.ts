@@ -73,7 +73,7 @@ export declare class PointerTracker {
 	isSimulated: boolean;
 	readonly view: Pointer2D;
 	readonly ray: Pointer6D;
-	protected _camera: PerspectiveCamera | OrthographicCamera | Object3D;
+	_camera: PerspectiveCamera | OrthographicCamera | Object3D;
 	private readonly _viewCoord;
 	private readonly _intersection;
 	private readonly _raycaster;

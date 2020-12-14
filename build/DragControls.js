@@ -11,14 +11,14 @@ export class DragControls extends Controls {
 
 	constructor( objects, camera, domElement ) {
 
-		super();
+		super( camera, domElement );
 		this.transformGroup = false;
 		this.objects = objects;
 
 		this.addEventListener( 'enabled-changed', ( event ) => {
 
 			if ( ! event.value )
-				this.viewport.domElement.style.cursor = '';
+				this.domElement.style.cursor = '';
 
 		} );
 
@@ -38,7 +38,7 @@ export class DragControls extends Controls {
 				if ( _hoveredObject )
 					this.dispatchEvent( { type: 'hoveroff', object: _hoveredObject } );
 
-				this.viewport.domElement.style.cursor = 'pointer';
+				this.domElement.style.cursor = 'pointer';
 				this.dispatchEvent( { type: 'hoveron', object: object } );
 				_hoveredObjects[ id ] = object;
 
@@ -47,7 +47,7 @@ export class DragControls extends Controls {
 		} else if ( _hoveredObject ) {
 
 			this.dispatchEvent( { type: 'hoveroff', object: _hoveredObject } );
-			this.viewport.domElement.style.cursor = 'auto';
+			this.domElement.style.cursor = 'auto';
 			delete _hoveredObjects[ id ];
 
 		}
@@ -56,14 +56,14 @@ export class DragControls extends Controls {
 	onTrackedPointerDown( pointer ) {
 
 		const id = String( pointer.pointerId );
-		this.viewport.domElement.style.cursor = 'move';
+		this.domElement.style.cursor = 'move';
 		_intersections = pointer.intersectObjects( this.objects );
 
 		if ( _intersections.length > 0 ) {
 
 			const object = ( this.transformGroup === true ) ? this.objects[ 0 ] : _intersections[ 0 ].object;
 			_target.setFromMatrixPosition( object.matrixWorld );
-			this.viewport.domElement.style.cursor = 'move';
+			this.domElement.style.cursor = 'move';
 			this.dispatchEvent( { type: 'dragstart', object: object } );
 			_selectedObjects[ id ] = object;
 
@@ -77,7 +77,7 @@ export class DragControls extends Controls {
 
 		if ( _selectedObject ) {
 
-			_eye.set( 0, 0, 1 ).applyQuaternion( this.viewport.camera.quaternion ).normalize();
+			_eye.set( 0, 0, 1 ).applyQuaternion( this.camera.quaternion ).normalize();
 			this._plane.setFromNormalAndCoplanarPoint( _eye, _target );
 			_selectedObject.position.add( pointer.projectOnPlane( this._plane ).movement );
 			this.dispatchEvent( { type: 'drag', object: _selectedObject } );
@@ -112,7 +112,7 @@ export class DragControls extends Controls {
 		}
 
 		if ( pointers.length === 0 )
-			this.viewport.domElement.style.cursor = Object.keys( _hoveredObjects ).length ? 'pointer' : 'auto';
+			this.domElement.style.cursor = Object.keys( _hoveredObjects ).length ? 'pointer' : 'auto';
 
 	}
 

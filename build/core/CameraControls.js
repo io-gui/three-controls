@@ -12,48 +12,45 @@ export class CameraControls extends Controls {
 
 	constructor( camera, domElement ) {
 
-		super();
+		super( camera, domElement );
 		this.frustumCulled = false;
 
-		if ( camera && ! ( camera instanceof PerspectiveCamera ) && ! ( camera instanceof OrthographicCamera ) ) {
+		Object.defineProperty( this, 'camera', {
+			get() {
 
-			console.error( `THREE.CameraControls: Unsuported camera type: ${camera.constructor.name}` );
+				return camera;
 
-		}
+			},
+			set( newCamera ) {
 
-		if ( domElement && ! ( domElement instanceof HTMLElement ) ) {
+				const oldCamera = camera;
+				camera = newCamera;
+				newCamera !== oldCamera && this.cameraChanged( newCamera, oldCamera );
 
-			console.error( `THREE.CameraControls: Unsuported domElement: ${domElement}` );
+			}
+		} );
 
-		}
-
-		this.viewport = {
-			domElement: domElement,
-			camera: camera,
-		};
+		this.cameraChanged( camera );
 
 	}
-	viewportChanged( newViewport, oldViewport ) {
+	cameraChanged( newCamera, oldCamera ) {
 
-		super.viewportChanged( newViewport, oldViewport );
+		if ( newCamera && oldCamera ) {
 
-		if ( oldViewport && oldViewport.camera ) {
-
-			const oldState = STATES.get( oldViewport.camera ) || new CameraState( oldViewport.camera, this );
-			STATES.set( oldViewport.camera, oldState.update( oldViewport.camera, this ) );
+			const oldState = STATES.get( oldCamera ) || new CameraState( oldCamera, this );
+			STATES.set( oldCamera, oldState.update( oldCamera, this ) );
 
 		}
 
-		const newState = STATES.get( newViewport.camera ) || new CameraState( newViewport.camera, this );
-		STATES.set( newViewport.camera, newState.apply( newViewport.camera, this ) );
-		this.dispatchEvent( EVENT.CHANGE );
+		const newState = STATES.get( newCamera ) || new CameraState( newCamera, this );
+		STATES.set( newCamera, newState.apply( newCamera, this ) );
 
 	}
 
 	// Saves camera state for later reset.
 	saveCameraState() {
 
-		const camera = this.viewport.camera;
+		const camera = this.camera;
 		const state = STATES.get( camera ) || new CameraState( camera, this );
 		STATES.set( camera, state.update( camera, this ) );
 
@@ -62,7 +59,7 @@ export class CameraControls extends Controls {
 	// Resets camera state from saved reset state.
 	resetCameraState() {
 
-		const camera = this.viewport.camera;
+		const camera = this.camera;
 		const state = STATES.get( camera ) || new CameraState( camera, this );
 		STATES.set( camera, state.apply( camera, this ) );
 		this.dispatchEvent( EVENT.CHANGE );

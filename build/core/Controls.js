@@ -31,9 +31,9 @@ import { Base } from './Base';
  */
 export class Controls extends Base {
 
-	constructor() {
+	constructor( camera, domElement ) {
 
-		super();
+		super( camera, domElement );
 
 		// Public API
 		this.enabled = true;
@@ -49,6 +49,15 @@ export class Controls extends Base {
 		this._xrPointers = [];
 		this._keys = [];
 		this._plane = new Plane();
+		this._viewports = [];
+		this._viewportCameras = new WeakMap();
+
+		this.onBeforeRender = ( renderer ) => {
+
+			this.xr = renderer.xr;
+
+		};
+
 
 		// Bind handler functions
 		this._preventDefault = this._preventDefault.bind( this );
@@ -74,7 +83,7 @@ export class Controls extends Base {
 		this._onXRControllerUp = this._onXRControllerUp.bind( this );
 		this.observeProperty( 'enabled' );
 		this.observeProperty( 'xr' );
-		this.observeProperty( 'viewport' );
+		this.registerViewport( camera, domElement );
 
 	}
 	enabledChanged( value ) {
@@ -87,27 +96,55 @@ export class Controls extends Base {
 		value ? this._connectXR() : this._disconnectXR();
 
 	}
-	viewportChanged( newViewport, oldViewport ) {
+	registerViewport( camera, domElement ) {
 
-		this.enabled && this._connect();
+		this._viewports.push( domElement );
+		this._viewportCameras.set( domElement, camera );
+		this._connectViewport( domElement );
+
+	}
+	_connectViewport( domElement ) {
+
+		domElement.addEventListener( 'contextmenu', this._onContextMenu, false );
+		domElement.addEventListener( 'wheel', this._onWheel, { capture: false, passive: false } );
+		domElement.addEventListener( 'touchdown', this._preventDefault, { capture: false, passive: false } );
+		domElement.addEventListener( 'touchmove', this._preventDefault, { capture: false, passive: false } );
+		domElement.addEventListener( 'pointerdown', this._onPointerDown );
+		domElement.addEventListener( 'pointermove', this._onPointerMove, { capture: true } );
+		domElement.addEventListener( 'pointerleave', this._onPointerLeave, false );
+		domElement.addEventListener( 'pointercancel', this._onPointerCancel, false );
+		domElement.addEventListener( 'pointerover', this._onPointerOver, false );
+		domElement.addEventListener( 'pointerenter', this._onPointerEnter, false );
+		domElement.addEventListener( 'pointerout', this._onPointerOut, false );
+		domElement.addEventListener( 'pointerup', this._onPointerUp, false );
+		domElement.addEventListener( 'keydown', this._onKeyDown, false );
+		domElement.addEventListener( 'keyup', this._onKeyUp, false );
+
+	}
+	_disconnectViewport( domElement ) {
+
+		domElement.removeEventListener( 'contextmenu', this._onContextMenu, false );
+		domElement.removeEventListener( 'wheel', this._onWheel );
+		domElement.removeEventListener( 'touchdown', this._preventDefault );
+		domElement.removeEventListener( 'touchmove', this._preventDefault );
+		domElement.removeEventListener( 'pointerdown', this._onPointerDown );
+		domElement.removeEventListener( 'pointermove', this._onPointerMove );
+		domElement.removeEventListener( 'pointerleave', this._onPointerLeave, false );
+		domElement.removeEventListener( 'pointercancel', this._onPointerCancel, false );
+		domElement.removeEventListener( 'pointerup', this._onPointerUp, false );
+		domElement.removeEventListener( 'keydown', this._onKeyDown, false );
+		domElement.removeEventListener( 'keyup', this._onKeyUp, false );
+
+
+		// Release all captured pointers
+		for ( let i = 0; i < this._pointers.length; i ++ ) {
+
+			domElement.releasePointerCapture( this._pointers[ i ].pointerId );
+
+		}
 
 	}
 	_connect() {
-
-		this.viewport.domElement.addEventListener( 'contextmenu', this._onContextMenu, false );
-		this.viewport.domElement.addEventListener( 'wheel', this._onWheel, { capture: false, passive: false } );
-		this.viewport.domElement.addEventListener( 'touchdown', this._preventDefault, { capture: false, passive: false } );
-		this.viewport.domElement.addEventListener( 'touchmove', this._preventDefault, { capture: false, passive: false } );
-		this.viewport.domElement.addEventListener( 'pointerdown', this._onPointerDown );
-		this.viewport.domElement.addEventListener( 'pointermove', this._onPointerMove );
-		this.viewport.domElement.addEventListener( 'pointerleave', this._onPointerLeave, false );
-		this.viewport.domElement.addEventListener( 'pointercancel', this._onPointerCancel, false );
-		this.viewport.domElement.addEventListener( 'pointerover', this._onPointerOver, false );
-		this.viewport.domElement.addEventListener( 'pointerenter', this._onPointerEnter, false );
-		this.viewport.domElement.addEventListener( 'pointerout', this._onPointerOut, false );
-		this.viewport.domElement.addEventListener( 'pointerup', this._onPointerUp, false );
-		this.viewport.domElement.addEventListener( 'keydown', this._onKeyDown, false );
-		this.viewport.domElement.addEventListener( 'keyup', this._onKeyUp, false );
 
 		if ( this.xr )
 			this._connectXR();
@@ -115,27 +152,7 @@ export class Controls extends Base {
 	}
 	_disconnect() {
 
-		this.viewport.domElement.removeEventListener( 'contextmenu', this._onContextMenu, false );
-		this.viewport.domElement.removeEventListener( 'wheel', this._onWheel );
-		this.viewport.domElement.removeEventListener( 'touchdown', this._preventDefault );
-		this.viewport.domElement.removeEventListener( 'touchmove', this._preventDefault );
-		this.viewport.domElement.removeEventListener( 'pointerdown', this._onPointerDown );
-		this.viewport.domElement.removeEventListener( 'pointermove', this._onPointerMove );
-		this.viewport.domElement.removeEventListener( 'pointerleave', this._onPointerLeave, false );
-		this.viewport.domElement.removeEventListener( 'pointercancel', this._onPointerCancel, false );
-		this.viewport.domElement.removeEventListener( 'pointerup', this._onPointerUp, false );
-		this.viewport.domElement.removeEventListener( 'keydown', this._onKeyDown, false );
-		this.viewport.domElement.removeEventListener( 'keyup', this._onKeyUp, false );
 		this._disconnectXR();
-
-
-		// Release all captured pointers
-		for ( let i = 0; i < this._pointers.length; i ++ ) {
-
-			this.viewport.domElement.releasePointerCapture( this._pointers[ i ].pointerId );
-
-		}
-
 
 		// Stop all animations
 		this.stopAllAnimations();
@@ -147,7 +164,7 @@ export class Controls extends Base {
 	}
 	_connectXR() {
 
-		if ( this.xr && this.viewport ) {
+		if ( this.xr && this.domElement ) {
 
 			this._xrControllers = [
 				this.xr.getController( 0 ),
@@ -162,10 +179,10 @@ export class Controls extends Base {
 			this._xrControllers[ 1 ].addEventListener( 'selectend', this._onXRControllerUp );
 
 			const event = {
-				target: this.viewport.domElement,
+				target: this.domElement,
 				type: 'XRController',
-				clientX: this.viewport.domElement.clientWidth / 2,
-				clientY: this.viewport.domElement.clientHeight / 2,
+				clientX: this.domElement.clientWidth / 2,
+				clientY: this.domElement.clientHeight / 2,
 			};
 
 			this._xrPointers = [
@@ -272,6 +289,12 @@ export class Controls extends Base {
 	}
 	_onPointerDown( event ) {
 
+		const path = event.path;
+		const domElement = path.find( element => this._viewports.indexOf( element ) !== - 1 );
+
+		// const domElement = event.target as HTMLElement;
+		const camera = this._viewportCameras.get( domElement );
+
 		if ( this._simulatedPointer ) {
 
 			this._simulatedPointer.clearMovement();
@@ -280,10 +303,10 @@ export class Controls extends Base {
 
 		}
 
-		this.viewport.domElement.focus ? this.viewport.domElement.focus() : window.focus();
-		this.viewport.domElement.setPointerCapture( event.pointerId );
+		domElement.focus ? domElement.focus() : window.focus();
+		domElement.setPointerCapture( event.pointerId );
 		const pointers = this._pointers;
-		const pointer = new PointerTracker( event, this.viewport.camera );
+		const pointer = new PointerTracker( event, camera );
 		pointer.clearMovement(); // TODO: investigate why this is necessary
 		pointers.push( pointer );
 		this.onTrackedPointerDown( pointer, pointers );
@@ -292,13 +315,19 @@ export class Controls extends Base {
 	}
 	_onPointerMove( event ) {
 
+		const path = event.path;
+		const domElement = path.find( element => this._viewports.indexOf( element ) !== - 1 );
+
+		// const domElement = event.target as HTMLElement;
+		const camera = this._viewportCameras.get( domElement );
+
 		const pointers = this._pointers;
 		const index = pointers.findIndex( pointer => pointer.pointerId === event.pointerId );
 		let pointer = pointers[ index ];
 
 		if ( pointer ) {
 
-			pointer.update( event, this.viewport.camera );
+			pointer.update( event, camera );
 			const x = Math.abs( pointer.view.current.x );
 			const y = Math.abs( pointer.view.current.y );
 
@@ -307,7 +336,7 @@ export class Controls extends Base {
 			if ( pointer.button !== 0 && ( x > 1 || x < 0 || y > 1 || y < 0 ) ) {
 
 				pointers.splice( index, 1 );
-				this.viewport.domElement.releasePointerCapture( event.pointerId );
+				domElement.releasePointerCapture( event.pointerId );
 				this.dispatchEvent( event );
 				this.onTrackedPointerUp( pointer, pointers );
 				return;
@@ -330,7 +359,7 @@ export class Controls extends Base {
 
 			}
 
-			this._centerPointer = this._centerPointer || new CenterPointerTracker( event, this.viewport.camera );
+			this._centerPointer = this._centerPointer || new CenterPointerTracker( event, camera );
 			this._centerPointer.updateCenter( pointers );
 
 			// TODO: consider throttling once per frame. On Mac pointermove fires up to 120 Hz.
@@ -339,12 +368,12 @@ export class Controls extends Base {
 		} else if ( this._hoverPointer && this._hoverPointer.pointerId === event.pointerId ) {
 
 			pointer = this._hoverPointer;
-			pointer.update( event, this.viewport.camera );
+			pointer.update( event, camera );
 			this.onTrackedPointerHover( pointer, [ pointer ] );
 
 		} else {
 
-			pointer = this._hoverPointer = new PointerTracker( event, this.viewport.camera );
+			pointer = this._hoverPointer = new PointerTracker( event, camera );
 			this.onTrackedPointerHover( pointer, [ pointer ] );
 
 		}
@@ -380,7 +409,10 @@ export class Controls extends Base {
 	}
 	_onPointerUp( event ) {
 
+		const path = event.path;
+		const domElement = path.find( element => this._viewports.indexOf( element ) !== - 1 );
 
+		// const domElement = event.target as HTMLElement;
 		// TODO: three-finger drag on Mac touchpad producing delayed pointerup.
 		const pointers = this._pointers;
 		const index = pointers.findIndex( pointer => pointer.pointerId === event.pointerId );
@@ -389,7 +421,7 @@ export class Controls extends Base {
 		if ( pointer ) {
 
 			pointers.splice( index, 1 );
-			this.viewport.domElement.releasePointerCapture( event.pointerId );
+			domElement.releasePointerCapture( event.pointerId );
 
 			if ( this.enableDamping ) {
 
@@ -410,6 +442,10 @@ export class Controls extends Base {
 	}
 	_onPointerLeave( event ) {
 
+		const path = event.path;
+		const domElement = path.find( element => this._viewports.indexOf( element ) !== - 1 );
+
+		// const domElement = event.target as HTMLElement;
 		const pointers = this._pointers;
 		const index = pointers.findIndex( pointer => pointer.pointerId === event.pointerId );
 		const pointer = pointers[ index ];
@@ -417,7 +453,7 @@ export class Controls extends Base {
 		if ( pointer ) {
 
 			pointers.splice( index, 1 );
-			this.viewport.domElement.releasePointerCapture( event.pointerId );
+			domElement.releasePointerCapture( event.pointerId );
 			this.onTrackedPointerUp( pointer, pointers );
 
 		}
@@ -427,6 +463,10 @@ export class Controls extends Base {
 	}
 	_onPointerCancel( event ) {
 
+		const path = event.path;
+		const domElement = path.find( element => this._viewports.indexOf( element ) !== - 1 );
+
+		// const domElement = event.target as HTMLElement;
 		const pointers = this._pointers;
 		const index = pointers.findIndex( pointer => pointer.pointerId === event.pointerId );
 		const pointer = pointers[ index ];
@@ -434,7 +474,7 @@ export class Controls extends Base {
 		if ( pointer ) {
 
 			pointers.splice( index, 1 );
-			this.viewport.domElement.releasePointerCapture( event.pointerId );
+			domElement.releasePointerCapture( event.pointerId );
 			this.onTrackedPointerUp( pointer, pointers );
 
 		}

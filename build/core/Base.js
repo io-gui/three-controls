@@ -1,4 +1,4 @@
-import { Vector3, Quaternion, OrthographicCamera } from 'three';
+import { Vector3, Quaternion, PerspectiveCamera, OrthographicCamera } from 'three';
 import { Mesh } from 'three';
 
 export const EVENT = {
@@ -21,39 +21,37 @@ export const UNIT = {
  */
 export class Base extends Mesh {
 
-	constructor() {
+	constructor( camera, domElement ) {
 
 		super();
-		this.viewport = {};
 		this.eye = new Vector3();
-		this.needsAnimationFrame = false;
-		this._cameraPosition = new Vector3();
-		this._cameraQuaternion = new Quaternion();
-		this._cameraScale = new Vector3();
-		this._cameraOffset = new Vector3();
-		this._position = new Vector3();
-		this._quaternion = new Quaternion();
-		this._scale = new Vector3();
+		this.cameraPosition = new Vector3();
+		this.cameraQuaternion = new Quaternion();
+		this.cameraScale = new Vector3();
+		this.cameraOffset = new Vector3();
+		this.worldPosition = new Vector3();
+		this.worldQuaternion = new Quaternion();
+		this.worldScale = new Vector3();
+		this.needsAnimationFrame = false; // TODO: deprecate
 		this._animations = [];
 		this._animationFrame = 0;
-		this._changeDispatched = false;
+		this.changeDispatched = false;
+
+		if ( camera && ! ( camera instanceof PerspectiveCamera ) && ! ( camera instanceof OrthographicCamera ) ) {
+
+			console.error( `Unsuported camera type: ${camera.constructor.name}` );
+
+		}
+
+		if ( domElement && ! ( domElement instanceof HTMLElement ) ) {
+
+			console.error( `Unsuported domElement: ${domElement}` );
+
+		}
+
+		this.camera = camera;
+		this.domElement = domElement;
 		this._onAnimationFrame = this._onAnimationFrame.bind( this );
-
-		this.onBeforeRender = ( renderer, scene, camera ) => {
-
-			this.xr = renderer.xr;
-
-			if ( this.viewport.camera !== camera || this.viewport.domElement !== renderer.domElement ) {
-
-				this.viewport = {
-					camera: camera,
-					domElement: renderer.domElement,
-				};
-
-			}
-
-		};
-
 		this.observeProperty( 'needsAnimationFrame' );
 		this.needsAnimationFrame = true;
 
@@ -87,14 +85,14 @@ export class Base extends Mesh {
 					callback && callback( newValue, oldValue );
 					this.dispatchEvent( { type: propertyKey + '-changed', value: newValue, oldValue: oldValue } );
 
-					if ( ! this._changeDispatched ) {
+					if ( ! this.changeDispatched ) {
 
-						this._changeDispatched = true;
+						this.changeDispatched = true;
 
 						requestAnimationFrame( () => {
 
 							this.dispatchEvent( EVENT.CHANGE );
-							this._changeDispatched = false;
+							this.changeDispatched = false;
 
 						} );
 
@@ -170,27 +168,32 @@ export class Base extends Mesh {
 		this.dispatchEvent( EVENT.DISPOSE );
 
 	}
+	decomposeMatrices() {
+
+		this.matrixWorld.decompose( this.worldPosition, this.worldQuaternion, this.worldScale );
+		this.camera.updateMatrixWorld();
+		this.camera.matrixWorld.decompose( this.cameraPosition, this.cameraQuaternion, this.cameraScale );
+		this.cameraOffset.copy( this.cameraPosition ).sub( this.worldPosition );
+
+		if ( this.camera instanceof OrthographicCamera ) {
+
+			this.eye.set( 0, 0, 1 ).applyQuaternion( this.cameraQuaternion );
+
+		} else {
+
+			this.eye.copy( this.cameraOffset ).normalize();
+
+		}
+
+	}
 	updateMatrixWorld() {
 
 		super.updateMatrixWorld();
-		this.matrixWorld.decompose( this._position, this._quaternion, this._scale );
+		this.decomposeMatrices();
 
-		if ( this.viewport.camera ) {
-
-			this.viewport.camera.matrixWorld.decompose( this._cameraPosition, this._cameraQuaternion, this._cameraScale );
-			this._cameraOffset.copy( this._cameraPosition ).sub( this._position );
-
-			if ( this.viewport.camera instanceof OrthographicCamera ) {
-
-				this.eye.set( 0, 0, 1 ).applyQuaternion( this._cameraQuaternion );
-
-			} else {
-
-				this.eye.copy( this._cameraOffset ).normalize();
-
-			}
-
-		}
+		// TODO: investigate why is this necessary.
+		// Without this, TransformControls needs another update to reoriante after "space" change.
+		super.updateMatrixWorld();
 
 	}
 

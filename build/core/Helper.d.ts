@@ -1,5 +1,5 @@
 import { Vector3, Vector4, Euler, Mesh, Line, LineBasicMaterial, MeshBasicMaterial } from 'three';
-import { Base } from './Base';
+import { Base, AnyCameraType } from './Base';
 
 export declare const helperMaterial: MeshBasicMaterial;
 
@@ -19,6 +19,8 @@ export interface HelperGeometrySpec {
 
 export declare class Helper extends Base {
 
-	constructor( helperMap?: [Mesh | Line, HelperGeometrySpec][] );
+	protected _sizeAttenuation: number;
+	constructor( camera: AnyCameraType, domElement: HTMLElement, helperMap?: [Mesh | Line, HelperGeometrySpec][] );
+	decomposeMatrices(): void;
 
 }

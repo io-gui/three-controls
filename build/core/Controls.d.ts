@@ -1,6 +1,6 @@
-import { Plane, Event as ThreeEvent } from 'three';
+import { Plane, Event as ThreeEvent, WebXRManager } from 'three';
 import { PointerTracker, CenterPointerTracker } from './Pointers';
-import { Base, Callback, Viewport } from './Base';
+import { Base, Callback, AnyCameraType } from './Base';
 
 
 /**
@@ -31,6 +31,7 @@ import { Base, Callback, Viewport } from './Base';
  */
 export declare class Controls extends Base {
 
+	xr?: WebXRManager;
 	enabled: boolean;
 	enableDamping: boolean;
 	dampingFactor: number;
@@ -42,10 +43,14 @@ export declare class Controls extends Base {
 	private _xrPointers;
 	private _keys;
 	protected readonly _plane: Plane;
-	constructor();
+	protected readonly _viewports: HTMLElement[];
+	protected readonly _viewportCameras: WeakMap<HTMLElement, AnyCameraType>;
+	constructor( camera: AnyCameraType, domElement: HTMLElement );
 	enabledChanged( value: boolean ): void;
 	xrChanged( value: boolean ): void;
-	viewportChanged( newViewport: Viewport, oldViewport: Viewport ): void;
+	registerViewport( camera: AnyCameraType, domElement: HTMLElement ): void;
+	_connectViewport( domElement: HTMLElement ): void;
+	_disconnectViewport( domElement: HTMLElement ): void;
 	_connect(): void;
 	_disconnect(): void;
 	_connectXR(): void;

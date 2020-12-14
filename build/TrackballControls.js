@@ -116,7 +116,7 @@ class TrackballControls extends CameraControls {
 		this._panMagnitude.set( 0, 0, 0 );
 		this._plane.setFromNormalAndCoplanarPoint( this.eye, this.position );
 		const button = pointers[ 0 ].button;
-		const camera = this.viewport.camera;
+		const camera = this.camera;
 
 		switch ( pointers.length ) {
 
@@ -148,7 +148,7 @@ class TrackballControls extends CameraControls {
 
 		}
 
-		this._offset.copy( this._cameraOffset );
+		this._offset.copy( this.cameraOffset );
 
 		if ( ! camera )
 			return;

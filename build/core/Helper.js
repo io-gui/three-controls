@@ -1,4 +1,4 @@
-import { Mesh, Line, DoubleSide, LineBasicMaterial, MeshBasicMaterial } from 'three';
+import { Mesh, Line, DoubleSide, LineBasicMaterial, MeshBasicMaterial, OrthographicCamera, PerspectiveCamera } from 'three';
 import { Base } from './Base';
 
 export const helperMaterial = new MeshBasicMaterial( {
@@ -21,9 +21,10 @@ export const helperLineMaterial = new LineBasicMaterial( {
 
 export class Helper extends Base {
 
-	constructor( helperMap ) {
+	constructor( camera, domElement, helperMap ) {
 
-		super();
+		super( camera, domElement );
+		this._sizeAttenuation = 1;
 
 		if ( helperMap ) {
 
@@ -74,6 +75,25 @@ export class Helper extends Base {
 			}
 
 		}
+
+	}
+	decomposeMatrices() {
+
+		super.decomposeMatrices();
+		const camera = this.camera;
+		this._sizeAttenuation = 1;
+
+		if ( camera instanceof OrthographicCamera ) {
+
+			this._sizeAttenuation = ( camera.top - camera.bottom ) / camera.zoom;
+
+		} else if ( camera instanceof PerspectiveCamera ) {
+
+			this._sizeAttenuation = this.worldPosition.distanceTo( this.cameraPosition ) * Math.min( 1.9 * Math.tan( Math.PI * camera.fov / 360 ) / camera.zoom, 7 );
+
+		}
+
+		this._sizeAttenuation *= 720 / this.domElement.clientHeight;
 
 	}
 

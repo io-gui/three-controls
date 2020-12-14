@@ -1,14 +1,9 @@
-import { Vector3, Quaternion, PerspectiveCamera, OrthographicCamera, Camera, WebXRManager } from 'three';
+import { Vector3, Quaternion, PerspectiveCamera, OrthographicCamera, Camera } from 'three';
 import { Mesh, Event as ThreeEvent } from 'three';
 
 export declare type Callback = ( callbackValue?: any, callbackOldValue?: any ) => void;
 
 export declare type AnyCameraType = Camera | PerspectiveCamera | OrthographicCamera;
-
-export declare type Viewport = {
-	camera: AnyCameraType;
-	domElement: HTMLElement;
-};
 
 export declare const EVENT: Record<string, ThreeEvent>;
 
@@ -25,21 +20,21 @@ export declare const UNIT: {
  */
 export declare class Base extends Mesh {
 
-	viewport: Viewport;
-	xr?: WebXRManager;
-	eye: Vector3;
+	camera: AnyCameraType;
+	domElement: HTMLElement;
+	readonly eye: Vector3;
+	protected readonly cameraPosition: Vector3;
+	protected readonly cameraQuaternion: Quaternion;
+	protected readonly cameraScale: Vector3;
+	protected readonly cameraOffset: Vector3;
+	protected readonly worldPosition: Vector3;
+	protected readonly worldQuaternion: Quaternion;
+	protected readonly worldScale: Vector3;
 	protected needsAnimationFrame: boolean;
-	protected readonly _cameraPosition: Vector3;
-	protected readonly _cameraQuaternion: Quaternion;
-	protected readonly _cameraScale: Vector3;
-	protected readonly _cameraOffset: Vector3;
-	protected readonly _position: Vector3;
-	protected readonly _quaternion: Quaternion;
-	protected readonly _scale: Vector3;
 	private readonly _animations;
 	private _animationFrame;
-	protected _changeDispatched: boolean;
-	constructor();
+	protected changeDispatched: boolean;
+	constructor( camera: AnyCameraType, domElement: HTMLElement );
 
 	/**
      * Adds property observing mechanism via getter and setter.
@@ -52,6 +47,7 @@ export declare class Base extends Mesh {
 	stopAnimation( callback: Callback ): void;
 	stopAllAnimations(): void;
 	dispose(): void;
+	decomposeMatrices(): void;
 	updateMatrixWorld(): void;
 
 }

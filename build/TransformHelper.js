@@ -1,4 +1,4 @@
-import { Quaternion, Mesh, Euler, Vector3, Vector4, Matrix4, Line, OctahedronBufferGeometry, TorusBufferGeometry, SphereBufferGeometry, BoxBufferGeometry, PlaneBufferGeometry, CylinderBufferGeometry, BufferGeometry, Float32BufferAttribute, OrthographicCamera, PerspectiveCamera } from 'three';
+import { Quaternion, Mesh, Euler, Vector3, Vector4, Matrix4, Line, OctahedronBufferGeometry, TorusBufferGeometry, SphereBufferGeometry, BoxBufferGeometry, PlaneBufferGeometry, CylinderBufferGeometry, BufferGeometry, Float32BufferAttribute } from 'three';
 import { UNIT } from './core/Base';
 import { Helper } from './core/Helper';
 
@@ -635,9 +635,9 @@ const scaleHelperGeometrySpec = [
 
 export class TransformHelper extends Helper {
 
-	constructor() {
+	constructor( camera, domElement ) {
 
-		super( [
+		super( camera, domElement, [
 			...scaleHelperGeometrySpec,
 			...translateHelperGeometrySpec,
 			...rotateHelperGeometrySpec,
@@ -656,9 +656,6 @@ export class TransformHelper extends Helper {
 		this.AXIS_HIDE_TRESHOLD = 0.99;
 		this.PLANE_HIDE_TRESHOLD = 0.9;
 		this.AXIS_FLIP_TRESHOLD = 0.0;
-		this._sizeAttenuation = 1;
-		this._cameraPosition = new Vector3();
-		this._position = new Vector3();
 		this._tempMatrix = new Matrix4();
 		this._dirVector = new Vector3( 0, 1, 0 );
 		this._tempQuaternion = new Quaternion();
@@ -667,17 +664,15 @@ export class TransformHelper extends Helper {
 	}
 	updateHandle( handle ) {
 
-		handle.quaternion.copy( this.quaternion ).invert();
-		handle.position.set( 0, 0, 0 );
-		handle.scale.set( 1, 1, 1 ).multiplyScalar( this._sizeAttenuation * this.size / 7 );
-		handle.quaternion.multiply( this.quaternion );
 		const eye = this.eye;
-		const quaternion = this.quaternion;
+		const quaternion = this.worldQuaternion;
 		const handleType = handle.userData.type;
 		const handleAxis = handle.userData.axis;
 		const handleTag = handle.userData.tag;
-
-		// Hide disabled axes
+		handle.quaternion.copy( quaternion ).invert();
+		handle.position.set( 0, 0, 0 );
+		handle.scale.set( 1, 1, 1 ).multiplyScalar( this._sizeAttenuation * this.size / 7 );
+		handle.quaternion.multiply( quaternion );
 		handle.visible = true;
 
 		if ( handleAxis.indexOf( 'X' ) !== - 1 && ! this.showX )
@@ -710,7 +705,7 @@ export class TransformHelper extends Helper {
 			if ( handleAxis.search( 'E' ) !== - 1 ) {
 
 				this._tempQuaternion2.setFromRotationMatrix( this._tempMatrix.lookAt( eye, UNIT.ZERO, UNIT.Y ) );
-				handle.quaternion.copy( this.quaternion ).invert();
+				handle.quaternion.copy( quaternion ).invert();
 				handle.quaternion.multiply( this._tempQuaternion2 );
 
 			}
@@ -864,39 +859,13 @@ export class TransformHelper extends Helper {
 	}
 	updateMatrixWorld() {
 
-		let _a;
 		super.updateMatrixWorld();
-		const camera = ( _a = this.viewport ) === null || _a === void 0 ? void 0 : _a.camera;
-
-		if ( camera instanceof PerspectiveCamera ) {
-
-			this.eye.copy( this._cameraPosition ).sub( this._position ).normalize();
-
-		} else if ( camera instanceof OrthographicCamera ) {
-
-			this.eye.set( 0, 0, 1 ).applyQuaternion( this._cameraQuaternion );
-
-		}
-
-		this._sizeAttenuation = 1;
-
-		if ( camera instanceof OrthographicCamera ) {
-
-			this._sizeAttenuation = ( camera.top - camera.bottom ) / camera.zoom;
-
-		} else if ( camera instanceof PerspectiveCamera ) {
-
-			this._sizeAttenuation = this._position.distanceTo( this._cameraPosition ) * Math.min( 1.9 * Math.tan( Math.PI * camera.fov / 360 ) / camera.zoom, 7 );
-
-		}
 
 		for ( let i = 0; i < this.children.length; i ++ ) {
 
 			this.updateHandle( this.children[ i ] );
 
 		}
-
-		super.updateMatrixWorld();
 
 	}
 

@@ -312,6 +312,7 @@ export class PointerTracker {
 		}
 
 		this._camera = camera;
+		this.domElement = pointerEvent.target;
 
 		// Get view-space pointer coords from PointerEvent data and domElement size.
 		const rect = this.domElement.getBoundingClientRect();
@@ -326,7 +327,7 @@ export class PointerTracker {
 
 		this._viewCoord.set( 0, 0 );
 		this.view.set( this._viewCoord.x, this._viewCoord.y );
-		this.ray.updateByViewPointer( this._camera, this.view );
+		this.ray.updateByViewPointer( controller, this.view );
 
 	}
 	updateByXRController( controller ) {
