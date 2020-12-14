@@ -1,4 +1,4 @@
-import { Vector3, Quaternion, WebGLRenderer, Scene, PerspectiveCamera, OrthographicCamera, Camera } from 'three';
+import { Vector3, Quaternion, PerspectiveCamera, OrthographicCamera, Camera } from 'three';
 
 import { Mesh, Event as ThreeEvent } from 'three';
 
@@ -23,27 +23,27 @@ export const UNIT = {
  * `Base`: Base class for Objects with observable properties, change events and animation.
  */
 export class Base extends Mesh {
-  camera?: AnyCameraType;
+  camera: AnyCameraType;
   readonly eye = new Vector3();
-  protected readonly _cameraPosition = new Vector3();
-  protected readonly _cameraQuaternion = new Quaternion();
-  protected readonly _cameraScale = new Vector3();
-  protected readonly _cameraOffset = new Vector3();
-  protected readonly _worldPosition = new Vector3();
-  protected readonly _worlQuaternion = new Quaternion();
-  protected readonly _worldScale = new Vector3();
-  protected needsAnimationFrame = false;
+  protected readonly cameraPosition = new Vector3();
+  protected readonly cameraQuaternion = new Quaternion();
+  protected readonly cameraScale = new Vector3();
+  protected readonly cameraOffset = new Vector3();
+  protected readonly worldPosition = new Vector3();
+  protected readonly worldQuaternion = new Quaternion();
+  protected readonly worldScale = new Vector3();
+  protected needsAnimationFrame = false; // TODO: deprecate
   private readonly _animations: Callback[] = [];
   private _animationFrame = 0;
-  protected _changeDispatched = false;
-  constructor() {
+  protected changeDispatched = false;
+  constructor( camera: AnyCameraType ) {
     super();
-    this._onAnimationFrame = this._onAnimationFrame.bind( this );
-
-    this.onBeforeRender = ( renderer: WebGLRenderer, scene: Scene, camera: Camera ) => {
-      if ( this.camera !== camera ) this.camera = camera;
+    if ( camera && !(camera instanceof PerspectiveCamera) && !(camera instanceof OrthographicCamera) ) {
+      console.error(`Unsuported camera type: ${camera.constructor.name}`);
     }
+    this.camera = camera;
 
+    this._onAnimationFrame = this._onAnimationFrame.bind( this );
     this.observeProperty( 'needsAnimationFrame' );
     this.needsAnimationFrame = true;
   }
@@ -65,11 +65,11 @@ export class Base extends Mesh {
         if ( newValue !== oldValue ) {
           callback && callback(newValue, oldValue);
           this.dispatchEvent({ type: propertyKey + '-changed', value: newValue, oldValue: oldValue });
-          if ( !this._changeDispatched ) {
-            this._changeDispatched = true;
+          if ( !this.changeDispatched ) {
+            this.changeDispatched = true;
             requestAnimationFrame(() => {
               this.dispatchEvent(EVENT.CHANGE);
-              this._changeDispatched = false;
+              this.changeDispatched = false;
             });
           }
         }
@@ -111,18 +111,20 @@ export class Base extends Mesh {
     this.stopAllAnimations();
     this.dispatchEvent( EVENT.DISPOSE );
   }
+  decomposeMatrices() {
+    this.matrixWorld.decompose( this.worldPosition, this.worldQuaternion, this.worldScale );
+    this.camera.updateMatrixWorld();
+    this.camera.matrixWorld.decompose( this.cameraPosition, this.cameraQuaternion, this.cameraScale ); 
+    this.cameraOffset.copy( this.cameraPosition ).sub( this.worldPosition );
+    if ( this.camera instanceof OrthographicCamera ) {
+      this.eye.set( 0, 0, 1 ).applyQuaternion( this.cameraQuaternion );
+    } else {
+      this.eye.copy( this.cameraOffset ).normalize();
+    }
+  }
   updateMatrixWorld() {
     super.updateMatrixWorld();
-    this.matrixWorld.decompose( this._worldPosition, this._worlQuaternion, this._worldScale );
-    if ( this.camera ) {
-      this.camera.matrixWorld.decompose( this._cameraPosition, this._cameraQuaternion, this._cameraScale ); 
-      this._cameraOffset.copy( this._cameraPosition ).sub( this._worldPosition );
-      if ( this.camera instanceof OrthographicCamera ) {
-        this.eye.set( 0, 0, 1 ).applyQuaternion( this._cameraQuaternion );
-      } else {
-        this.eye.copy( this._cameraOffset ).normalize();
-      }
-    }
+    this.decomposeMatrices();
   }
 }
 

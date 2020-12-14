@@ -1,5 +1,5 @@
 import { Vector2, Vector3, Vector4, Quaternion, PerspectiveCamera, OrthographicCamera } from 'three';
-import { Controls, Viewport } from './Controls';
+import { Controls } from './Controls';
 import { EVENT, AnyCameraType } from './Base';
 
 const STATES = new WeakMap();
@@ -8,40 +8,38 @@ const STATES = new WeakMap();
  * `CameraControls`: Generic superclass for interactive camera controls.
  */
 export class CameraControls extends Controls {
-  viewport: Viewport;
   frustumCulled = false;
   constructor( camera: AnyCameraType, domElement: HTMLElement ) {
-    super();
-    if ( camera && !(camera instanceof PerspectiveCamera) && !(camera instanceof OrthographicCamera) ) {
-      console.error(`THREE.CameraControls: Unsuported camera type: ${camera.constructor.name}`);
-    }
-    if ( domElement && !(domElement instanceof HTMLElement) ) {
-      console.error(`THREE.CameraControls: Unsuported domElement: ${domElement}`);
-    }
-    this.viewport = {
-      domElement: domElement,
-      camera: camera,
-    }
+    super( camera, domElement );
+    Object.defineProperty( this, 'camera', {
+      get() {
+        return camera;
+      },
+      set( newCamera: AnyCameraType ) {
+        const oldCamera = camera;
+        camera = newCamera;
+        newCamera !== oldCamera && this.cameraChanged( newCamera, oldCamera );
+      }
+    });
+    this.cameraChanged( camera );
   }
-  viewportChanged( newViewport: Viewport, oldViewport: Viewport ) {
-    super.viewportChanged( newViewport, oldViewport );
-    if ( oldViewport && oldViewport.camera ) {
-      const oldState = STATES.get( oldViewport.camera ) || new CameraState( oldViewport.camera, this );
-      STATES.set( oldViewport.camera, oldState.update( oldViewport.camera, this ) );
+  cameraChanged( newCamera: AnyCameraType, oldCamera?: AnyCameraType ) {
+    if ( newCamera && oldCamera ) {
+      const oldState = STATES.get( oldCamera ) || new CameraState( oldCamera, this );
+      STATES.set( oldCamera, oldState.update( oldCamera, this ) );
     }
-    const newState = STATES.get( newViewport.camera ) || new CameraState( newViewport.camera, this );
-    STATES.set( newViewport.camera, newState.apply( newViewport.camera, this ) );
-    this.dispatchEvent( EVENT.CHANGE );
+    const newState = STATES.get( newCamera ) || new CameraState( newCamera, this );
+    STATES.set( newCamera, newState.apply( newCamera, this ) );
   }
   // Saves camera state for later reset.
   saveCameraState() {
-    const camera = this.viewport.camera as AnyCameraType;
+    const camera = this.camera as AnyCameraType;
     const state = STATES.get( camera ) || new CameraState( camera, this );
     STATES.set( camera, state.update( camera, this ) );
   }
   // Resets camera state from saved reset state.
   resetCameraState() {
-    const camera = this.viewport.camera as AnyCameraType;
+    const camera = this.camera as AnyCameraType;
     const state = STATES.get( camera ) || new CameraState( camera, this );
     STATES.set( camera, state.apply( camera, this ) );
     this.dispatchEvent( EVENT.CHANGE );

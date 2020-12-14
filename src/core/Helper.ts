@@ -1,5 +1,5 @@
-import { Vector3, Vector4, Euler, Mesh, Line, DoubleSide, LineBasicMaterial, MeshBasicMaterial } from 'three';
-import { Base } from './Base';
+import { Vector3, Vector4, Euler, Mesh, Line, DoubleSide, LineBasicMaterial, MeshBasicMaterial, OrthographicCamera, PerspectiveCamera } from 'three';
+import { Base, AnyCameraType } from './Base';
 
 export const helperMaterial = new MeshBasicMaterial( {
   depthTest: false,
@@ -32,8 +32,9 @@ export interface HelperGeometrySpec {
 }
 
 export class Helper extends Base {
-  constructor( helperMap?: [ Mesh | Line, HelperGeometrySpec ][] ) {
-    super();
+  protected _sizeAttenuation = 1;
+  constructor( camera: AnyCameraType, helperMap?: [ Mesh | Line, HelperGeometrySpec ][] ) {
+    super( camera );
     if ( helperMap ) {
       for ( let i = helperMap.length; i --; ) {
 
@@ -71,6 +72,16 @@ export class Helper extends Base {
 
         this.add( object );
       }
+    }
+  }
+  decomposeMatrices() {
+    super.decomposeMatrices();
+    const camera = this.camera;
+    this._sizeAttenuation = 1;
+    if ( camera instanceof OrthographicCamera ) {
+      this._sizeAttenuation = ( camera.top - camera.bottom ) / camera.zoom;
+    } else if ( camera instanceof PerspectiveCamera ) {
+      this._sizeAttenuation = this.worldPosition.distanceTo( this.cameraPosition ) * Math.min( 1.9 * Math.tan( Math.PI * camera.fov / 360 ) / camera.zoom, 7 );
     }
   }
 }

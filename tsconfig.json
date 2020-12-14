@@ -29,7 +29,7 @@
     /* Experimental Options */
     "experimentalDecorators": true,
     "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true  /* Disallow inconsistently-cased references to the same file. */
+    "forceConsistentCasingInFileNames": true
   },
   "include": ["./src"],
   "exclude": ["./src/_HelperGeometry.ts", "./src/_BufferGeometryUtils.ts"]
