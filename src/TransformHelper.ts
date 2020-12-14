@@ -655,8 +655,8 @@ export class TransformHelper extends Helper {
   private readonly _tempQuaternion = new Quaternion();
   private readonly _tempQuaternion2 = new Quaternion();
 
-  constructor( camera: AnyCameraType ) {
-    super( camera, [
+  constructor( camera: AnyCameraType, domElement: HTMLElement ) {
+    super( camera, domElement, [
       ...scaleHelperGeometrySpec,
       ...translateHelperGeometrySpec,
       ...rotateHelperGeometrySpec,

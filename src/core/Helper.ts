@@ -33,8 +33,8 @@ export interface HelperGeometrySpec {
 
 export class Helper extends Base {
   protected _sizeAttenuation = 1;
-  constructor( camera: AnyCameraType, helperMap?: [ Mesh | Line, HelperGeometrySpec ][] ) {
-    super( camera );
+  constructor( camera: AnyCameraType, domElement: HTMLElement, helperMap?: [ Mesh | Line, HelperGeometrySpec ][] ) {
+    super( camera, domElement );
     if ( helperMap ) {
       for ( let i = helperMap.length; i --; ) {
 
@@ -83,5 +83,6 @@ export class Helper extends Base {
     } else if ( camera instanceof PerspectiveCamera ) {
       this._sizeAttenuation = this.worldPosition.distanceTo( this.cameraPosition ) * Math.min( 1.9 * Math.tan( Math.PI * camera.fov / 360 ) / camera.zoom, 7 );
     }
+    this._sizeAttenuation *= 720 / this.domElement.clientHeight;
   }
 }

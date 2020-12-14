@@ -1,4 +1,4 @@
-import { Vector2, Vector3, Quaternion, Plane, Intersection, Object3D, Camera, PerspectiveCamera, OrthographicCamera, Raycaster, Ray, MathUtils } from 'three';
+import { Vector2, Vector3, Plane, Intersection, Object3D, Camera, PerspectiveCamera, OrthographicCamera, Raycaster, Ray, MathUtils } from 'three';
 
 // Keeps pointer movement data in 2D space
 class Pointer2D {
@@ -219,10 +219,6 @@ export class PointerTracker {
   private readonly _viewMultiplier = new Vector2();
   private readonly _origin = new Vector3();
   private readonly _direction = new Vector3();
-  private readonly _cameraPosition = new Vector3();
-  private readonly _cameraQuaternion = new Quaternion();
-  private readonly _cameraScale = new Vector3();
-  private readonly _eye = new Vector3();
   constructor( pointerEvent: PointerEvent, camera: PerspectiveCamera | OrthographicCamera | Object3D ) {
     this.buttons = pointerEvent.buttons;
     this.altKey = pointerEvent.altKey;
@@ -264,7 +260,7 @@ export class PointerTracker {
   setByXRController( controller: Object3D ) {
     this._viewCoord.set( 0, 0 )
     this.view.set( this._viewCoord.x, this._viewCoord.y );
-    this.ray.updateByViewPointer( this._camera, this.view );
+    this.ray.updateByViewPointer( controller, this.view );
   }
   updateByXRController( controller: Object3D ) {
     this._viewCoord.set( this.domElement.clientWidth / 2, this.domElement.clientHeight / 2 );

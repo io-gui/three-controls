@@ -96,7 +96,7 @@ class TransformControls extends Controls {
   private readonly _viewportEye = new Vector3();
 
   // TODO: improve
-  protected readonly _cameraHelpers = new WeakMap();
+  protected readonly _cameraHelpers: WeakMap<AnyCameraType, TransformHelper> = new WeakMap();
   // private _helper: TransformHelper;
 
   constructor( camera: AnyCameraType, domElement: HTMLElement ) {
@@ -147,8 +147,9 @@ class TransformControls extends Controls {
   }
   getHelper( camera: AnyCameraType ) {
     // TODO: dispose all helpers on dispose();
-    const helper = this._cameraHelpers.get( camera ) || new TransformHelper( camera );
-    if (helper.camera != camera) console.log(helper.camera, camera);
+    // TODO: set helper camera and domElement automatically before onBeforeRender.
+    const helper = this._cameraHelpers.get( camera ) || new TransformHelper( camera, this.domElement );
+    if (helper.camera !== camera) console.log(helper.camera, camera);
     this._cameraHelpers.set( camera, helper );
     return helper;
   }
@@ -544,6 +545,7 @@ class TransformControls extends Controls {
   attach( object: Object3D ): this {
     this.object = object;
     this.visible = true;
+    this.updateMatrixWorld();
     return this;
   }
   // Detatch from object

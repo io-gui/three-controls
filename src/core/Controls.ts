@@ -1,4 +1,4 @@
-import { Plane, Object3D, Scene, Camera, Event as ThreeEvent, WebXRManager, WebGLRenderer } from 'three';
+import { Plane, Object3D, Event as ThreeEvent, WebXRManager, WebGLRenderer } from 'three';
 import { PointerTracker, CenterPointerTracker } from './Pointers';
 import { Base, Callback, AnyCameraType } from './Base';
 
@@ -29,7 +29,6 @@ import { Base, Callback, AnyCameraType } from './Base';
  * - Emits lyfecycle events: "enabled", "disabled", "dispose"
  */
 export class Controls extends Base {
-  domElement: HTMLElement;
   xr?: WebXRManager;
   // Public API
   enabled = true;
@@ -45,14 +44,11 @@ export class Controls extends Base {
   private _keys: number[] = [];
   protected readonly _plane = new Plane();
   protected readonly _viewports: HTMLElement[] = [];
-  protected readonly _viewportCameras = new WeakMap();
+  protected readonly _viewportCameras: WeakMap<HTMLElement, AnyCameraType> = new WeakMap();
   constructor( camera: AnyCameraType, domElement: HTMLElement ) {
-    super(camera);
-    if ( domElement && !(domElement instanceof HTMLElement) ) {
-      console.error(`Unsuported domElement: ${domElement}`);
-    }
-    this.domElement = domElement;
-    this.onBeforeRender = ( renderer: WebGLRenderer, scene: Scene, camera: Camera ) => {
+    super(camera, domElement);
+
+    this.onBeforeRender = ( renderer: WebGLRenderer ) => {
       this.xr = renderer.xr;
     }
 
@@ -101,7 +97,7 @@ export class Controls extends Base {
     domElement.addEventListener( 'touchdown', this._preventDefault, {capture: false, passive: false });
     domElement.addEventListener( 'touchmove', this._preventDefault, {capture: false, passive: false });
     domElement.addEventListener( 'pointerdown', this._onPointerDown )
-    domElement.addEventListener( 'pointermove', this._onPointerMove );
+    domElement.addEventListener( 'pointermove', this._onPointerMove, { capture: true } );
     domElement.addEventListener( 'pointerleave', this._onPointerLeave, false );
     domElement.addEventListener( 'pointercancel', this._onPointerCancel, false );
     domElement.addEventListener( 'pointerover', this._onPointerOver, false );
@@ -129,9 +125,7 @@ export class Controls extends Base {
     }
   }
 
-
   _connect() {
-
     if ( this.xr ) this._connectXR();
   }
   _disconnect() {
@@ -228,8 +222,10 @@ export class Controls extends Base {
     this.dispatchEvent( event );
   }
   _onPointerDown( event: PointerEvent ) {
-    const domElement = event.target as HTMLElement;
-    const camera = this._viewportCameras.get( domElement );
+    const path = ((event as any).path as HTMLElement[]);
+    const domElement = path.find( element => this._viewports.indexOf(element) !== -1) as HTMLElement;
+    // const domElement = event.target as HTMLElement;
+    const camera = this._viewportCameras.get( domElement ) as AnyCameraType;
     if ( this._simulatedPointer ) {
       this._simulatedPointer.clearMovement();
       this._simulatedPointer = null;
@@ -245,8 +241,10 @@ export class Controls extends Base {
     this.dispatchEvent( event );
   }
   _onPointerMove( event: PointerEvent ) {
-    const domElement = event.target as HTMLElement;
-    const camera = this._viewportCameras.get( domElement );
+    const path = ((event as any).path as HTMLElement[]);
+    const domElement = path.find( element => this._viewports.indexOf(element) !== -1) as HTMLElement;
+    // const domElement = event.target as HTMLElement;
+    const camera = this._viewportCameras.get( domElement ) as AnyCameraType;;
     const pointers = this._pointers;
     const index = pointers.findIndex( pointer => pointer.pointerId === event.pointerId );
     let pointer = pointers[index];
@@ -303,7 +301,9 @@ export class Controls extends Base {
     }
   }
   _onPointerUp( event: PointerEvent ) {
-    const domElement = event.target as HTMLElement;
+    const path = ((event as any).path as HTMLElement[]);
+    const domElement = path.find( element => this._viewports.indexOf(element) !== -1) as HTMLElement;
+    // const domElement = event.target as HTMLElement;
     // TODO: three-finger drag on Mac touchpad producing delayed pointerup.
     const pointers = this._pointers;
     const index = pointers.findIndex( pointer => pointer.pointerId === event.pointerId );
@@ -322,7 +322,9 @@ export class Controls extends Base {
     this.dispatchEvent( event );
   }
   _onPointerLeave( event: PointerEvent ) {
-    const domElement = event.target as HTMLElement;
+    const path = ((event as any).path as HTMLElement[]);
+    const domElement = path.find( element => this._viewports.indexOf(element) !== -1) as HTMLElement;
+    // const domElement = event.target as HTMLElement;
     const pointers = this._pointers;
     const index = pointers.findIndex( pointer => pointer.pointerId === event.pointerId );
     const pointer = pointers[index];
@@ -334,7 +336,9 @@ export class Controls extends Base {
     this.dispatchEvent( event );
   }
   _onPointerCancel( event: PointerEvent ) {
-    const domElement = event.target as HTMLElement;
+    const path = ((event as any).path as HTMLElement[]);
+    const domElement = path.find( element => this._viewports.indexOf(element) !== -1) as HTMLElement;
+    // const domElement = event.target as HTMLElement;
     const pointers = this._pointers;
     const index = pointers.findIndex( pointer => pointer.pointerId === event.pointerId );
     const pointer = pointers[index];

@@ -24,6 +24,7 @@ export const UNIT = {
  */
 export class Base extends Mesh {
   camera: AnyCameraType;
+  domElement: HTMLElement;
   readonly eye = new Vector3();
   protected readonly cameraPosition = new Vector3();
   protected readonly cameraQuaternion = new Quaternion();
@@ -36,12 +37,17 @@ export class Base extends Mesh {
   private readonly _animations: Callback[] = [];
   private _animationFrame = 0;
   protected changeDispatched = false;
-  constructor( camera: AnyCameraType ) {
+  constructor( camera: AnyCameraType, domElement: HTMLElement ) {
     super();
     if ( camera && !(camera instanceof PerspectiveCamera) && !(camera instanceof OrthographicCamera) ) {
       console.error(`Unsuported camera type: ${camera.constructor.name}`);
     }
+    if ( domElement && !(domElement instanceof HTMLElement) ) {
+      console.error(`Unsuported domElement: ${domElement}`);
+    }
+
     this.camera = camera;
+    this.domElement = domElement;
 
     this._onAnimationFrame = this._onAnimationFrame.bind( this );
     this.observeProperty( 'needsAnimationFrame' );
@@ -125,6 +131,9 @@ export class Base extends Mesh {
   updateMatrixWorld() {
     super.updateMatrixWorld();
     this.decomposeMatrices();
+    // TODO: investigate why is this necessary.
+    // Without this, TransformControls needs another update to reoriante after "space" change.
+    super.updateMatrixWorld();
   }
 }
 
