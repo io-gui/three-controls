@@ -1,9 +1,9 @@
-import { Vector3, Quaternion, PerspectiveCamera, OrthographicCamera, Camera } from 'three';
+import { Vector3, Quaternion, PerspectiveCamera, OrthographicCamera, Camera, Object3D } from 'three';
 
 import { Mesh, Event as ThreeEvent } from 'three';
 
 export type Callback = ( callbackValue?: any, callbackOldValue?: any ) => void;
-export type AnyCameraType = Camera | PerspectiveCamera | OrthographicCamera;
+export type AnyCameraType = Camera | PerspectiveCamera | OrthographicCamera | Object3D;
 
 export const EVENT: Record<string, ThreeEvent> = {
   CHANGE: { type: 'change' },
@@ -39,13 +39,6 @@ export class Base extends Mesh {
   protected changeDispatched = false;
   constructor( camera: AnyCameraType, domElement: HTMLElement ) {
     super();
-    if ( camera && !(camera instanceof PerspectiveCamera) && !(camera instanceof OrthographicCamera) ) {
-      console.error(`Unsuported camera type: ${camera.constructor.name}`);
-    }
-    if ( domElement && !(domElement instanceof HTMLElement) ) {
-      console.error(`Unsuported domElement: ${domElement}`);
-    }
-
     this.camera = camera;
     this.domElement = domElement;
 

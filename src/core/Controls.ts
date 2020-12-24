@@ -143,10 +143,10 @@ export class Controls extends Base {
         this.xr.getController( 1 )
       ];
       this._xrControllers[ 0 ].addEventListener( 'selectstart', this._onXRControllerDown );
-      this._xrControllers[ 0 ].addEventListener( 'change', this._onXRControllerMove );
+      this._xrControllers[ 0 ].addEventListener( 'controllermove', this._onXRControllerMove );
       this._xrControllers[ 0 ].addEventListener( 'selectend', this._onXRControllerUp );
       this._xrControllers[ 1 ].addEventListener( 'selectstart', this._onXRControllerDown );
-      this._xrControllers[ 1 ].addEventListener( 'change', this._onXRControllerMove );
+      this._xrControllers[ 1 ].addEventListener( 'controllermove', this._onXRControllerMove );
       this._xrControllers[ 1 ].addEventListener( 'selectend', this._onXRControllerUp );
 
       const event = {
@@ -164,10 +164,10 @@ export class Controls extends Base {
   _disconnectXR() {
     if (this._xrControllers.length) {
       this._xrControllers[ 0 ].removeEventListener( 'selectstart', this._onXRControllerDown );
-      this._xrControllers[ 0 ].removeEventListener( 'change', this._onXRControllerMove );
+      this._xrControllers[ 0 ].removeEventListener( 'controllermove', this._onXRControllerMove );
       this._xrControllers[ 0 ].removeEventListener( 'selectend', this._onXRControllerUp );
       this._xrControllers[ 1 ].removeEventListener( 'selectstart', this._onXRControllerDown );
-      this._xrControllers[ 1 ].removeEventListener( 'change', this._onXRControllerMove );
+      this._xrControllers[ 1 ].removeEventListener( 'controllermove', this._onXRControllerMove );
       this._xrControllers[ 1 ].removeEventListener( 'selectend', this._onXRControllerUp );
     }
   }

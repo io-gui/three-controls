@@ -1,4 +1,4 @@
-import { Vector3, Vector4, Euler, Mesh, Line, DoubleSide, LineBasicMaterial, MeshBasicMaterial, OrthographicCamera, PerspectiveCamera } from 'three';
+import { Vector3, Vector4, Euler, Mesh, Line, Material, DoubleSide, LineBasicMaterial, MeshBasicMaterial, OrthographicCamera, PerspectiveCamera } from 'three';
 import { Base, AnyCameraType } from './Base';
 
 export const helperMaterial = new MeshBasicMaterial( {
@@ -32,7 +32,7 @@ export interface HelperGeometrySpec {
 }
 
 export class Helper extends Base {
-  protected _sizeAttenuation = 1;
+  sizeAttenuation = 1;
   constructor( camera: AnyCameraType, domElement: HTMLElement, helperMap?: [ Mesh | Line, HelperGeometrySpec ][] ) {
     super( camera, domElement );
     if ( helperMap ) {
@@ -74,15 +74,22 @@ export class Helper extends Base {
       }
     }
   }
+  dispose() {
+    super.dispose();
+    this.traverse( child => {
+      if ((child as Mesh).material) ((child as Mesh).material as Material).dispose();
+      if ((child as Mesh).geometry) (child as Mesh).geometry.dispose();
+    });
+  }
   decomposeMatrices() {
     super.decomposeMatrices();
     const camera = this.camera;
-    this._sizeAttenuation = 1;
+    this.sizeAttenuation = 1;
     if ( camera instanceof OrthographicCamera ) {
-      this._sizeAttenuation = ( camera.top - camera.bottom ) / camera.zoom;
+      this.sizeAttenuation = ( camera.top - camera.bottom ) / camera.zoom;
     } else if ( camera instanceof PerspectiveCamera ) {
-      this._sizeAttenuation = this.worldPosition.distanceTo( this.cameraPosition ) * Math.min( 1.9 * Math.tan( Math.PI * camera.fov / 360 ) / camera.zoom, 7 );
+      this.sizeAttenuation = this.worldPosition.distanceTo( this.cameraPosition ) * Math.min( 1.9 * Math.tan( Math.PI * camera.fov / 360 ) / camera.zoom, 7 );
     }
-    this._sizeAttenuation *= 720 / this.domElement.clientHeight;
+    this.sizeAttenuation *= 720 / this.domElement.clientHeight / window.devicePixelRatio;
   }
 }

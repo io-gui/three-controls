@@ -96,13 +96,11 @@ class TransformControls extends Controls {
   private readonly _viewportEye = new Vector3();
 
   // TODO: improve
-  protected readonly _cameraHelpers: WeakMap<AnyCameraType, TransformHelper> = new WeakMap();
+  protected readonly _cameraHelpers: Map<AnyCameraType, TransformHelper> = new Map();
   // private _helper: TransformHelper;
 
   constructor( camera: AnyCameraType, domElement: HTMLElement ) {
     super( camera, domElement );
-
-    // this._helper = this.getHelper( camera );
 
     /* eslint-disable @typescript-eslint/no-use-before-define */
 
@@ -146,12 +144,18 @@ class TransformControls extends Controls {
     this.add( this.getHelper( newCamera ) );
   }
   getHelper( camera: AnyCameraType ) {
-    // TODO: dispose all helpers on dispose();
     // TODO: set helper camera and domElement automatically before onBeforeRender.
     const helper = this._cameraHelpers.get( camera ) || new TransformHelper( camera, this.domElement );
     if (helper.camera !== camera) console.log(helper.camera, camera);
     this._cameraHelpers.set( camera, helper );
     return helper;
+  }
+  dispose() {
+    super.dispose();
+    this._cameraHelpers.forEach(helper => {
+      helper.dispose();
+    });
+    this._cameraHelpers.clear();
   }
   decomposeViewportCamera( camera: AnyCameraType ) {
     camera.matrixWorld.decompose( this._viewportCameraPosition, this._viewportCameraQuaternion, this._viewportCameraScale );
@@ -484,7 +488,7 @@ class TransformControls extends Controls {
       }
     } else if ( mode === 'rotate' ) {
       this._offsetVector.copy( this._pointEnd ).sub( this._pointStart );
-      const ROTATION_SPEED = 20 / this.objectWorldPosition.distanceTo( this._viewportCameraPosition );
+      const ROTATION_SPEED = (pointer.domElement.clientHeight / 1440) * 0.025;
       let angle = 0;
       if ( axis === 'E' ) {
         this.rotationAxis.copy( this._viewportEye );
@@ -533,13 +537,7 @@ class TransformControls extends Controls {
     this.active = false;
     this.dragging = false;
     this.activeAxis = '';
-  }
-  dispose() {
-    this.traverse( ( child: Object3D ) => {
-      const mesh = child as Mesh;
-      if ( mesh.geometry ) mesh.geometry.dispose();
-      if ( mesh.material ) (mesh.material as MeshBasicMaterial).dispose();
-    } );
+    this.activeMode = '';
   }
   // Set current object
   attach( object: Object3D ): this {

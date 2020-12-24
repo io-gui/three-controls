@@ -1,4 +1,5 @@
-import { Vector2, Vector3, Plane, Intersection, Object3D, Camera, PerspectiveCamera, OrthographicCamera, Raycaster, Ray, MathUtils } from 'three';
+import { Vector2, Vector3, Plane, Intersection, Object3D, PerspectiveCamera, OrthographicCamera, Raycaster, Ray, MathUtils } from 'three';
+import { AnyCameraType } from './Base';
 
 // Keeps pointer movement data in 2D space
 class Pointer2D {
@@ -102,7 +103,7 @@ class Pointer6D {
     this.previous.copy( this.current );
     this.current.set( origin, direction );
   }
-  updateByViewPointer( camera: PerspectiveCamera | OrthographicCamera | Object3D, viewPointer: Pointer2D ): this {
+  updateByViewPointer( camera: AnyCameraType, viewPointer: Pointer2D ): this {
     if ( camera instanceof PerspectiveCamera ) {
       this.start.origin.setFromMatrixPosition( camera.matrixWorld );
       this.start.direction.set( viewPointer.start.x, viewPointer.start.y, 0.5 ).unproject( camera ).sub( this.start.origin ).normalize();
@@ -210,7 +211,7 @@ export class PointerTracker {
   // 6D pointer with coordinates in world-space ( origin, direction )
   readonly ray: Pointer6D = new Pointer6D();
 
-  _camera: PerspectiveCamera | OrthographicCamera | Object3D;
+  _camera: AnyCameraType;
   private readonly _viewCoord = new Vector2();
   private readonly _intersection = new Vector3();
   private readonly _raycaster = new Raycaster();
@@ -219,7 +220,7 @@ export class PointerTracker {
   private readonly _viewMultiplier = new Vector2();
   private readonly _origin = new Vector3();
   private readonly _direction = new Vector3();
-  constructor( pointerEvent: PointerEvent, camera: PerspectiveCamera | OrthographicCamera | Object3D ) {
+  constructor( pointerEvent: PointerEvent, camera: AnyCameraType ) {
     this.buttons = pointerEvent.buttons;
     this.altKey = pointerEvent.altKey;
     this.ctrlKey = pointerEvent.ctrlKey;
@@ -240,7 +241,7 @@ export class PointerTracker {
     this.ray.updateByViewPointer( camera, this.view );
   }
   // Updates the pointer with the lastest pointerEvent and camera.
-  update( pointerEvent: PointerEvent, camera: PerspectiveCamera | OrthographicCamera | Object3D ) {
+  update( pointerEvent: PointerEvent, camera: AnyCameraType ) {
     debug: {
       if ( this.pointerId !== pointerEvent.pointerId ) {
         console.error( 'Invalid pointerId!' );
@@ -311,7 +312,7 @@ export class CenterPointerTracker extends PointerTracker {
   // Array of pointers to calculate centers from
   private _pointers: PointerTracker[] = [];
   private readonly _projected = new Pointer3D();
-  constructor( pointerEvent: PointerEvent, camera: Camera ) {
+  constructor( pointerEvent: PointerEvent, camera: AnyCameraType ) {
     super( pointerEvent, camera );
     // Set center pointer read-only "type" and "pointerId" properties.
     Object.defineProperties( this, {
