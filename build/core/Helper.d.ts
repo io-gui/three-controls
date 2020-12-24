@@ -19,8 +19,9 @@ export interface HelperGeometrySpec {
 
 export declare class Helper extends Base {
 
-	protected _sizeAttenuation: number;
+	sizeAttenuation: number;
 	constructor( camera: AnyCameraType, domElement: HTMLElement, helperMap?: [Mesh | Line, HelperGeometrySpec][] );
+	dispose(): void;
 	decomposeMatrices(): void;
 
 }

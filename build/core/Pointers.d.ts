@@ -1,4 +1,5 @@
-import { Vector2, Vector3, Plane, Intersection, Object3D, Camera, PerspectiveCamera, OrthographicCamera, Ray } from 'three';
+import { Vector2, Vector3, Plane, Intersection, Object3D, Ray } from 'three';
+import { AnyCameraType } from './Base';
 
 declare class Pointer2D {
 
@@ -48,7 +49,7 @@ declare class Pointer6D {
 	constructor( origin?: Vector3, direction?: Vector3 );
 	set( origin: Vector3, direction: Vector3 ): this;
 	update( origin: Vector3, direction: Vector3 ): void;
-	updateByViewPointer( camera: PerspectiveCamera | OrthographicCamera | Object3D, viewPointer: Pointer2D ): this;
+	updateByViewPointer( camera: AnyCameraType, viewPointer: Pointer2D ): this;
 	updateByDamping( damping: number ): this;
 	projectOnPlane( plane: Plane, minGrazingAngle?: number ): Pointer3D;
 
@@ -73,7 +74,7 @@ export declare class PointerTracker {
 	isSimulated: boolean;
 	readonly view: Pointer2D;
 	readonly ray: Pointer6D;
-	_camera: PerspectiveCamera | OrthographicCamera | Object3D;
+	_camera: AnyCameraType;
 	private readonly _viewCoord;
 	private readonly _intersection;
 	private readonly _raycaster;
@@ -82,8 +83,8 @@ export declare class PointerTracker {
 	private readonly _viewMultiplier;
 	private readonly _origin;
 	private readonly _direction;
-	constructor( pointerEvent: PointerEvent, camera: PerspectiveCamera | OrthographicCamera | Object3D );
-	update( pointerEvent: PointerEvent, camera: PerspectiveCamera | OrthographicCamera | Object3D ): void;
+	constructor( pointerEvent: PointerEvent, camera: AnyCameraType );
+	update( pointerEvent: PointerEvent, camera: AnyCameraType ): void;
 	setByXRController( controller: Object3D ): void;
 	updateByXRController( controller: Object3D ): void;
 	simmulateDamping( dampingFactor: number, deltaTime: number ): void;
@@ -98,7 +99,7 @@ export declare class CenterPointerTracker extends PointerTracker {
 
 	private _pointers;
 	private readonly _projected;
-	constructor( pointerEvent: PointerEvent, camera: Camera );
+	constructor( pointerEvent: PointerEvent, camera: AnyCameraType );
 	projectOnPlane( plane: Plane, minGrazingAngle?: number ): Pointer3D;
 	updateCenter( pointers: PointerTracker[] ): void;
 

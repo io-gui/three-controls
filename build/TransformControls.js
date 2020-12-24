@@ -90,9 +90,7 @@ class TransformControls extends Controls {
 		this._viewportEye = new Vector3();
 
 		// TODO: improve
-		this._cameraHelpers = new WeakMap();
-
-		// this._helper = this.getHelper( camera );
+		this._cameraHelpers = new Map();
 		/* eslint-disable @typescript-eslint/no-use-before-define */
 		// Define properties with getters/setter
 		// Setting the defined property will automatically trigger change event
@@ -149,7 +147,6 @@ class TransformControls extends Controls {
 	getHelper( camera ) {
 
 
-		// TODO: dispose all helpers on dispose();
 		// TODO: set helper camera and domElement automatically before onBeforeRender.
 		const helper = this._cameraHelpers.get( camera ) || new TransformHelper( camera, this.domElement );
 
@@ -158,6 +155,19 @@ class TransformControls extends Controls {
 
 		this._cameraHelpers.set( camera, helper );
 		return helper;
+
+	}
+	dispose() {
+
+		super.dispose();
+
+		this._cameraHelpers.forEach( helper => {
+
+			helper.dispose();
+
+		} );
+
+		this._cameraHelpers.clear();
 
 	}
 	decomposeViewportCamera( camera ) {
@@ -709,7 +719,7 @@ class TransformControls extends Controls {
 		} else if ( mode === 'rotate' ) {
 
 			this._offsetVector.copy( this._pointEnd ).sub( this._pointStart );
-			const ROTATION_SPEED = 20 / this.objectWorldPosition.distanceTo( this._viewportCameraPosition );
+			const ROTATION_SPEED = ( pointer.domElement.clientHeight / 1440 ) * 0.025;
 			let angle = 0;
 
 			if ( axis === 'E' ) {
@@ -786,21 +796,7 @@ class TransformControls extends Controls {
 		this.active = false;
 		this.dragging = false;
 		this.activeAxis = '';
-
-	}
-	dispose() {
-
-		this.traverse( ( child ) => {
-
-			const mesh = child;
-
-			if ( mesh.geometry )
-				mesh.geometry.dispose();
-
-			if ( mesh.material )
-				mesh.material.dispose();
-
-		} );
+		this.activeMode = '';
 
 	}
 

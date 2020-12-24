@@ -69,10 +69,11 @@ declare class TransformControls extends Controls {
 	private readonly _viewportCameraQuaternion;
 	private readonly _viewportCameraScale;
 	private readonly _viewportEye;
-	protected readonly _cameraHelpers: WeakMap<AnyCameraType, TransformHelper>;
+	protected readonly _cameraHelpers: Map<AnyCameraType, TransformHelper>;
 	constructor( camera: AnyCameraType, domElement: HTMLElement );
 	cameraChanged( newCamera: AnyCameraType ): void;
 	getHelper( camera: AnyCameraType ): TransformHelper;
+	dispose(): void;
 	decomposeViewportCamera( camera: AnyCameraType ): Vector3;
 	updateHandleMaterial( handle: Mesh ): void;
 	updateHandle( handle: Mesh ): void;
@@ -83,7 +84,6 @@ declare class TransformControls extends Controls {
 	onTrackedPointerDown( pointer: PointerTracker ): void;
 	onTrackedPointerMove( pointer: PointerTracker ): void;
 	onTrackedPointerUp( pointer: PointerTracker ): void;
-	dispose(): void;
 	attach( object: Object3D ): this;
 	detach(): this;
 	getMode(): void;

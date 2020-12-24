@@ -24,7 +24,7 @@ export class Helper extends Base {
 	constructor( camera, domElement, helperMap ) {
 
 		super( camera, domElement );
-		this._sizeAttenuation = 1;
+		this.sizeAttenuation = 1;
 
 		if ( helperMap ) {
 
@@ -77,23 +77,38 @@ export class Helper extends Base {
 		}
 
 	}
+	dispose() {
+
+		super.dispose();
+
+		this.traverse( child => {
+
+			if ( child.material )
+				child.material.dispose();
+
+			if ( child.geometry )
+				child.geometry.dispose();
+
+		} );
+
+	}
 	decomposeMatrices() {
 
 		super.decomposeMatrices();
 		const camera = this.camera;
-		this._sizeAttenuation = 1;
+		this.sizeAttenuation = 1;
 
 		if ( camera instanceof OrthographicCamera ) {
 
-			this._sizeAttenuation = ( camera.top - camera.bottom ) / camera.zoom;
+			this.sizeAttenuation = ( camera.top - camera.bottom ) / camera.zoom;
 
 		} else if ( camera instanceof PerspectiveCamera ) {
 
-			this._sizeAttenuation = this.worldPosition.distanceTo( this.cameraPosition ) * Math.min( 1.9 * Math.tan( Math.PI * camera.fov / 360 ) / camera.zoom, 7 );
+			this.sizeAttenuation = this.worldPosition.distanceTo( this.cameraPosition ) * Math.min( 1.9 * Math.tan( Math.PI * camera.fov / 360 ) / camera.zoom, 7 );
 
 		}
 
-		this._sizeAttenuation *= 720 / this.domElement.clientHeight;
+		this.sizeAttenuation *= 720 / this.domElement.clientHeight / window.devicePixelRatio;
 
 	}
 

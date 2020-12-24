@@ -671,7 +671,7 @@ export class TransformHelper extends Helper {
 		const handleTag = handle.userData.tag;
 		handle.quaternion.copy( quaternion ).invert();
 		handle.position.set( 0, 0, 0 );
-		handle.scale.set( 1, 1, 1 ).multiplyScalar( this._sizeAttenuation * this.size / 7 );
+		handle.scale.set( 1, 1, 1 ).multiplyScalar( this.sizeAttenuation * this.size / 7 );
 		handle.quaternion.multiply( quaternion );
 		handle.visible = true;
 

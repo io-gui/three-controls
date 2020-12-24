@@ -1,9 +1,9 @@
-import { Vector3, Quaternion, PerspectiveCamera, OrthographicCamera, Camera } from 'three';
+import { Vector3, Quaternion, PerspectiveCamera, OrthographicCamera, Camera, Object3D } from 'three';
 import { Mesh, Event as ThreeEvent } from 'three';
 
 export declare type Callback = ( callbackValue?: any, callbackOldValue?: any ) => void;
 
-export declare type AnyCameraType = Camera | PerspectiveCamera | OrthographicCamera;
+export declare type AnyCameraType = Camera | PerspectiveCamera | OrthographicCamera | Object3D;
 
 export declare const EVENT: Record<string, ThreeEvent>;
 

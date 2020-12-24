@@ -1,4 +1,4 @@
-import { Vector3, Quaternion, PerspectiveCamera, OrthographicCamera } from 'three';
+import { Vector3, Quaternion, OrthographicCamera } from 'three';
 import { Mesh } from 'three';
 
 export const EVENT = {
@@ -36,19 +36,6 @@ export class Base extends Mesh {
 		this._animations = [];
 		this._animationFrame = 0;
 		this.changeDispatched = false;
-
-		if ( camera && ! ( camera instanceof PerspectiveCamera ) && ! ( camera instanceof OrthographicCamera ) ) {
-
-			console.error( `Unsuported camera type: ${camera.constructor.name}` );
-
-		}
-
-		if ( domElement && ! ( domElement instanceof HTMLElement ) ) {
-
-			console.error( `Unsuported domElement: ${domElement}` );
-
-		}
-
 		this.camera = camera;
 		this.domElement = domElement;
 		this._onAnimationFrame = this._onAnimationFrame.bind( this );
