@@ -641,6 +641,7 @@ export class TransformHelper extends Helper {
   showX = true;
   showY = true;
   showZ = true;
+  showE = true;
   showTranslate = true;
   showRotate = true;
   showScale = true;
@@ -678,7 +679,8 @@ export class TransformHelper extends Helper {
     if ( handleAxis.indexOf( 'X' ) !== - 1 && !this.showX ) handle.visible = false;
     if ( handleAxis.indexOf( 'Y' ) !== - 1 && !this.showY ) handle.visible = false;
     if ( handleAxis.indexOf( 'Z' ) !== - 1 && !this.showZ ) handle.visible = false;
-    if ( handleAxis.indexOf( 'E' ) !== - 1 && ( !this.showX || !this.showY || !this.showZ ) ) handle.visible = false;
+    if ( handleAxis !== 'E' && handleAxis.indexOf( 'E' ) !== - 1 && ( !this.showX || !this.showY || !this.showZ || !this.showE ) ) handle.visible = false;
+    if ( handleAxis === 'E' && ( !this.showE ) ) handle.visible = false;
 
     if ( handleType === 'translate' && !this.showTranslate ) handle.visible = false;
     if ( handleType === 'rotate' && !this.showRotate ) handle.visible = false;

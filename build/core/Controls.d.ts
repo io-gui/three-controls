@@ -1,6 +1,6 @@
 import { Plane, Event as ThreeEvent, WebXRManager } from 'three';
 import { PointerTracker, CenterPointerTracker } from './Pointers';
-import { Base, Callback, AnyCameraType } from './Base';
+import { ControlsBase, Callback, AnyCameraType } from './Base';
 
 
 /**
@@ -10,7 +10,7 @@ import { Base, Callback, AnyCameraType } from './Base';
  *
  * - Captures most relevant pointer and keyboard events and fixes some platform-specific bugs and discrepancies.
  * - Serves as a proxy dispatcher for pointer and keyboard events:
- *   "contextmenu", "wheel", "pointerdown", "pointermove", "pointerup", "pointerleave", "pointerover", "pointerenter", "pointerout", "pointercancel", "keydown", "keyup"
+ *   "contextmenu", "wheel", "pointerdown", "pointermove", "pointerup", "keydown", "keyup"
  * - Tracks active pointer gestures and evokes pointer event handler functions with tracked pointer data:
  *   `onTrackedPointerDown`, `onTrackedPointerMove`, `onTrackedPointerHover`, `onTrackedPointerUp`
  * - Enables inertial behaviours via simmulated pointer with framerate-independent damping.
@@ -29,7 +29,7 @@ import { Base, Callback, AnyCameraType } from './Base';
  * - Takes care of the event listener cleanup when `dipose()` method is called.
  * - Emits lyfecycle events: "enabled", "disabled", "dispose"
  */
-export declare class Controls extends Base {
+export declare class Controls extends ControlsBase {
 
 	xr?: WebXRManager;
 	enabled: boolean;
@@ -67,11 +67,6 @@ export declare class Controls extends Base {
 	_onPointerMove( event: PointerEvent ): void;
 	_onPointerSimulation( timeDelta: number ): void;
 	_onPointerUp( event: PointerEvent ): void;
-	_onPointerLeave( event: PointerEvent ): void;
-	_onPointerCancel( event: PointerEvent ): void;
-	_onPointerOver( event: PointerEvent ): void;
-	_onPointerEnter( event: PointerEvent ): void;
-	_onPointerOut( event: PointerEvent ): void;
 	_onKeyDown( event: KeyboardEvent ): void;
 	_onKeyUp( event: KeyboardEvent ): void;
 	onTrackedPointerDown( _pointer: PointerTracker, _pointers: PointerTracker[] ): void;

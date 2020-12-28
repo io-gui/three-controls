@@ -20,9 +20,9 @@ export const UNIT = {
 }
 
 /**
- * `Base`: Base class for Objects with observable properties, change events and animation.
+ * `ControlsBase`: Base class for Objects with observable properties, change events and animation.
  */
-export class Base extends Mesh {
+export class ControlsBase extends Mesh {
   camera: AnyCameraType;
   domElement: HTMLElement;
   readonly eye = new Vector3();
@@ -51,8 +51,8 @@ export class Base extends Mesh {
    * Also emits '[property]-changed' event and cummulative 'change' event on next rAF.
    */
   observeProperty( propertyKey: string ): void {
-    let value: any = this[ propertyKey as keyof Base ];
-    let callback = this[ propertyKey + 'Changed' as keyof Base ] as Callback;
+    let value: any = this[ propertyKey as keyof ControlsBase ];
+    let callback = this[ propertyKey + 'Changed' as keyof ControlsBase ] as Callback;
     if (callback) callback = callback.bind( this );
     Object.defineProperty( this, propertyKey, {
       get() {
@@ -125,7 +125,7 @@ export class Base extends Mesh {
     super.updateMatrixWorld();
     this.decomposeMatrices();
     // TODO: investigate why is this necessary.
-    // Without this, TransformControls needs another update to reoriante after "space" change.
+    // Without this, TransformControls needs another update to reorient after "space" change.
     super.updateMatrixWorld();
   }
 }

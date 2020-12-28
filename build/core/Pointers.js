@@ -270,7 +270,8 @@ export class PointerTracker {
 		this.domElement = pointerEvent.target;
 		this.pointerId = pointerEvent.pointerId;
 		this.type = pointerEvent.type;
-		this._camera = camera;
+		this.camera = camera;
+		this.timestamp = Date.now();
 
 		// Get view-space pointer coords from PointerEvent data and domElement size.
 		const rect = this.domElement.getBoundingClientRect();
@@ -311,8 +312,9 @@ export class PointerTracker {
 
 		}
 
-		this._camera = camera;
+		this.camera = camera;
 		this.domElement = pointerEvent.target;
+		this.timestamp = Date.now();
 
 		// Get view-space pointer coords from PointerEvent data and domElement size.
 		const rect = this.domElement.getBoundingClientRect();
@@ -325,6 +327,7 @@ export class PointerTracker {
 	}
 	setByXRController( controller ) {
 
+		this.timestamp = Date.now();
 		this._viewCoord.set( 0, 0 );
 		this.view.set( this._viewCoord.x, this._viewCoord.y );
 		this.ray.updateByViewPointer( controller, this.view );
@@ -332,6 +335,7 @@ export class PointerTracker {
 	}
 	updateByXRController( controller ) {
 
+		this.timestamp = Date.now();
 		this._viewCoord.set( this.domElement.clientWidth / 2, this.domElement.clientHeight / 2 );
 		this.view.update( this._viewCoord.x, this._viewCoord.y );
 		this._origin.setFromMatrixPosition( controller.matrixWorld );
@@ -358,7 +362,7 @@ export class PointerTracker {
 
 		const damping = Math.pow( 1 - dampingFactor, deltaTime * 60 / 1000 );
 		this.view.updateByDamping( damping );
-		this.ray.updateByViewPointer( this._camera, this.view );
+		this.ray.updateByViewPointer( this.camera, this.view );
 
 	}
 
@@ -451,7 +455,7 @@ export class CenterPointerTracker extends PointerTracker {
 		Object.defineProperty( this, 'ray', {
 			get: () => {
 
-				ray.updateByViewPointer( this._camera, this.view );
+				ray.updateByViewPointer( this.camera, this.view );
 				return ray;
 
 			}

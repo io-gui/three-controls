@@ -4,12 +4,6 @@ import { AnyCameraType } from './core/Base';
 import { Controls } from './core/Controls';
 import { TransformHelper } from './TransformHelper';
 
-export { TransformHelper } from './TransformHelper';
-
-export declare const TRANSFORM_CHANGE_EVENT: {
-	type: string;
-};
-
 declare class TransformControls extends Controls {
 
 	static readonly isTransformControls = true;
@@ -18,6 +12,7 @@ declare class TransformControls extends Controls {
 	showX: boolean;
 	showY: boolean;
 	showZ: boolean;
+	showE: boolean;
 	showTranslate: boolean;
 	showRotate: boolean;
 	showScale: boolean;
@@ -97,5 +92,9 @@ declare class TransformControls extends Controls {
 	addEventListener( type: string, listener: ( event: Event ) => void ): void;
 
 }
+
+export declare const TRANSFORM_CHANGE_EVENT: {
+	type: string;
+};
 
 export { TransformControls };

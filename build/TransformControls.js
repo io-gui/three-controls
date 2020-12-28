@@ -3,10 +3,6 @@ import { EVENT, UNIT } from './core/Base';
 import { Controls } from './core/Controls';
 import { TransformHelper } from './TransformHelper';
 
-export { TransformHelper } from './TransformHelper';
-
-export const TRANSFORM_CHANGE_EVENT = { type: 'transform-changed' };
-
 function getFirstIntersection( intersections, includeInvisible ) {
 
 	for ( let i = 0; i < intersections.length; i ++ ) {
@@ -25,8 +21,6 @@ function getFirstIntersection( intersections, includeInvisible ) {
 
 class TransformControls extends Controls {
 
-
-	// private _helper: TransformHelper;
 	constructor( camera, domElement ) {
 
 		super( camera, domElement );
@@ -36,6 +30,7 @@ class TransformControls extends Controls {
 		this.showX = true;
 		this.showY = true;
 		this.showZ = true;
+		this.showE = true;
 		this.showTranslate = true;
 		this.showRotate = true;
 		this.showScale = true;
@@ -49,7 +44,7 @@ class TransformControls extends Controls {
 		this.scaleSnap = 0;
 		this.minGrazingAngle = 30;
 		this.FADE_EPS = 0.001;
-		this.FADE_FACTOR = 0.15;
+		this.FADE_FACTOR = 0.25;
 		this._pointStart = new Vector3();
 		this._pointEnd = new Vector3();
 		this._pointStartNorm = new Vector3();
@@ -82,14 +77,10 @@ class TransformControls extends Controls {
 		this._dirZ = new Vector3( 0, 0, 1 );
 		this._dirVector = new Vector3();
 		this._identityQuaternion = Object.freeze( new Quaternion() );
-
-		// TODO: Document
 		this._viewportCameraPosition = new Vector3();
 		this._viewportCameraQuaternion = new Quaternion();
 		this._viewportCameraScale = new Vector3();
 		this._viewportEye = new Vector3();
-
-		// TODO: improve
 		this._cameraHelpers = new Map();
 		/* eslint-disable @typescript-eslint/no-use-before-define */
 		// Define properties with getters/setter
@@ -104,6 +95,7 @@ class TransformControls extends Controls {
 		this.observeProperty( 'showX' );
 		this.observeProperty( 'showY' );
 		this.observeProperty( 'showZ' );
+		this.observeProperty( 'showE' );
 		this.observeProperty( 'showTranslate' );
 		this.observeProperty( 'showRotate' );
 		this.observeProperty( 'showScale' );
@@ -334,6 +326,7 @@ class TransformControls extends Controls {
 		helper.showX = this.showX;
 		helper.showY = this.showY;
 		helper.showZ = this.showZ;
+		helper.showE = this.showE;
 		helper.showTranslate = this.showTranslate;
 		helper.showRotate = this.showRotate;
 		helper.showScale = this.showScale;
@@ -421,7 +414,8 @@ class TransformControls extends Controls {
 		if ( ! this.object || this.active === true )
 			return;
 
-		const helper = this.getHelper( pointer._camera );
+		const camera = ( this.xr && this.xr.isPresenting ) ? this.camera : pointer.camera;
+		const helper = this.getHelper( camera );
 
 		const pickers = helper.children.filter( ( child ) => {
 
@@ -521,7 +515,7 @@ class TransformControls extends Controls {
 		const axis = this.activeAxis;
 		const mode = this.activeMode;
 		const object = this.object;
-		const camera = pointer._camera;
+		const camera = ( this.xr && this.xr.isPresenting ) ? this.camera : pointer.camera;
 		this.decomposeViewportCamera( camera );
 		let space = this.space;
 
@@ -719,7 +713,11 @@ class TransformControls extends Controls {
 		} else if ( mode === 'rotate' ) {
 
 			this._offsetVector.copy( this._pointEnd ).sub( this._pointStart );
-			const ROTATION_SPEED = ( pointer.domElement.clientHeight / 1440 ) * 0.025;
+			let ROTATION_SPEED = ( pointer.domElement.clientHeight / 720 );
+
+			if ( this.xr && this.xr.isPresenting )
+				ROTATION_SPEED *= 5;
+
 			let angle = 0;
 
 			if ( axis === 'E' ) {
@@ -894,5 +892,7 @@ class TransformControls extends Controls {
 
 TransformControls.isTransformControls = true;
 TransformControls.type = 'TransformControls';
+
+export const TRANSFORM_CHANGE_EVENT = { type: 'transform-changed' };
 
 export { TransformControls };

@@ -1,5 +1,5 @@
 import { Vector3, Vector4, Euler, Mesh, Line, Material, DoubleSide, LineBasicMaterial, MeshBasicMaterial, OrthographicCamera, PerspectiveCamera } from 'three';
-import { Base, AnyCameraType } from './Base';
+import { ControlsBase, AnyCameraType } from './Base';
 
 export const helperMaterial = new MeshBasicMaterial( {
   depthTest: false,
@@ -31,14 +31,14 @@ export interface HelperGeometrySpec {
   tag?: string,
 }
 
-export class Helper extends Base {
+export class Helper extends ControlsBase {
   sizeAttenuation = 1;
   constructor( camera: AnyCameraType, domElement: HTMLElement, helperMap?: [ Mesh | Line, HelperGeometrySpec ][] ) {
     super( camera, domElement );
     if ( helperMap ) {
       for ( let i = helperMap.length; i --; ) {
 
-        const object = helperMap[ i ][ 0 ].clone();
+        const object = helperMap[ i ][ 0 ].clone() as Mesh | Line;
         const helperSpec = helperMap[ i ][ 1 ];
 
         if (object instanceof Mesh) {

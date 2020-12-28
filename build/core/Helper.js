@@ -1,5 +1,5 @@
 import { Mesh, Line, DoubleSide, LineBasicMaterial, MeshBasicMaterial, OrthographicCamera, PerspectiveCamera } from 'three';
-import { Base } from './Base';
+import { ControlsBase } from './Base';
 
 export const helperMaterial = new MeshBasicMaterial( {
 	depthTest: false,
@@ -19,7 +19,7 @@ export const helperLineMaterial = new LineBasicMaterial( {
 	toneMapped: false
 } );
 
-export class Helper extends Base {
+export class Helper extends ControlsBase {
 
 	constructor( camera, domElement, helperMap ) {
 

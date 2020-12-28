@@ -16,9 +16,9 @@ export declare const UNIT: {
 
 
 /**
- * `Base`: Base class for Objects with observable properties, change events and animation.
+ * `ControlsBase`: Base class for Objects with observable properties, change events and animation.
  */
-export declare class Base extends Mesh {
+export declare class ControlsBase extends Mesh {
 
 	camera: AnyCameraType;
 	domElement: HTMLElement;

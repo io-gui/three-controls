@@ -1,7 +1,9 @@
 import { Plane, Object3D, Event as ThreeEvent, WebXRManager, WebGLRenderer } from 'three';
 import { PointerTracker, CenterPointerTracker } from './Pointers';
-import { Base, Callback, AnyCameraType } from './Base';
+import { ControlsBase, Callback, AnyCameraType } from './Base';
 
+const INERTIA_TIME_THRESHOLD = 100;
+const INERTIA_MOVEMENT_THRESHOLD = 0.01;
 /**
  * `Controls`: Generic class for interactive threejs viewport controls. It solves some of the most common and complex problems in threejs control designs.
  * 
@@ -9,7 +11,7 @@ import { Base, Callback, AnyCameraType } from './Base';
  *
  * - Captures most relevant pointer and keyboard events and fixes some platform-specific bugs and discrepancies.
  * - Serves as a proxy dispatcher for pointer and keyboard events:
- *   "contextmenu", "wheel", "pointerdown", "pointermove", "pointerup", "pointerleave", "pointerover", "pointerenter", "pointerout", "pointercancel", "keydown", "keyup"
+ *   "contextmenu", "wheel", "pointerdown", "pointermove", "pointerup", "keydown", "keyup"
  * - Tracks active pointer gestures and evokes pointer event handler functions with tracked pointer data:
  *   `onTrackedPointerDown`, `onTrackedPointerMove`, `onTrackedPointerHover`, `onTrackedPointerUp`
  * - Enables inertial behaviours via simmulated pointer with framerate-independent damping.
@@ -28,7 +30,7 @@ import { Base, Callback, AnyCameraType } from './Base';
  * - Takes care of the event listener cleanup when `dipose()` method is called.
  * - Emits lyfecycle events: "enabled", "disabled", "dispose"
  */
-export class Controls extends Base {
+export class Controls extends ControlsBase {
   xr?: WebXRManager;
   // Public API
   enabled = true;
@@ -60,11 +62,6 @@ export class Controls extends Base {
     this._onPointerMove = this._onPointerMove.bind( this );
     this._onPointerSimulation = this._onPointerSimulation.bind( this );
     this._onPointerUp = this._onPointerUp.bind( this );
-    this._onPointerLeave = this._onPointerLeave.bind( this );
-    this._onPointerCancel = this._onPointerCancel.bind( this );
-    this._onPointerOver = this._onPointerOver.bind( this );
-    this._onPointerEnter = this._onPointerEnter.bind( this );
-    this._onPointerOut = this._onPointerOut.bind( this );
     this._onKeyDown = this._onKeyDown.bind( this );
     this._onKeyUp = this._onKeyUp.bind( this );
     this._connect = this._connect.bind( this );
@@ -98,11 +95,6 @@ export class Controls extends Base {
     domElement.addEventListener( 'touchmove', this._preventDefault, {capture: false, passive: false });
     domElement.addEventListener( 'pointerdown', this._onPointerDown )
     domElement.addEventListener( 'pointermove', this._onPointerMove, { capture: true } );
-    domElement.addEventListener( 'pointerleave', this._onPointerLeave, false );
-    domElement.addEventListener( 'pointercancel', this._onPointerCancel, false );
-    domElement.addEventListener( 'pointerover', this._onPointerOver, false );
-    domElement.addEventListener( 'pointerenter', this._onPointerEnter, false );
-    domElement.addEventListener( 'pointerout', this._onPointerOut, false );
     domElement.addEventListener( 'pointerup', this._onPointerUp, false );
     domElement.addEventListener( 'keydown', this._onKeyDown, false );
     domElement.addEventListener( 'keyup', this._onKeyUp, false );
@@ -114,8 +106,6 @@ export class Controls extends Base {
     domElement.removeEventListener( 'touchmove', this._preventDefault);
     domElement.removeEventListener( 'pointerdown', this._onPointerDown);
     domElement.removeEventListener( 'pointermove', this._onPointerMove);
-    domElement.removeEventListener( 'pointerleave', this._onPointerLeave, false );
-    domElement.removeEventListener( 'pointercancel', this._onPointerCancel, false );
     domElement.removeEventListener( 'pointerup', this._onPointerUp, false );
     domElement.removeEventListener( 'keydown', this._onKeyDown, false );
     domElement.removeEventListener( 'keyup', this._onKeyUp, false );
@@ -222,7 +212,7 @@ export class Controls extends Base {
     this.dispatchEvent( event );
   }
   _onPointerDown( event: PointerEvent ) {
-    const path = ((event as any).path as HTMLElement[]);
+    const path = ((event as any).path || (event.composedPath && event.composedPath())) as HTMLElement[];
     const domElement = path.find( element => this._viewports.indexOf(element) !== -1) as HTMLElement;
     // const domElement = event.target as HTMLElement;
     const camera = this._viewportCameras.get( domElement ) as AnyCameraType;
@@ -241,7 +231,7 @@ export class Controls extends Base {
     this.dispatchEvent( event );
   }
   _onPointerMove( event: PointerEvent ) {
-    const path = ((event as any).path as HTMLElement[]);
+    const path = ((event as any).path || (event.composedPath && event.composedPath())) as HTMLElement[];
     const domElement = path.find( element => this._viewports.indexOf(element) !== -1) as HTMLElement;
     // const domElement = event.target as HTMLElement;
     const camera = this._viewportCameras.get( domElement ) as AnyCameraType;;
@@ -301,7 +291,7 @@ export class Controls extends Base {
     }
   }
   _onPointerUp( event: PointerEvent ) {
-    const path = ((event as any).path as HTMLElement[]);
+    const path = ((event as any).path || (event.composedPath && event.composedPath())) as HTMLElement[];
     const domElement = path.find( element => this._viewports.indexOf(element) !== -1) as HTMLElement;
     // const domElement = event.target as HTMLElement;
     // TODO: three-finger drag on Mac touchpad producing delayed pointerup.
@@ -311,7 +301,10 @@ export class Controls extends Base {
     if ( pointer ) {
       pointers.splice( index, 1 );
       domElement.releasePointerCapture( event.pointerId );
-      if ( this.enableDamping ) {
+      // Prevents residual inertia with three-finger-drag on MacOS/touchpad
+      const timeDelta = Date.now() - pointer.timestamp;
+      const viewDelta = pointer.view.movement.length();
+      if ( this.enableDamping && timeDelta < INERTIA_TIME_THRESHOLD && viewDelta > INERTIA_MOVEMENT_THRESHOLD ) {
         this._simulatedPointer = pointer;
         this._simulatedPointer.isSimulated = true;
         this.startAnimation( this._onPointerSimulation as Callback );
@@ -319,43 +312,6 @@ export class Controls extends Base {
         this.onTrackedPointerUp( pointer, pointers );
       }
     }
-    this.dispatchEvent( event );
-  }
-  _onPointerLeave( event: PointerEvent ) {
-    const path = ((event as any).path as HTMLElement[]);
-    const domElement = path.find( element => this._viewports.indexOf(element) !== -1) as HTMLElement;
-    // const domElement = event.target as HTMLElement;
-    const pointers = this._pointers;
-    const index = pointers.findIndex( pointer => pointer.pointerId === event.pointerId );
-    const pointer = pointers[index];
-    if ( pointer ) {
-      pointers.splice( index, 1 );
-      domElement.releasePointerCapture( event.pointerId );
-      this.onTrackedPointerUp( pointer, pointers );
-    }
-    this.dispatchEvent( event );
-  }
-  _onPointerCancel( event: PointerEvent ) {
-    const path = ((event as any).path as HTMLElement[]);
-    const domElement = path.find( element => this._viewports.indexOf(element) !== -1) as HTMLElement;
-    // const domElement = event.target as HTMLElement;
-    const pointers = this._pointers;
-    const index = pointers.findIndex( pointer => pointer.pointerId === event.pointerId );
-    const pointer = pointers[index];
-    if ( pointer ) {
-      pointers.splice( index, 1 );
-      domElement.releasePointerCapture( event.pointerId );
-      this.onTrackedPointerUp( pointer, pointers );
-    }
-    this.dispatchEvent( event );
-  }
-  _onPointerOver( event: PointerEvent ) {
-    this.dispatchEvent( event );
-  }
-  _onPointerEnter( event: PointerEvent ) {
-    this.dispatchEvent( event );
-  }
-  _onPointerOut( event: PointerEvent ) {
     this.dispatchEvent( event );
   }
   _onKeyDown( event: KeyboardEvent ) {

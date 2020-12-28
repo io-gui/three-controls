@@ -1,5 +1,4 @@
 import dts from "rollup-plugin-dts";
-import alias from '@rollup/plugin-alias';
 
 const isDev = !!process.env.DEV;
 
@@ -39,57 +38,56 @@ function replace(matchString, replacementString) {
   };
 }
 
-function demodularize() {
-  return {
-    name: "demodularize",
-    renderChunk( code ) {
-      const threeClassNames = new Set();
-      const exportClassNames = new Set();
+// function demodularize() {
+//   return {
+//     name: "demodularize",
+//     renderChunk( code ) {
+//       const threeClassNames = new Set();
+//       const exportClassNames = new Set();
 
-      const threeImports = code.match( /(?<=import {)(.*)(?=} from '..\/..\/..\/build\/three.module.js')/g );
-      for ( let i = 0; i < threeImports.length; i ++ ) {
-        threeImports[ i ]
-          .split( ',' )
-          .map( Function.prototype.call, String.prototype.trim )
-          .forEach( className => {
-            threeClassNames.add( className );
-          } );
-      }
+//       const threeImports = code.match( /(?<=import {)(.*)(?=} from '..\/..\/..\/build\/three.module.js')/g );
+//       for ( let i = 0; i < threeImports.length; i ++ ) {
+//         threeImports[ i ]
+//           .split( ',' )
+//           .map( Function.prototype.call, String.prototype.trim )
+//           .forEach( className => {
+//             threeClassNames.add( className );
+//           } );
+//       }
 
-      threeClassNames.forEach( className => {
-        code = code.replace( new RegExp( `(?<=new )(${className}\\()`, 'g' ), ( match, p1 ) => `THREE.${p1}` );
-        code = code.replace( new RegExp( `(?<=: )(${className})`, 'g' ), ( match, p1 ) => `THREE.${p1}` );
-        code = code.replace( new RegExp( `(?<=extends )(${className})`, 'g' ), ( match, p1 ) => `THREE.${p1}` );
-        code = code.replace( new RegExp( `(?<=instanceof )(${className})`, 'g' ), ( match, p1 ) => `THREE.${p1}` );
-      } );
+//       threeClassNames.forEach( className => {
+//         code = code.replace( new RegExp( `(?<=new )(${className}\\()`, 'g' ), ( match, p1 ) => `THREE.${p1}` );
+//         code = code.replace( new RegExp( `(?<=: )(${className})`, 'g' ), ( match, p1 ) => `THREE.${p1}` );
+//         code = code.replace( new RegExp( `(?<=extends )(${className})`, 'g' ), ( match, p1 ) => `THREE.${p1}` );
+//         code = code.replace( new RegExp( `(?<=instanceof )(${className})`, 'g' ), ( match, p1 ) => `THREE.${p1}` );
+//       } );
 
-      code = code.replace( new RegExp( '^import {.*three.module.js\';\n$', 'gm' ), '' );
+//       code = code.replace( new RegExp( '^import {.*three.module.js\';\n$', 'gm' ), '' );
 
-      const localExports = code.match( /(?<=export {)(.*)(?=};)/g );
-      for ( let i = 0; i < localExports.length; i ++ ) {
-        localExports[ i ]
-          .split( ',' )
-          .map( Function.prototype.call, String.prototype.trim )
-          .forEach( className => {
-            exportClassNames.add( className );
-          } );
-      }
+//       const localExports = code.match( /(?<=export {)(.*)(?=};)/g );
+//       for ( let i = 0; i < localExports.length; i ++ ) {
+//         localExports[ i ]
+//           .split( ',' )
+//           .map( Function.prototype.call, String.prototype.trim )
+//           .forEach( className => {
+//             exportClassNames.add( className );
+//           } );
+//       }
 
-      code = code.replace( new RegExp( '^export {.*};$', 'gm' ), '' );
+//       code = code.replace( new RegExp( '^export {.*};$', 'gm' ), '' );
 
-      exportClassNames.forEach( className => {
-        code = code += `\nTHREE.${className} = ${className};`;
-      } );
+//       exportClassNames.forEach( className => {
+//         code = code += `\nTHREE.${className} = ${className};`;
+//       } );
 
-      const output = `(function() {\n${code}\n\n})();\n`;
-      return {
-        code: output,
-        map: null
-      };
-    }
-  };
-}
-
+//       const output = `(function() {\n${code}\n\n})();\n`;
+//       return {
+//         code: output,
+//         map: null
+//       };
+//     }
+//   };
+// }
 
 const makeConfig = ( filename, externals = [] ) => {
   return [
@@ -98,7 +96,7 @@ const makeConfig = ( filename, externals = [] ) => {
       output: {
         file: `../three/examples/jsm/controls/${filename}`,
         format: 'es',
-        sourcemap: isDev,
+        sourcemap: false,
         plugins: [
           replace("'three'", "'../../../build/three.module.js'"),
           isDev ? null : singleImportPaths(),
@@ -111,7 +109,7 @@ const makeConfig = ( filename, externals = [] ) => {
       output: {
         file: `../three/examples/jsm/controls/${filename.replace('.js', '.d.ts')}`,
         format: "es",
-        sourcemap: isDev,
+        sourcemap: false,
         plugins: [
           replace("'three'", "'../../../build/three.module.js'"),
           isDev ? null : singleImportPaths(),
@@ -122,17 +120,17 @@ const makeConfig = ( filename, externals = [] ) => {
       ],
       external: ['../../../src/Three', ...externals ],
     },
-    {
-      input: `../three/examples/jsm/controls/${filename}`,
-      output: {
-        file: `../three/examples/js/controls/${filename}`,
-        format: 'es',
-        plugins: [
-          demodularize(),
-        ]
-      },
-      external: ['../../../build/three.module.js', ...externals ],
-    },
+    // {
+    //   input: `../three/examples/jsm/controls/${filename}`,
+    //   output: {
+    //     file: `../three/examples/js/controls/${filename}`,
+    //     format: 'es',
+    //     plugins: [
+    //       demodularize(),
+    //     ]
+    //   },
+    //   external: ['../../../build/three.module.js', ...externals ],
+    // },
   ]
 }
 

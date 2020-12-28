@@ -71,10 +71,11 @@ export declare class PointerTracker {
 	domElement: HTMLElement;
 	pointerId: number;
 	type: string;
+	timestamp: number;
 	isSimulated: boolean;
 	readonly view: Pointer2D;
 	readonly ray: Pointer6D;
-	_camera: AnyCameraType;
+	camera: AnyCameraType;
 	private readonly _viewCoord;
 	private readonly _intersection;
 	private readonly _raycaster;

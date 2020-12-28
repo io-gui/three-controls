@@ -11,6 +11,7 @@ export declare class TransformHelper extends Helper {
 	showX: boolean;
 	showY: boolean;
 	showZ: boolean;
+	showE: boolean;
 	showTranslate: boolean;
 	showRotate: boolean;
 	showScale: boolean;

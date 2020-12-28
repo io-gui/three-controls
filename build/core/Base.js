@@ -17,9 +17,9 @@ export const UNIT = {
 
 
 /**
- * `Base`: Base class for Objects with observable properties, change events and animation.
+ * `ControlsBase`: Base class for Objects with observable properties, change events and animation.
  */
-export class Base extends Mesh {
+export class ControlsBase extends Mesh {
 
 	constructor( camera, domElement ) {
 
@@ -179,7 +179,7 @@ export class Base extends Mesh {
 		this.decomposeMatrices();
 
 		// TODO: investigate why is this necessary.
-		// Without this, TransformControls needs another update to reoriante after "space" change.
+		// Without this, TransformControls needs another update to reorient after "space" change.
 		super.updateMatrixWorld();
 
 	}

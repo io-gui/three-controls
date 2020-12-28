@@ -204,6 +204,7 @@ export class PointerTracker {
   domElement: HTMLElement;
   pointerId: number;
   type: string;
+  timestamp: number;
   // Used to distinguish a special "simulated" pointer used to actuate inertial gestures with damping.
   isSimulated = false;
   // 2D pointer with coordinates in view-space ( [-1...1] range )
@@ -211,7 +212,7 @@ export class PointerTracker {
   // 6D pointer with coordinates in world-space ( origin, direction )
   readonly ray: Pointer6D = new Pointer6D();
 
-  _camera: AnyCameraType;
+  camera: AnyCameraType;
   private readonly _viewCoord = new Vector2();
   private readonly _intersection = new Vector3();
   private readonly _raycaster = new Raycaster();
@@ -230,7 +231,8 @@ export class PointerTracker {
     this.pointerId = pointerEvent.pointerId;
     this.type = pointerEvent.type;
 
-    this._camera = camera;
+    this.camera = camera;
+    this.timestamp = Date.now();
 
     // Get view-space pointer coords from PointerEvent data and domElement size.
     const rect = this.domElement.getBoundingClientRect();
@@ -248,8 +250,9 @@ export class PointerTracker {
         return;
       }
     }
-    this._camera = camera;
+    this.camera = camera;
     this.domElement = pointerEvent.target as HTMLElement;
+    this.timestamp = Date.now();
     // Get view-space pointer coords from PointerEvent data and domElement size.
     const rect = this.domElement.getBoundingClientRect();
     this._viewCoord.set( pointerEvent.clientX - rect.left, pointerEvent.clientY - rect.top );
@@ -259,11 +262,13 @@ export class PointerTracker {
     this.ray.updateByViewPointer( camera, this.view );
   }
   setByXRController( controller: Object3D ) {
+    this.timestamp = Date.now();
     this._viewCoord.set( 0, 0 )
     this.view.set( this._viewCoord.x, this._viewCoord.y );
     this.ray.updateByViewPointer( controller, this.view );
   }
   updateByXRController( controller: Object3D ) {
+    this.timestamp = Date.now();
     this._viewCoord.set( this.domElement.clientWidth / 2, this.domElement.clientHeight / 2 );
     this.view.update( this._viewCoord.x, this._viewCoord.y );
     this._origin.setFromMatrixPosition( controller.matrixWorld );
@@ -280,7 +285,7 @@ export class PointerTracker {
     if ( !this.isSimulated ) return;
     const damping = Math.pow( 1 - dampingFactor, deltaTime * 60 / 1000 );
     this.view.updateByDamping( damping );
-    this.ray.updateByViewPointer( this._camera, this.view );
+    this.ray.updateByViewPointer( this.camera, this.view );
   }
   // Projects tracked pointer onto a plane object-space.
   projectOnPlane( plane: Plane, minGrazingAngle?: number ): Pointer3D {
@@ -339,7 +344,7 @@ export class CenterPointerTracker extends PointerTracker {
     const ray = new Pointer6D();
     Object.defineProperty( this, 'ray', {
       get: () => {
-        ray.updateByViewPointer( this._camera, this.view );
+        ray.updateByViewPointer( this.camera, this.view );
         return ray;
       }
     });
