@@ -1,6 +1,6 @@
 import { Plane, Object3D, WebXRManager, WebGLRenderer } from 'three';
 import { PointerTracker, CenterPointerTracker } from './Pointers';
-import { ControlsBase, Callback, AnyCameraType, ThreeEvent } from './Base';
+import { ControlsBase, Callback, AnyCameraType, ControlsEvent } from './Base';
 
 const INERTIA_TIME_THRESHOLD = 100;
 const INERTIA_MOVEMENT_THRESHOLD = 0.01;
@@ -161,7 +161,7 @@ export class Controls extends ControlsBase {
       this._xrControllers[ 1 ].removeEventListener( 'selectend', this._onXRControllerUp );
     }
   }
-  _onXRControllerMove( controllerEvent: ThreeEvent ) {
+  _onXRControllerMove( controllerEvent: ControlsEvent ) {
     const index = this._xrControllers.indexOf( controllerEvent.target );
     const xrPointer = this._xrPointers[ index ];
     xrPointer.updateByXRController( controllerEvent.target );
@@ -171,14 +171,14 @@ export class Controls extends ControlsBase {
       this.onTrackedPointerHover( xrPointer, [ xrPointer ] );
     }
   }
-  _onXRControllerDown( controllerEvent: ThreeEvent ) {
+  _onXRControllerDown( controllerEvent: ControlsEvent ) {
     const index = this._xrControllers.indexOf( controllerEvent.target );
     const xrPointer = this._xrPointers[ index ];
     xrPointer.buttons = 1;
     xrPointer.setByXRController( controllerEvent.target );
     this.onTrackedPointerDown( xrPointer, [ xrPointer ] );
   }
-  _onXRControllerUp( controllerEvent: ThreeEvent ) {
+  _onXRControllerUp( controllerEvent: ControlsEvent ) {
     const index = this._xrControllers.indexOf( controllerEvent.target );
     const xrPointer = this._xrPointers[ index ];
     xrPointer.buttons = 0;

@@ -1,7 +1,7 @@
 import { Vector3, Object3D, Intersection, PerspectiveCamera, OrthographicCamera } from 'three';
 import { PointerTracker } from './core/Pointers';
 import { Controls } from './core/Controls';
-import { ThreeEvent } from './core/Base';
+import { ControlsEvent } from './core/Base';
 
 let _intersections: Intersection[];
 const _hoveredObjects: Record<string, Object3D> = {};
@@ -18,7 +18,7 @@ export class DragControls extends Controls {
     super( camera, domElement );
     this.objects = objects;
 
-    this.addEventListener( 'enabled-changed', ( event: ThreeEvent ) => {
+    this.addEventListener( 'enabled-changed', ( event: ControlsEvent ) => {
       if ( !event.value ) this.domElement.style.cursor = '';
     } );
   }

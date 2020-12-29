@@ -1,22 +1,13 @@
 import { Vector3, Quaternion, PerspectiveCamera, OrthographicCamera, Camera, Object3D } from 'three';
 
-import { Mesh } from 'three';
-
 export type Callback = ( callbackValue?: any, callbackOldValue?: any ) => void;
 export type AnyCameraType = Camera | PerspectiveCamera | OrthographicCamera | Object3D;
 
-export interface ThreeEvent {
+export interface ControlsEvent {
 	type: string;
 	target?: any;
 	[attachment: string]: any;
 }
-
-export const EVENT: Record<string, ThreeEvent> = {
-  CHANGE: { type: 'change' },
-  START: { type: 'start' },
-  END: { type: 'end' },
-  DISPOSE: { type: 'dispose' },
-};
 
 export const UNIT = {
   ZERO: Object.freeze(new Vector3( 0, 0, 0 )),
@@ -28,7 +19,7 @@ export const UNIT = {
 /**
  * `ControlsBase`: Base class for Objects with observable properties, change events and animation.
  */
-export class ControlsBase extends Mesh {
+export class ControlsBase extends Object3D {
   camera: AnyCameraType;
   domElement: HTMLElement;
   readonly eye = new Vector3();
@@ -39,18 +30,17 @@ export class ControlsBase extends Mesh {
   protected readonly worldPosition = new Vector3();
   protected readonly worldQuaternion = new Quaternion();
   protected readonly worldScale = new Vector3();
-  protected needsAnimationFrame = false; // TODO: deprecate
+  protected needsAnimationUpdate = false; // TODO: deprecate
   private readonly _animations: Callback[] = [];
   private _animationFrame = 0;
-  protected changeDispatched = false;
   constructor( camera: AnyCameraType, domElement: HTMLElement ) {
     super();
     this.camera = camera;
     this.domElement = domElement;
 
     this._onAnimationFrame = this._onAnimationFrame.bind( this );
-    this.observeProperty( 'needsAnimationFrame' );
-    this.needsAnimationFrame = true;
+    this.observeProperty( 'needsAnimationUpdate' );
+    this.needsAnimationUpdate = true;
   }
   /**
    * Adds property observing mechanism via getter and setter.
@@ -70,28 +60,21 @@ export class ControlsBase extends Mesh {
         if ( newValue !== oldValue ) {
           callback && callback(newValue, oldValue);
           this.dispatchEvent({ type: propertyKey + '-changed', value: newValue, oldValue: oldValue });
-          if ( !this.changeDispatched ) {
-            this.changeDispatched = true;
-            requestAnimationFrame(() => {
-              this.dispatchEvent(EVENT.CHANGE);
-              this.changeDispatched = false;
-            });
-          }
+          this.needsAnimationUpdate = true;
         }
       }
     });
   }
   // TODO: consider making this work with WebXR context animaiton frame?
-  protected needsAnimationFrameChanged(): void {
+  protected needsAnimationUpdateChanged(): void {
     cancelAnimationFrame(this._animationFrame);
-    if (this.needsAnimationFrame) {
+    if (this.needsAnimationUpdate) {
       this._animationFrame = requestAnimationFrame( this._onAnimationFrame );
     }
   }
   private _onAnimationFrame() {
-    this.dispatchEvent(EVENT.CHANGE);
-    this.needsAnimationFrame = false;
-    this._animationFrame = 0;
+    this.dispatchEvent({ type: 'change' });
+    this.needsAnimationUpdate = false;
   }
   // Adds animation callback to animation loop.
   startAnimation( callback: Callback ): void {
@@ -114,7 +97,7 @@ export class ControlsBase extends Mesh {
   dispose() {
     if ( this.parent ) this.parent.remove( this );
     this.stopAllAnimations();
-    this.dispatchEvent( EVENT.DISPOSE );
+    this.dispatchEvent({ type: 'dispose' });
   }
   decomposeMatrices() {
     this.matrixWorld.decompose( this.worldPosition, this.worldQuaternion, this.worldScale );

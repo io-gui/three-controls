@@ -219,10 +219,7 @@ class TransformControls extends Controls {
         material.color.copy( this._targetColor );
         material.opacity = _targetOpacity;
         // TODO: use animation API instead
-        requestAnimationFrame( () => {
-          // TODO: unhack
-          this.needsAnimationFrame = true;
-        })
+        this.needsAnimationUpdate = true;
       }
     }
   }
