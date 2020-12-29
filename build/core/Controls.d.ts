@@ -1,6 +1,6 @@
-import { Plane, Event as ThreeEvent, WebXRManager } from 'three';
+import { Plane, WebXRManager } from 'three';
 import { PointerTracker, CenterPointerTracker } from './Pointers';
-import { ControlsBase, Callback, AnyCameraType } from './Base';
+import { ControlsBase, Callback, AnyCameraType, ThreeEvent } from './Base';
 
 
 /**

@@ -645,6 +645,7 @@ export class TransformHelper extends Helper {
 
 		this.enabled = true;
 		this.size = 1;
+		this.space = 'local';
 		this.showX = true;
 		this.showY = true;
 		this.showZ = true;
@@ -699,6 +700,16 @@ export class TransformHelper extends Helper {
 
 		if ( handleType === 'scale' && ! this.showScale )
 			handle.visible = false;
+
+		if ( handleType === 'scale' && this.space === 'world' ) {
+
+			if ( [ 'XYZX', 'XYZY', 'XYZZ' ].indexOf( handle.userData.axis ) === - 1 ) {
+
+				handle.visible = false;
+
+			}
+
+		}
 
 		if ( handleType === 'rotate' ) {
 

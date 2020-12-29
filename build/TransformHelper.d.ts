@@ -8,6 +8,7 @@ export declare class TransformHelper extends Helper {
 	static readonly type = "TransformHelper";
 	enabled: boolean;
 	size: number;
+	space: 'world' | 'local';
 	showX: boolean;
 	showY: boolean;
 	showZ: boolean;

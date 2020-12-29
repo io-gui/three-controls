@@ -1,6 +1,6 @@
-import { Plane, Object3D, Event as ThreeEvent, WebXRManager, WebGLRenderer } from 'three';
+import { Plane, Object3D, WebXRManager, WebGLRenderer } from 'three';
 import { PointerTracker, CenterPointerTracker } from './Pointers';
-import { ControlsBase, Callback, AnyCameraType } from './Base';
+import { ControlsBase, Callback, AnyCameraType, ThreeEvent } from './Base';
 
 const INERTIA_TIME_THRESHOLD = 100;
 const INERTIA_MOVEMENT_THRESHOLD = 0.01;

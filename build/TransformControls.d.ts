@@ -1,4 +1,4 @@
-import { Mesh, Object3D, Quaternion, Vector3, Matrix4 } from 'three';
+import { Mesh, Object3D, Quaternion, Vector3 } from 'three';
 import { PointerTracker } from './core/Pointers';
 import { AnyCameraType } from './core/Base';
 import { Controls } from './core/Controls';
@@ -9,6 +9,7 @@ declare class TransformControls extends Controls {
 	static readonly isTransformControls = true;
 	static readonly type = "TransformControls";
 	size: number;
+	space: 'world' | 'local';
 	showX: boolean;
 	showY: boolean;
 	showZ: boolean;
@@ -19,7 +20,6 @@ declare class TransformControls extends Controls {
 	object?: Object3D;
 	dragging: boolean;
 	active: boolean;
-	space: string;
 	activeMode: 'translate' | 'rotate' | 'scale' | '';
 	activeAxis: 'X' | 'Y' | 'Z' | 'XY' | 'YZ' | 'XZ' | 'XYZ' | 'XYZE' | 'XYZX' | 'XYZY' | 'XYZZ' | 'E' | '';
 	translationSnap: number;
@@ -29,30 +29,34 @@ declare class TransformControls extends Controls {
 	FADE_EPS: number;
 	FADE_FACTOR: number;
 	private readonly _pointStart;
-	private readonly _pointEnd;
 	private readonly _pointStartNorm;
-	private readonly _pointEndNorm;
-	protected readonly transformMatrixStart: Matrix4;
-	protected readonly transformMatrixEnd: Matrix4;
-	protected readonly transformMatrixOffset: Matrix4;
-	protected readonly parentWorldPosition: Vector3;
-	protected readonly parentWorldQuaternion: Quaternion;
-	protected readonly parentWorldQuaternionInv: Quaternion;
-	protected readonly parentWorldScale: Vector3;
-	protected readonly objectWorldPositionStart: Vector3;
-	protected readonly objectWorldQuaternionStart: Quaternion;
-	protected readonly objectWorldScaleStart: Vector3;
-	protected readonly objectWorldPosition: Vector3;
-	protected readonly objectWorldQuaternion: Quaternion;
-	protected readonly objectWorldQuaternionInv: Quaternion;
-	protected readonly objectWorldScale: Vector3;
-	protected readonly objectPositionStart: Vector3;
-	protected readonly objectQuaternionStart: Quaternion;
-	protected readonly objectQuaternionStartInv: Quaternion;
-	protected readonly objectScaleStart: Vector3;
-	protected readonly rotationAxis: Vector3;
+	private readonly _point;
+	private readonly _pointNorm;
+	private readonly _pointOffset;
+	private readonly _worldPositionStart;
+	private readonly _worldQuaternionStart;
+	private readonly _worldScaleStart;
+	private readonly _worldMatrix;
+	private readonly _worldPosition;
+	private readonly _worldQuaternion;
+	private readonly _worldQuaternionInv;
+	private readonly _worldScale;
+	private readonly _matrixStart;
+	private readonly _positionStart;
+	private readonly _quaternionStart;
+	private readonly _quaternionStartInv;
+	private readonly _scaleStart;
+	private readonly _matrix;
+	private readonly _position;
+	private readonly _quaternion;
+	private readonly _scale;
+	private readonly _rotationAxis;
+	private readonly _parentWorldPosition;
+	private readonly _parentWorldQuaternion;
+	private readonly _parentWorldQuaternionInv;
+	private readonly _parentWorldScale;
 	private readonly _tempVector;
-	private readonly _offsetVector;
+	private readonly _tempOffsetVector;
 	private readonly _tempQuaternion;
 	private readonly _targetColor;
 	private readonly _dirX;
@@ -87,14 +91,10 @@ declare class TransformControls extends Controls {
 	setRotationSnap( rotationSnap: number ): void;
 	setScaleSnap( scaleSnap: number ): void;
 	setSize( size: number ): void;
-	setSpace( space: string ): void;
+	setSpace( space: 'world' | 'local' ): void;
 	update(): void;
 	addEventListener( type: string, listener: ( event: Event ) => void ): void;
 
 }
-
-export declare const TRANSFORM_CHANGE_EVENT: {
-	type: string;
-};
 
 export { TransformControls };

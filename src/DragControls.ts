@@ -1,6 +1,7 @@
-import { Vector3, Object3D, Intersection, PerspectiveCamera, OrthographicCamera, Event as ThreeEvent } from 'three';
+import { Vector3, Object3D, Intersection, PerspectiveCamera, OrthographicCamera } from 'three';
 import { PointerTracker } from './core/Pointers';
 import { Controls } from './core/Controls';
+import { ThreeEvent } from './core/Base';
 
 let _intersections: Intersection[];
 const _hoveredObjects: Record<string, Object3D> = {};

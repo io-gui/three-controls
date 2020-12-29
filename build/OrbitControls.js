@@ -378,7 +378,7 @@ class OrbitControls extends CameraControls {
 		_movement.add( _offset );
 
 		// Pan movement left / right
-		_offset.setFromMatrixColumn( this.camera.matrix, 0 ); // get X column of objectMatrix
+		_offset.setFromMatrixColumn( this.camera.matrix, 0 ); // get X column of object matrix
 		_offset.multiplyScalar( deltaX * fovFactor );
 		_movement.add( _offset );
 		this._applyPanMovement( _movement );
