@@ -30,17 +30,14 @@ export class ControlsBase extends Object3D {
   protected readonly worldPosition = new Vector3();
   protected readonly worldQuaternion = new Quaternion();
   protected readonly worldScale = new Vector3();
-  protected needsAnimationUpdate = false; // TODO: deprecate
   private readonly _animations: Callback[] = [];
-  private _animationFrame = 0;
+  private _changeTimeout: null | number = null;
   constructor( camera: AnyCameraType, domElement: HTMLElement ) {
     super();
     this.camera = camera;
     this.domElement = domElement;
-
-    this._onAnimationFrame = this._onAnimationFrame.bind( this );
-    this.observeProperty( 'needsAnimationUpdate' );
-    this.needsAnimationUpdate = true;
+    this.changed = this.changed.bind(this);
+    this._debouncedChanged = this._debouncedChanged.bind(this);
   }
   /**
    * Adds property observing mechanism via getter and setter.
@@ -48,8 +45,8 @@ export class ControlsBase extends Object3D {
    */
   observeProperty( propertyKey: string ): void {
     let value: any = this[ propertyKey as keyof ControlsBase ];
-    let callback = this[ propertyKey + 'Changed' as keyof ControlsBase ] as Callback;
-    if (callback) callback = callback.bind( this );
+    let propChangeCallback = this[ propertyKey + 'Changed' as keyof ControlsBase ] as Callback;
+    if (propChangeCallback) propChangeCallback = propChangeCallback.bind( this );
     Object.defineProperty( this, propertyKey, {
       get() {
         return value;
@@ -58,24 +55,20 @@ export class ControlsBase extends Object3D {
         const oldValue = value;
         value = newValue;
         if ( newValue !== oldValue ) {
-          callback && callback(newValue, oldValue);
+          propChangeCallback && propChangeCallback(newValue, oldValue);
           this.dispatchEvent({ type: propertyKey + '-changed', value: newValue, oldValue: oldValue });
-          this.needsAnimationUpdate = true;
+          this._debouncedChanged();
         }
       }
     });
   }
-  // TODO: consider making this work with WebXR context animaiton frame?
-  protected needsAnimationUpdateChanged(): void {
-    cancelAnimationFrame(this._animationFrame);
-    if (this.needsAnimationUpdate) {
-      this._animationFrame = requestAnimationFrame( this._onAnimationFrame );
-    }
+  _debouncedChanged() {
+    this._changeTimeout = this._changeTimeout || setTimeout(() => {
+      this.changed();
+      this._changeTimeout = null;
+    })
   }
-  private _onAnimationFrame() {
-    this.dispatchEvent({ type: 'change' });
-    this.needsAnimationUpdate = false;
-  }
+  changed() {}
   // Adds animation callback to animation loop.
   startAnimation( callback: Callback ): void {
     const index = this._animations.findIndex( animation => animation === callback );

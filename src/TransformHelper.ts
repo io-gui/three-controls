@@ -1,9 +1,9 @@
-import { Quaternion, Mesh, Euler, Vector3, Vector4, Matrix4, Line, OctahedronBufferGeometry,
+import { Quaternion, Mesh, Euler, Vector3, Vector4, Color, Matrix4, Line, OctahedronBufferGeometry,
   TorusBufferGeometry, SphereBufferGeometry, BoxBufferGeometry, PlaneBufferGeometry, CylinderBufferGeometry,
-  BufferGeometry, Float32BufferAttribute } from 'three';
+  BufferGeometry, Float32BufferAttribute, MeshBasicMaterial } from 'three';
 
-import { AnyCameraType, UNIT } from './core/Base';
-import { Helper, HelperGeometrySpec } from './core/Helper';
+import { AnyCameraType, UNIT } from './core/ControlsBase';
+import { ControlsHelper, HelperGeometrySpec } from './core/ControlsHelper';
 
 const CircleGeometry = function ( radius: number, arc: number ) {
   const geometry = new BufferGeometry( );
@@ -14,6 +14,16 @@ const CircleGeometry = function ( radius: number, arc: number ) {
   geometry.setAttribute( 'position', new Float32BufferAttribute( vertices, 3 ) );
   return geometry;
 };
+
+const lerp = ( x: number, y: number, a: number ) => {
+  return x * (1 - a) + y * a;
+}
+
+const EPS = 0.001;
+
+const colorEquals = ( c1: Color, c2: Color ) => {
+  return Math.abs( c1.r - c2.r ) < EPS && Math.abs( c1.g - c2.g ) < EPS && Math.abs( c1.b - c2.b ) < EPS;
+}
 
 const scaleHandleGeometry = new BoxBufferGeometry( 0.125, 0.125, 0.125 );
 
@@ -632,13 +642,15 @@ const scaleHelperGeometrySpec: [ Mesh | Line, HelperGeometrySpec ][] = [
   ], 
 ];
 
-export class TransformHelper extends Helper {
+export class TransformHelper extends ControlsHelper {
   static readonly isTransformHelper = true;
   static readonly type = 'TransformHelper';
 
   enabled = true;
   size = 1;
   space: 'world' | 'local' = 'local';
+  activeMode = '';
+  activeAxis = '';
   showX = true;
   showY = true;
   showZ = true;
@@ -647,15 +659,18 @@ export class TransformHelper extends Helper {
   showRotate = true;
   showScale = true;
 
+  dampingFactor = 0.25;
+
   // Hide translate and scale axis facing the camera
   AXIS_HIDE_TRESHOLD = 0.99;
   PLANE_HIDE_TRESHOLD = 0.9;
-  AXIS_FLIP_TRESHOLD = 0.0;
+  AXIS_FLIP_TRESHOLD = 0.001;
 
   private readonly _tempMatrix = new Matrix4();
   private readonly _dirVector = new Vector3( 0, 1, 0 );
   private readonly _tempQuaternion = new Quaternion();
   private readonly _tempQuaternion2 = new Quaternion();
+  private readonly _tempColor = new Color();
 
   constructor( camera: AnyCameraType, domElement: HTMLElement ) {
     super( camera, domElement, [
@@ -663,6 +678,23 @@ export class TransformHelper extends Helper {
       ...translateHelperGeometrySpec,
       ...rotateHelperGeometrySpec,
     ] );
+    this.observeProperty('enabled');
+    this.observeProperty( 'activeAxis' );
+    this.observeProperty( 'activeMode' );
+    this.observeProperty( 'space', );
+    this.observeProperty( 'size' );
+    this.observeProperty( 'showX' );
+    this.observeProperty( 'showY' );
+    this.observeProperty( 'showZ' );
+    this.observeProperty( 'showE' );
+    this.observeProperty( 'showTranslate' );
+    this.observeProperty( 'showRotate' );
+    this.observeProperty( 'showScale' );
+
+    this._animate = this._animate.bind(this);
+  }
+  changed() {
+    this.startAnimation(this._animate);
   }
   updateHandle( handle: Mesh ): void {
     const eye = this.eye;
@@ -670,10 +702,11 @@ export class TransformHelper extends Helper {
     const handleType = handle.userData.type;
     const handleAxis = handle.userData.axis;
     const handleTag = handle.userData.tag;
+    this.userData.size = this.userData.size || this.size;
 
     handle.quaternion.copy( quaternion ).invert();
     handle.position.set( 0, 0, 0 );
-    handle.scale.set( 1, 1, 1 ).multiplyScalar( this.sizeAttenuation * this.size / 7 );
+    handle.scale.set( 1, 1, 1 ).multiplyScalar( this.sizeAttenuation * this.userData.size / 7 );
     handle.quaternion.multiply( quaternion );
     handle.visible = true;
 
@@ -792,7 +825,75 @@ export class TransformHelper extends Helper {
         handle.visible = false;
     }
   }
+  _animate( timestep: number ) {
+    const damping = Math.pow( this.dampingFactor, timestep * 60 / 1000 );
 
+    let needsUpdate = false;
+
+    // Animate axis highlight
+    for ( let i = 0; i < this.children.length; i ++ ) {
+      const handle = this.children[ i ] as Mesh;
+      const handleType = handle.userData.type;
+      const handleAxis = handle.userData.axis;
+      const handleTag = handle.userData.tag;
+
+
+      if ( handleTag !== 'picker' ) {
+
+        const material = handle.material as MeshBasicMaterial;
+        material.userData.color = material.userData.color || material.color.clone();
+        material.userData.opacity = material.userData.opacity || material.opacity;
+        material.userData.highlightColor = material.userData.highlightColor || material.color.clone().lerp( new Color( 1, 1, 1 ), 0.5 );
+        material.userData.highlightOpacity = material.userData.highlightOpacity || lerp( material.opacity, 1, 0.75 );
+
+        // highlight selected axis
+        let highlight = 0;
+        if ( ! this.enabled || (this.activeMode && handleType !== this.activeMode ) ) {
+          highlight = -1;
+        } else if ( this.activeAxis ) {
+          if ( handleAxis === this.activeAxis ) {
+            highlight = 1;
+          } else if ( this.activeAxis.split( '' ).some( (a: string) => { return handleAxis === a } ) ) {
+            highlight = 1;
+          } else {
+            highlight = - 1;
+          }
+        }
+
+        this._tempColor.copy( material.color );
+        let opacity = material.opacity;
+
+        if ( highlight === 0 ) {
+          this._tempColor.lerp( material.userData.color, damping );
+          opacity = lerp( opacity, material.userData.opacity, damping );
+        } else if ( highlight === -1 ) {
+          opacity = lerp( opacity, material.userData.opacity * 0.125, damping );
+          this._tempColor.lerp( material.userData.highlightColor, damping );
+        } else if ( highlight === 1 ) {
+          opacity = lerp( opacity, material.userData.highlightOpacity, damping );
+          this._tempColor.lerp( material.userData.highlightColor, damping );
+        }
+
+        if ( !colorEquals( material.color, this._tempColor ) || !(Math.abs( material.opacity - opacity ) < EPS) ) {
+          material.color.copy( this._tempColor );
+          material.opacity = opacity;
+          needsUpdate = true;
+        }
+      }
+    }
+
+    // Animate size
+    this.userData.size = this.userData.size || this.size;
+    const size = lerp( this.userData.size, this.size, damping );
+
+    if (Math.abs(this.userData.size - size) > EPS) {
+      this.userData.size = size;
+      needsUpdate = true;
+    }
+
+    if (!needsUpdate) this.stopAnimation(this._animate);
+    if (this.parent) this.parent.dispatchEvent({type: 'change', bubbles: true});
+  }
   updateMatrixWorld() {
     super.updateMatrixWorld();
     for ( let i = 0; i < this.children.length; i ++ ) {

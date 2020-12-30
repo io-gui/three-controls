@@ -1,7 +1,7 @@
 import { MOUSE, TOUCH, Vector3, Quaternion, Spherical, PerspectiveCamera, OrthographicCamera } from 'three';
-import { CameraControls } from './core/CameraControls';
+import { ControlsCamera } from './core/ControlsCamera';
 import { PointerTracker } from './core/Pointers';
-import { Callback, EVENT } from './core/Base';
+import { Callback } from './core/ControlsBase';
 
 // This set of controls performs orbiting, dollying ( zooming ), and panning.
 // Unlike TrackballControls, it maintains the "up" direction camera.up ( +Y by default ).
@@ -17,7 +17,7 @@ const _quatInverse = new Quaternion();
 const _offset = new Vector3();
 const _movement = new Vector3();
 
-class OrbitControls extends CameraControls {
+class OrbitControls extends ControlsCamera {
   // Public API
   // How far you can dolly in and out ( PerspectiveCamera only )
   minDistance = 0;
@@ -149,7 +149,7 @@ class OrbitControls extends CameraControls {
 
   onTrackedPointerDown( pointer: PointerTracker, pointers: PointerTracker[] ): void {
     if ( pointers.length === 1 ) {
-      this.dispatchEvent( EVENT.START );
+      this.dispatchEvent({ type: 'start' });
     }
   }
 
@@ -201,7 +201,7 @@ class OrbitControls extends CameraControls {
 
   onTrackedPointerUp( pointer: PointerTracker, pointers: PointerTracker[] ): void {
     if ( pointers.length === 0 ) {
-      this.dispatchEvent( EVENT.END );
+      this.dispatchEvent({type: 'end' });
       this._interacting = false;
     }
   }
@@ -230,7 +230,7 @@ class OrbitControls extends CameraControls {
     _offset.setFromSpherical( this._spherical );
     this.camera.position.copy( this.position ).add( _offset );
     this.camera.lookAt( this.position );
-    this.dispatchEvent( EVENT.CHANGE );
+    this.dispatchEvent({ type: 'change' });
   }
 
   _pointerPan( pointer: PointerTracker ): void {
@@ -275,7 +275,7 @@ class OrbitControls extends CameraControls {
     _offset.copy( movement ).multiplyScalar( this.panSpeed );
     this.position.sub( _offset );
     this.camera.position.sub( _offset );
-    this.dispatchEvent( EVENT.CHANGE );
+    this.dispatchEvent({ type: 'change' });
   }
 
   _pointerRotate( pointer: PointerTracker ): void {
@@ -290,8 +290,8 @@ class OrbitControls extends CameraControls {
     this.autoRotate ? this.startAnimation( this._autoRotateAnimation ) : this.stopAnimation( this._autoRotateAnimation );
   }
 
-  _autoRotateAnimation( deltaTime: number ): void {
-    const damping = Math.pow( 1 - this.dampingFactor, deltaTime * 60 / 1000 );
+  _autoRotateAnimation( timestep: number ): void {
+    const damping = Math.pow( 1 - this.dampingFactor, timestep * 60 / 1000 );
     const angle = this._interacting ? 0 : 2 * Math.PI / 60 / 60 * this.autoRotateSpeed;
     if ( this.enableDamping ) {
       this._autoRotationMagnitude += angle * ( 1 - damping );
@@ -337,7 +337,7 @@ class OrbitControls extends CameraControls {
     _offset.applyQuaternion( _quatInverse );
     this.camera.position.copy( this.position ).add( _offset );
     this.camera.lookAt( this.position );
-    this.dispatchEvent( EVENT.CHANGE );
+    this.dispatchEvent({ type: 'change' });
   }
 
   // Deprecation warning

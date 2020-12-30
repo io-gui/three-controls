@@ -1,13 +1,13 @@
 import { Vector2, Vector3, Vector4, Quaternion, PerspectiveCamera, OrthographicCamera } from 'three';
-import { Controls } from './Controls';
-import { AnyCameraType } from './Base';
+import { ControlsInteractive } from './ControlsInteractive';
+import { AnyCameraType } from './ControlsBase';
 
 const STATES = new WeakMap();
 
 /**
- * `CameraControls`: Generic superclass for interactive camera controls.
+ * `ControlsCamera`: Generic superclass for interactive camera controls.
  */
-export class CameraControls extends Controls {
+export class ControlsCamera extends ControlsInteractive {
   frustumCulled = false;
   constructor( camera: AnyCameraType, domElement: HTMLElement ) {
     super( camera, domElement );
@@ -63,10 +63,10 @@ class CameraState {
   private readonly target = new Vector3();
   private readonly lens = new Vector2();
   private readonly bounds = new Vector4();
-  constructor( camera: AnyCameraType, controls: CameraControls ) {
+  constructor( camera: AnyCameraType, controls: ControlsCamera ) {
     this.update( camera, controls );
   }
-  update( camera: AnyCameraType, controls: CameraControls ): this {
+  update( camera: AnyCameraType, controls: ControlsCamera ): this {
     this.quaternion.copy( camera.quaternion );
     this.position.copy( camera.position );
     this.up.copy( camera.up );
@@ -80,7 +80,7 @@ class CameraState {
     }
     return this;
   }
-  apply( camera: AnyCameraType, controls: CameraControls ): this {
+  apply( camera: AnyCameraType, controls: ControlsCamera ): this {
     camera.quaternion.copy( this.quaternion );
     camera.position.copy( this.position );
     camera.up.copy( this.up );

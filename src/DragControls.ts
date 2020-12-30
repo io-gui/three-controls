@@ -1,7 +1,7 @@
 import { Vector3, Object3D, Intersection, PerspectiveCamera, OrthographicCamera } from 'three';
 import { PointerTracker } from './core/Pointers';
-import { Controls } from './core/Controls';
-import { ControlsEvent } from './core/Base';
+import { ControlsInteractive } from './core/ControlsInteractive';
+import { ControlsEvent } from './core/ControlsBase';
 
 let _intersections: Intersection[];
 const _hoveredObjects: Record<string, Object3D> = {};
@@ -9,7 +9,7 @@ const _selectedObjects: Record<string, Object3D> = {};
 const _eye = new Vector3();
 const _target = new Vector3();
 
-export class DragControls extends Controls {
+export class DragControls extends ControlsInteractive {
   // Public API
   objects: Object3D[];
   transformGroup = false;

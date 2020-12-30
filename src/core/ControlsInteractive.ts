@@ -1,11 +1,11 @@
 import { Plane, Object3D, WebXRManager, WebGLRenderer } from 'three';
 import { PointerTracker, CenterPointerTracker } from './Pointers';
-import { ControlsBase, Callback, AnyCameraType, ControlsEvent } from './Base';
+import { ControlsBase, Callback, AnyCameraType, ControlsEvent } from './ControlsBase';
 
 const INERTIA_TIME_THRESHOLD = 100;
 const INERTIA_MOVEMENT_THRESHOLD = 0.01;
 /**
- * `Controls`: Generic class for interactive threejs viewport controls. It solves some of the most common and complex problems in threejs control designs.
+ * `ControlsInteractive`: Generic class for interactive threejs viewport controls. It solves some of the most common and complex problems in threejs control designs.
  * 
  * ### Pointer Tracking ###
  *
@@ -23,14 +23,14 @@ const INERTIA_MOVEMENT_THRESHOLD = 0.01;
  * - Removes the necessity to call `.update()` method externally from external animation loop for damping calculations.
  * - Developers can start and stop per-frame function invocations via `private startAnimation( callback )` and `stopAnimation( callback )`.
  * 
- * ### Controls Livecycle ###
+ * ### ControlsInteractive Livecycle ###
  * 
  * - Adds/removes event listeners during lifecycle and on `enabled` property change.
  * - Stops current animations when `enabled` property is set to `false`.
  * - Takes care of the event listener cleanup when `dipose()` method is called.
  * - Emits lyfecycle events: "enabled", "disabled", "dispose"
  */
-export class Controls extends ControlsBase {
+export class ControlsInteractive extends ControlsBase {
   xr?: WebXRManager;
   // Public API
   enabled = true;
@@ -116,9 +116,15 @@ export class Controls extends ControlsBase {
   }
 
   _connect() {
+    for (let i = 0; i < this._viewports.length; i++) {
+      this._connectViewport(this._viewports[i]);
+    }
     if ( this.xr ) this._connectXR();
   }
   _disconnect() {
+    for (let i = 0; i < this._viewports.length; i++) {
+      this._disconnectViewport(this._viewports[i]);
+    }
     this._disconnectXR();
     // Stop all animations
     this.stopAllAnimations();
@@ -336,10 +342,6 @@ export class Controls extends ControlsBase {
   }
 
   // Tracked pointer handlers
-
-  /* eslint-disable @typescript-eslint/no-empty-function */
-  /* eslint-disable @typescript-eslint/no-unused-vars */
-  /* eslint-disable no-unused-vars */
   onTrackedPointerDown( _pointer: PointerTracker, _pointers: PointerTracker[] ) {}
   onTrackedPointerMove( _pointer: PointerTracker, _pointers: PointerTracker[], _centerPointer: CenterPointerTracker ) {}
   onTrackedPointerHover( _pointer: PointerTracker, _pointers: PointerTracker[] ) {}
@@ -347,7 +349,4 @@ export class Controls extends ControlsBase {
   onTrackedKeyDown( code: number, codes: number[] ) {}
   onTrackedKeyUp( code: number, codes: number[] ) {}
   onTrackedKeyChange( code: number, codes: number[] ) {}
-  /* eslint-enable @typescript-eslint/no-empty-function */
-  /* eslint-enable @typescript-eslint/no-unused-vars */
-  /* eslint-enable no-unused-vars */
 }

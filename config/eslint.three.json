@@ -29,6 +29,7 @@
     ],
     "lines-around-comment": ["error", { "beforeBlockComment": true, "beforeLineComment": true }],
     "@typescript-eslint/no-unused-vars": 1,
+    "@typescript-eslint/no-empty-function": 1,
     "@typescript-eslint/indent": [
       "error",
       "tab",
