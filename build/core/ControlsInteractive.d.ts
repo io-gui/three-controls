@@ -1,10 +1,10 @@
 import { Plane, WebXRManager } from 'three';
 import { PointerTracker, CenterPointerTracker } from './Pointers';
-import { ControlsBase, Callback, AnyCameraType, ThreeEvent } from './Base';
+import { ControlsBase, Callback, AnyCameraType, ControlsEvent } from './ControlsBase';
 
 
 /**
- * `Controls`: Generic class for interactive threejs viewport controls. It solves some of the most common and complex problems in threejs control designs.
+ * `ControlsInteractive`: Generic class for interactive threejs viewport controls. It solves some of the most common and complex problems in threejs control designs.
  *
  * ### Pointer Tracking ###
  *
@@ -22,14 +22,14 @@ import { ControlsBase, Callback, AnyCameraType, ThreeEvent } from './Base';
  * - Removes the necessity to call `.update()` method externally from external animation loop for damping calculations.
  * - Developers can start and stop per-frame function invocations via `private startAnimation( callback )` and `stopAnimation( callback )`.
  *
- * ### Controls Livecycle ###
+ * ### ControlsInteractive Livecycle ###
  *
  * - Adds/removes event listeners during lifecycle and on `enabled` property change.
  * - Stops current animations when `enabled` property is set to `false`.
  * - Takes care of the event listener cleanup when `dipose()` method is called.
  * - Emits lyfecycle events: "enabled", "disabled", "dispose"
  */
-export declare class Controls extends ControlsBase {
+export declare class ControlsInteractive extends ControlsBase {
 
 	xr?: WebXRManager;
 	enabled: boolean;
@@ -55,9 +55,9 @@ export declare class Controls extends ControlsBase {
 	_disconnect(): void;
 	_connectXR(): void;
 	_disconnectXR(): void;
-	_onXRControllerMove( controllerEvent: ThreeEvent ): void;
-	_onXRControllerDown( controllerEvent: ThreeEvent ): void;
-	_onXRControllerUp( controllerEvent: ThreeEvent ): void;
+	_onXRControllerMove( controllerEvent: ControlsEvent ): void;
+	_onXRControllerDown( controllerEvent: ControlsEvent ): void;
+	_onXRControllerUp( controllerEvent: ControlsEvent ): void;
 	dispose(): void;
 	addEventListener( type: string, listener: Callback ): void;
 	_preventDefault( event: Event ): void;

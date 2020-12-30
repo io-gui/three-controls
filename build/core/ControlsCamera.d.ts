@@ -1,11 +1,11 @@
-import { Controls } from './Controls';
-import { AnyCameraType } from './Base';
+import { ControlsInteractive } from './ControlsInteractive';
+import { AnyCameraType } from './ControlsBase';
 
 
 /**
- * `CameraControls`: Generic superclass for interactive camera controls.
+ * `ControlsCamera`: Generic superclass for interactive camera controls.
  */
-export declare class CameraControls extends Controls {
+export declare class ControlsCamera extends ControlsInteractive {
 
 	frustumCulled: boolean;
 	constructor( camera: AnyCameraType, domElement: HTMLElement );

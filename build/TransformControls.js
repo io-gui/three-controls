@@ -1,6 +1,6 @@
-import { Quaternion, Vector3, Color, Matrix4, OrthographicCamera } from 'three';
-import { UNIT } from './core/Base';
-import { Controls } from './core/Controls';
+import { Quaternion, Vector3, Matrix4, OrthographicCamera } from 'three';
+import { UNIT } from './core/ControlsBase';
+import { ControlsInteractive } from './core/ControlsInteractive';
 import { TransformHelper } from './TransformHelper';
 
 function getFirstIntersection( intersections, includeInvisible ) {
@@ -19,7 +19,7 @@ function getFirstIntersection( intersections, includeInvisible ) {
 
 }
 
-class TransformControls extends Controls {
+class TransformControls extends ControlsInteractive {
 
 	constructor( camera, domElement ) {
 
@@ -43,8 +43,6 @@ class TransformControls extends Controls {
 		this.rotationSnap = 0;
 		this.scaleSnap = 0;
 		this.minGrazingAngle = 30;
-		this.FADE_EPS = 0.001;
-		this.FADE_FACTOR = 0.25;
 		this._pointStart = new Vector3();
 		this._pointStartNorm = new Vector3();
 		this._point = new Vector3();
@@ -75,7 +73,6 @@ class TransformControls extends Controls {
 		this._tempVector = new Vector3();
 		this._tempOffsetVector = new Vector3();
 		this._tempQuaternion = new Quaternion();
-		this._targetColor = new Color();
 		this._dirX = new Vector3( 1, 0, 0 );
 		this._dirY = new Vector3( 0, 1, 0 );
 		this._dirZ = new Vector3( 0, 0, 1 );
@@ -86,7 +83,7 @@ class TransformControls extends Controls {
 		this._viewportCameraScale = new Vector3();
 		this._viewportEye = new Vector3();
 		this._cameraHelpers = new Map();
-		/* eslint-disable @typescript-eslint/no-use-before-define */
+
 		// Define properties with getters/setter
 		// Setting the defined property will automatically trigger change event
 		this.observeProperty( 'object' );
@@ -183,106 +180,6 @@ class TransformControls extends Controls {
 		return this._viewportEye;
 
 	}
-	updateHandleMaterial( handle ) {
-
-		const handleType = handle.userData.type;
-		const handleAxis = handle.userData.axis;
-		const handleTag = handle.userData.tag;
-
-		const lerp = ( x, y, a ) => {
-
-			return x * ( 1 - a ) + y * a;
-
-		};
-
-		const equals = ( c1, c2 ) => {
-
-			return Math.abs( c1.r - c2.r ) < this.FADE_EPS && Math.abs( c1.g - c2.g ) < this.FADE_EPS && Math.abs( c1.b - c2.b ) < this.FADE_EPS;
-
-		};
-
-		if ( handleTag !== 'picker' ) {
-
-			const material = handle.material;
-			material.userData.color = material.userData.color || material.color.clone();
-			material.userData.opacity = material.userData.opacity || material.opacity;
-			material.userData.highlightColor = material.userData.highlightColor || material.color.clone().lerp( new Color( 1, 1, 1 ), 0.5 );
-			material.userData.highlightOpacity = material.userData.highlightOpacity || lerp( material.opacity, 1, 0.75 );
-
-			// highlight selected axis
-			let highlight = 0;
-
-			if ( ! this.enabled || ( this.activeMode && handleType !== this.activeMode ) ) {
-
-				highlight = - 1;
-
-			} else if ( this.activeAxis ) {
-
-				if ( handleAxis === this.activeAxis ) {
-
-					highlight = 1;
-
-				} else if ( this.activeAxis.split( '' ).some( ( a ) => {
-
-					return handleAxis === a;
-
-				} ) ) {
-
-					highlight = 1;
-
-				} else {
-
-					highlight = - 1;
-
-				}
-
-			}
-
-			this._targetColor.copy( material.color );
-			let _targetOpacity = material.opacity;
-
-			if ( highlight === 0 ) {
-
-				this._targetColor.lerp( material.userData.color, this.FADE_FACTOR );
-				_targetOpacity = lerp( _targetOpacity, material.userData.opacity, this.FADE_FACTOR );
-
-			} else if ( highlight === - 1 ) {
-
-				_targetOpacity = lerp( _targetOpacity, material.userData.opacity * 0.125, this.FADE_FACTOR );
-				this._targetColor.lerp( material.userData.highlightColor, this.FADE_FACTOR );
-
-			} else if ( highlight === 1 ) {
-
-				_targetOpacity = lerp( _targetOpacity, material.userData.highlightOpacity, this.FADE_FACTOR );
-				this._targetColor.lerp( material.userData.highlightColor, this.FADE_FACTOR );
-
-			}
-
-			if ( ! equals( material.color, this._targetColor ) || ! ( Math.abs( material.opacity - _targetOpacity ) < this.FADE_EPS ) ) {
-
-				material.color.copy( this._targetColor );
-				material.opacity = _targetOpacity;
-
-
-				// TODO: use animation API instead
-				requestAnimationFrame( () => {
-
-
-					// TODO: unhack
-					this.needsAnimationFrame = true;
-
-				} );
-
-			}
-
-		}
-
-	}
-	updateHandle( handle ) {
-
-		this.updateHandleMaterial( handle );
-
-	}
 	decomposeMatrices() {
 
 		super.decomposeMatrices();
@@ -316,31 +213,24 @@ class TransformControls extends Controls {
 		this.quaternion.copy( this.space === 'local' ? this._worldQuaternion : this._identityQuaternion );
 
 	}
-	updateMatrixWorld() {
+	changed() {
 
-		super.updateMatrixWorld();
+		this._cameraHelpers.forEach( helper => {
 
-		// Se helper visibility properties.
-		const helper = this.getHelper( this.camera );
-		helper.size = this.size;
-		helper.space = this.space;
-		helper.showX = this.showX;
-		helper.showY = this.showY;
-		helper.showZ = this.showZ;
-		helper.showE = this.showE;
-		helper.showTranslate = this.showTranslate;
-		helper.showRotate = this.showRotate;
-		helper.showScale = this.showScale;
+			helper.space = this.space;
+			helper.showX = this.showX;
+			helper.showY = this.showY;
+			helper.showZ = this.showZ;
+			helper.showE = this.showE;
+			helper.showTranslate = this.showTranslate;
+			helper.showRotate = this.showRotate;
+			helper.showScale = this.showScale;
+			helper.enabled = this.enabled;
+			helper.activeMode = this.activeMode;
+			helper.activeAxis = this.activeAxis;
+			helper.size = this.size;
 
-		for ( let i = 0; i < helper.children.length; i ++ ) {
-
-			this.updateHandle( helper.children[ i ] );
-
-		}
-
-
-		// TODO: Optimize!
-		super.updateMatrixWorld();
+		} );
 
 	}
 	getPlaneNormal( cameraQuaternion ) {

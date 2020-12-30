@@ -1,13 +1,13 @@
 import { Plane } from 'three';
 import { PointerTracker, CenterPointerTracker } from './Pointers';
-import { ControlsBase } from './Base';
+import { ControlsBase } from './ControlsBase';
 
 const INERTIA_TIME_THRESHOLD = 100;
 const INERTIA_MOVEMENT_THRESHOLD = 0.01;
 
 
 /**
- * `Controls`: Generic class for interactive threejs viewport controls. It solves some of the most common and complex problems in threejs control designs.
+ * `ControlsInteractive`: Generic class for interactive threejs viewport controls. It solves some of the most common and complex problems in threejs control designs.
  *
  * ### Pointer Tracking ###
  *
@@ -25,14 +25,14 @@ const INERTIA_MOVEMENT_THRESHOLD = 0.01;
  * - Removes the necessity to call `.update()` method externally from external animation loop for damping calculations.
  * - Developers can start and stop per-frame function invocations via `private startAnimation( callback )` and `stopAnimation( callback )`.
  *
- * ### Controls Livecycle ###
+ * ### ControlsInteractive Livecycle ###
  *
  * - Adds/removes event listeners during lifecycle and on `enabled` property change.
  * - Stops current animations when `enabled` property is set to `false`.
  * - Takes care of the event listener cleanup when `dipose()` method is called.
  * - Emits lyfecycle events: "enabled", "disabled", "dispose"
  */
-export class Controls extends ControlsBase {
+export class ControlsInteractive extends ControlsBase {
 
 	constructor( camera, domElement ) {
 
@@ -137,11 +137,23 @@ export class Controls extends ControlsBase {
 	}
 	_connect() {
 
+		for ( let i = 0; i < this._viewports.length; i ++ ) {
+
+			this._connectViewport( this._viewports[ i ] );
+
+		}
+
 		if ( this.xr )
 			this._connectXR();
 
 	}
 	_disconnect() {
+
+		for ( let i = 0; i < this._viewports.length; i ++ ) {
+
+			this._disconnectViewport( this._viewports[ i ] );
+
+		}
 
 		this._disconnectXR();
 
@@ -470,9 +482,6 @@ export class Controls extends ControlsBase {
 	}
 
 	// Tracked pointer handlers
-	/* eslint-disable @typescript-eslint/no-empty-function */
-	/* eslint-disable @typescript-eslint/no-unused-vars */
-	/* eslint-disable no-unused-vars */
 	onTrackedPointerDown( _pointer, _pointers ) { }
 	onTrackedPointerMove( _pointer, _pointers, _centerPointer ) { }
 	onTrackedPointerHover( _pointer, _pointers ) { }

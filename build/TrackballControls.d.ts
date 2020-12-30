@@ -1,9 +1,9 @@
 import { MOUSE } from 'three';
-import { CameraControls } from './core/CameraControls';
+import { ControlsCamera } from './core/ControlsCamera';
 import { PointerTracker } from './core/Pointers';
-import { AnyCameraType } from './core/Base';
+import { AnyCameraType } from './core/ControlsBase';
 
-declare class TrackballControls extends CameraControls {
+declare class TrackballControls extends ControlsCamera {
 
 	rotateSpeed: number;
 	zoomSpeed: number;

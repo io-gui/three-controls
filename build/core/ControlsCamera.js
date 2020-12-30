@@ -1,14 +1,13 @@
 import { Vector2, Vector3, Vector4, Quaternion, PerspectiveCamera, OrthographicCamera } from 'three';
-import { Controls } from './Controls';
-import { EVENT } from './Base';
+import { ControlsInteractive } from './ControlsInteractive';
 
 const STATES = new WeakMap();
 
 
 /**
- * `CameraControls`: Generic superclass for interactive camera controls.
+ * `ControlsCamera`: Generic superclass for interactive camera controls.
  */
-export class CameraControls extends Controls {
+export class ControlsCamera extends ControlsInteractive {
 
 	constructor( camera, domElement ) {
 
@@ -62,7 +61,7 @@ export class CameraControls extends Controls {
 		const camera = this.camera;
 		const state = STATES.get( camera ) || new CameraState( camera, this );
 		STATES.set( camera, state.apply( camera, this ) );
-		this.dispatchEvent( EVENT.CHANGE );
+		this.dispatchEvent( { type: 'change' } );
 
 	}
 

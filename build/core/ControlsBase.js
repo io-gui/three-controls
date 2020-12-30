@@ -1,12 +1,4 @@
-import { Vector3, Quaternion, OrthographicCamera } from 'three';
-import { Mesh } from 'three';
-
-export const EVENT = {
-	CHANGE: { type: 'change' },
-	START: { type: 'start' },
-	END: { type: 'end' },
-	DISPOSE: { type: 'dispose' },
-};
+import { Vector3, Quaternion, OrthographicCamera, Object3D } from 'three';
 
 export const UNIT = {
 	ZERO: Object.freeze( new Vector3( 0, 0, 0 ) ),
@@ -19,7 +11,7 @@ export const UNIT = {
 /**
  * `ControlsBase`: Base class for Objects with observable properties, change events and animation.
  */
-export class ControlsBase extends Mesh {
+export class ControlsBase extends Object3D {
 
 	constructor( camera, domElement ) {
 
@@ -32,15 +24,12 @@ export class ControlsBase extends Mesh {
 		this.worldPosition = new Vector3();
 		this.worldQuaternion = new Quaternion();
 		this.worldScale = new Vector3();
-		this.needsAnimationFrame = false; // TODO: deprecate
 		this._animations = [];
-		this._animationFrame = 0;
-		this.changeDispatched = false;
+		this._changeTimeout = null;
 		this.camera = camera;
 		this.domElement = domElement;
-		this._onAnimationFrame = this._onAnimationFrame.bind( this );
-		this.observeProperty( 'needsAnimationFrame' );
-		this.needsAnimationFrame = true;
+		this.changed = this.changed.bind( this );
+		this._debouncedChanged = this._debouncedChanged.bind( this );
 
 	}
 
@@ -51,10 +40,10 @@ export class ControlsBase extends Mesh {
 	observeProperty( propertyKey ) {
 
 		let value = this[ propertyKey ];
-		let callback = this[ propertyKey + 'Changed' ];
+		let propChangeCallback = this[ propertyKey + 'Changed' ];
 
-		if ( callback )
-			callback = callback.bind( this );
+		if ( propChangeCallback )
+			propChangeCallback = propChangeCallback.bind( this );
 
 		Object.defineProperty( this, propertyKey, {
 			get() {
@@ -69,21 +58,9 @@ export class ControlsBase extends Mesh {
 
 				if ( newValue !== oldValue ) {
 
-					callback && callback( newValue, oldValue );
+					propChangeCallback && propChangeCallback( newValue, oldValue );
 					this.dispatchEvent( { type: propertyKey + '-changed', value: newValue, oldValue: oldValue } );
-
-					if ( ! this.changeDispatched ) {
-
-						this.changeDispatched = true;
-
-						requestAnimationFrame( () => {
-
-							this.dispatchEvent( EVENT.CHANGE );
-							this.changeDispatched = false;
-
-						} );
-
-					}
+					this._debouncedChanged();
 
 				}
 
@@ -91,26 +68,17 @@ export class ControlsBase extends Mesh {
 		} );
 
 	}
+	_debouncedChanged() {
 
-	// TODO: consider making this work with WebXR context animaiton frame?
-	needsAnimationFrameChanged() {
+		this._changeTimeout = this._changeTimeout || setTimeout( () => {
 
-		cancelAnimationFrame( this._animationFrame );
+			this.changed();
+			this._changeTimeout = null;
 
-		if ( this.needsAnimationFrame ) {
-
-			this._animationFrame = requestAnimationFrame( this._onAnimationFrame );
-
-		}
+		} );
 
 	}
-	_onAnimationFrame() {
-
-		this.dispatchEvent( EVENT.CHANGE );
-		this.needsAnimationFrame = false;
-		this._animationFrame = 0;
-
-	}
+	changed() { }
 
 	// Adds animation callback to animation loop.
 	startAnimation( callback ) {
@@ -152,7 +120,7 @@ export class ControlsBase extends Mesh {
 			this.parent.remove( this );
 
 		this.stopAllAnimations();
-		this.dispatchEvent( EVENT.DISPOSE );
+		this.dispatchEvent( { type: 'dispose' } );
 
 	}
 	decomposeMatrices() {

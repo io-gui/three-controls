@@ -1,5 +1,5 @@
 import { Vector3, Vector4, Euler, Mesh, Line, LineBasicMaterial, MeshBasicMaterial } from 'three';
-import { ControlsBase, AnyCameraType } from './Base';
+import { ControlsBase, AnyCameraType } from './ControlsBase';
 
 export declare const helperMaterial: MeshBasicMaterial;
 
@@ -17,7 +17,7 @@ export interface HelperGeometrySpec {
 	tag?: string;
 }
 
-export declare class Helper extends ControlsBase {
+export declare class ControlsHelper extends ControlsBase {
 
 	sizeAttenuation: number;
 	constructor( camera: AnyCameraType, domElement: HTMLElement, helperMap?: [Mesh | Line, HelperGeometrySpec][] );

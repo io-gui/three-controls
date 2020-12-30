@@ -1,8 +1,8 @@
 import { Object3D, PerspectiveCamera, OrthographicCamera } from 'three';
 import { PointerTracker } from './core/Pointers';
-import { Controls } from './core/Controls';
+import { ControlsInteractive } from './core/ControlsInteractive';
 
-export declare class DragControls extends Controls {
+export declare class DragControls extends ControlsInteractive {
 
 	objects: Object3D[];
 	transformGroup: boolean;

@@ -1,9 +1,9 @@
 import { MOUSE, TOUCH, Vector3, PerspectiveCamera, OrthographicCamera } from 'three';
-import { CameraControls } from './core/CameraControls';
+import { ControlsCamera } from './core/ControlsCamera';
 import { PointerTracker } from './core/Pointers';
-import { Callback } from './core/Base';
+import { Callback } from './core/ControlsBase';
 
-declare class OrbitControls extends CameraControls {
+declare class OrbitControls extends ControlsCamera {
 
 	minDistance: number;
 	maxDistance: number;
@@ -60,7 +60,7 @@ declare class OrbitControls extends CameraControls {
 	_applyPanMovement( movement: Vector3 ): void;
 	_pointerRotate( pointer: PointerTracker ): void;
 	autoRotateChanged(): void;
-	_autoRotateAnimation( deltaTime: number ): void;
+	_autoRotateAnimation( timestep: number ): void;
 	_applyRotateMovement( movement: Vector3 ): void;
 	update(): void;
 

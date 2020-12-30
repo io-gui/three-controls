@@ -1,17 +1,14 @@
 import { Vector3, Quaternion, PerspectiveCamera, OrthographicCamera, Camera, Object3D } from 'three';
-import { Mesh } from 'three';
 
 export declare type Callback = ( callbackValue?: any, callbackOldValue?: any ) => void;
 
 export declare type AnyCameraType = Camera | PerspectiveCamera | OrthographicCamera | Object3D;
 
-export interface ThreeEvent {
+export interface ControlsEvent {
 	type: string;
 	target?: any;
 	[attachment: string]: any;
 }
-
-export declare const EVENT: Record<string, ThreeEvent>;
 
 export declare const UNIT: {
 	ZERO: Readonly<Vector3>;
@@ -24,7 +21,7 @@ export declare const UNIT: {
 /**
  * `ControlsBase`: Base class for Objects with observable properties, change events and animation.
  */
-export declare class ControlsBase extends Mesh {
+export declare class ControlsBase extends Object3D {
 
 	camera: AnyCameraType;
 	domElement: HTMLElement;
@@ -36,10 +33,8 @@ export declare class ControlsBase extends Mesh {
 	protected readonly worldPosition: Vector3;
 	protected readonly worldQuaternion: Quaternion;
 	protected readonly worldScale: Vector3;
-	protected needsAnimationFrame: boolean;
 	private readonly _animations;
-	private _animationFrame;
-	protected changeDispatched: boolean;
+	private _changeTimeout;
 	constructor( camera: AnyCameraType, domElement: HTMLElement );
 
 	/**
@@ -47,8 +42,8 @@ export declare class ControlsBase extends Mesh {
      * Also emits '[property]-changed' event and cummulative 'change' event on next rAF.
      */
 	observeProperty( propertyKey: string ): void;
-	protected needsAnimationFrameChanged(): void;
-	private _onAnimationFrame;
+	_debouncedChanged(): void;
+	changed(): void;
 	startAnimation( callback: Callback ): void;
 	stopAnimation( callback: Callback ): void;
 	stopAllAnimations(): void;

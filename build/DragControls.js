@@ -1,5 +1,5 @@
 import { Vector3 } from 'three';
-import { Controls } from './core/Controls';
+import { ControlsInteractive } from './core/ControlsInteractive';
 
 let _intersections;
 const _hoveredObjects = {};
@@ -7,7 +7,7 @@ const _selectedObjects = {};
 const _eye = new Vector3();
 const _target = new Vector3();
 
-export class DragControls extends Controls {
+export class DragControls extends ControlsInteractive {
 
 	constructor( objects, camera, domElement ) {
 

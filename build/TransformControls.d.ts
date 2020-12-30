@@ -1,10 +1,10 @@
-import { Mesh, Object3D, Quaternion, Vector3 } from 'three';
+import { Object3D, Quaternion, Vector3 } from 'three';
 import { PointerTracker } from './core/Pointers';
-import { AnyCameraType } from './core/Base';
-import { Controls } from './core/Controls';
+import { AnyCameraType } from './core/ControlsBase';
+import { ControlsInteractive } from './core/ControlsInteractive';
 import { TransformHelper } from './TransformHelper';
 
-declare class TransformControls extends Controls {
+declare class TransformControls extends ControlsInteractive {
 
 	static readonly isTransformControls = true;
 	static readonly type = "TransformControls";
@@ -26,8 +26,6 @@ declare class TransformControls extends Controls {
 	rotationSnap: number;
 	scaleSnap: number;
 	minGrazingAngle: number;
-	FADE_EPS: number;
-	FADE_FACTOR: number;
 	private readonly _pointStart;
 	private readonly _pointStartNorm;
 	private readonly _point;
@@ -58,7 +56,6 @@ declare class TransformControls extends Controls {
 	private readonly _tempVector;
 	private readonly _tempOffsetVector;
 	private readonly _tempQuaternion;
-	private readonly _targetColor;
 	private readonly _dirX;
 	private readonly _dirY;
 	private readonly _dirZ;
@@ -74,10 +71,8 @@ declare class TransformControls extends Controls {
 	getHelper( camera: AnyCameraType ): TransformHelper;
 	dispose(): void;
 	decomposeViewportCamera( camera: AnyCameraType ): Vector3;
-	updateHandleMaterial( handle: Mesh ): void;
-	updateHandle( handle: Mesh ): void;
 	decomposeMatrices(): void;
-	updateMatrixWorld(): void;
+	changed(): void;
 	getPlaneNormal( cameraQuaternion: Quaternion ): Vector3;
 	onTrackedPointerHover( pointer: PointerTracker ): void;
 	onTrackedPointerDown( pointer: PointerTracker ): void;
