@@ -673,23 +673,24 @@ const scaleHelperGeometrySpec: [ Mesh | LineSegments, HelperGeometrySpec ][] = [
     }
   ],
   // Offset visualization
-  [
-    new LineSegments( scaleOffsetLineGeometry ),
-    {
-      type: 'scale',
-      axis: 'XYZ',
-      tag: 'offset-start',
-      color: new Vector4( ...colors.white, 1 ),
-    }
-  ], [
-    new LineSegments( scaleOffsetLineGeometry ),
-    {
-      type: 'scale',
-      axis: 'XYZ',
-      tag: 'offset',
-      color: new Vector4( ...colors.white, 1 ),
-    }
-  ]
+  // TODO: Design scale offset visualization. Make it work with inverse/flip axis.
+  // [
+  //   new LineSegments( scaleOffsetLineGeometry ),
+  //   {
+  //     type: 'scale',
+  //     axis: 'XYZ',
+  //     tag: 'offset-start',
+  //     color: new Vector4( ...colors.white, 1 ),
+  //   }
+  // ], [
+  //   new LineSegments( scaleOffsetLineGeometry ),
+  //   {
+  //     type: 'scale',
+  //     axis: 'XYZ',
+  //     tag: 'offset',
+  //     color: new Vector4( ...colors.white, 1 ),
+  //   }
+  // ]
 ];
 
 export class TransformHelper extends ControlsHelper {
@@ -719,7 +720,7 @@ export class TransformHelper extends ControlsHelper {
   // Hide translate and scale axis facing the camera
   AXIS_HIDE_TRESHOLD = 0.99;
   PLANE_HIDE_TRESHOLD = 0.9;
-  AXIS_FLIP_TRESHOLD = 0.001;
+  AXIS_FLIP_TRESHOLD = -0.001;
 
   private readonly _tempMatrix = new Matrix4();
   private readonly _dirVector = new Vector3( 0, 1, 0 );
@@ -760,7 +761,7 @@ export class TransformHelper extends ControlsHelper {
 
     handle.quaternion.copy( quaternion ).invert();
     handle.position.set( 0, 0, 0 );
-    handle.scale.set( 1, 1, 1 ).multiplyScalar( this.sizeAttenuation * this.userData.size / 6 );
+    handle.scale.set( 1, 1, 1 ).multiplyScalar( this.sizeAttenuation * this.userData.size / 7 );
     handle.quaternion.multiply( quaternion );
     handle.visible = true;
 
@@ -832,11 +833,6 @@ export class TransformHelper extends ControlsHelper {
 
       } else {
 
-        if ( handleType === 'scale' && handleTag.search( 'offset' ) !== -1 ) {
-          handle.visible = this.scaleOffset.length() !== 0 && handleType === this.activeMode;
-          if (handleTag === 'offset') handle.scale.multiply( this.scaleOffset );  
-        }
-
         // Flip handle to prevent occlusion by other handles
 
         if ( handleAxis.search( 'X' ) !== - 1 || handleAxis === 'YZ' ) {
@@ -873,6 +869,14 @@ export class TransformHelper extends ControlsHelper {
           }
         }
       }
+
+      // TODO: Design scale offset visualization. Make it work with inverse/flip axis.
+      // if ( handleType === 'scale' && handleTag.search( 'offset' ) !== -1 ) {
+      //   handle.visible = this.scaleOffset.length() !== 0 && handleType === this.activeMode;
+      //   if (handleTag === 'offset') {
+      //     handle.scale.multiply( this.scaleOffset ) );
+      //   }
+      // }
 
     }
 
@@ -916,14 +920,14 @@ export class TransformHelper extends ControlsHelper {
       const handle = this.children[ i ] as Mesh;
       const handleType = handle.userData.type;
       const handleAxis = handle.userData.axis;
-      const handleTag = handle.userData.tag;
+      const handleTag = handle.userData.tag || '';
 
       if ( handleTag !== 'picker' ) {
 
         const material = handle.material as HelperMaterial;
 
         let targetHighlight = 1;
-        if ( handleTag === 'offset' || handleTag === 'offset-start' ) {
+        if ( handleTag.search( 'offset' ) !== -1 ) {
           handle.renderOrder = 1e10 + 20;
         } else if ( !this.enabled || (this.activeMode && handleType !== this.activeMode ) ) {
           targetHighlight = handle instanceof LineSegments ? 0 : 0.1;

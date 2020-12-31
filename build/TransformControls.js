@@ -228,6 +228,9 @@ class TransformControls extends ControlsInteractive {
 			helper.activeMode = this.activeMode;
 			helper.activeAxis = this.activeAxis;
 			helper.size = this.size;
+			helper.positionOffset.set( 0, 0, 0 );
+			helper.quaternionOffset.identity();
+			helper.scaleOffset.set( 0, 0, 0 );
 
 		} );
 
@@ -445,7 +448,7 @@ class TransformControls extends ControlsInteractive {
 		if ( ! object || axis === '' || this.active === false || pointer.button !== 0 )
 			return;
 
-		this._plane.setFromNormalAndCoplanarPoint( this.getPlaneNormal( this._viewportCameraQuaternion ), this._worldPosition );
+		this._plane.setFromNormalAndCoplanarPoint( this.getPlaneNormal( this._viewportCameraQuaternion ), this._worldPositionStart );
 		const intersection = pointer.projectOnPlane( this._plane, this.minGrazingAngle );
 
 		if ( ! intersection )
