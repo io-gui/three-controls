@@ -1,23 +1,11 @@
-import { Vector3, Vector4, Euler, Mesh, Line, Material, DoubleSide, LineBasicMaterial, MeshBasicMaterial, OrthographicCamera, PerspectiveCamera } from 'three';
+import { Vector3, Vector4, Euler, Mesh, LineSegments, Material, OrthographicCamera, PerspectiveCamera } from 'three';
 import { ControlsBase, AnyCameraType } from './ControlsBase';
+import { HelperMaterial } from './HelperMaterial';
 
-export const helperMaterial = new MeshBasicMaterial( {
-  depthTest: false,
-  depthWrite: false,
-  transparent: true,
-  side: DoubleSide,
-  fog: false,
-  toneMapped: false
-} );
+// TODO: depth bias and dithered transparency.
 
-export const helperLineMaterial = new LineBasicMaterial( {
-  depthTest: false,
-  depthWrite: false,
-  transparent: true,
-  linewidth: 1,
-  fog: false,
-  toneMapped: false
-} );
+
+export const helperMaterial = new HelperMaterial();
 
 export interface HelperGeometrySpec {
   type: string,
@@ -33,28 +21,29 @@ export interface HelperGeometrySpec {
 
 export class ControlsHelper extends ControlsBase {
   sizeAttenuation = 1;
-  constructor( camera: AnyCameraType, domElement: HTMLElement, helperMap?: [ Mesh | Line, HelperGeometrySpec ][] ) {
+  constructor( camera: AnyCameraType, domElement: HTMLElement, helperMap?: [ Mesh | LineSegments, HelperGeometrySpec ][] ) {
     super( camera, domElement );
     if ( helperMap ) {
       for ( let i = helperMap.length; i --; ) {
 
-        const object = helperMap[ i ][ 0 ].clone() as Mesh | Line;
+        const object = helperMap[ i ][ 0 ].clone() as Mesh | LineSegments;
         const helperSpec = helperMap[ i ][ 1 ];
 
-        if (object instanceof Mesh) {
-          object.material = helperMaterial.clone();
-        } else if (object instanceof Line) {
-          object.material = helperLineMaterial.clone();
-        }
-        (object.material as MeshBasicMaterial).color.setRGB( helperSpec.color.x, helperSpec.color.y, helperSpec.color.z );
-        (object.material as MeshBasicMaterial).opacity = helperSpec.color.w;
+        object.material = helperMaterial.clone();
+        const material = object.material as HelperMaterial;
+        material.userData.highlight = 1;
+        material.color.setRGB( helperSpec.color.x, helperSpec.color.y, helperSpec.color.z );
+        material.opacity = helperSpec.color.w;
+        material.changed && material.changed();
 
         object.name = helperSpec.type + '-' + helperSpec.axis + helperSpec.tag || '';
+
         object.userData = {
           type: helperSpec.type,
           axis: helperSpec.axis,
           tag: helperSpec.tag,
         };
+
         if ( helperSpec.position ) object.position.copy( helperSpec.position );
         if ( helperSpec.rotation ) object.rotation.copy( helperSpec.rotation );
         if ( helperSpec.scale ) object.scale.copy( helperSpec.scale );
@@ -64,7 +53,7 @@ export class ControlsHelper extends ControlsBase {
         const tempGeometry = object.geometry.clone();
         tempGeometry.applyMatrix4( object.matrix );
         object.geometry = tempGeometry;
-        object.renderOrder = Infinity;
+        object.renderOrder = 1e10;
 
         object.position.set( 0, 0, 0 );
         object.rotation.set( 0, 0, 0 );

@@ -29,6 +29,7 @@ export class ControlsBase extends Object3D {
   protected readonly cameraOffset = new Vector3();
   protected readonly worldPosition = new Vector3();
   protected readonly worldQuaternion = new Quaternion();
+  protected readonly worldQuaternionInv = new Quaternion();
   protected readonly worldScale = new Vector3();
   private readonly _animations: Callback[] = [];
   private _changeTimeout: null | number = null;
@@ -94,6 +95,7 @@ export class ControlsBase extends Object3D {
   }
   decomposeMatrices() {
     this.matrixWorld.decompose( this.worldPosition, this.worldQuaternion, this.worldScale );
+    this.worldQuaternionInv.copy( this.worldQuaternion ).invert();
     this.camera.updateMatrixWorld();
     this.camera.matrixWorld.decompose( this.cameraPosition, this.cameraQuaternion, this.cameraScale ); 
     this.cameraOffset.copy( this.cameraPosition ).sub( this.worldPosition );
