@@ -32,6 +32,7 @@ export declare class ControlsBase extends Object3D {
 	protected readonly cameraOffset: Vector3;
 	protected readonly worldPosition: Vector3;
 	protected readonly worldQuaternion: Quaternion;
+	protected readonly worldQuaternionInv: Quaternion;
 	protected readonly worldScale: Vector3;
 	private readonly _animations;
 	private _changeTimeout;

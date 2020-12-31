@@ -1,15 +1,17 @@
-import { Quaternion, Mesh, Euler, Vector3, Vector4, Color, Matrix4, Line, OctahedronBufferGeometry, TorusBufferGeometry, SphereBufferGeometry, BoxBufferGeometry, PlaneBufferGeometry, CylinderBufferGeometry, BufferGeometry, Float32BufferAttribute } from 'three';
+import { Quaternion, Mesh, Euler, Vector3, Vector4, Matrix4, LineSegments, OctahedronBufferGeometry, TorusBufferGeometry, SphereBufferGeometry, BoxBufferGeometry, PlaneBufferGeometry, CylinderBufferGeometry, BufferGeometry, Float32BufferAttribute } from 'three';
 import { UNIT } from './core/ControlsBase';
 import { ControlsHelper } from './core/ControlsHelper';
+import { colors } from './core/HelperMaterial';
 
 const CircleGeometry = function ( radius, arc ) {
 
 	const geometry = new BufferGeometry();
 	const vertices = [];
 
-	for ( let i = 0; i <= 64 * arc; ++ i ) {
+	for ( let i = 0; i <= 63 * arc; ++ i ) {
 
 		vertices.push( 0, Math.cos( i / 32 * Math.PI ) * radius, Math.sin( i / 32 * Math.PI ) * radius );
+		vertices.push( 0, Math.cos( ( i + 1 ) / 32 * Math.PI ) * radius, Math.sin( ( i + 1 ) / 32 * Math.PI ) * radius );
 
 	}
 
@@ -25,22 +27,25 @@ const lerp = ( x, y, a ) => {
 };
 
 const EPS = 0.001;
-
-const colorEquals = ( c1, c2 ) => {
-
-	return Math.abs( c1.r - c2.r ) < EPS && Math.abs( c1.g - c2.g ) < EPS && Math.abs( c1.b - c2.b ) < EPS;
-
-};
-
-const scaleHandleGeometry = new BoxBufferGeometry( 0.125, 0.125, 0.125 );
-const arrowGeometry = new CylinderBufferGeometry( 0, 0.05, 0.2, 12, 1, false );
+const H = 0.125;
+const HH = H / 2;
+const H2 = H * 2;
+const H3 = H * 3;
+const PICKER_DEBUG_ALPHA = 0.0;
+const scaleHandleGeometry = new BoxBufferGeometry( H, H, H );
+const arrowGeometry = new CylinderBufferGeometry( 0, HH, H2, 12, 1, false );
 const lineGeometry = new BufferGeometry();
 lineGeometry.setAttribute( 'position', new Float32BufferAttribute( [ 0, 0, 0, 1, 0, 0 ], 3 ) );
 const squareLineGeometry = new BufferGeometry();
-squareLineGeometry.setAttribute( 'position', new Float32BufferAttribute( [ - 1, - 1, 0, - 1, 1, 0, 1, 1, 0, 1, - 1, 0, - 1, - 1, 0 ], 3 ) );
+squareLineGeometry.setAttribute( 'position', new Float32BufferAttribute( [ - 1, - 1, 0, - 1, 1, 0, - 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, - 1, 0, 1, - 1, 0, - 1, - 1, 0 ], 3 ) );
+const translateOffsetLineGeometry = new BufferGeometry();
+translateOffsetLineGeometry.setAttribute( 'position', new Float32BufferAttribute( [ 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 1, 0, 1, 1, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1 ], 3 ) );
+translateOffsetLineGeometry.setAttribute( 'color', new Float32BufferAttribute( [ ...colors.red, ...colors.red, ...colors.green, ...colors.green, ...colors.blue, ...colors.blue, ...colors.lightGray, ...colors.lightGray ], 3 ) );
+const scaleOffsetLineGeometry = new BufferGeometry();
+scaleOffsetLineGeometry.setAttribute( 'position', new Float32BufferAttribute( [ 0, 0, 0, 1, 0, 0, 1, 1, 0, 1, 0, 0, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 0, 0, 1, 0, 0, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1, 0, 0, 1 ], 3 ) );
+scaleOffsetLineGeometry.setAttribute( 'color', new Float32BufferAttribute( [ ...colors.white, ...colors.red, ...colors.red, ...colors.red, ...colors.red, ...colors.red, ...colors.white, ...colors.green, ...colors.green, ...colors.green, ...colors.green, ...colors.green, ...colors.white, ...colors.blue, ...colors.blue, ...colors.blue, ...colors.blue, ...colors.blue ], 3 ) );
 const cornerLineGeometry = new BufferGeometry();
-cornerLineGeometry.setAttribute( 'position', new Float32BufferAttribute( [ 0, - 1, 0, 0, 0, 0, 1, 0, 0 ], 3 ) );
-const PICKER_DEBUG_ALPHA = 0.0;
+cornerLineGeometry.setAttribute( 'position', new Float32BufferAttribute( [ 0, 0, 0, 0, - 1, 0, 0, 0, 0, 1, 0, 0 ], 3 ) );
 
 const translateHelperGeometrySpec = [
 	[
@@ -49,8 +54,8 @@ const translateHelperGeometrySpec = [
 			type: 'translate',
 			axis: 'X',
 			tag: 'fwd',
-			color: new Vector4( 1, 0, 0, 1 ),
-			position: new Vector3( 0.8, 0, 0 ),
+			color: new Vector4( ...colors.red, 1 ),
+			position: new Vector3( 1 - H2, 0, 0 ),
 			rotation: new Euler( 0, 0, - Math.PI / 2 ),
 		}
 	], [
@@ -59,17 +64,18 @@ const translateHelperGeometrySpec = [
 			type: 'translate',
 			axis: 'X',
 			tag: 'bwd',
-			color: new Vector4( 1, 0, 0, 1 ),
-			position: new Vector3( 0.8, 0, 0 ),
+			color: new Vector4( ...colors.red, 1 ),
+			position: new Vector3( 1 - H2, 0, 0 ),
 			rotation: new Euler( 0, 0, Math.PI / 2 ),
 		}
 	], [
-		new Line( lineGeometry ),
+		new LineSegments( lineGeometry ),
 		{
 			type: 'translate',
 			axis: 'X',
-			color: new Vector4( 1, 0, 0, 1 ),
-			scale: new Vector3( 0.8, 0.8, 0.8 )
+			color: new Vector4( ...colors.red, 1 ),
+			position: new Vector3( HH, 0, 0 ),
+			scale: new Vector3( 1 - H2 - H, 1 - H2 - H, 1 - H2 - H )
 		}
 	], [
 		new Mesh( arrowGeometry ),
@@ -77,8 +83,8 @@ const translateHelperGeometrySpec = [
 			type: 'translate',
 			axis: 'Y',
 			tag: 'fwd',
-			color: new Vector4( 0, 1, 0, 1 ),
-			position: new Vector3( 0, 0.8, 0 ),
+			color: new Vector4( ...colors.green, 1 ),
+			position: new Vector3( 0, 1 - H2, 0 ),
 		}
 	], [
 		new Mesh( arrowGeometry ),
@@ -86,18 +92,19 @@ const translateHelperGeometrySpec = [
 			type: 'translate',
 			axis: 'Y',
 			tag: 'bwd',
-			color: new Vector4( 0, 1, 0, 1 ),
-			position: new Vector3( 0, 0.8, 0 ),
+			color: new Vector4( ...colors.green, 1 ),
+			position: new Vector3( 0, 1 - H2, 0 ),
 			rotation: new Euler( Math.PI, 0, 0 ),
 		}
 	], [
-		new Line( lineGeometry ),
+		new LineSegments( lineGeometry ),
 		{
 			type: 'translate',
 			axis: 'Y',
-			color: new Vector4( 0, 1, 0, 1 ),
+			color: new Vector4( ...colors.green, 1 ),
+			position: new Vector3( 0, HH, 0 ),
 			rotation: new Euler( 0, 0, Math.PI / 2 ),
-			scale: new Vector3( 0.8, 0.8, 0.8 )
+			scale: new Vector3( 1 - H2 - H, 1 - H2 - H, 1 - H2 - H )
 		}
 	], [
 		new Mesh( arrowGeometry ),
@@ -105,8 +112,8 @@ const translateHelperGeometrySpec = [
 			type: 'translate',
 			axis: 'Z',
 			tag: 'fwd',
-			color: new Vector4( 0, 0, 1, 1 ),
-			position: new Vector3( 0, 0, 0.8 ),
+			color: new Vector4( ...colors.blue, 1 ),
+			position: new Vector3( 0, 0, 1 - H2 ),
 			rotation: new Euler( Math.PI / 2, 0, 0 ),
 		}
 	], [
@@ -115,473 +122,496 @@ const translateHelperGeometrySpec = [
 			type: 'translate',
 			axis: 'Z',
 			tag: 'bwd',
-			color: new Vector4( 0, 0, 1, 1 ),
-			position: new Vector3( 0, 0, 0.8 ),
+			color: new Vector4( ...colors.blue, 1 ),
+			position: new Vector3( 0, 0, 1 - H2 ),
 			rotation: new Euler( - Math.PI / 2, 0, 0 ),
 		}
 	], [
-		new Line( lineGeometry ),
+		new LineSegments( lineGeometry ),
 		{
 			type: 'translate',
 			axis: 'Z',
-			color: new Vector4( 0, 0, 1, 1 ),
+			color: new Vector4( ...colors.blue, 1 ),
+			position: new Vector3( 0, 0, HH ),
 			rotation: new Euler( 0, - Math.PI / 2, 0 ),
-			scale: new Vector3( 0.8, 0.8, 0.8 )
+			scale: new Vector3( 1 - H2 - H, 1 - H2 - H, 1 - H2 - H )
 		}
 	], [
-		new Mesh( new OctahedronBufferGeometry( 0.1, 0 ) ),
+		new Mesh( new OctahedronBufferGeometry( HH, 0 ) ),
 		{
 			type: 'translate',
 			axis: 'XYZ',
-			color: new Vector4( 1, 1, 1, 0.25 ),
+			color: new Vector4( ...colors.lightGray, 0.5 ),
 			position: new Vector3( 0, 0, 0 ),
 			rotation: new Euler( 0, 0, 0 )
 		}
 	], [
-		new Mesh( new PlaneBufferGeometry( 0.3, 0.3 ) ),
+		new Mesh( new PlaneBufferGeometry( H2, H2 ) ),
 		{
 			type: 'translate',
 			axis: 'XY',
-			color: new Vector4( 1, 1, 0, 0.05 ),
-			position: new Vector3( 0.15, 0.15, 0 )
+			color: new Vector4( ...colors.yellow, 0.15 ),
+			position: new Vector3( H, H, 0 )
 		}
 	], [
-		new Line( cornerLineGeometry ),
+		new LineSegments( cornerLineGeometry ),
 		{
 			type: 'translate',
 			axis: 'XY',
-			color: new Vector4( 1, 1, 0, 1 ),
-			position: new Vector3( 0.3, 0.3, 0 ),
+			color: new Vector4( ...colors.yellow, 1 ),
+			position: new Vector3( H2, H2, 0 ),
 			rotation: new Euler( 0, 0, - Math.PI / 2 ),
-			scale: new Vector3( 0.15, 0.15, 1 )
+			scale: new Vector3( H, H, 1 )
 		}
 	], [
-		new Mesh( new PlaneBufferGeometry( 0.3, 0.3 ) ),
+		new Mesh( new PlaneBufferGeometry( H2, H2 ) ),
 		{
 			type: 'translate',
 			axis: 'YZ',
-			color: new Vector4( 0, 1, 1, 0.05 ),
-			position: new Vector3( 0, 0.15, 0.15 ),
+			color: new Vector4( ...colors.cyan, 0.15 ),
+			position: new Vector3( 0, H, H ),
 			rotation: new Euler( 0, Math.PI / 2, 0 )
 		}
 	], [
-		new Line( cornerLineGeometry ),
+		new LineSegments( cornerLineGeometry ),
 		{
 			type: 'translate',
 			axis: 'YZ',
-			color: new Vector4( 0, 1, 1, 1 ),
-			position: new Vector3( 0, 0.3, 0.3 ),
+			color: new Vector4( ...colors.cyan, 1 ),
+			position: new Vector3( 0, H2, H2 ),
 			rotation: new Euler( 0, - Math.PI / 2, - Math.PI / 2 ),
-			scale: new Vector3( 0.15, 0.15, 1 )
+			scale: new Vector3( H, H, 1 )
 		}
 	], [
-		new Mesh( new PlaneBufferGeometry( 0.3, 0.3 ) ),
+		new Mesh( new PlaneBufferGeometry( H2, H2 ) ),
 		{
 			type: 'translate',
 			axis: 'XZ',
-			color: new Vector4( 1, 0, 1, 0.05 ),
-			position: new Vector3( 0.15, 0, 0.15 ),
+			color: new Vector4( ...colors.magenta, 0.15 ),
+			position: new Vector3( H, 0, H ),
 			rotation: new Euler( - Math.PI / 2, 0, 0 )
 		}
 	], [
-		new Line( cornerLineGeometry ),
+		new LineSegments( cornerLineGeometry ),
 		{
 			type: 'translate',
 			axis: 'XZ',
-			color: new Vector4( 1, 0, 1, 1 ),
-			position: new Vector3( 0.3, 0, 0.3 ),
+			color: new Vector4( ...colors.magenta, 1 ),
+			position: new Vector3( H2, 0, H2 ),
 			rotation: new Euler( Math.PI / 2, 0, - Math.PI / 2 ),
-			scale: new Vector3( 0.15, 0.15, 1 )
+			scale: new Vector3( H, H, 1 )
 		}
 	],
 
 	// Pickers
 	[
-		new Mesh( new CylinderBufferGeometry( 0.3, 0, 0.6, 4, 1, false ) ),
+		new Mesh( new CylinderBufferGeometry( H2, 0, H2 * 2, 6, 1, false ) ),
 		{
 			type: 'translate',
 			axis: 'X',
 			tag: 'picker',
-			color: new Vector4( 1, 1, 1, PICKER_DEBUG_ALPHA ),
-			position: new Vector3( 0.6, 0, 0 ),
+			color: new Vector4( ...colors.red, PICKER_DEBUG_ALPHA ),
+			position: new Vector3( H * 5, 0, 0 ),
 			rotation: new Euler( Math.PI / 4, 0, - Math.PI / 2 ),
 		}
 	], [
-		new Mesh( new CylinderBufferGeometry( 0.3, 0, 0.6, 4, 1, false ) ),
+		new Mesh( new CylinderBufferGeometry( H2, 0, H2 * 2, 6, 1, false ) ),
 		{
 			type: 'translate',
 			axis: 'Y',
 			tag: 'picker',
-			color: new Vector4( 1, 1, 1, PICKER_DEBUG_ALPHA ),
-			position: new Vector3( 0, 0.6, 0 ),
+			color: new Vector4( ...colors.green, PICKER_DEBUG_ALPHA ),
+			position: new Vector3( 0, H * 5, 0 ),
 			rotation: new Euler( 0, Math.PI / 4, 0 ),
 		}
 	], [
-		new Mesh( new CylinderBufferGeometry( 0.3, 0, 0.6, 4, 1, false ) ),
+		new Mesh( new CylinderBufferGeometry( H2, 0, H2 * 2, 6, 1, false ) ),
 		{
 			type: 'translate',
 			axis: 'Z',
 			tag: 'picker',
-			color: new Vector4( 1, 1, 1, PICKER_DEBUG_ALPHA ),
-			position: new Vector3( 0, 0, 0.6 ),
+			color: new Vector4( ...colors.blue, PICKER_DEBUG_ALPHA ),
+			position: new Vector3( 0, 0, H * 5 ),
 			rotation: new Euler( Math.PI / 2, Math.PI / 4, 0 ),
 		}
 	], [
-		new Mesh( new OctahedronBufferGeometry( 0.3, 0 ) ),
+		new Mesh( new OctahedronBufferGeometry( H2, 0 ) ),
 		{
 			type: 'translate',
 			axis: 'XYZ',
 			tag: 'picker',
-			color: new Vector4( 1, 1, 1, PICKER_DEBUG_ALPHA ),
+			color: new Vector4( ...colors.white, PICKER_DEBUG_ALPHA ),
 		}
 	], [
-		new Mesh( new PlaneBufferGeometry( 0.4, 0.4 ) ),
+		new Mesh( new PlaneBufferGeometry( H3, H3 ) ),
 		{
 			type: 'translate',
 			axis: 'XY',
 			tag: 'picker',
-			color: new Vector4( 1, 1, 1, PICKER_DEBUG_ALPHA ),
-			position: new Vector3( 0.2, 0.2, 0 ),
+			color: new Vector4( ...colors.yellow, PICKER_DEBUG_ALPHA ),
+			position: new Vector3( H * 1.5, H * 1.5, 0 ),
 		}
 	], [
-		new Mesh( new PlaneBufferGeometry( 0.4, 0.4 ) ),
+		new Mesh( new PlaneBufferGeometry( H3, H3 ) ),
 		{
 			type: 'translate',
 			axis: 'YZ',
 			tag: 'picker',
-			color: new Vector4( 1, 1, 1, PICKER_DEBUG_ALPHA ),
-			position: new Vector3( 0, 0.2, 0.2 ),
+			color: new Vector4( ...colors.cyan, PICKER_DEBUG_ALPHA ),
+			position: new Vector3( 0, H * 1.5, H * 1.5 ),
 			rotation: new Euler( 0, Math.PI / 2, 0 ),
 		}
 	], [
-		new Mesh( new PlaneBufferGeometry( 0.4, 0.4 ) ),
+		new Mesh( new PlaneBufferGeometry( H3, H3 ) ),
 		{
 			type: 'translate',
 			axis: 'XZ',
 			tag: 'picker',
-			color: new Vector4( 1, 1, 1, PICKER_DEBUG_ALPHA ),
-			position: new Vector3( 0.2, 0, 0.2 ),
+			color: new Vector4( ...colors.magenta, PICKER_DEBUG_ALPHA ),
+			position: new Vector3( H * 1.5, 0, H * 1.5 ),
 			rotation: new Euler( - Math.PI / 2, 0, 0 ),
 		}
 	],
+
+	// Offset visualization
+	[
+		new LineSegments( translateOffsetLineGeometry ),
+		{
+			type: 'translate',
+			axis: 'XYZ',
+			tag: 'offset',
+			color: new Vector4( ...colors.white, 1 ),
+		}
+	]
 ];
 
 const rotateHelperGeometrySpec = [
 	[
-		new Line( CircleGeometry( 0.9, 0.5 ) ),
+		new LineSegments( CircleGeometry( 1 - H, 0.5 ) ),
 		{
 			type: 'rotate',
 			axis: 'X',
-			color: new Vector4( 1, 0, 0, 1 ),
+			color: new Vector4( ...colors.red, 1 ),
 		}
 	], [
-		new Mesh( new OctahedronBufferGeometry( 0.04, 0 ) ),
+		new Mesh( new OctahedronBufferGeometry( H / 3, 2 ) ),
 		{
 			type: 'rotate',
 			axis: 'X',
-			color: new Vector4( 1, 0, 0, 1 ),
-			position: new Vector3( 0, 0, 0.893 ),
-			scale: new Vector3( 1, 3, 1 )
+			color: new Vector4( ...colors.red, 1 ),
+			position: new Vector3( 0, 0, 1 - H ),
 		}
 	], [
-		new Line( CircleGeometry( 0.9, 0.5 ) ),
+		new LineSegments( CircleGeometry( 1 - H, 0.5 ) ),
 		{
 			type: 'rotate',
 			axis: 'Y',
-			color: new Vector4( 0, 1, 0, 1 ),
+			color: new Vector4( ...colors.green, 1 ),
 			rotation: new Euler( 0, 0, - Math.PI / 2 )
 		}
 	], [
-		new Mesh( new OctahedronBufferGeometry( 0.04, 0 ) ),
+		new Mesh( new OctahedronBufferGeometry( H / 3, 2 ) ),
 		{
 			type: 'rotate',
 			axis: 'Y',
-			color: new Vector4( 0, 1, 0, 1 ),
-			position: new Vector3( 0, 0, 0.893 ),
-			scale: new Vector3( 3, 1, 1 )
+			color: new Vector4( ...colors.green, 1 ),
+			position: new Vector3( 0, 0, 1 - H ),
 		}
 	], [
-		new Line( CircleGeometry( 0.9, 0.5 ) ),
+		new LineSegments( CircleGeometry( 1 - H, 0.5 ) ),
 		{
 			type: 'rotate',
 			axis: 'Z',
-			color: new Vector4( 0, 0, 1, 1 ),
+			color: new Vector4( ...colors.blue, 1 ),
 			rotation: new Euler( 0, Math.PI / 2, 0 )
 		}
 	], [
-		new Mesh( new OctahedronBufferGeometry( 0.04, 0 ) ),
+		new Mesh( new OctahedronBufferGeometry( H / 3, 2 ) ),
 		{
 			type: 'rotate',
 			axis: 'Z',
-			color: new Vector4( 0, 0, 1, 1 ),
-			position: new Vector3( 0.893, 0, 0 ),
-			scale: new Vector3( 1, 3, 1 )
+			color: new Vector4( ...colors.blue, 1 ),
+			position: new Vector3( 1 - H, 0, 0 ),
 		}
 	], [
-		new Line( CircleGeometry( 1.3, 1 ) ),
+		new LineSegments( CircleGeometry( 1 + H * 3, 1 ) ),
 		{
 			type: 'rotate',
 			axis: 'E',
-			color: new Vector4( 1, 1, 0, 0.25 ),
+			color: new Vector4( ...colors.yellow, 1 ),
 			rotation: new Euler( 0, Math.PI / 2, 0 )
 		}
 	], [
-		new Line( CircleGeometry( 0.9, 1 ) ),
+		new LineSegments( CircleGeometry( 1 - H, 1 ) ),
 		{
 			type: 'rotate',
 			axis: 'XYZE',
-			color: new Vector4( 0.25, 0.25, 0.25, 1 ),
+			color: new Vector4( ...colors.darkGray, 1 ),
 			rotation: new Euler( 0, Math.PI / 2, 0 )
 		}
 	],
 
 	// Pickers
 	[
-		new Mesh( new TorusBufferGeometry( 0.9, 0.2, 4, 6, Math.PI ) ),
+		new Mesh( new TorusBufferGeometry( 1, H2, 4, 6, Math.PI ) ),
 		{
 			type: 'rotate',
 			axis: 'X',
 			tag: 'picker',
-			color: new Vector4( 1, 1, 1, PICKER_DEBUG_ALPHA ),
+			color: new Vector4( ...colors.red, PICKER_DEBUG_ALPHA ),
 			position: new Vector3( 0, 0, 0 ),
 			rotation: new Euler( 0, - Math.PI / 2, - Math.PI / 2 ),
-			scale: new Vector3( 1, 1, 0.3 ),
+			scale: new Vector3( 1, 1, H2 ),
 		}
 	], [
-		new Mesh( new TorusBufferGeometry( 0.9, 0.2, 4, 6, Math.PI ) ),
+		new Mesh( new TorusBufferGeometry( 1, H2, 4, 6, Math.PI ) ),
 		{
 			type: 'rotate',
 			axis: 'Y',
 			tag: 'picker',
-			color: new Vector4( 1, 1, 1, PICKER_DEBUG_ALPHA ),
+			color: new Vector4( ...colors.green, PICKER_DEBUG_ALPHA ),
 			position: new Vector3( 0, 0, 0 ),
 			rotation: new Euler( Math.PI / 2, 0, 0 ),
-			scale: new Vector3( 1, 1, 0.3 ),
+			scale: new Vector3( 1, 1, H2 ),
 		}
 	], [
-		new Mesh( new TorusBufferGeometry( 0.9, 0.2, 4, 6, Math.PI ) ),
+		new Mesh( new TorusBufferGeometry( 1, H2, 4, 6, Math.PI ) ),
 		{
 			type: 'rotate',
 			axis: 'Z',
 			tag: 'picker',
-			color: new Vector4( 1, 1, 1, PICKER_DEBUG_ALPHA ),
+			color: new Vector4( ...colors.blue, PICKER_DEBUG_ALPHA ),
 			position: new Vector3( 0, 0, 0 ),
 			rotation: new Euler( 0, 0, - Math.PI / 2 ),
-			scale: new Vector3( 1, 1, 0.3 ),
+			scale: new Vector3( 1, 1, H2 ),
 		}
 	], [
-		new Mesh( new TorusBufferGeometry( 1.3, 0.2, 2, 12 ) ),
+		new Mesh( new TorusBufferGeometry( 1 + H2, H2, 2, 12 ) ),
 		{
 			type: 'rotate',
 			axis: 'E',
 			tag: 'picker',
-			color: new Vector4( 1, 1, 1, PICKER_DEBUG_ALPHA ),
+			color: new Vector4( ...colors.yellow, PICKER_DEBUG_ALPHA ),
 		}
 	], [
-		new Mesh( new SphereBufferGeometry( 1.3, 12, 2, 0, Math.PI * 2, 0, Math.PI / 2 ) ),
+		new Mesh( new SphereBufferGeometry( 1 + H2, 12, 2, 0, Math.PI * 2, 0, Math.PI / 2 ) ),
 		{
 			type: 'rotate',
 			axis: 'XYZE',
 			tag: 'picker',
-			color: new Vector4( 1, 1, 1, PICKER_DEBUG_ALPHA ),
+			color: new Vector4( ...colors.gray, PICKER_DEBUG_ALPHA ),
 			rotation: new Euler( - Math.PI / 2, 0, 0 ),
+		}
+	],
+
+	// Offset visualization
+	[
+		new LineSegments( lineGeometry ),
+		{
+			type: 'rotate',
+			axis: 'XYZ',
+			tag: 'offset',
+			color: new Vector4( ...colors.lightGray, 1 ),
+			position: new Vector3( 0, 0, 1 + H * 3 ),
+			rotation: new Euler( 0, Math.PI / 2, 0 ),
+			scale: new Vector3( 2 + H * 6, 2 + H * 6, 2 + H * 6 ),
 		}
 	]
 ];
 
 const scaleHelperGeometrySpec = [
 	[
-		new Mesh( new BoxBufferGeometry( 0.125, 0.125, 0.125 ) ),
+		new Mesh( scaleHandleGeometry ),
 		{
 			type: 'scale',
 			axis: 'XYZX',
-			color: new Vector4( 0.75, 0.75, 0.75, 1 ),
-			position: new Vector3( 1.1, 0, 0 )
-		}
-	], [
-		new Mesh( new BoxBufferGeometry( 0.125, 0.125, 0.125 ) ),
-		{
-			type: 'scale',
-			axis: 'XYZY',
-			color: new Vector4( 0.75, 0.75, 0.75, 1 ),
-			position: new Vector3( 0, 1.1, 0 )
-		}
-	], [
-		new Mesh( new BoxBufferGeometry( 0.125, 0.125, 0.125 ) ),
-		{
-			type: 'scale',
-			axis: 'XYZZ',
-			color: new Vector4( 0.75, 0.75, 0.75, 1 ),
-			position: new Vector3( 0, 0, 1.1 )
-		}
-	], [
-		new Line( lineGeometry ), {
-			type: 'scale',
-			axis: 'X',
-			color: new Vector4( 1, 0, 0, 1 ),
-			position: new Vector3( 0.5, 0, 0 ),
-			scale: new Vector3( 0.5, 1, 1 )
+			color: new Vector4( ...colors.lightGray, 1 ),
+			position: new Vector3( 1 + H, 0, 0 )
 		}
 	], [
 		new Mesh( scaleHandleGeometry ),
 		{
 			type: 'scale',
-			axis: 'Y',
-			color: new Vector4( 0, 1, 0, 1 ),
-			position: new Vector3( 0, 0.95, 0 )
-		}
-	], [
-		new Line( lineGeometry ),
-		{
-			type: 'scale',
-			axis: 'Y',
-			color: new Vector4( 0, 1, 0, 1 ),
-			position: new Vector3( 0, 0.5, 0 ),
-			rotation: new Euler( 0, 0, Math.PI / 2 ),
-			scale: new Vector3( 0.5, 1, 1 )
+			axis: 'XYZY',
+			color: new Vector4( ...colors.lightGray, 1 ),
+			position: new Vector3( 0, 1 + H, 0 )
 		}
 	], [
 		new Mesh( scaleHandleGeometry ),
 		{
 			type: 'scale',
-			axis: 'Z',
-			color: new Vector4( 0, 0, 1, 1 ),
-			position: new Vector3( 0, 0, 0.95 ),
-			rotation: new Euler( Math.PI / 2, 0, 0 )
-		}
-	], [
-		new Line( lineGeometry ),
-		{
-			type: 'scale',
-			axis: 'Z',
-			color: new Vector4( 0, 0, 1, 1 ),
-			position: new Vector3( 0, 0, 0.5 ),
-			rotation: new Euler( 0, - Math.PI / 2, 0 ),
-			scale: new Vector3( 0.5, 1, 1 )
-		}
-	], [
-		new Line( lineGeometry ), {
-			type: 'scale',
-			axis: 'XYZX',
-			color: new Vector4( 0.75, 0.75, 0.75, 1 ),
-			position: new Vector3( 0.9, 0, 0 ),
-			scale: new Vector3( 0.2, 1, 1 )
-		}
-	], [
-		new Line( lineGeometry ),
-		{
-			type: 'scale',
-			axis: 'XYZY',
-			color: new Vector4( 0.75, 0.75, 0.75, 1 ),
-			position: new Vector3( 0, 0.9, 0 ),
-			rotation: new Euler( 0, 0, Math.PI / 2 ),
-			scale: new Vector3( 0.2, 1, 1 )
-		}
-	], [
-		new Line( lineGeometry ),
-		{
-			type: 'scale',
 			axis: 'XYZZ',
-			color: new Vector4( 0.75, 0.75, 0.75, 1 ),
-			position: new Vector3( 0, 0, 0.9 ),
-			rotation: new Euler( 0, - Math.PI / 2, 0 ),
-			scale: new Vector3( 0.2, 1, 1 )
+			color: new Vector4( ...colors.lightGray, 1 ),
+			position: new Vector3( 0, 0, 1 + H )
 		}
 	], [
 		new Mesh( scaleHandleGeometry ),
 		{
 			type: 'scale',
 			axis: 'X',
-			color: new Vector4( 1, 0, 0, 1 ),
-			position: new Vector3( 0.95, 0, 0 ),
+			color: new Vector4( ...colors.red, 1 ),
+			position: new Vector3( 1 - HH, 0, 0 ),
 			rotation: new Euler( 0, 0, - Math.PI / 2 )
 		}
 	], [
-		new Mesh( new PlaneBufferGeometry( 0.3, 0.3 ) ),
+		new LineSegments( lineGeometry ), {
+			type: 'scale',
+			axis: 'X',
+			color: new Vector4( ...colors.red, 1 ),
+			position: new Vector3( 0.5, 0, 0 ),
+			scale: new Vector3( 0.5 - HH, 1, 1 )
+		}
+	], [
+		new Mesh( scaleHandleGeometry ),
+		{
+			type: 'scale',
+			axis: 'Y',
+			color: new Vector4( ...colors.green, 1 ),
+			position: new Vector3( 0, 1 - HH, 0 )
+		}
+	], [
+		new LineSegments( lineGeometry ),
+		{
+			type: 'scale',
+			axis: 'Y',
+			color: new Vector4( ...colors.green, 1 ),
+			position: new Vector3( 0, 0.5, 0 ),
+			rotation: new Euler( 0, 0, Math.PI / 2 ),
+			scale: new Vector3( 0.5 - HH, 1, 1 )
+		}
+	], [
+		new Mesh( scaleHandleGeometry ),
+		{
+			type: 'scale',
+			axis: 'Z',
+			color: new Vector4( ...colors.blue, 1 ),
+			position: new Vector3( 0, 0, 1 - HH ),
+			rotation: new Euler( Math.PI / 2, 0, 0 )
+		}
+	], [
+		new LineSegments( lineGeometry ),
+		{
+			type: 'scale',
+			axis: 'Z',
+			color: new Vector4( ...colors.blue, 1 ),
+			position: new Vector3( 0, 0, 0.5 ),
+			rotation: new Euler( 0, - Math.PI / 2, 0 ),
+			scale: new Vector3( 0.5 - HH, 1, 1 )
+		}
+	], [
+		new LineSegments( lineGeometry ), {
+			type: 'scale',
+			axis: 'XYZX',
+			color: new Vector4( ...colors.lightGray, 1 ),
+			position: new Vector3( 1 - H, 0, 0 ),
+			scale: new Vector3( H2, 1, 1 )
+		}
+	], [
+		new LineSegments( lineGeometry ),
+		{
+			type: 'scale',
+			axis: 'XYZY',
+			color: new Vector4( ...colors.lightGray, 1 ),
+			position: new Vector3( 0, 1 - H, 0 ),
+			rotation: new Euler( 0, 0, Math.PI / 2 ),
+			scale: new Vector3( H2, 1, 1 )
+		}
+	], [
+		new LineSegments( lineGeometry ),
+		{
+			type: 'scale',
+			axis: 'XYZZ',
+			color: new Vector4( ...colors.lightGray, 1 ),
+			position: new Vector3( 0, 0, 1 - H ),
+			rotation: new Euler( 0, - Math.PI / 2, 0 ),
+			scale: new Vector3( H2, 1, 1 )
+		}
+	], [
+		new LineSegments( squareLineGeometry ),
 		{
 			type: 'scale',
 			axis: 'XY',
-			color: new Vector4( 1, 1, 0, 0.1 ),
-			position: new Vector3( 0.85, 0.85, 0 )
+			color: new Vector4( ...colors.yellow, 1 ),
+			position: new Vector3( 1 - HH, 1 - HH, 0 ),
+			scale: new Vector3( HH, HH, 1 ),
 		}
 	], [
-		new Line( squareLineGeometry ),
+		new Mesh( new PlaneBufferGeometry( H2, H2 ) ),
 		{
 			type: 'scale',
 			axis: 'XY',
-			color: new Vector4( 1, 1, 0, 1 ),
-			position: new Vector3( 0.925, 0.925, 0 ),
-			scale: new Vector3( 0.075, 0.075, 1 ),
+			color: new Vector4( ...colors.yellow, 0.15 ),
+			position: new Vector3( 1 - H, 1 - H, 0 )
 		}
 	], [
-		new Mesh( new PlaneBufferGeometry( 0.3, 0.3 ) ),
+		new LineSegments( squareLineGeometry ),
 		{
 			type: 'scale',
 			axis: 'YZ',
-			color: new Vector4( 0, 1, 1, 0.1 ),
-			position: new Vector3( 0, 0.85, 0.85 ),
+			color: new Vector4( ...colors.cyan, 1 ),
+			position: new Vector3( 0, 1 - HH, 1 - HH ),
 			rotation: new Euler( 0, Math.PI / 2, 0 ),
+			scale: new Vector3( HH, HH, 1 )
 		}
 	], [
-		new Line( squareLineGeometry ),
+		new Mesh( new PlaneBufferGeometry( H2, H2 ) ),
 		{
 			type: 'scale',
 			axis: 'YZ',
-			color: new Vector4( 0, 1, 1, 1 ),
-			position: new Vector3( 0, 0.925, 0.925 ),
+			color: new Vector4( ...colors.cyan, 0.15 ),
+			position: new Vector3( 0, 1 - H, 1 - H ),
 			rotation: new Euler( 0, Math.PI / 2, 0 ),
-			scale: new Vector3( 0.075, 0.075, 1 )
 		}
 	], [
-		new Mesh( new PlaneBufferGeometry( 0.3, 0.3 ) ),
+		new LineSegments( squareLineGeometry ),
 		{
 			type: 'scale',
 			axis: 'XZ',
-			color: new Vector4( 1, 0, 1, 0.1 ),
-			position: new Vector3( 0.85, 0, 0.85 ),
-			rotation: new Euler( - Math.PI / 2, 0, 0 )
-		}
-	], [
-		new Line( squareLineGeometry ),
-		{
-			type: 'scale',
-			axis: 'XZ',
-			color: new Vector4( 1, 0, 1, 1 ),
-			position: new Vector3( 0.925, 0, 0.925 ),
+			color: new Vector4( ...colors.magenta, 1 ),
+			position: new Vector3( 1 - HH, 0, 1 - HH ),
 			rotation: new Euler( Math.PI / 2, 0, 0 ),
-			scale: new Vector3( 0.075, 0.075, 1 ),
+			scale: new Vector3( HH, HH, 1 ),
+		}
+	], [
+		new Mesh( new PlaneBufferGeometry( H2, H2 ) ),
+		{
+			type: 'scale',
+			axis: 'XZ',
+			color: new Vector4( ...colors.magenta, 0.15 ),
+			position: new Vector3( 1 - H, 0, 1 - H ),
+			rotation: new Euler( - Math.PI / 2, 0, 0 )
 		}
 	],
 
 	// Pickers
 	[
-		new Mesh( new CylinderBufferGeometry( 0.2, 0, 0.7, 4, 1, false ) ),
+		new Mesh( new CylinderBufferGeometry( H2, 0, H2 * 2, 6, 1, false ) ),
 		{
 			type: 'scale',
 			axis: 'X',
 			tag: 'picker',
-			color: new Vector4( 1, 1, 1, PICKER_DEBUG_ALPHA ),
-			position: new Vector3( 0.7, 0, 0 ),
+			color: new Vector4( ...colors.red, PICKER_DEBUG_ALPHA ),
+			position: new Vector3( H * 6, 0, 0 ),
 			rotation: new Euler( Math.PI / 4, 0, - Math.PI / 2 ),
 		}
 	], [
-		new Mesh( new CylinderBufferGeometry( 0.2, 0, 0.7, 4, 1, false ) ),
+		new Mesh( new CylinderBufferGeometry( H2, 0, H2 * 2, 6, 1, false ) ),
 		{
 			type: 'scale',
 			axis: 'Y',
 			tag: 'picker',
-			color: new Vector4( 1, 1, 1, PICKER_DEBUG_ALPHA ),
-			position: new Vector3( 0, 0.7, 0 ),
+			color: new Vector4( ...colors.green, PICKER_DEBUG_ALPHA ),
+			position: new Vector3( 0, H * 6, 0 ),
 			rotation: new Euler( 0, Math.PI / 4, 0 ),
 		}
 	], [
-		new Mesh( new CylinderBufferGeometry( 0.2, 0, 0.7, 4, 1, false ) ),
+		new Mesh( new CylinderBufferGeometry( H2, 0, H2 * 2, 6, 1, false ) ),
 		{
 			type: 'scale',
 			axis: 'Z',
 			tag: 'picker',
-			color: new Vector4( 1, 1, 1, PICKER_DEBUG_ALPHA ),
-			position: new Vector3( 0, 0, 0.7 ),
+			color: new Vector4( ...colors.blue, PICKER_DEBUG_ALPHA ),
+			position: new Vector3( 0, 0, H * 6 ),
 			rotation: new Euler( Math.PI / 2, Math.PI / 4, 0 ),
 		}
 	], [
@@ -590,9 +620,9 @@ const scaleHelperGeometrySpec = [
 			type: 'scale',
 			axis: 'XY',
 			tag: 'picker',
-			color: new Vector4( 1, 1, 1, PICKER_DEBUG_ALPHA ),
-			position: new Vector3( 0.85, 0.85, 0 ),
-			scale: new Vector3( 4, 4, 0.6 ),
+			color: new Vector4( ...colors.yellow, PICKER_DEBUG_ALPHA ),
+			position: new Vector3( 1 - H, 1 - H, - HH ),
+			scale: new Vector3( 3, 3, 1 ),
 		}
 	], [
 		new Mesh( scaleHandleGeometry ),
@@ -600,9 +630,9 @@ const scaleHelperGeometrySpec = [
 			type: 'scale',
 			axis: 'YZ',
 			tag: 'picker',
-			color: new Vector4( 1, 1, 1, PICKER_DEBUG_ALPHA ),
-			position: new Vector3( 0, 0.85, 0.85 ),
-			scale: new Vector3( 0.6, 4, 4 ),
+			color: new Vector4( ...colors.cyan, PICKER_DEBUG_ALPHA ),
+			position: new Vector3( - HH, 1 - H, 1 - H ),
+			scale: new Vector3( 1, 3, 3 ),
 		}
 	], [
 		new Mesh( scaleHandleGeometry ),
@@ -610,41 +640,60 @@ const scaleHelperGeometrySpec = [
 			type: 'scale',
 			axis: 'XZ',
 			tag: 'picker',
-			color: new Vector4( 1, 1, 1, PICKER_DEBUG_ALPHA ),
-			position: new Vector3( 0.85, 0, 0.85 ),
-			scale: new Vector3( 4, 0.6, 4 ),
+			color: new Vector4( ...colors.magenta, PICKER_DEBUG_ALPHA ),
+			position: new Vector3( 1 - H, - HH, 1 - H ),
+			scale: new Vector3( 3, 1, 3 ),
 		}
 	], [
-		new Mesh( new CylinderBufferGeometry( 0.24, 0, 0.55, 4, 1, false ) ),
+		new Mesh( new CylinderBufferGeometry( H2, 0, H * 4, 6, 1, false ) ),
 		{
 			type: 'scale',
 			axis: 'XYZX',
 			tag: 'picker',
-			color: new Vector4( 1, 1, 1, PICKER_DEBUG_ALPHA ),
-			position: new Vector3( 1.1, 0, 0 ),
+			color: new Vector4( ...colors.white, PICKER_DEBUG_ALPHA ),
+			position: new Vector3( 1 + H, 0, 0 ),
 			rotation: new Euler( Math.PI / 4, 0, - Math.PI / 2 ),
 		}
 	], [
-		new Mesh( new CylinderBufferGeometry( 0.24, 0, 0.55, 4, 1, false ) ),
+		new Mesh( new CylinderBufferGeometry( H2, 0, H * 4, 6, 1, false ) ),
 		{
 			type: 'scale',
 			axis: 'XYZY',
 			tag: 'picker',
-			color: new Vector4( 1, 1, 1, PICKER_DEBUG_ALPHA ),
-			position: new Vector3( 0, 1.1, 0 ),
+			color: new Vector4( ...colors.white, PICKER_DEBUG_ALPHA ),
+			position: new Vector3( 0, 1 + H, 0 ),
 			rotation: new Euler( 0, Math.PI / 4, 0 ),
 		}
 	], [
-		new Mesh( new CylinderBufferGeometry( 0.24, 0, 0.55, 4, 1, false ) ),
+		new Mesh( new CylinderBufferGeometry( H2, 0, H * 4, 6, 1, false ) ),
 		{
 			type: 'scale',
 			axis: 'XYZZ',
 			tag: 'picker',
-			color: new Vector4( 1, 1, 1, PICKER_DEBUG_ALPHA ),
-			position: new Vector3( 0, 0, 1.1 ),
+			color: new Vector4( ...colors.white, PICKER_DEBUG_ALPHA ),
+			position: new Vector3( 0, 0, 1 + H ),
 			rotation: new Euler( Math.PI / 2, Math.PI / 4, 0 ),
 		}
 	],
+
+	// Offset visualization
+	[
+		new LineSegments( scaleOffsetLineGeometry ),
+		{
+			type: 'scale',
+			axis: 'XYZ',
+			tag: 'offset-start',
+			color: new Vector4( ...colors.white, 1 ),
+		}
+	], [
+		new LineSegments( scaleOffsetLineGeometry ),
+		{
+			type: 'scale',
+			axis: 'XYZ',
+			tag: 'offset',
+			color: new Vector4( ...colors.white, 1 ),
+		}
+	]
 ];
 
 export class TransformHelper extends ControlsHelper {
@@ -669,7 +718,11 @@ export class TransformHelper extends ControlsHelper {
 		this.showTranslate = true;
 		this.showRotate = true;
 		this.showScale = true;
-		this.dampingFactor = 0.25;
+		this.showOffset = true; // TODO
+		this.positionOffset = new Vector3();
+		this.quaternionOffset = new Quaternion();
+		this.scaleOffset = new Vector3();
+		this.dampingFactor = 0.3;
 
 		// Hide translate and scale axis facing the camera
 		this.AXIS_HIDE_TRESHOLD = 0.99;
@@ -679,7 +732,6 @@ export class TransformHelper extends ControlsHelper {
 		this._dirVector = new Vector3( 0, 1, 0 );
 		this._tempQuaternion = new Quaternion();
 		this._tempQuaternion2 = new Quaternion();
-		this._tempColor = new Color();
 		this.observeProperty( 'enabled' );
 		this.observeProperty( 'activeAxis' );
 		this.observeProperty( 'activeMode' );
@@ -706,11 +758,11 @@ export class TransformHelper extends ControlsHelper {
 		const quaternion = this.worldQuaternion;
 		const handleType = handle.userData.type;
 		const handleAxis = handle.userData.axis;
-		const handleTag = handle.userData.tag;
+		const handleTag = handle.userData.tag || '';
 		this.userData.size = this.userData.size || this.size;
 		handle.quaternion.copy( quaternion ).invert();
 		handle.position.set( 0, 0, 0 );
-		handle.scale.set( 1, 1, 1 ).multiplyScalar( this.sizeAttenuation * this.userData.size / 7 );
+		handle.scale.set( 1, 1, 1 ).multiplyScalar( this.sizeAttenuation * this.userData.size / 6 );
 		handle.quaternion.multiply( quaternion );
 		handle.visible = true;
 
@@ -736,6 +788,12 @@ export class TransformHelper extends ControlsHelper {
 			handle.visible = false;
 
 		if ( handleType === 'scale' && ! this.showScale )
+			handle.visible = false;
+
+		if ( handleTag.search( 'offset' ) !== - 1 && ! this.showOffset )
+			handle.visible = false;
+
+		if ( handleTag.search( 'offset' ) !== - 1 && handleType !== this.activeMode )
 			handle.visible = false;
 
 		if ( handleType === 'scale' && this.space === 'world' ) {
@@ -789,71 +847,101 @@ export class TransformHelper extends ControlsHelper {
 
 			}
 
+			if ( handleTag === 'offset' ) {
+
+				const rotationAngle = this.quaternionOffset.angleTo( this._tempQuaternion.identity() );
+				this._dirVector.set( this.quaternionOffset.x, this.quaternionOffset.y, this.quaternionOffset.z ).normalize();
+				handle.quaternion.copy( this._tempQuaternion.copy( quaternion ).invert() );
+				handle.quaternion.multiply( this._tempQuaternion.setFromRotationMatrix( this._tempMatrix.lookAt( UNIT.ZERO, this._dirVector, UNIT.Y ) ) );
+				handle.visible = !! rotationAngle && handleType === this.activeMode;
+
+			}
+
 		} else {
 
 
-			// Flip handle to prevent occlusion by other handles
-			if ( handleAxis.search( 'X' ) !== - 1 ) {
+			// TODO: branch out translate and scale
+			if ( handleType === 'translate' && handleTag === 'offset' ) {
 
-				if ( this._dirVector.copy( UNIT.X ).applyQuaternion( quaternion ).dot( eye ) < this.AXIS_FLIP_TRESHOLD ) {
+				handle.position.copy( this.positionOffset ).applyQuaternion( this.worldQuaternionInv ).multiplyScalar( - 1 );
+				handle.scale.copy( this.positionOffset ).applyQuaternion( this.worldQuaternionInv );
 
-					if ( handleTag === 'fwd' ) {
+			} else {
 
-						handle.visible = false;
+				if ( handleType === 'scale' && handleTag.search( 'offset' ) !== - 1 ) {
 
-					} else {
+					handle.visible = this.scaleOffset.length() !== 0 && handleType === this.activeMode;
 
-						handle.scale.x *= - 1;
-
-					}
-
-				} else if ( handleTag === 'bwd' ) {
-
-					handle.visible = false;
+					if ( handleTag === 'offset' )
+						handle.scale.multiply( this.scaleOffset );
 
 				}
 
-			}
 
-			if ( handleAxis.search( 'Y' ) !== - 1 ) {
+				// Flip handle to prevent occlusion by other handles
+				if ( handleAxis.search( 'X' ) !== - 1 || handleAxis === 'YZ' ) {
 
-				if ( this._dirVector.copy( UNIT.Y ).applyQuaternion( quaternion ).dot( eye ) < this.AXIS_FLIP_TRESHOLD ) {
+					if ( this._dirVector.copy( UNIT.X ).applyQuaternion( quaternion ).dot( eye ) < this.AXIS_FLIP_TRESHOLD ) {
 
-					if ( handleTag === 'fwd' ) {
+						if ( handleTag === 'fwd' ) {
+
+							handle.visible = false;
+
+						} else {
+
+							handle.scale.x *= - 1;
+
+						}
+
+					} else if ( handleTag === 'bwd' ) {
 
 						handle.visible = false;
 
-					} else {
-
-						handle.scale.y *= - 1;
-
 					}
-
-				} else if ( handleTag === 'bwd' ) {
-
-					handle.visible = false;
 
 				}
 
-			}
+				if ( handleAxis.search( 'Y' ) !== - 1 || handleAxis === 'XZ' ) {
 
-			if ( handleAxis.search( 'Z' ) !== - 1 ) {
+					if ( this._dirVector.copy( UNIT.Y ).applyQuaternion( quaternion ).dot( eye ) < this.AXIS_FLIP_TRESHOLD ) {
 
-				if ( this._dirVector.copy( UNIT.Z ).applyQuaternion( quaternion ).dot( eye ) < this.AXIS_FLIP_TRESHOLD ) {
+						if ( handleTag === 'fwd' ) {
 
-					if ( handleTag === 'fwd' ) {
+							handle.visible = false;
+
+						} else {
+
+							handle.scale.y *= - 1;
+
+						}
+
+					} else if ( handleTag === 'bwd' ) {
 
 						handle.visible = false;
 
-					} else {
-
-						handle.scale.z *= - 1;
-
 					}
 
-				} else if ( handleTag === 'bwd' ) {
+				}
 
-					handle.visible = false;
+				if ( handleAxis.search( 'Z' ) !== - 1 || handleAxis === 'XY' ) {
+
+					if ( this._dirVector.copy( UNIT.Z ).applyQuaternion( quaternion ).dot( eye ) < this.AXIS_FLIP_TRESHOLD ) {
+
+						if ( handleTag === 'fwd' ) {
+
+							handle.visible = false;
+
+						} else {
+
+							handle.scale.z *= - 1;
+
+						}
+
+					} else if ( handleTag === 'bwd' ) {
+
+						handle.visible = false;
+
+					}
 
 				}
 
@@ -926,23 +1014,23 @@ export class TransformHelper extends ControlsHelper {
 			if ( handleTag !== 'picker' ) {
 
 				const material = handle.material;
-				material.userData.color = material.userData.color || material.color.clone();
-				material.userData.opacity = material.userData.opacity || material.opacity;
-				material.userData.highlightColor = material.userData.highlightColor || material.color.clone().lerp( new Color( 1, 1, 1 ), 0.5 );
-				material.userData.highlightOpacity = material.userData.highlightOpacity || lerp( material.opacity, 1, 0.75 );
+				let targetHighlight = 1;
 
-				// highlight selected axis
-				let highlight = 0;
+				if ( handleTag === 'offset' || handleTag === 'offset-start' ) {
 
-				if ( ! this.enabled || ( this.activeMode && handleType !== this.activeMode ) ) {
+					handle.renderOrder = 1e10 + 20;
 
-					highlight = - 1;
+				} else if ( ! this.enabled || ( this.activeMode && handleType !== this.activeMode ) ) {
+
+					targetHighlight = handle instanceof LineSegments ? 0 : 0.1;
+					handle.renderOrder = 1e10 - 10;
 
 				} else if ( this.activeAxis ) {
 
 					if ( handleAxis === this.activeAxis ) {
 
-						highlight = 1;
+						targetHighlight = 2;
+						handle.renderOrder = 1e10 + 10;
 
 					} else if ( this.activeAxis.split( '' ).some( ( a ) => {
 
@@ -950,40 +1038,26 @@ export class TransformHelper extends ControlsHelper {
 
 					} ) ) {
 
-						highlight = 1;
+						targetHighlight = 2;
+						handle.renderOrder = 1e10 + 10;
 
 					} else {
 
-						highlight = - 1;
+						targetHighlight = handle instanceof LineSegments ? 0 : 0.1;
+						handle.renderOrder = 1e10 - 10;
 
 					}
 
 				}
 
-				this._tempColor.copy( material.color );
-				let opacity = material.opacity;
+				material.userData.highlight = material.userData.highlight || targetHighlight;
+				const highlight = lerp( material.userData.highlight, targetHighlight, damping );
 
-				if ( highlight === 0 ) {
+				if ( Math.abs( material.userData.highlight - highlight ) > EPS ) {
 
-					this._tempColor.lerp( material.userData.color, damping );
-					opacity = lerp( opacity, material.userData.opacity, damping );
-
-				} else if ( highlight === - 1 ) {
-
-					opacity = lerp( opacity, material.userData.opacity * 0.125, damping );
-					this._tempColor.lerp( material.userData.highlightColor, damping );
-
-				} else if ( highlight === 1 ) {
-
-					opacity = lerp( opacity, material.userData.highlightOpacity, damping );
-					this._tempColor.lerp( material.userData.highlightColor, damping );
-
-				}
-
-				if ( ! colorEquals( material.color, this._tempColor ) || ! ( Math.abs( material.opacity - opacity ) < EPS ) ) {
-
-					material.color.copy( this._tempColor );
-					material.opacity = opacity;
+					material.userData.highlight = highlight;
+					material.highlight = highlight;
+					material.changed && material.changed();
 					needsUpdate = true;
 
 				}

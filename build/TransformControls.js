@@ -35,6 +35,7 @@ class TransformControls extends ControlsInteractive {
 		this.showTranslate = true;
 		this.showRotate = true;
 		this.showScale = true;
+		this.showOffset = true;
 		this.dragging = false;
 		this.active = false;
 		this.activeMode = '';
@@ -100,6 +101,7 @@ class TransformControls extends ControlsInteractive {
 		this.observeProperty( 'showTranslate' );
 		this.observeProperty( 'showRotate' );
 		this.observeProperty( 'showScale' );
+		this.observeProperty( 'showOffset' );
 
 
 		// Deprecation warnings
@@ -142,10 +144,6 @@ class TransformControls extends ControlsInteractive {
 
 		// TODO: set helper camera and domElement automatically before onBeforeRender.
 		const helper = this._cameraHelpers.get( camera ) || new TransformHelper( camera, this.domElement );
-
-		if ( helper.camera !== camera )
-			console.log( helper.camera, camera );
-
 		this._cameraHelpers.set( camera, helper );
 		return helper;
 
@@ -225,6 +223,7 @@ class TransformControls extends ControlsInteractive {
 			helper.showTranslate = this.showTranslate;
 			helper.showRotate = this.showRotate;
 			helper.showScale = this.showScale;
+			helper.showOffset = this.showOffset;
 			helper.enabled = this.enabled;
 			helper.activeMode = this.activeMode;
 			helper.activeAxis = this.activeAxis;
@@ -391,6 +390,14 @@ class TransformControls extends ControlsInteractive {
 			this._matrix.copy( this.object.matrix );
 			this._matrix.decompose( this._position, this._quaternion, this._scale );
 			this.object.matrixWorld.decompose( this._worldPositionStart, this._worldQuaternionStart, this._worldScaleStart );
+
+			this._cameraHelpers.forEach( helper => {
+
+				helper.positionOffset.set( 0, 0, 0 );
+				helper.quaternionOffset.identity();
+				helper.scaleOffset.set( 0, 0, 0 );
+
+			} );
 
 			this.dispatchEvent( {
 				type: 'start',
@@ -631,7 +638,7 @@ class TransformControls extends ControlsInteractive {
 
 			} else if ( axis === 'XYZE' ) {
 
-				this._rotationAxis.copy( this._pointOffset ).cross( this._viewportEye ).normalize();
+				this._rotationAxis.copy( this._pointStart ).add( this._pointOffset ).cross( this._viewportEye ).normalize();
 				angle = this._pointOffset.dot( this._tempVector.copy( this._rotationAxis ).cross( this._viewportEye ) ) * ROTATION_SPEED;
 
 			} else if ( axis === 'X' || axis === 'Y' || axis === 'Z' ) {
@@ -674,6 +681,15 @@ class TransformControls extends ControlsInteractive {
 		this.updateMatrixWorld();
 		this._matrix.copy( object.matrix );
 		this._matrix.decompose( this._position, this._quaternion, this._scale );
+		this._tempQuaternion.copy( this._quaternionStart ).invert();
+
+		this._cameraHelpers.forEach( helper => {
+
+			helper.positionOffset.copy( this._position ).sub( this._positionStart );
+			helper.quaternionOffset.copy( this._quaternion ).multiply( this._tempQuaternion ).normalize();
+			helper.scaleOffset.copy( this._scale ).divide( this._scaleStart );
+
+		} );
 
 		this.dispatchEvent( {
 			type: 'change',
@@ -700,6 +716,14 @@ class TransformControls extends ControlsInteractive {
 
 			this._matrix.copy( this.object.matrix );
 			this._matrix.decompose( this._position, this._quaternion, this._scale );
+
+			this._cameraHelpers.forEach( helper => {
+
+				helper.positionOffset.set( 0, 0, 0 );
+				helper.quaternionOffset.identity();
+				helper.scaleOffset.set( 0, 0, 0 );
+
+			} );
 
 			this.dispatchEvent( {
 				type: 'end',

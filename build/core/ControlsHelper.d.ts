@@ -1,9 +1,8 @@
-import { Vector3, Vector4, Euler, Mesh, Line, LineBasicMaterial, MeshBasicMaterial } from 'three';
+import { Vector3, Vector4, Euler, Mesh, LineSegments } from 'three';
 import { ControlsBase, AnyCameraType } from './ControlsBase';
+import { HelperMaterial } from './HelperMaterial';
 
-export declare const helperMaterial: MeshBasicMaterial;
-
-export declare const helperLineMaterial: LineBasicMaterial;
+export declare const helperMaterial: HelperMaterial;
 
 export interface HelperGeometrySpec {
 	type: string;
@@ -20,7 +19,7 @@ export interface HelperGeometrySpec {
 export declare class ControlsHelper extends ControlsBase {
 
 	sizeAttenuation: number;
-	constructor( camera: AnyCameraType, domElement: HTMLElement, helperMap?: [Mesh | Line, HelperGeometrySpec][] );
+	constructor( camera: AnyCameraType, domElement: HTMLElement, helperMap?: [Mesh | LineSegments, HelperGeometrySpec][] );
 	dispose(): void;
 	decomposeMatrices(): void;
 

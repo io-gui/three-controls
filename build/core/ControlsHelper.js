@@ -1,23 +1,10 @@
-import { Mesh, Line, DoubleSide, LineBasicMaterial, MeshBasicMaterial, OrthographicCamera, PerspectiveCamera } from 'three';
+import { OrthographicCamera, PerspectiveCamera } from 'three';
 import { ControlsBase } from './ControlsBase';
+import { HelperMaterial } from './HelperMaterial';
 
-export const helperMaterial = new MeshBasicMaterial( {
-	depthTest: false,
-	depthWrite: false,
-	transparent: true,
-	side: DoubleSide,
-	fog: false,
-	toneMapped: false
-} );
 
-export const helperLineMaterial = new LineBasicMaterial( {
-	depthTest: false,
-	depthWrite: false,
-	transparent: true,
-	linewidth: 1,
-	fog: false,
-	toneMapped: false
-} );
+// TODO: depth bias and dithered transparency.
+export const helperMaterial = new HelperMaterial();
 
 export class ControlsHelper extends ControlsBase {
 
@@ -32,19 +19,12 @@ export class ControlsHelper extends ControlsBase {
 
 				const object = helperMap[ i ][ 0 ].clone();
 				const helperSpec = helperMap[ i ][ 1 ];
-
-				if ( object instanceof Mesh ) {
-
-					object.material = helperMaterial.clone();
-
-				} else if ( object instanceof Line ) {
-
-					object.material = helperLineMaterial.clone();
-
-				}
-
-				object.material.color.setRGB( helperSpec.color.x, helperSpec.color.y, helperSpec.color.z );
-				object.material.opacity = helperSpec.color.w;
+				object.material = helperMaterial.clone();
+				const material = object.material;
+				material.userData.highlight = 1;
+				material.color.setRGB( helperSpec.color.x, helperSpec.color.y, helperSpec.color.z );
+				material.opacity = helperSpec.color.w;
+				material.changed && material.changed();
 				object.name = helperSpec.type + '-' + helperSpec.axis + helperSpec.tag || '';
 
 				object.userData = {
@@ -66,7 +46,7 @@ export class ControlsHelper extends ControlsBase {
 				const tempGeometry = object.geometry.clone();
 				tempGeometry.applyMatrix4( object.matrix );
 				object.geometry = tempGeometry;
-				object.renderOrder = Infinity;
+				object.renderOrder = 1e10;
 				object.position.set( 0, 0, 0 );
 				object.rotation.set( 0, 0, 0 );
 				object.scale.set( 1, 1, 1 );

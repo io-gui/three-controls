@@ -1,4 +1,4 @@
-import { Mesh } from 'three';
+import { Quaternion, Mesh, Vector3 } from 'three';
 import { AnyCameraType } from './core/ControlsBase';
 import { ControlsHelper } from './core/ControlsHelper';
 
@@ -18,6 +18,10 @@ export declare class TransformHelper extends ControlsHelper {
 	showTranslate: boolean;
 	showRotate: boolean;
 	showScale: boolean;
+	showOffset: boolean;
+	readonly positionOffset: Vector3;
+	readonly quaternionOffset: Quaternion;
+	readonly scaleOffset: Vector3;
 	dampingFactor: number;
 	AXIS_HIDE_TRESHOLD: number;
 	PLANE_HIDE_TRESHOLD: number;
@@ -26,7 +30,6 @@ export declare class TransformHelper extends ControlsHelper {
 	private readonly _dirVector;
 	private readonly _tempQuaternion;
 	private readonly _tempQuaternion2;
-	private readonly _tempColor;
 	constructor( camera: AnyCameraType, domElement: HTMLElement );
 	changed(): void;
 	updateHandle( handle: Mesh ): void;
