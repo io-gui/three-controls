@@ -4,9 +4,9 @@ export type Callback = ( callbackValue?: any, callbackOldValue?: any ) => void;
 export type AnyCameraType = Camera | PerspectiveCamera | OrthographicCamera | Object3D;
 
 export interface ControlsEvent {
-	type: string;
-	target?: any;
-	[attachment: string]: any;
+  type: string;
+  target?: any;
+  [attachment: string]: any;
 }
 
 export const UNIT = {
@@ -15,6 +15,8 @@ export const UNIT = {
   Y: Object.freeze(new Vector3( 0, 1, 0 )),
   Z: Object.freeze(new Vector3( 0, 0, 1 )),
 }
+
+// TODO: make rAF compatible with WebXR
 
 /**
  * `ControlsBase`: Base class for Objects with observable properties, change events and animation.
@@ -32,13 +34,12 @@ export class ControlsBase extends Object3D {
   protected readonly worldQuaternionInv = new Quaternion();
   protected readonly worldScale = new Vector3();
   private readonly _animations: Callback[] = [];
-  private _changeTimeout: null | number = null;
+  private _eventTimeout: Record<string, number> = {};
   constructor( camera: AnyCameraType, domElement: HTMLElement ) {
     super();
     this.camera = camera;
     this.domElement = domElement;
     this.changed = this.changed.bind(this);
-    this._debouncedChanged = this._debouncedChanged.bind(this);
   }
   /**
    * Adds property observing mechanism via getter and setter.
@@ -46,8 +47,6 @@ export class ControlsBase extends Object3D {
    */
   observeProperty( propertyKey: string ): void {
     let value: any = this[ propertyKey as keyof ControlsBase ];
-    let propChangeCallback = this[ propertyKey + 'Changed' as keyof ControlsBase ] as Callback;
-    if (propChangeCallback) propChangeCallback = propChangeCallback.bind( this );
     Object.defineProperty( this, propertyKey, {
       get() {
         return value;
@@ -56,18 +55,36 @@ export class ControlsBase extends Object3D {
         const oldValue = value;
         value = newValue;
         if ( newValue !== oldValue ) {
-          propChangeCallback && propChangeCallback(newValue, oldValue);
-          this.dispatchEvent({ type: propertyKey + '-changed', value: newValue, oldValue: oldValue });
-          this._debouncedChanged();
+          this.dispatchEvent({ type: propertyKey + '-changed', property: propertyKey, value: newValue, oldValue: oldValue });
+          this.dispatchEvent({ type: 'change' });
         }
       }
     });
   }
-  _debouncedChanged() {
-    this._changeTimeout = this._changeTimeout || setTimeout(() => {
+  private _invokeChangeHandlers(event: ControlsEvent) {
+    const type = event.type;
+    if (type == 'change') {
       this.changed();
-      this._changeTimeout = null;
-    })
+    } else if (type.endsWith('-changed')) {
+      const handler = this[ event.property + 'Changed' as keyof ControlsBase ] as Callback;
+      handler && handler(event.value, event.oldValue);
+    }
+  }
+  dispatchEvent(event: ControlsEvent) {
+    const type = event.type;
+    if (!this._eventTimeout[type]) {
+      super.dispatchEvent(event);
+      this._invokeChangeHandlers(event);
+      this._eventTimeout[type] = -1;
+      requestAnimationFrame(() => { this._eventTimeout[type] = 0 });
+    } else {
+      cancelAnimationFrame(this._eventTimeout[type]);
+      this._eventTimeout[type] = requestAnimationFrame(() => {
+        this._eventTimeout[type] = 0;
+        super.dispatchEvent(event);
+        this._invokeChangeHandlers(event);
+      });
+    }
   }
   changed() {}
   // Adds animation callback to animation loop.
