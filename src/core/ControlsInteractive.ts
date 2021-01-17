@@ -316,6 +316,7 @@ export class ControlsInteractive extends ControlsBase {
         this.startAnimation( this._onPointerSimulation as Callback );
       } else {
         this.onTrackedPointerUp( pointer, pointers );
+        this.onTrackedPointerHover( pointer, pointers );
       }
     }
     this.dispatchEvent( event );
