@@ -1,4 +1,4 @@
-import { Vector3, Color, UniformsUtils, ShaderMaterial, DataTexture, RGBAFormat, FloatType, NearestFilter, DoubleSide } from 'three';
+import { Color, UniformsUtils, ShaderMaterial, DataTexture, RGBAFormat, FloatType, NearestFilter, DoubleSide } from 'three';
 
 export const colors = {
 	'white': [ 1, 1, 1 ],
@@ -29,7 +29,7 @@ export class HelperMaterial extends ShaderMaterial {
 		this.color = new Color();
 		this.opacity = 1;
 		this.highlight = 1;
-		this.resolution = new Vector3();
+		this.dithering = false;
 
 		const data = new Float32Array( [
 			1.0 / 17.0, 0, 0, 0, 9.0 / 17.0, 0, 0, 0, 3.0 / 17.0, 0, 0, 0, 11.0 / 17.0, 0, 0, 0,
@@ -51,6 +51,7 @@ export class HelperMaterial extends ShaderMaterial {
 			"uColor": { value: this.color },
 			"uOpacity": { value: this.opacity },
 			"uHighlight": { value: this.highlight },
+			"uDithering": { value: this.dithering ? 1 : 0 },
 			"tDitherMatrix": { value: ditherPatternTex },
 		} ] );
 
@@ -73,6 +74,7 @@ export class HelperMaterial extends ShaderMaterial {
       uniform vec3 uColor;
       uniform float uOpacity;
       uniform float uHighlight;
+      uniform float uDithering;
       uniform sampler2D tDitherMatrix;
       varying vec4 vColor;
       void main() {
@@ -90,22 +92,20 @@ export class HelperMaterial extends ShaderMaterial {
         vec2 matCoord = ( mod(gl_FragCoord.xy, 4.0) - vec2(0.5) ) / 4.0;
         vec4 ditherPattern = texture2D( tDitherMatrix, matCoord.xy );
 
-        gl_FragColor = vec4(color, 1.0);
-        if (opacity < ditherPattern.r) discard;
+        gl_FragColor = vec4(color, max(opacity, uDithering));
+
+        if (max(opacity, 1.0 - uDithering) < ditherPattern.r) discard;
       }
     `;
 
 	}
 	changed() {
 
-		if ( this.uniforms ) {
-
-			this.uniforms.uColor.value = this.color;
-			this.uniforms.uOpacity.value = this.opacity;
-			this.uniforms.uHighlight.value = this.highlight;
-			this.uniformsNeedUpdate = true;
-
-		}
+		this.uniforms.uColor.value = this.color;
+		this.uniforms.uOpacity.value = this.opacity;
+		this.uniforms.uHighlight.value = this.highlight;
+		this.uniforms.uDithering.value = this.dithering ? 1 : 0;
+		this.uniformsNeedUpdate = true;
 
 	}
 

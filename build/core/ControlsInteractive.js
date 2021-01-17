@@ -439,6 +439,7 @@ export class ControlsInteractive extends ControlsBase {
 			} else {
 
 				this.onTrackedPointerUp( pointer, pointers );
+				this.onTrackedPointerHover( pointer, pointers );
 
 			}
 

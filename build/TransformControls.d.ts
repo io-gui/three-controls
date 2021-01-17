@@ -18,6 +18,7 @@ declare class TransformControls extends ControlsInteractive {
 	showRotate: boolean;
 	showScale: boolean;
 	showOffset: boolean;
+	dithering: boolean;
 	object?: Object3D;
 	dragging: boolean;
 	active: boolean;

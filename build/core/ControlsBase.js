@@ -8,6 +8,7 @@ export const UNIT = {
 };
 
 
+// TODO: make rAF compatible with WebXR
 /**
  * `ControlsBase`: Base class for Objects with observable properties, change events and animation.
  */
@@ -26,11 +27,10 @@ export class ControlsBase extends Object3D {
 		this.worldQuaternionInv = new Quaternion();
 		this.worldScale = new Vector3();
 		this._animations = [];
-		this._changeTimeout = null;
+		this._eventTimeout = {};
 		this.camera = camera;
 		this.domElement = domElement;
 		this.changed = this.changed.bind( this );
-		this._debouncedChanged = this._debouncedChanged.bind( this );
 
 	}
 
@@ -41,10 +41,6 @@ export class ControlsBase extends Object3D {
 	observeProperty( propertyKey ) {
 
 		let value = this[ propertyKey ];
-		let propChangeCallback = this[ propertyKey + 'Changed' ];
-
-		if ( propChangeCallback )
-			propChangeCallback = propChangeCallback.bind( this );
 
 		Object.defineProperty( this, propertyKey, {
 			get() {
@@ -59,9 +55,8 @@ export class ControlsBase extends Object3D {
 
 				if ( newValue !== oldValue ) {
 
-					propChangeCallback && propChangeCallback( newValue, oldValue );
-					this.dispatchEvent( { type: propertyKey + '-changed', value: newValue, oldValue: oldValue } );
-					this._debouncedChanged();
+					this.dispatchEvent( { type: propertyKey + '-changed', property: propertyKey, value: newValue, oldValue: oldValue } );
+					this.dispatchEvent( { type: 'change' } );
 
 				}
 
@@ -69,14 +64,51 @@ export class ControlsBase extends Object3D {
 		} );
 
 	}
-	_debouncedChanged() {
+	_invokeChangeHandlers( event ) {
 
-		this._changeTimeout = this._changeTimeout || setTimeout( () => {
+		const type = event.type;
+
+		if ( type === 'change' ) {
 
 			this.changed();
-			this._changeTimeout = null;
 
-		} );
+		} else if ( type.endsWith( '-changed' ) ) {
+
+			const handler = this[ event.property + 'Changed' ];
+			handler && handler( event.value, event.oldValue );
+
+		}
+
+	}
+	dispatchEvent( event ) {
+
+		const type = event.type;
+
+		if ( ! this._eventTimeout[ type ] ) {
+
+			super.dispatchEvent( event );
+			this._invokeChangeHandlers( event );
+			this._eventTimeout[ type ] = - 1;
+
+			requestAnimationFrame( () => {
+
+				this._eventTimeout[ type ] = 0;
+
+			} );
+
+		} else {
+
+			cancelAnimationFrame( this._eventTimeout[ type ] );
+
+			this._eventTimeout[ type ] = requestAnimationFrame( () => {
+
+				this._eventTimeout[ type ] = 0;
+				super.dispatchEvent( event );
+				this._invokeChangeHandlers( event );
+
+			} );
+
+		}
 
 	}
 	changed() { }

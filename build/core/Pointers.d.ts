@@ -13,7 +13,7 @@ declare class Pointer2D {
 	constructor( x?: number, y?: number );
 	set( x: number, y: number ): this;
 	update( x: number, y: number ): this;
-	updateByDamping( damping: number ): this;
+	updateByInertia( damping: number ): this;
 
 }
 declare class Pointer3D {
@@ -28,7 +28,7 @@ declare class Pointer3D {
 	constructor( x?: number, y?: number, z?: number );
 	set( x: number, y: number, z: number ): this;
 	update( x: number, y: number, z: number ): this;
-	updateByDamping( damping: number ): this;
+	updateByInertia( damping: number ): this;
 
 }
 declare class Pointer6D {
@@ -50,7 +50,7 @@ declare class Pointer6D {
 	set( origin: Vector3, direction: Vector3 ): this;
 	update( origin: Vector3, direction: Vector3 ): void;
 	updateByViewPointer( camera: AnyCameraType, viewPointer: Pointer2D ): this;
-	updateByDamping( damping: number ): this;
+	updateByInertia( damping: number ): this;
 	projectOnPlane( plane: Plane, minGrazingAngle?: number ): Pointer3D;
 
 }

@@ -19,6 +19,8 @@ function getFirstIntersection( intersections, includeInvisible ) {
 
 }
 
+
+// TODO: fix inverted scale rotation axis
 class TransformControls extends ControlsInteractive {
 
 	constructor( camera, domElement ) {
@@ -36,6 +38,7 @@ class TransformControls extends ControlsInteractive {
 		this.showRotate = true;
 		this.showScale = true;
 		this.showOffset = true;
+		this.dithering = false;
 		this.dragging = false;
 		this.active = false;
 		this.activeMode = '';
@@ -102,6 +105,7 @@ class TransformControls extends ControlsInteractive {
 		this.observeProperty( 'showRotate' );
 		this.observeProperty( 'showScale' );
 		this.observeProperty( 'showOffset' );
+		this.observeProperty( 'dithering' );
 
 
 		// Deprecation warnings
@@ -224,6 +228,7 @@ class TransformControls extends ControlsInteractive {
 			helper.showRotate = this.showRotate;
 			helper.showScale = this.showScale;
 			helper.showOffset = this.showOffset;
+			helper.dithering = this.dithering;
 			helper.enabled = this.enabled;
 			helper.activeMode = this.activeMode;
 			helper.activeAxis = this.activeAxis;
@@ -695,7 +700,7 @@ class TransformControls extends ControlsInteractive {
 		} );
 
 		this.dispatchEvent( {
-			type: 'change',
+			type: 'transform',
 			object: this.object,
 			matrixStart: this._matrixStart,
 			positionStart: this._positionStart,
@@ -709,13 +714,15 @@ class TransformControls extends ControlsInteractive {
 			mode: this.activeMode,
 		} );
 
+		this.dispatchEvent( { type: 'change' } );
+
 	}
 	onTrackedPointerUp( pointer ) {
 
 		if ( pointer.button > 0 || ! this.object )
 			return;
 
-		if ( this.active ) { // this.activeAxis !== '' ?
+		if ( this.active ) {
 
 			this._matrix.copy( this.object.matrix );
 			this._matrix.decompose( this._position, this._quaternion, this._scale );

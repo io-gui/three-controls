@@ -1,4 +1,4 @@
-import { Vector3, Color, ShaderMaterial, Side } from 'three';
+import { Color, ShaderMaterial, Side } from 'three';
 
 export declare const colors: {
 	white: number[];
@@ -26,7 +26,7 @@ export declare class HelperMaterial extends ShaderMaterial {
 	color: Color;
 	opacity: number;
 	highlight: number;
-	resolution: Vector3;
+	dithering: boolean;
 	constructor( props?: {
 		color: Color;
 		opacity: number;

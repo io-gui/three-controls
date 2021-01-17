@@ -19,6 +19,7 @@ export declare class TransformHelper extends ControlsHelper {
 	showRotate: boolean;
 	showScale: boolean;
 	showOffset: boolean;
+	dithering: boolean;
 	readonly positionOffset: Vector3;
 	readonly quaternionOffset: Quaternion;
 	readonly scaleOffset: Vector3;

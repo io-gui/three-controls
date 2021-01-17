@@ -35,7 +35,7 @@ export declare class ControlsBase extends Object3D {
 	protected readonly worldQuaternionInv: Quaternion;
 	protected readonly worldScale: Vector3;
 	private readonly _animations;
-	private _changeTimeout;
+	private _eventTimeout;
 	constructor( camera: AnyCameraType, domElement: HTMLElement );
 
 	/**
@@ -43,7 +43,8 @@ export declare class ControlsBase extends Object3D {
      * Also emits '[property]-changed' event and cummulative 'change' event on next rAF.
      */
 	observeProperty( propertyKey: string ): void;
-	_debouncedChanged(): void;
+	private _invokeChangeHandlers;
+	dispatchEvent( event: ControlsEvent ): void;
 	changed(): void;
 	startAnimation( callback: Callback ): void;
 	stopAnimation( callback: Callback ): void;

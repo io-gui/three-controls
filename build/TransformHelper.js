@@ -294,7 +294,7 @@ const rotateHelperGeometrySpec = [
 			color: new Vector4( ...colors.red, 1 ),
 		}
 	], [
-		new Mesh( new OctahedronBufferGeometry( H / 3, 2 ) ),
+		new Mesh( new OctahedronBufferGeometry( H / 2, 2 ) ),
 		{
 			type: 'rotate',
 			axis: 'X',
@@ -310,7 +310,7 @@ const rotateHelperGeometrySpec = [
 			rotation: new Euler( 0, 0, - Math.PI / 2 )
 		}
 	], [
-		new Mesh( new OctahedronBufferGeometry( H / 3, 2 ) ),
+		new Mesh( new OctahedronBufferGeometry( H / 2, 2 ) ),
 		{
 			type: 'rotate',
 			axis: 'Y',
@@ -326,7 +326,7 @@ const rotateHelperGeometrySpec = [
 			rotation: new Euler( 0, Math.PI / 2, 0 )
 		}
 	], [
-		new Mesh( new OctahedronBufferGeometry( H / 3, 2 ) ),
+		new Mesh( new OctahedronBufferGeometry( H / 2, 2 ) ),
 		{
 			type: 'rotate',
 			axis: 'Z',
@@ -359,9 +359,9 @@ const rotateHelperGeometrySpec = [
 			axis: 'X',
 			tag: 'picker',
 			color: new Vector4( ...colors.red, PICKER_DEBUG_ALPHA ),
-			position: new Vector3( 0, 0, 0 ),
+			position: new Vector3( - HH, 0, 0 ),
 			rotation: new Euler( 0, - Math.PI / 2, - Math.PI / 2 ),
-			scale: new Vector3( 1, 1, H2 ),
+			scale: new Vector3( 1, 1, H3 ),
 		}
 	], [
 		new Mesh( new TorusBufferGeometry( 1, H2, 4, 6, Math.PI ) ),
@@ -370,9 +370,9 @@ const rotateHelperGeometrySpec = [
 			axis: 'Y',
 			tag: 'picker',
 			color: new Vector4( ...colors.green, PICKER_DEBUG_ALPHA ),
-			position: new Vector3( 0, 0, 0 ),
+			position: new Vector3( 0, - HH, 0 ),
 			rotation: new Euler( Math.PI / 2, 0, 0 ),
-			scale: new Vector3( 1, 1, H2 ),
+			scale: new Vector3( 1, 1, H3 ),
 		}
 	], [
 		new Mesh( new TorusBufferGeometry( 1, H2, 4, 6, Math.PI ) ),
@@ -381,9 +381,9 @@ const rotateHelperGeometrySpec = [
 			axis: 'Z',
 			tag: 'picker',
 			color: new Vector4( ...colors.blue, PICKER_DEBUG_ALPHA ),
-			position: new Vector3( 0, 0, 0 ),
+			position: new Vector3( 0, 0, - HH ),
 			rotation: new Euler( 0, 0, - Math.PI / 2 ),
-			scale: new Vector3( 1, 1, H2 ),
+			scale: new Vector3( 1, 1, H3 ),
 		}
 	], [
 		new Mesh( new TorusBufferGeometry( 1 + H2, H2, 2, 12 ) ),
@@ -622,7 +622,7 @@ const scaleHelperGeometrySpec = [
 			tag: 'picker',
 			color: new Vector4( ...colors.yellow, PICKER_DEBUG_ALPHA ),
 			position: new Vector3( 1 - H, 1 - H, - HH ),
-			scale: new Vector3( 3, 3, 1 ),
+			scale: new Vector3( 3, 3, 2 ),
 		}
 	], [
 		new Mesh( scaleHandleGeometry ),
@@ -632,7 +632,7 @@ const scaleHelperGeometrySpec = [
 			tag: 'picker',
 			color: new Vector4( ...colors.cyan, PICKER_DEBUG_ALPHA ),
 			position: new Vector3( - HH, 1 - H, 1 - H ),
-			scale: new Vector3( 1, 3, 3 ),
+			scale: new Vector3( 2, 3, 3 ),
 		}
 	], [
 		new Mesh( scaleHandleGeometry ),
@@ -642,7 +642,7 @@ const scaleHelperGeometrySpec = [
 			tag: 'picker',
 			color: new Vector4( ...colors.magenta, PICKER_DEBUG_ALPHA ),
 			position: new Vector3( 1 - H, - HH, 1 - H ),
-			scale: new Vector3( 3, 1, 3 ),
+			scale: new Vector3( 3, 2, 3 ),
 		}
 	], [
 		new Mesh( new CylinderBufferGeometry( H2, 0, H * 4, 6, 1, false ) ),
@@ -699,11 +699,12 @@ export class TransformHelper extends ControlsHelper {
 		this.showTranslate = true;
 		this.showRotate = true;
 		this.showScale = true;
-		this.showOffset = true; // TODO
+		this.showOffset = true;
+		this.dithering = false;
 		this.positionOffset = new Vector3();
 		this.quaternionOffset = new Quaternion();
 		this.scaleOffset = new Vector3();
-		this.dampingFactor = 0.3;
+		this.dampingFactor = 0.2;
 
 		// Hide translate and scale axis facing the camera
 		this.AXIS_HIDE_TRESHOLD = 0.99;
@@ -808,6 +809,12 @@ export class TransformHelper extends ControlsHelper {
 				this._tempQuaternion.multiplyQuaternions( this._tempQuaternion2, this._tempQuaternion );
 				handle.quaternion.copy( this._tempQuaternion );
 
+				if ( this._dirVector.copy( UNIT.X ).applyQuaternion( quaternion ).dot( eye ) < this.AXIS_FLIP_TRESHOLD ) {
+
+					handle.scale.x *= - 1;
+
+				}
+
 			}
 
 			if ( handleAxis === 'Y' ) {
@@ -817,6 +824,12 @@ export class TransformHelper extends ControlsHelper {
 				this._tempQuaternion.multiplyQuaternions( this._tempQuaternion2, this._tempQuaternion );
 				handle.quaternion.copy( this._tempQuaternion );
 
+				if ( this._dirVector.copy( UNIT.Y ).applyQuaternion( quaternion ).dot( eye ) < this.AXIS_FLIP_TRESHOLD ) {
+
+					handle.scale.y *= - 1;
+
+				}
+
 			}
 
 			if ( handleAxis === 'Z' ) {
@@ -825,6 +838,12 @@ export class TransformHelper extends ControlsHelper {
 				this._tempQuaternion.setFromAxisAngle( UNIT.Z, Math.atan2( this._dirVector.y, this._dirVector.x ) );
 				this._tempQuaternion.multiplyQuaternions( this._tempQuaternion2, this._tempQuaternion );
 				handle.quaternion.copy( this._tempQuaternion );
+
+				if ( this._dirVector.copy( UNIT.Z ).applyQuaternion( quaternion ).dot( eye ) < this.AXIS_FLIP_TRESHOLD ) {
+
+					handle.scale.z *= - 1;
+
+				}
 
 			}
 
@@ -976,6 +995,14 @@ export class TransformHelper extends ControlsHelper {
 
 		}
 
+		if ( handle.visible ) {
+
+			const material = handle.material;
+			material.dithering = handle instanceof LineSegments ? false : this.dithering;
+			material.changed && material.changed();
+
+		}
+
 	}
 	_animate( timestep ) {
 
@@ -1037,7 +1064,6 @@ export class TransformHelper extends ControlsHelper {
 
 					material.userData.highlight = highlight;
 					material.highlight = highlight;
-					material.changed && material.changed();
 					needsUpdate = true;
 
 				}
@@ -1062,7 +1088,7 @@ export class TransformHelper extends ControlsHelper {
 			this.stopAnimation( this._animate );
 
 		if ( this.parent )
-			this.parent.dispatchEvent( { type: 'change', bubbles: true } );
+			this.parent.dispatchEvent( { type: 'change' } );
 
 	}
 	updateMatrixWorld() {

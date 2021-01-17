@@ -39,7 +39,7 @@ class Pointer2D {
 		return this;
 
 	}
-	updateByDamping( damping ) {
+	updateByInertia( damping ) {
 
 		this.update( this.current.x + this.movement.x * damping, this.current.y + this.movement.y * damping );
 		return this;
@@ -87,7 +87,7 @@ class Pointer3D {
 		return this;
 
 	}
-	updateByDamping( damping ) {
+	updateByInertia( damping ) {
 
 		this.update( this.current.x + this.movement.x * damping, this.current.y + this.movement.y * damping, this.current.z + this.movement.z * damping );
 		return this;
@@ -166,8 +166,6 @@ class Pointer6D {
 
 		} else {
 
-
-			// console.error( 'Pointer6D: updateByViewPointer() requires camera of type PerspectiveCamera | OrthographicCamera!' );
 			this.start.origin.setFromMatrixPosition( camera.matrixWorld );
 			this.start.direction.set( 0, 0, - 1 ).transformDirection( camera.matrixWorld );
 			this.current.origin.setFromMatrixPosition( camera.matrixWorld );
@@ -180,7 +178,7 @@ class Pointer6D {
 		return this;
 
 	}
-	updateByDamping( damping ) {
+	updateByInertia( damping ) {
 
 		this._origin.set( this.current.origin.x + this.movement.origin.x * damping, this.current.origin.y + this.movement.origin.y * damping, this.current.origin.z + this.movement.origin.z * damping );
 		this._direction.set( this.current.direction.x + this.movement.direction.x * damping, this.current.direction.y + this.movement.direction.y * damping, this.current.direction.z + this.movement.direction.z * damping );
@@ -361,7 +359,7 @@ export class PointerTracker {
 			return;
 
 		const damping = Math.pow( 1 - dampingFactor, deltaTime * 60 / 1000 );
-		this.view.updateByDamping( damping );
+		this.view.updateByInertia( damping );
 		this.ray.updateByViewPointer( this.camera, this.view );
 
 	}
