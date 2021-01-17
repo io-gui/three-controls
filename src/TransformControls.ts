@@ -15,6 +15,8 @@ function getFirstIntersection(intersections: Intersection[], includeInvisible: b
   return null;
 }
 
+// TODO: fix inverted scale rotation axis
+
 class TransformControls extends ControlsInteractive {
   static readonly isTransformControls = true;
   static readonly type = 'TransformControls';
@@ -31,6 +33,7 @@ class TransformControls extends ControlsInteractive {
   showRotate = true;
   showScale = true;
   showOffset = true;
+  dithering = false;
 
   // TransformControls API
 
@@ -117,6 +120,7 @@ class TransformControls extends ControlsInteractive {
     this.observeProperty( 'showRotate' );
     this.observeProperty( 'showScale' );
     this.observeProperty( 'showOffset' );
+    this.observeProperty( 'dithering' );
 
     // Deprecation warnings
     Object.defineProperty( this, 'mode', {
@@ -195,6 +199,7 @@ class TransformControls extends ControlsInteractive {
       helper.showRotate = this.showRotate;
       helper.showScale = this.showScale;
       helper.showOffset = this.showOffset;
+      helper.dithering = this.dithering;
       helper.enabled = this.enabled;
       helper.activeMode = this.activeMode;
       helper.activeAxis = this.activeAxis;
@@ -257,6 +262,7 @@ class TransformControls extends ControlsInteractive {
     const pickers = helper.children.filter((child: Object3D) => {
       return child.userData.tag === 'picker';
     });
+
     const intersect = getFirstIntersection(pointer.intersectObjects(pickers), false);
     if ( intersect && !pointer.isSimulated ) {
       this.activeMode = intersect.object.userData.type;
@@ -488,7 +494,7 @@ class TransformControls extends ControlsInteractive {
     });
 
     this.dispatchEvent( {
-      type: 'change',
+      type: 'transform',
       object: this.object,
       matrixStart: this._matrixStart,
       positionStart: this._positionStart,
@@ -502,11 +508,13 @@ class TransformControls extends ControlsInteractive {
       mode: this.activeMode,
     } );
 
+    this.dispatchEvent({ type: 'change' })
+
   }
 
   onTrackedPointerUp( pointer: PointerTracker ): void {
     if ( pointer.button > 0 || !this.object ) return;
-    if ( this.active ) { // this.activeAxis !== '' ?
+    if ( this.active ) {
 
       this._matrix.copy( this.object.matrix );
       this._matrix.decompose( this._position, this._quaternion, this._scale );
@@ -517,7 +525,7 @@ class TransformControls extends ControlsInteractive {
         helper.scaleOffset.set(0, 0, 0);
       });
 
-      this.dispatchEvent( {
+      this.dispatchEvent({
         type: 'end',
         object: this.object,
         matrixStart: this._matrixStart,
@@ -530,7 +538,7 @@ class TransformControls extends ControlsInteractive {
         scale: this._scale,
         axis: this.activeAxis,
         mode: this.activeMode,
-      } );
+      });
     }
     this.active = false;
     this.dragging = false;

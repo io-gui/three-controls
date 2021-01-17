@@ -28,7 +28,7 @@ class Pointer2D {
     this.current.set( x, y );
     return this;
   }
-  updateByDamping( damping: number ): this {
+  updateByInertia( damping: number ): this {
     this.update( this.current.x + this.movement.x * damping, this.current.y + this.movement.y * damping );
     return this;
   }
@@ -61,7 +61,7 @@ class Pointer3D {
     this.current.set( x, y, z );
     return this;
   }
-  updateByDamping( damping: number ): this {
+  updateByInertia( damping: number ): this {
     this.update( this.current.x + this.movement.x * damping, this.current.y + this.movement.y * damping, this.current.z + this.movement.z * damping );
     return this;
   }
@@ -119,7 +119,6 @@ class Pointer6D {
       this.previous.origin.set( viewPointer.previous.x, viewPointer.previous.y, ( camera.near + camera.far ) / ( camera.near - camera.far ) ).unproject( camera );
       this.previous.direction.set( 0, 0, - 1 ).transformDirection( camera.matrixWorld );
     } else {
-      // console.error( 'Pointer6D: updateByViewPointer() requires camera of type PerspectiveCamera | OrthographicCamera!' );
       this.start.origin.setFromMatrixPosition( camera.matrixWorld );
       this.start.direction.set( 0, 0, - 1 ).transformDirection( camera.matrixWorld );
       this.current.origin.setFromMatrixPosition( camera.matrixWorld );
@@ -129,7 +128,7 @@ class Pointer6D {
     }
     return this;
   }
-  updateByDamping( damping: number ): this {
+  updateByInertia( damping: number ): this {
     this._origin.set(
       this.current.origin.x + this.movement.origin.x * damping,
       this.current.origin.y + this.movement.origin.y * damping,
@@ -284,7 +283,7 @@ export class PointerTracker {
     }
     if ( !this.isSimulated ) return;
     const damping = Math.pow( 1 - dampingFactor, deltaTime * 60 / 1000 );
-    this.view.updateByDamping( damping );
+    this.view.updateByInertia( damping );
     this.ray.updateByViewPointer( this.camera, this.view );
   }
   // Projects tracked pointer onto a plane object-space.
