@@ -1,11 +1,13 @@
 {
   "name": "@io-gui/three-controls",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "main": "index.js",
   "type":"module",
   "files": [
     "src",
     "build",
+    "index.js",
+    "index.ts",
     "LICENSE",
     "README.md"
   ],
