@@ -84,11 +84,12 @@ export class ControlsHelper extends ControlsBase {
 
 		} else if ( camera instanceof PerspectiveCamera ) {
 
-			this.sizeAttenuation = this.worldPosition.distanceTo( this.cameraPosition ) * Math.min( 1.9 * Math.tan( Math.PI * camera.fov / 360 ) / camera.zoom, 7 );
+			const fovFactor = Math.min( 1.9 * Math.tan( Math.PI * camera.fov / 360 ) / camera.zoom, 7 );
+			this.sizeAttenuation = this.worldPosition.distanceTo( this.cameraPosition ) * fovFactor;
 
 		}
 
-		this.sizeAttenuation *= 720 / this.domElement.clientHeight / window.devicePixelRatio;
+		this.sizeAttenuation *= 720 / this.domElement.clientHeight;
 
 	}
 

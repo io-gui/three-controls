@@ -55,13 +55,13 @@ declare class TransformControls extends ControlsInteractive {
 	private readonly _parentWorldQuaternion;
 	private readonly _parentWorldQuaternionInv;
 	private readonly _parentWorldScale;
-	private readonly _tempVector;
-	private readonly _tempOffsetVector;
+	private readonly _tempVector1;
+	private readonly _tempVector2;
 	private readonly _tempQuaternion;
 	private readonly _dirX;
 	private readonly _dirY;
 	private readonly _dirZ;
-	private readonly _dirVector;
+	private readonly _normalVector;
 	private readonly _identityQuaternion;
 	private readonly _viewportCameraPosition;
 	private readonly _viewportCameraQuaternion;

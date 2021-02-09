@@ -74,13 +74,13 @@ class TransformControls extends ControlsInteractive {
 		this._parentWorldQuaternion = new Quaternion();
 		this._parentWorldQuaternionInv = new Quaternion();
 		this._parentWorldScale = new Vector3();
-		this._tempVector = new Vector3();
-		this._tempOffsetVector = new Vector3();
+		this._tempVector1 = new Vector3();
+		this._tempVector2 = new Vector3();
 		this._tempQuaternion = new Quaternion();
 		this._dirX = new Vector3( 1, 0, 0 );
 		this._dirY = new Vector3( 0, 1, 0 );
 		this._dirZ = new Vector3( 0, 0, 1 );
-		this._dirVector = new Vector3();
+		this._normalVector = new Vector3();
 		this._identityQuaternion = Object.freeze( new Quaternion() );
 		this._viewportCameraPosition = new Vector3();
 		this._viewportCameraQuaternion = new Quaternion();
@@ -233,9 +233,6 @@ class TransformControls extends ControlsInteractive {
 			helper.activeMode = this.activeMode;
 			helper.activeAxis = this.activeAxis;
 			helper.size = this.size;
-			helper.positionOffset.set( 0, 0, 0 );
-			helper.quaternionOffset.identity();
-			helper.scaleOffset.set( 0, 0, 0 );
 
 		} );
 
@@ -256,27 +253,27 @@ class TransformControls extends ControlsInteractive {
 				switch ( this.activeAxis ) {
 
 					case 'X':
-						this._dirVector.set( 0, 0, 1 ).applyQuaternion( cameraQuaternion ).normalize().cross( this._dirX ).cross( this._dirX );
+						this._normalVector.set( 0, 0, 1 ).applyQuaternion( cameraQuaternion ).normalize().cross( this._dirX ).cross( this._dirX );
 						break;
 
 					case 'Y':
-						this._dirVector.set( 0, 0, 1 ).applyQuaternion( cameraQuaternion ).normalize().cross( this._dirY ).cross( this._dirY );
+						this._normalVector.set( 0, 0, 1 ).applyQuaternion( cameraQuaternion ).normalize().cross( this._dirY ).cross( this._dirY );
 						break;
 
 					case 'Z':
-						this._dirVector.set( 0, 0, 1 ).applyQuaternion( cameraQuaternion ).normalize().cross( this._dirZ ).cross( this._dirZ );
+						this._normalVector.set( 0, 0, 1 ).applyQuaternion( cameraQuaternion ).normalize().cross( this._dirZ ).cross( this._dirZ );
 						break;
 
 					case 'XY':
-						this._dirVector.copy( this._dirZ );
+						this._normalVector.copy( this._dirZ );
 						break;
 
 					case 'YZ':
-						this._dirVector.copy( this._dirX );
+						this._normalVector.copy( this._dirX );
 						break;
 
 					case 'XZ':
-						this._dirVector.copy( this._dirY );
+						this._normalVector.copy( this._dirY );
 						break;
 
 					case 'XYZ':
@@ -288,7 +285,7 @@ class TransformControls extends ControlsInteractive {
 					case 'XYZZ':
 
 					case 'E':
-						this._dirVector.set( 0, 0, 1 ).applyQuaternion( cameraQuaternion ).normalize();
+						this._normalVector.set( 0, 0, 1 ).applyQuaternion( cameraQuaternion ).normalize();
 						break;
 
 				}
@@ -300,11 +297,11 @@ class TransformControls extends ControlsInteractive {
 			default:
 
 				// special case for rotate
-				this._dirVector.set( 0, 0, 1 ).applyQuaternion( cameraQuaternion ).normalize();
+				this._normalVector.set( 0, 0, 1 ).applyQuaternion( cameraQuaternion ).normalize();
 
 		}
 
-		return this._dirVector;
+		return this._normalVector;
 
 	}
 	onTrackedPointerHover( pointer ) {
@@ -321,7 +318,7 @@ class TransformControls extends ControlsInteractive {
 
 		} );
 
-		const intersect = getFirstIntersection( pointer.intersectObjects( pickers ), false );
+		const intersect = getFirstIntersection( pointer.intersectObjects( pickers ), true );
 
 		if ( intersect && ! pointer.isSimulated ) {
 
@@ -398,6 +395,7 @@ class TransformControls extends ControlsInteractive {
 			this._matrix.copy( this.object.matrix );
 			this._matrix.decompose( this._position, this._quaternion, this._scale );
 			this.object.matrixWorld.decompose( this._worldPositionStart, this._worldQuaternionStart, this._worldScaleStart );
+			this._rotationAxis.set( 0, 0, 0 );
 
 			this._cameraHelpers.forEach( helper => {
 
@@ -469,34 +467,34 @@ class TransformControls extends ControlsInteractive {
 
 
 			// Apply translate
-			this._tempOffsetVector.copy( this._pointOffset );
+			this._tempVector2.copy( this._pointOffset );
 
 			if ( space === 'local' ) {
 
-				this._tempOffsetVector.applyQuaternion( this._quaternionStartInv );
+				this._tempVector2.applyQuaternion( this._quaternionStartInv );
 
 			}
 
 			if ( axis.indexOf( 'X' ) === - 1 )
-				this._tempOffsetVector.x = 0;
+				this._tempVector2.x = 0;
 
 			if ( axis.indexOf( 'Y' ) === - 1 )
-				this._tempOffsetVector.y = 0;
+				this._tempVector2.y = 0;
 
 			if ( axis.indexOf( 'Z' ) === - 1 )
-				this._tempOffsetVector.z = 0;
+				this._tempVector2.z = 0;
 
 			if ( space === 'local' ) {
 
-				this._tempOffsetVector.applyQuaternion( this._quaternionStart ).divide( this._parentWorldScale );
+				this._tempVector2.applyQuaternion( this._quaternionStart ).divide( this._parentWorldScale );
 
 			} else {
 
-				this._tempOffsetVector.applyQuaternion( this._parentWorldQuaternionInv ).divide( this._parentWorldScale );
+				this._tempVector2.applyQuaternion( this._parentWorldQuaternionInv ).divide( this._parentWorldScale );
 
 			}
 
-			object.position.copy( this._tempOffsetVector ).add( this._positionStart );
+			object.position.copy( this._tempVector2 ).add( this._positionStart );
 
 
 			// Apply translation snap
@@ -573,31 +571,31 @@ class TransformControls extends ControlsInteractive {
 				if ( this._point.dot( this._pointStart ) < 0 )
 					d *= - 1;
 
-				this._tempOffsetVector.set( d, d, d );
+				this._tempVector2.set( d, d, d );
 
 			} else {
 
-				this._tempVector.copy( this._pointStart );
-				this._tempOffsetVector.copy( this._point );
-				this._tempVector.applyQuaternion( this._worldQuaternionInv );
-				this._tempOffsetVector.applyQuaternion( this._worldQuaternionInv );
-				this._tempOffsetVector.divide( this._tempVector );
+				this._tempVector1.copy( this._pointStart );
+				this._tempVector2.copy( this._point );
+				this._tempVector1.applyQuaternion( this._worldQuaternionInv );
+				this._tempVector2.applyQuaternion( this._worldQuaternionInv );
+				this._tempVector2.divide( this._tempVector1 );
 
 				if ( axis.search( 'X' ) === - 1 ) {
 
-					this._tempOffsetVector.x = 1;
+					this._tempVector2.x = 1;
 
 				}
 
 				if ( axis.search( 'Y' ) === - 1 ) {
 
-					this._tempOffsetVector.y = 1;
+					this._tempVector2.y = 1;
 
 				}
 
 				if ( axis.search( 'Z' ) === - 1 ) {
 
-					this._tempOffsetVector.z = 1;
+					this._tempVector2.z = 1;
 
 				}
 
@@ -605,7 +603,7 @@ class TransformControls extends ControlsInteractive {
 
 
 			// Apply scale
-			object.scale.copy( this._scaleStart ).multiply( this._tempOffsetVector );
+			object.scale.copy( this._scaleStart ).multiply( this._tempVector2 );
 
 			if ( this.scaleSnap ) {
 
@@ -646,21 +644,33 @@ class TransformControls extends ControlsInteractive {
 
 			} else if ( axis === 'XYZE' ) {
 
-				this._rotationAxis.copy( this._pointStart ).add( this._pointOffset ).cross( this._viewportEye ).normalize();
-				angle = this._pointOffset.dot( this._tempVector.copy( this._rotationAxis ).cross( this._viewportEye ) ) * ROTATION_SPEED;
+				this._tempVector2.copy( this._pointStart ).add( this._pointOffset );
+				const helper = this.getHelper( pointer.camera );
+				let lerp = this._tempVector2.length() / helper.sizeAttenuation;
+				lerp = Math.min( 1, Math.pow( 2 * Math.max( 0, lerp - 0.03 ), 2 ) );
+				console.log( lerp );
+				this._tempVector2.cross( this._viewportEye ).normalize();
+				this._tempVector1.copy( this._tempVector2 ).multiplyScalar( - 1 );
+
+				if ( this._rotationAxis.length() === 0 )
+					lerp = 1;
+
+				const flip = this._rotationAxis.dot( this._tempVector2 ) > this._rotationAxis.dot( this._tempVector1 );
+				this._rotationAxis.lerp( flip ? this._tempVector2 : this._tempVector1, lerp ).normalize();
+				angle = this._pointOffset.dot( this._tempVector2.copy( this._rotationAxis ).cross( this._viewportEye ) ) * ROTATION_SPEED;
 
 			} else if ( axis === 'X' || axis === 'Y' || axis === 'Z' ) {
 
 				this._rotationAxis.copy( UNIT[ axis ] );
-				this._tempVector.copy( UNIT[ axis ] );
+				this._tempVector1.copy( UNIT[ axis ] );
 
 				if ( space === 'local' ) {
 
-					this._tempVector.applyQuaternion( this._worldQuaternion );
+					this._tempVector1.applyQuaternion( this._worldQuaternion );
 
 				}
 
-				angle = this._pointOffset.dot( this._tempVector.cross( this._viewportEye ).normalize() ) * ROTATION_SPEED;
+				angle = this._pointOffset.dot( this._tempVector1.cross( this._viewportEye ).normalize() ) * ROTATION_SPEED;
 
 			}
 

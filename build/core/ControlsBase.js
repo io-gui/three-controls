@@ -118,8 +118,12 @@ export class ControlsBase extends Object3D {
 
 		const index = this._animations.findIndex( animation => animation === callback );
 
-		if ( index === - 1 )
+		if ( index === - 1 ) {
+
+			callback( 1000 / 60 );
 			this._animations.push( callback );
+
+		}
 
 		AnimationManagerSingleton.add( callback );
 
