@@ -1,5 +1,5 @@
-import { Quaternion, Mesh, Euler, Vector3, Vector4, Matrix4, LineSegments, OctahedronBufferGeometry,
-  TorusBufferGeometry, SphereBufferGeometry, BoxBufferGeometry, PlaneBufferGeometry, CylinderBufferGeometry,
+import { Quaternion, Mesh, Euler, Vector3, Vector4, Matrix4, LineSegments, OctahedronGeometry,
+  TorusGeometry, SphereGeometry, BoxGeometry, PlaneGeometry, CylinderGeometry,
   BufferGeometry, Float32BufferAttribute } from 'three';
 
 import { AnyCameraType, UNIT } from './core/ControlsBase';
@@ -26,11 +26,12 @@ const H = 0.125;
 const HH = H / 2;
 const H2 = H * 2;
 const H3 = H * 3;
-const PICKER_DEBUG_ALPHA = 0.0;
+const PICKER_DEBUG = false;
+const PICKER_DEBUG_ALPHA = 0.2;
 
-const scaleHandleGeometry = new BoxBufferGeometry( H, H, H );
+const scaleHandleGeometry = new BoxGeometry( H, H, H );
 
-const arrowGeometry = new CylinderBufferGeometry( 0, HH, H2, 12, 1, false );
+const arrowGeometry = new CylinderGeometry( 0, HH, H2, 12, 1, false );
 
 const lineGeometry = new BufferGeometry();
 lineGeometry.setAttribute( 'position', new Float32BufferAttribute( [ 0, 0, 0,  1, 0, 0 ], 3 ) );
@@ -139,7 +140,7 @@ const translateHelperGeometrySpec: [ Mesh | LineSegments, HelperGeometrySpec ][]
       scale: new Vector3( 1 - H2 - H, 1 - H2 - H, 1 - H2 - H )
     }
   ], [
-    new Mesh( new OctahedronBufferGeometry( HH, 0 ) ),
+    new Mesh( new OctahedronGeometry( HH, 0 ) ),
     {
       type: 'translate',
       axis: 'XYZ',
@@ -148,7 +149,7 @@ const translateHelperGeometrySpec: [ Mesh | LineSegments, HelperGeometrySpec ][]
       rotation: new Euler( 0, 0, 0 )
     }
   ], [
-    new Mesh( new PlaneBufferGeometry( H2, H2 ) ),
+    new Mesh( new PlaneGeometry( H2, H2 ) ),
     {
       type: 'translate',
       axis: 'XY',
@@ -166,7 +167,7 @@ const translateHelperGeometrySpec: [ Mesh | LineSegments, HelperGeometrySpec ][]
       scale: new Vector3( H, H, 1 )
     }
   ], [
-    new Mesh( new PlaneBufferGeometry( H2, H2 ) ),
+    new Mesh( new PlaneGeometry( H2, H2 ) ),
     {
       type: 'translate',
       axis: 'YZ',
@@ -185,7 +186,7 @@ const translateHelperGeometrySpec: [ Mesh | LineSegments, HelperGeometrySpec ][]
       scale: new Vector3( H, H, 1 )
     }
   ], [
-    new Mesh( new PlaneBufferGeometry( H2, H2 ) ),
+    new Mesh( new PlaneGeometry( H2, H2 ) ),
     {
       type: 'translate',
       axis: 'XZ',
@@ -206,7 +207,7 @@ const translateHelperGeometrySpec: [ Mesh | LineSegments, HelperGeometrySpec ][]
   ],
   // Pickers
   [
-    new Mesh( new CylinderBufferGeometry( H2, 0, H2 * 2, 6, 1, false ) ),
+    new Mesh( new CylinderGeometry( H2, 0, H2 * 2, 6, 1, false ) ),
     {
       type: 'translate',
       axis: 'X',
@@ -216,7 +217,7 @@ const translateHelperGeometrySpec: [ Mesh | LineSegments, HelperGeometrySpec ][]
       rotation: new Euler( Math.PI / 4, 0, - Math.PI / 2 ),
     }
   ], [
-    new Mesh( new CylinderBufferGeometry( H2, 0, H2 * 2, 6, 1, false ) ),
+    new Mesh( new CylinderGeometry( H2, 0, H2 * 2, 6, 1, false ) ),
     {
       type: 'translate',
       axis: 'Y',
@@ -226,7 +227,7 @@ const translateHelperGeometrySpec: [ Mesh | LineSegments, HelperGeometrySpec ][]
       rotation: new Euler( 0, Math.PI / 4, 0 ),
     }
   ], [
-    new Mesh( new CylinderBufferGeometry( H2, 0, H2 * 2, 6, 1, false ) ),
+    new Mesh( new CylinderGeometry( H2, 0, H2 * 2, 6, 1, false ) ),
     {
       type: 'translate',
       axis: 'Z',
@@ -236,7 +237,7 @@ const translateHelperGeometrySpec: [ Mesh | LineSegments, HelperGeometrySpec ][]
       rotation: new Euler( Math.PI / 2, Math.PI / 4, 0 ),
     }
   ], [
-    new Mesh( new OctahedronBufferGeometry( H2, 0 ) ),
+    new Mesh( new OctahedronGeometry( H2, 0 ) ),
     {
       type: 'translate',
       axis: 'XYZ',
@@ -244,7 +245,7 @@ const translateHelperGeometrySpec: [ Mesh | LineSegments, HelperGeometrySpec ][]
       color: new Vector4( ...colors.white, PICKER_DEBUG_ALPHA ),
     }
   ], [
-    new Mesh( new PlaneBufferGeometry( H3, H3 ) ),
+    new Mesh( new PlaneGeometry( H3, H3 ) ),
     {
       type: 'translate',
       axis: 'XY',
@@ -253,7 +254,7 @@ const translateHelperGeometrySpec: [ Mesh | LineSegments, HelperGeometrySpec ][]
       position: new Vector3( H * 1.5, H * 1.5, 0),
     }
   ], [
-    new Mesh( new PlaneBufferGeometry( H3, H3 ) ),
+    new Mesh( new PlaneGeometry( H3, H3 ) ),
     {
       type: 'translate',
       axis: 'YZ',
@@ -263,7 +264,7 @@ const translateHelperGeometrySpec: [ Mesh | LineSegments, HelperGeometrySpec ][]
       rotation: new Euler( 0, Math.PI / 2, 0 ),
     }
   ], [
-    new Mesh( new PlaneBufferGeometry( H3, H3 ) ),
+    new Mesh( new PlaneGeometry( H3, H3 ) ),
     {
       type: 'translate',
       axis: 'XZ',
@@ -294,7 +295,7 @@ const rotateHelperGeometrySpec: [ Mesh | LineSegments, HelperGeometrySpec ][] = 
       color: new Vector4( ...colors.red, 1 ),
     }
   ], [
-    new Mesh( new OctahedronBufferGeometry( H / 2, 2 ) ),
+    new Mesh( new OctahedronGeometry( H / 2, 2 ) ),
     {
       type: 'rotate',
       axis: 'X',
@@ -310,7 +311,7 @@ const rotateHelperGeometrySpec: [ Mesh | LineSegments, HelperGeometrySpec ][] = 
       rotation: new Euler( 0, 0, - Math.PI / 2 )
     }
   ], [
-    new Mesh( new OctahedronBufferGeometry( H / 2, 2 ) ),
+    new Mesh( new OctahedronGeometry( H / 2, 2 ) ),
     {
       type: 'rotate',
       axis: 'Y',
@@ -326,7 +327,7 @@ const rotateHelperGeometrySpec: [ Mesh | LineSegments, HelperGeometrySpec ][] = 
       rotation: new Euler( 0, Math.PI / 2, 0 )
     }
   ], [
-    new Mesh( new OctahedronBufferGeometry( H / 2, 2 ) ),
+    new Mesh( new OctahedronGeometry( H / 2, 2 ) ),
     {
       type: 'rotate',
       axis: 'Z',
@@ -346,13 +347,13 @@ const rotateHelperGeometrySpec: [ Mesh | LineSegments, HelperGeometrySpec ][] = 
     {
       type: 'rotate',
       axis: 'XYZE',
-      color: new Vector4( ...colors.darkGray, 1 ),
+      color: new Vector4( ...colors.white, 0.5 ),
       rotation: new Euler( 0, Math.PI / 2, 0 )
     }
   ],
   // Pickers
   [
-    new Mesh( new TorusBufferGeometry( 1, H2, 4, 6, Math.PI ) ),
+    new Mesh( new TorusGeometry( 1 - HH, H, 4, 6, Math.PI ) ),
     {
       type: 'rotate',
       axis: 'X',
@@ -363,7 +364,7 @@ const rotateHelperGeometrySpec: [ Mesh | LineSegments, HelperGeometrySpec ][] = 
       scale: new Vector3( 1, 1, H3 ),
     }
   ], [
-    new Mesh( new TorusBufferGeometry( 1, H2, 4, 6, Math.PI ) ),
+    new Mesh( new TorusGeometry( 1 - HH, H, 4, 6, Math.PI ) ),
     {
       type: 'rotate',
       axis: 'Y',
@@ -374,7 +375,7 @@ const rotateHelperGeometrySpec: [ Mesh | LineSegments, HelperGeometrySpec ][] = 
       scale: new Vector3( 1, 1, H3 ),
     }
   ], [
-    new Mesh( new TorusBufferGeometry( 1, H2, 4, 6, Math.PI ) ),
+    new Mesh( new TorusGeometry( 1 - HH, H, 4, 6, Math.PI ) ),
     {
       type: 'rotate',
       axis: 'Z',
@@ -385,7 +386,7 @@ const rotateHelperGeometrySpec: [ Mesh | LineSegments, HelperGeometrySpec ][] = 
       scale: new Vector3( 1, 1, H3 ),
     }
   ], [
-    new Mesh( new TorusBufferGeometry( 1 + H2, H2, 2, 12 ) ),
+    new Mesh( new TorusGeometry( 1 + H2 + H, H, 2, 12 ) ),
     {
       type: 'rotate',
       axis: 'E',
@@ -393,7 +394,7 @@ const rotateHelperGeometrySpec: [ Mesh | LineSegments, HelperGeometrySpec ][] = 
       color: new Vector4( ...colors.yellow, PICKER_DEBUG_ALPHA ),
     }
   ], [
-    new Mesh( new SphereBufferGeometry( 1 + H2, 12, 2, 0, Math.PI * 2, 0, Math.PI / 2 ) ),
+    new Mesh( new SphereGeometry( 1 + H2, 12, 2, 0, Math.PI * 2, 0, Math.PI / 2 ) ),
     {
       type: 'rotate',
       axis: 'XYZE',
@@ -534,7 +535,7 @@ const scaleHelperGeometrySpec: [ Mesh | LineSegments, HelperGeometrySpec ][] = [
       scale: new Vector3( HH, HH, 1 ),
     }
   ], [
-    new Mesh( new PlaneBufferGeometry( H2, H2 ) ),
+    new Mesh( new PlaneGeometry( H2, H2 ) ),
     {
       type: 'scale',
       axis: 'XY',
@@ -552,7 +553,7 @@ const scaleHelperGeometrySpec: [ Mesh | LineSegments, HelperGeometrySpec ][] = [
       scale: new Vector3( HH, HH, 1 )
     }
   ], [
-    new Mesh( new PlaneBufferGeometry( H2, H2 ) ),
+    new Mesh( new PlaneGeometry( H2, H2 ) ),
     {
       type: 'scale',
       axis: 'YZ',
@@ -571,7 +572,7 @@ const scaleHelperGeometrySpec: [ Mesh | LineSegments, HelperGeometrySpec ][] = [
       scale: new Vector3( HH, HH, 1 ),
     }
   ], [
-    new Mesh( new PlaneBufferGeometry( H2, H2 ) ),
+    new Mesh( new PlaneGeometry( H2, H2 ) ),
     {
       type: 'scale',
       axis: 'XZ',
@@ -582,7 +583,7 @@ const scaleHelperGeometrySpec: [ Mesh | LineSegments, HelperGeometrySpec ][] = [
   ],
   // Pickers
   [
-    new Mesh( new CylinderBufferGeometry( H2, 0, H2 * 2, 6, 1, false ) ),
+    new Mesh( new CylinderGeometry( H2, 0, H2 * 2, 6, 1, false ) ),
     {
       type: 'scale',
       axis: 'X',
@@ -592,7 +593,7 @@ const scaleHelperGeometrySpec: [ Mesh | LineSegments, HelperGeometrySpec ][] = [
       rotation: new Euler( Math.PI / 4, 0, - Math.PI / 2 ),
     }
   ], [
-    new Mesh( new CylinderBufferGeometry( H2, 0, H2 * 2, 6, 1, false ) ),
+    new Mesh( new CylinderGeometry( H2, 0, H2 * 2, 6, 1, false ) ),
     {
       type: 'scale',
       axis: 'Y',
@@ -602,7 +603,7 @@ const scaleHelperGeometrySpec: [ Mesh | LineSegments, HelperGeometrySpec ][] = [
       rotation: new Euler( 0, Math.PI / 4, 0 ),
     }
   ], [
-    new Mesh( new CylinderBufferGeometry( H2, 0, H2 * 2, 6, 1, false ) ),
+    new Mesh( new CylinderGeometry( H2, 0, H2 * 2, 6, 1, false ) ),
     {
       type: 'scale',
       axis: 'Z',
@@ -642,7 +643,7 @@ const scaleHelperGeometrySpec: [ Mesh | LineSegments, HelperGeometrySpec ][] = [
       scale: new Vector3( 3, 2, 3 ),
     }
   ], [
-    new Mesh( new CylinderBufferGeometry( H2, 0, H * 4, 6, 1, false ) ),
+    new Mesh( new CylinderGeometry( H2, 0, H * 4, 6, 1, false ) ),
     {
       type: 'scale',
       axis: 'XYZX',
@@ -652,7 +653,7 @@ const scaleHelperGeometrySpec: [ Mesh | LineSegments, HelperGeometrySpec ][] = [
       rotation: new Euler( Math.PI / 4, 0, - Math.PI / 2 ),
     }
   ], [
-    new Mesh( new CylinderBufferGeometry( H2, 0, H * 4, 6, 1, false ) ),
+    new Mesh( new CylinderGeometry( H2, 0, H * 4, 6, 1, false ) ),
     {
       type: 'scale',
       axis: 'XYZY',
@@ -662,7 +663,7 @@ const scaleHelperGeometrySpec: [ Mesh | LineSegments, HelperGeometrySpec ][] = [
       rotation: new Euler( 0, Math.PI / 4, 0 ),
     }
   ], [
-    new Mesh( new CylinderBufferGeometry( H2, 0, H * 4, 6, 1, false ) ),
+    new Mesh( new CylinderGeometry( H2, 0, H * 4, 6, 1, false ) ),
     {
       type: 'scale',
       axis: 'XYZZ',
@@ -734,7 +735,7 @@ export class TransformHelper extends ControlsHelper {
       ...translateHelperGeometrySpec,
       ...rotateHelperGeometrySpec,
     ] );
-    this.observeProperty('enabled');
+    this.observeProperty( 'enabled' );
     this.observeProperty( 'activeAxis' );
     this.observeProperty( 'activeMode' );
     this.observeProperty( 'space', );
@@ -746,6 +747,8 @@ export class TransformHelper extends ControlsHelper {
     this.observeProperty( 'showTranslate' );
     this.observeProperty( 'showRotate' );
     this.observeProperty( 'showScale' );
+    this.observeProperty( 'showOffset' );
+    this.observeProperty( 'dithering' );
 
     this._animate = this._animate.bind(this);
   }
@@ -764,7 +767,7 @@ export class TransformHelper extends ControlsHelper {
     handle.position.set( 0, 0, 0 );
     handle.scale.set( 1, 1, 1 ).multiplyScalar( this.sizeAttenuation * this.userData.size / 7 );
     handle.quaternion.multiply( quaternion );
-    handle.visible = true;
+    handle.visible = handleTag !== 'picker' || PICKER_DEBUG;
 
     if ( handleAxis.indexOf( 'X' ) !== - 1 && !this.showX ) handle.visible = false;
     if ( handleAxis.indexOf( 'Y' ) !== - 1 && !this.showY ) handle.visible = false;
@@ -938,11 +941,16 @@ export class TransformHelper extends ControlsHelper {
       const handleAxis = handle.userData.axis;
       const handleTag = handle.userData.tag || '';
 
-      if ( handleTag !== 'picker' ) {
+      let targetHighlight = 1;
+
+      if ( handleTag === 'picker' ) {
+
+        targetHighlight = 0;
+
+      } else {
 
         const material = handle.material as HelperMaterial;
 
-        let targetHighlight = 1;
         if ( handleTag.search( 'offset' ) !== -1 ) {
           handle.renderOrder = 1e10 + 20;
         } else if ( !this.enabled || (this.activeMode && handleType !== this.activeMode ) ) {
@@ -952,12 +960,15 @@ export class TransformHelper extends ControlsHelper {
           if ( handleAxis === this.activeAxis ) {
             targetHighlight = 2;
             handle.renderOrder = 1e10 + 10;
-          } else if ( this.activeAxis.split( '' ).some( (a: string) => { return handleAxis === a } ) ) {
-            targetHighlight = 2;
-            handle.renderOrder = 1e10 + 10;
           } else {
-            targetHighlight = handle instanceof LineSegments ? 0 : 0.1;
+            targetHighlight = 0.25;
             handle.renderOrder = 1e10 - 10;
+          }
+          if (['translate', 'scale'].indexOf(handleType) !== -1) {
+            if ( this.activeAxis.split('').some( (a: string) => { return handleAxis === a } ) ) {
+              targetHighlight = 2;
+              handle.renderOrder = 1e10 + 10;
+            }
           }
         }
 

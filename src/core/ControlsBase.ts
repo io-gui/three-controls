@@ -90,7 +90,10 @@ export class ControlsBase extends Object3D {
   // Adds animation callback to animation loop.
   startAnimation( callback: Callback ): void {
     const index = this._animations.findIndex( animation => animation === callback );
-    if ( index === -1 ) this._animations.push( callback );
+    if ( index === -1 ) {
+      callback( 1000 / 60 );
+      this._animations.push( callback );
+    }
     AnimationManagerSingleton.add( callback );
   }
   // Removes animation callback from animation loop.
