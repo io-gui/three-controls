@@ -1,5 +1,5 @@
 {
-  "name": "@three/controls",
+  "name": "@io-gui/controls",
   "version": "1.0.6",
   "main": "index.js",
   "type": "module",
