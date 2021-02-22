@@ -1,8 +1,8 @@
 {
-  "name": "@io-gui/three-controls",
-  "version": "1.0.5",
+  "name": "@three/controls",
+  "version": "1.0.6",
   "main": "index.js",
-  "type":"module",
+  "type": "module",
   "files": [
     "src",
     "build",
@@ -21,12 +21,9 @@
     "build:dev": "yarn clean && yarn tsc:dev & sleep 5; yarn rollup -c ./config/rollup.config.js -w --environment DEV"
   },
   "sideEffects": false,
-  "publishConfig": {
-    "registry": "https://npm.pkg.github.com/"
-  },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/io-gui/three-controls.git"
+    "url": "git+https://github.com/io-gui/controls.git"
   },
   "keywords": [
     "typescript",
@@ -36,21 +33,23 @@
   "author": "Aleksandar (Aki) Rodic",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/io-gui/three-controls/issues"
+    "url": "https://github.com/io-gui/controls/issues"
   },
-  "homepage": "https://github.com/io-gui/three.js-controls",
+  "homepage": "https://github.com/io-gui/controls",
   "devDependencies": {
     "@rollup/plugin-alias": "^3.1.1",
+    "@types/three": "^0.125.3",
     "@typescript-eslint/eslint-plugin": "^4.4.0",
     "@typescript-eslint/parser": "^4.4.0",
     "eslint": "^7.10.0",
     "eslint-config-mdcs": "^5.0.0",
     "rollup": "^2.33.3",
     "rollup-plugin-dts": "^1.4.14",
-    "three": "^0.122.0",
+    "three": "^0.125.0",
     "typescript": "^4.0.5"
   },
   "peerDependencies": {
-    "three": "^0.124.0"
+    "@types/three": "^0.125.3",
+    "three": "^0.125.0"
   }
 }
