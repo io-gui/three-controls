@@ -260,7 +260,7 @@ class TransformControls extends ControlsInteractive {
       return child.userData.tag === 'picker';
     });
 
-    const intersect = getFirstIntersection(pointer.intersectObjects(pickers), true);
+    const intersect = getFirstIntersection(pointer.intersectObjects(pickers), false);
     if ( intersect && !pointer.isSimulated ) {
       this.activeMode = intersect.object.userData.type;
       this.activeAxis = intersect.object.userData.axis;
@@ -465,7 +465,6 @@ class TransformControls extends ControlsInteractive {
         const helper = this.getHelper( pointer.camera );
         let lerp = this._tempVector2.length() / helper.sizeAttenuation;
         lerp = Math.min(1, Math.pow(2 * Math.max(0, lerp - 0.03 ), 2));
-        console.log(lerp);
 
         this._tempVector2.cross( this._viewportEye ).normalize();
         this._tempVector1.copy( this._tempVector2 ).multiplyScalar(-1);

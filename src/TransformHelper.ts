@@ -26,8 +26,7 @@ const H = 0.125;
 const HH = H / 2;
 const H2 = H * 2;
 const H3 = H * 3;
-const PICKER_DEBUG = false;
-const PICKER_DEBUG_ALPHA = 0.2;
+const PICKER_DEBUG_ALPHA = 0.0;
 
 const scaleHandleGeometry = new BoxGeometry( H, H, H );
 
@@ -767,7 +766,7 @@ export class TransformHelper extends ControlsHelper {
     handle.position.set( 0, 0, 0 );
     handle.scale.set( 1, 1, 1 ).multiplyScalar( this.sizeAttenuation * this.userData.size / 7 );
     handle.quaternion.multiply( quaternion );
-    handle.visible = handleTag !== 'picker' || PICKER_DEBUG;
+    handle.visible = true;
 
     if ( handleAxis.indexOf( 'X' ) !== - 1 && !this.showX ) handle.visible = false;
     if ( handleAxis.indexOf( 'Y' ) !== - 1 && !this.showY ) handle.visible = false;
