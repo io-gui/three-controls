@@ -205,11 +205,11 @@ class OrbitControls extends ControlsCamera {
 						button = this.mouseButtons.LEFT;
 						break;
 
-					case 2:
+					case 1:
 						button = this.mouseButtons.MIDDLE;
 						break;
 
-					case 1:
+					case 2:
 						button = this.mouseButtons.RIGHT;
 						break;
 
