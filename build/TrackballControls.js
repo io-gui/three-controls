@@ -1,5 +1,5 @@
 import { MOUSE, Vector2, Vector3, Quaternion, PerspectiveCamera, OrthographicCamera } from 'three';
-import { ControlsCamera } from './core/ControlsCamera';
+import { ControlsCamera } from './core/ControlsCamera.js';
 
 const STATE = { NONE: - 1, ROTATE: 0, ZOOM: 1, PAN: 2 };
 

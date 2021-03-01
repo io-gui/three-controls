@@ -1,6 +1,6 @@
 import { Vector3, Vector4, Euler, Mesh, LineSegments } from 'three';
-import { ControlsBase, AnyCameraType } from './ControlsBase';
-import { HelperMaterial } from './HelperMaterial';
+import { ControlsBase, AnyCameraType } from './ControlsBase.js';
+import { HelperMaterial } from './HelperMaterial.js';
 
 export declare const helperMaterial: HelperMaterial;
 

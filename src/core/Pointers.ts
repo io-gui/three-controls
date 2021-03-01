@@ -1,5 +1,5 @@
 import { Vector2, Vector3, Plane, Intersection, Object3D, PerspectiveCamera, OrthographicCamera, Raycaster, Ray, MathUtils } from 'three';
-import { AnyCameraType } from './ControlsBase';
+import { AnyCameraType } from './ControlsBase.js';
 
 // Keeps pointer movement data in 2D space
 class Pointer2D {

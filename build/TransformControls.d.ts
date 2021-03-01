@@ -1,8 +1,8 @@
 import { Object3D, Quaternion, Vector3 } from 'three';
-import { PointerTracker } from './core/Pointers';
-import { AnyCameraType } from './core/ControlsBase';
-import { ControlsInteractive } from './core/ControlsInteractive';
-import { TransformHelper } from './TransformHelper';
+import { PointerTracker } from './core/Pointers.js';
+import { AnyCameraType } from './core/ControlsBase.js';
+import { ControlsInteractive } from './core/ControlsInteractive.js';
+import { TransformHelper } from './TransformHelper.js';
 
 declare class TransformControls extends ControlsInteractive {
 

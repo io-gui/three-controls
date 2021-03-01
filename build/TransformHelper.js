@@ -1,7 +1,7 @@
 import { Quaternion, Mesh, Euler, Vector3, Vector4, Matrix4, LineSegments, OctahedronGeometry, TorusGeometry, SphereGeometry, BoxGeometry, PlaneGeometry, CylinderGeometry, BufferGeometry, Float32BufferAttribute } from 'three';
-import { UNIT } from './core/ControlsBase';
-import { ControlsHelper } from './core/ControlsHelper';
-import { colors } from './core/HelperMaterial';
+import { UNIT } from './core/ControlsBase.js';
+import { ControlsHelper } from './core/ControlsHelper.js';
+import { colors } from './core/HelperMaterial.js';
 
 const CircleGeometry = function ( radius, arc ) {
 
@@ -31,8 +31,7 @@ const H = 0.125;
 const HH = H / 2;
 const H2 = H * 2;
 const H3 = H * 3;
-const PICKER_DEBUG = false;
-const PICKER_DEBUG_ALPHA = 0.2;
+const PICKER_DEBUG_ALPHA = 0.0;
 const scaleHandleGeometry = new BoxGeometry( H, H, H );
 const arrowGeometry = new CylinderGeometry( 0, HH, H2, 12, 1, false );
 const lineGeometry = new BufferGeometry();
@@ -749,7 +748,7 @@ export class TransformHelper extends ControlsHelper {
 		handle.position.set( 0, 0, 0 );
 		handle.scale.set( 1, 1, 1 ).multiplyScalar( this.sizeAttenuation * this.userData.size / 7 );
 		handle.quaternion.multiply( quaternion );
-		handle.visible = handleTag !== 'picker' || PICKER_DEBUG;
+		handle.visible = true;
 
 		if ( handleAxis.indexOf( 'X' ) !== - 1 && ! this.showX )
 			handle.visible = false;

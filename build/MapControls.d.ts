@@ -1,5 +1,5 @@
 import { MOUSE, TOUCH } from 'three';
-import { OrbitControls } from './OrbitControls';
+import { OrbitControls } from './OrbitControls.js';
 
 export declare class MapControls extends OrbitControls {
 

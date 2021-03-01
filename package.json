@@ -1,8 +1,7 @@
 {
   "name": "@io-gui/controls",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "main": "index.js",
-  "type": "module",
   "files": [
     "src",
     "build",

@@ -1,10 +1,10 @@
 import { Object3D, Quaternion, Vector3, Matrix4, Intersection, OrthographicCamera } from 'three';
 
-import { PointerTracker } from './core/Pointers';
-import { AnyCameraType, UNIT } from './core/ControlsBase';
+import { PointerTracker } from './core/Pointers.js';
+import { AnyCameraType, UNIT } from './core/ControlsBase.js';
 
-import { ControlsInteractive } from './core/ControlsInteractive';
-import { TransformHelper } from './TransformHelper';
+import { ControlsInteractive } from './core/ControlsInteractive.js';
+import { TransformHelper } from './TransformHelper.js';
 
 function getFirstIntersection(intersections: Intersection[], includeInvisible: boolean ): Intersection | null {
   for ( let i = 0; i < intersections.length; i ++ ) {

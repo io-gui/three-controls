@@ -1,5 +1,5 @@
-import { ControlsInteractive } from './ControlsInteractive';
-import { AnyCameraType } from './ControlsBase';
+import { ControlsInteractive } from './ControlsInteractive.js';
+import { AnyCameraType } from './ControlsBase.js';
 
 
 /**

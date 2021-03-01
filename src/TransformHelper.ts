@@ -2,9 +2,9 @@ import { Quaternion, Mesh, Euler, Vector3, Vector4, Matrix4, LineSegments, Octah
   TorusGeometry, SphereGeometry, BoxGeometry, PlaneGeometry, CylinderGeometry,
   BufferGeometry, Float32BufferAttribute } from 'three';
 
-import { AnyCameraType, UNIT } from './core/ControlsBase';
-import { ControlsHelper, HelperGeometrySpec } from './core/ControlsHelper';
-import { HelperMaterial, colors } from './core/HelperMaterial';
+import { AnyCameraType, UNIT } from './core/ControlsBase.js';
+import { ControlsHelper, HelperGeometrySpec } from './core/ControlsHelper.js';
+import { HelperMaterial, colors } from './core/HelperMaterial.js';
 
 const CircleGeometry = function ( radius: number, arc: number ) {
   const geometry = new BufferGeometry( );

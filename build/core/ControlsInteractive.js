@@ -1,6 +1,6 @@
 import { Plane } from 'three';
-import { PointerTracker, CenterPointerTracker } from './Pointers';
-import { ControlsBase } from './ControlsBase';
+import { PointerTracker, CenterPointerTracker } from './Pointers.js';
+import { ControlsBase } from './ControlsBase.js';
 
 const INERTIA_TIME_THRESHOLD = 100;
 const INERTIA_MOVEMENT_THRESHOLD = 0.01;

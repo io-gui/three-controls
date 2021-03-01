@@ -1,6 +1,6 @@
 import { Quaternion, Mesh, Vector3 } from 'three';
-import { AnyCameraType } from './core/ControlsBase';
-import { ControlsHelper } from './core/ControlsHelper';
+import { AnyCameraType } from './core/ControlsBase.js';
+import { ControlsHelper } from './core/ControlsHelper.js';
 
 export declare class TransformHelper extends ControlsHelper {
 

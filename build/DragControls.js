@@ -1,5 +1,5 @@
 import { Vector3 } from 'three';
-import { ControlsInteractive } from './core/ControlsInteractive';
+import { ControlsInteractive } from './core/ControlsInteractive.js';
 
 let _intersections;
 const _hoveredObjects = {};

@@ -1,7 +1,7 @@
 import { Quaternion, Vector3, Matrix4, OrthographicCamera } from 'three';
-import { UNIT } from './core/ControlsBase';
-import { ControlsInteractive } from './core/ControlsInteractive';
-import { TransformHelper } from './TransformHelper';
+import { UNIT } from './core/ControlsBase.js';
+import { ControlsInteractive } from './core/ControlsInteractive.js';
+import { TransformHelper } from './TransformHelper.js';
 
 function getFirstIntersection( intersections, includeInvisible ) {
 
@@ -318,7 +318,7 @@ class TransformControls extends ControlsInteractive {
 
 		} );
 
-		const intersect = getFirstIntersection( pointer.intersectObjects( pickers ), true );
+		const intersect = getFirstIntersection( pointer.intersectObjects( pickers ), false );
 
 		if ( intersect && ! pointer.isSimulated ) {
 
@@ -648,7 +648,6 @@ class TransformControls extends ControlsInteractive {
 				const helper = this.getHelper( pointer.camera );
 				let lerp = this._tempVector2.length() / helper.sizeAttenuation;
 				lerp = Math.min( 1, Math.pow( 2 * Math.max( 0, lerp - 0.03 ), 2 ) );
-				console.log( lerp );
 				this._tempVector2.cross( this._viewportEye ).normalize();
 				this._tempVector1.copy( this._tempVector2 ).multiplyScalar( - 1 );
 

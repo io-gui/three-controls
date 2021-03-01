@@ -1,5 +1,5 @@
 import { MOUSE, TOUCH, Vector3, Quaternion, Spherical, PerspectiveCamera, OrthographicCamera } from 'three';
-import { ControlsCamera } from './core/ControlsCamera';
+import { ControlsCamera } from './core/ControlsCamera.js';
 
 
 // This set of controls performs orbiting, dollying ( zooming ), and panning.
