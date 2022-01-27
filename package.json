@@ -44,11 +44,11 @@
     "eslint-config-mdcs": "^5.0.0",
     "rollup": "^2.33.3",
     "rollup-plugin-dts": "^1.4.14",
-    "three": "^0.125.0",
+    "three": "^0.137.0",
     "typescript": "^4.0.5"
   },
   "peerDependencies": {
     "@types/three": "^0.125.3",
-    "three": "^0.125.0"
+    "three": "^0.137.0"
   }
 }
