@@ -9,10 +9,10 @@ const STATES = new WeakMap();
  */
 export class ControlsCamera extends ControlsInteractive {
 
+	frustumCulled = false;
 	constructor( camera, domElement ) {
 
 		super( camera, domElement );
-		this.frustumCulled = false;
 
 		Object.defineProperty( this, 'camera', {
 			get() {
@@ -85,14 +85,14 @@ export class ControlsCamera extends ControlsInteractive {
 
 class CameraState {
 
+	quaternion = new Quaternion();
+	position = new Vector3();
+	up = new Vector3();
+	target = new Vector3();
+	lens = new Vector2();
+	bounds = new Vector4();
 	constructor( camera, controls ) {
 
-		this.quaternion = new Quaternion();
-		this.position = new Vector3();
-		this.up = new Vector3();
-		this.target = new Vector3();
-		this.lens = new Vector2();
-		this.bounds = new Vector4();
 		this.update( camera, controls );
 
 	}

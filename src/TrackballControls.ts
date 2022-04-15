@@ -154,7 +154,7 @@ class TrackballControls extends ControlsCamera {
           console.warn( 'THREE.TrackballControls: Unsupported camera type' );
         }
       }
-    };
+    }
     if ( ! this.noPan ) {
       camera.position.sub( this._panMagnitude );
       this.position.sub( this._panMagnitude );

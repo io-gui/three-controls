@@ -1,16 +1,19 @@
 {
-  "parser": "@typescript-eslint/parser",
+  "env": {
+    "browser": true
+  },
   "parserOptions": {
-    "project": "./config/tsconfig.three.json"
+    "ecmaVersion": "latest",
+    "ecmaFeatures": {
+      "experimentalObjectRestSpread": true
+    }
   },
   "plugins": [
-    "@typescript-eslint"
   ],
   "extends": [
     "mdcs"
   ],
   "rules": {
-    "@typescript-eslint/explicit-module-boundary-types": "off",
     "padding-line-between-statements": [
       "error",
       { "blankLine": "always", "prev": "*", "next": "export" },
@@ -28,15 +31,6 @@
       { "blankLine": "always", "next": ["switch"], "prev": "*" }
     ],
     "lines-around-comment": ["error", { "beforeBlockComment": true, "beforeLineComment": true }],
-    "@typescript-eslint/no-unused-vars": 1,
-    "@typescript-eslint/no-empty-function": 1,
-    "@typescript-eslint/indent": [
-      "error",
-      "tab",
-      {
-        "SwitchCase": 1
-      }
-    ],
     "no-cond-assign": "off",
     "no-fallthrough": "off"
   }

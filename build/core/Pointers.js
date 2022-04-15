@@ -4,16 +4,11 @@ import { Vector2, Vector3, PerspectiveCamera, OrthographicCamera, Raycaster, Ray
 // Keeps pointer movement data in 2D space
 class Pointer2D {
 
-	constructor( x = 0, y = 0 ) {
-
-		this.start = new Vector2();
-		this.current = new Vector2();
-		this.previous = new Vector2();
-		this._movement = new Vector2();
-		this._offset = new Vector2();
-		this.set( x, y );
-
-	}
+	start = new Vector2();
+	current = new Vector2();
+	previous = new Vector2();
+	_movement = new Vector2();
+	_offset = new Vector2();
 	get movement() {
 
 		return this._movement.copy( this.current ).sub( this.previous );
@@ -22,6 +17,11 @@ class Pointer2D {
 	get offset() {
 
 		return this._offset.copy( this.current ).sub( this.start );
+
+	}
+	constructor( x = 0, y = 0 ) {
+
+		this.set( x, y );
 
 	}
 	set( x, y ) {
@@ -52,16 +52,11 @@ class Pointer2D {
 // Keeps pointer movement data in 3D space
 class Pointer3D {
 
-	constructor( x = 0, y = 0, z = 0 ) {
-
-		this.start = new Vector3();
-		this.current = new Vector3();
-		this.previous = new Vector3();
-		this._movement = new Vector3();
-		this._offset = new Vector3();
-		this.set( x, y, z );
-
-	}
+	start = new Vector3();
+	current = new Vector3();
+	previous = new Vector3();
+	_movement = new Vector3();
+	_offset = new Vector3();
 	get movement() {
 
 		return this._movement.copy( this.current ).sub( this.previous );
@@ -70,6 +65,11 @@ class Pointer3D {
 	get offset() {
 
 		return this._offset.copy( this.current ).sub( this.start );
+
+	}
+	constructor( x = 0, y = 0, z = 0 ) {
+
+		this.set( x, y, z );
 
 	}
 	set( x, y, z ) {
@@ -100,22 +100,11 @@ class Pointer3D {
 // Keeps pointer movement data in 6D space
 class Pointer6D {
 
-	constructor( origin = new Vector3(), direction = new Vector3() ) {
-
-		this.start = new Ray();
-		this.current = new Ray();
-		this.previous = new Ray();
-		this._movement = new Ray();
-		this._offset = new Ray();
-		this._intersection = new Vector3();
-		this._origin = new Vector3();
-		this._direction = new Vector3();
-		this._axis = new Vector3();
-		this._raycaster = new Raycaster();
-		this._projected = new Pointer3D();
-		this.set( origin, direction );
-
-	}
+	start = new Ray();
+	current = new Ray();
+	previous = new Ray();
+	_movement = new Ray();
+	_offset = new Ray();
 	get movement() {
 
 		this._movement.origin.copy( this.current.origin ).sub( this.previous.origin );
@@ -128,6 +117,17 @@ class Pointer6D {
 		this._offset.origin.copy( this.current.origin ).sub( this.start.origin );
 		this._offset.direction.copy( this.current.direction ).sub( this.start.direction );
 		return this._offset;
+
+	}
+	_intersection = new Vector3();
+	_origin = new Vector3();
+	_direction = new Vector3();
+	_axis = new Vector3();
+	_raycaster = new Raycaster();
+	_projected = new Pointer3D();
+	constructor( origin = new Vector3(), direction = new Vector3() ) {
+
+		this.set( origin, direction );
 
 	}
 	set( origin, direction ) {
@@ -236,30 +236,50 @@ class Pointer6D {
  */
 export class PointerTracker {
 
+	get button() {
+
+		switch ( this.buttons ) {
+
+			case 1: return 0;
+
+			case 2: return 2;
+
+			case 4: return 1;
+
+			default: return - 1;
+
+		}
+
+	}
+	buttons = 0;
+	altKey = false;
+	ctrlKey = false;
+	metaKey = false;
+	shiftKey = false;
+	domElement;
+	pointerId;
+	type;
+	timestamp;
+
+	// Used to distinguish a special "simulated" pointer used to actuate inertial gestures with damping.
+	isSimulated = false;
+
+	// 2D pointer with coordinates in view-space ( [-1...1] range )
+	view = new Pointer2D();
+
+	// 6D pointer with coordinates in world-space ( origin, direction )
+	ray = new Pointer6D();
+	camera;
+	_viewCoord = new Vector2();
+	_intersection = new Vector3();
+	_raycaster = new Raycaster();
+	_intersectedObjects = [];
+	_viewOffset = Object.freeze( new Vector2( 1, - 1 ) );
+	_viewMultiplier = new Vector2();
+	_origin = new Vector3();
+	_direction = new Vector3();
 	constructor( pointerEvent, camera ) {
 
-		this.buttons = 0;
-		this.altKey = false;
-		this.ctrlKey = false;
-		this.metaKey = false;
-		this.shiftKey = false;
-
-		// Used to distinguish a special "simulated" pointer used to actuate inertial gestures with damping.
-		this.isSimulated = false;
-
-		// 2D pointer with coordinates in view-space ( [-1...1] range )
-		this.view = new Pointer2D();
-
-		// 6D pointer with coordinates in world-space ( origin, direction )
-		this.ray = new Pointer6D();
-		this._viewCoord = new Vector2();
-		this._intersection = new Vector3();
-		this._raycaster = new Raycaster();
-		this._intersectedObjects = [];
-		this._viewOffset = Object.freeze( new Vector2( 1, - 1 ) );
-		this._viewMultiplier = new Vector2();
-		this._origin = new Vector3();
-		this._direction = new Vector3();
 		this.buttons = pointerEvent.buttons;
 		this.altKey = pointerEvent.altKey;
 		this.ctrlKey = pointerEvent.ctrlKey;
@@ -278,21 +298,6 @@ export class PointerTracker {
 		this._viewCoord.divide( this._viewMultiplier ).sub( this._viewOffset );
 		this.view.set( this._viewCoord.x, this._viewCoord.y );
 		this.ray.updateByViewPointer( camera, this.view );
-
-	}
-	get button() {
-
-		switch ( this.buttons ) {
-
-			case 1: return 0;
-
-			case 2: return 2;
-
-			case 4: return 1;
-
-			default: return - 1;
-
-		}
 
 	}
 
@@ -405,13 +410,13 @@ export class PointerTracker {
 // TODO: test!
 export class CenterPointerTracker extends PointerTracker {
 
+
+	// Array of pointers to calculate centers from
+	_pointers = [];
+	_projected = new Pointer3D();
 	constructor( pointerEvent, camera ) {
 
 		super( pointerEvent, camera );
-
-		// Array of pointers to calculate centers from
-		this._pointers = [];
-		this._projected = new Pointer3D();
 
 
 		// Set center pointer read-only "type" and "pointerId" properties.

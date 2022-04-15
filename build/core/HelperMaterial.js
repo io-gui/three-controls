@@ -16,20 +16,20 @@ export const colors = {
 
 export class HelperMaterial extends ShaderMaterial {
 
+	depthTest = false;
+	depthWrite = false;
+	transparent = true;
+	side = DoubleSide;
+	fog = false;
+	toneMapped = false;
+	linewidth = 1;
+	color = new Color();
+	opacity = 1;
+	highlight = 1;
+	dithering = false;
 	constructor( props = { color: new Color( 0xffffff ), opacity: 1, depthBias: 0, highlight: 0 } ) {
 
 		super();
-		this.depthTest = false;
-		this.depthWrite = false;
-		this.transparent = true;
-		this.side = DoubleSide;
-		this.fog = false;
-		this.toneMapped = false;
-		this.linewidth = 1;
-		this.color = new Color();
-		this.opacity = 1;
-		this.highlight = 1;
-		this.dithering = false;
 
 		const data = new Float32Array( [
 			1.0 / 17.0, 0, 0, 0, 9.0 / 17.0, 0, 0, 0, 3.0 / 17.0, 0, 0, 0, 11.0 / 17.0, 0, 0, 0,

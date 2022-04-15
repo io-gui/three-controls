@@ -1,13 +1,12 @@
 {
   "compilerOptions": {
     /* Basic Options */
-    "target": "es2015",
-    "module": "es2015",
-    // "lib": [],
+    "target": "esnext",
+    "module": "esnext",
     "allowJs": true,
     "checkJs": true,
     "declaration": true,
-    "declarationMap": false,
+    "declarationMap": true,
     "sourceMap": false,
     "rootDir": "./src",
     "outDir": "./build",
@@ -31,6 +30,8 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true
   },
-  "include": ["./src"],
+  "include": [
+    "src/**/*",
+  ],
   "exclude": ["./src/_HelperGeometry.ts", "./src/_BufferGeometryUtils.ts"]
 }

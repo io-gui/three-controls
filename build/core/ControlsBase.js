@@ -14,20 +14,22 @@ export const UNIT = {
  */
 export class ControlsBase extends Object3D {
 
+	camera;
+	domElement;
+	eye = new Vector3();
+	cameraPosition = new Vector3();
+	cameraQuaternion = new Quaternion();
+	cameraScale = new Vector3();
+	cameraOffset = new Vector3();
+	worldPosition = new Vector3();
+	worldQuaternion = new Quaternion();
+	worldQuaternionInv = new Quaternion();
+	worldScale = new Vector3();
+	_animations = [];
+	_eventTimeout = {};
 	constructor( camera, domElement ) {
 
 		super();
-		this.eye = new Vector3();
-		this.cameraPosition = new Vector3();
-		this.cameraQuaternion = new Quaternion();
-		this.cameraScale = new Vector3();
-		this.cameraOffset = new Vector3();
-		this.worldPosition = new Vector3();
-		this.worldQuaternion = new Quaternion();
-		this.worldQuaternionInv = new Quaternion();
-		this.worldScale = new Vector3();
-		this._animations = [];
-		this._eventTimeout = {};
 		this.camera = camera;
 		this.domElement = domElement;
 		this.changed = this.changed.bind( this );
@@ -199,11 +201,11 @@ export class ControlsBase extends Object3D {
  */
 class AnimationManager {
 
+	_queue = [];
+	_running = false;
+	_time = performance.now();
 	constructor() {
 
-		this._queue = [];
-		this._running = false;
-		this._time = performance.now();
 		this._update = this._update.bind( this );
 
 	}

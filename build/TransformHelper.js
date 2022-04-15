@@ -699,6 +699,35 @@ const scaleHelperGeometrySpec = [
 
 export class TransformHelper extends ControlsHelper {
 
+	static isTransformHelper = true;
+	static type = 'TransformHelper';
+	enabled = true;
+	size = 1;
+	space = 'local';
+	activeMode = '';
+	activeAxis = '';
+	showX = true;
+	showY = true;
+	showZ = true;
+	showE = true;
+	showTranslate = true;
+	showRotate = true;
+	showScale = true;
+	showOffset = true;
+	dithering = false;
+	positionOffset = new Vector3();
+	quaternionOffset = new Quaternion();
+	scaleOffset = new Vector3();
+	dampingFactor = 0.2;
+
+	// Hide translate and scale axis facing the camera
+	AXIS_HIDE_TRESHOLD = 0.99;
+	PLANE_HIDE_TRESHOLD = 0.9;
+	AXIS_FLIP_TRESHOLD = - 0.001;
+	_tempMatrix = new Matrix4();
+	_dirVector = new Vector3( 0, 1, 0 );
+	_tempQuaternion = new Quaternion();
+	_tempQuaternion2 = new Quaternion();
 	constructor( camera, domElement ) {
 
 		super( camera, domElement, [
@@ -707,33 +736,6 @@ export class TransformHelper extends ControlsHelper {
 			...rotateHelperGeometrySpec,
 		] );
 
-		this.enabled = true;
-		this.size = 1;
-		this.space = 'local';
-		this.activeMode = '';
-		this.activeAxis = '';
-		this.showX = true;
-		this.showY = true;
-		this.showZ = true;
-		this.showE = true;
-		this.showTranslate = true;
-		this.showRotate = true;
-		this.showScale = true;
-		this.showOffset = true;
-		this.dithering = false;
-		this.positionOffset = new Vector3();
-		this.quaternionOffset = new Quaternion();
-		this.scaleOffset = new Vector3();
-		this.dampingFactor = 0.2;
-
-		// Hide translate and scale axis facing the camera
-		this.AXIS_HIDE_TRESHOLD = 0.99;
-		this.PLANE_HIDE_TRESHOLD = 0.9;
-		this.AXIS_FLIP_TRESHOLD = - 0.001;
-		this._tempMatrix = new Matrix4();
-		this._dirVector = new Vector3( 0, 1, 0 );
-		this._tempQuaternion = new Quaternion();
-		this._tempQuaternion2 = new Quaternion();
 		this.observeProperty( 'enabled' );
 		this.observeProperty( 'activeAxis' );
 		this.observeProperty( 'activeMode' );
@@ -1136,6 +1138,3 @@ export class TransformHelper extends ControlsHelper {
 	}
 
 }
-
-TransformHelper.isTransformHelper = true;
-TransformHelper.type = 'TransformHelper';

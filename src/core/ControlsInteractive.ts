@@ -240,7 +240,7 @@ export class ControlsInteractive extends ControlsBase {
     const path = ((event as any).path || (event.composedPath && event.composedPath())) as HTMLElement[];
     const domElement = path.find( element => this._viewports.indexOf(element) !== -1) as HTMLElement;
     // const domElement = event.target as HTMLElement;
-    const camera = this._viewportCameras.get( domElement ) as AnyCameraType;;
+    const camera = this._viewportCameras.get( domElement ) as AnyCameraType;
     const pointers = this._pointers;
     const index = pointers.findIndex( pointer => pointer.pointerId === event.pointerId );
     let pointer = pointers[index];

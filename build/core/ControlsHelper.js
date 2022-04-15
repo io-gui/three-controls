@@ -8,10 +8,10 @@ export const helperMaterial = new HelperMaterial();
 
 export class ControlsHelper extends ControlsBase {
 
+	sizeAttenuation = 1;
 	constructor( camera, domElement, helperMap ) {
 
 		super( camera, domElement );
-		this.sizeAttenuation = 1;
 
 		if ( helperMap ) {
 

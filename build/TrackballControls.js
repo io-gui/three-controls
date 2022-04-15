@@ -7,33 +7,33 @@ const STATE = { NONE: - 1, ROTATE: 0, ZOOM: 1, PAN: 2 };
 // TODO: make sure events are always fired in right order ( start > change > end )
 class TrackballControls extends ControlsCamera {
 
+
+	// Public API
+	rotateSpeed = 1.0;
+	zoomSpeed = 1.2;
+	panSpeed = 1.0;
+	noRotate = false;
+	noZoom = false;
+	noPan = false;
+	minDistance = 0;
+	maxDistance = Infinity;
+	keys = [ 65 /*A*/, 83 /*S*/, 68 /*D*/];
+	mouseButtons = { LEFT: MOUSE.ROTATE, MIDDLE: MOUSE.DOLLY, RIGHT: MOUSE.PAN };
+
+	// Internal utility variables
+	_keyState = STATE.NONE;
+	_offset = new Vector3();
+	_rotationMagnitude = new Vector2();
+	_zoomMagnitude = new Vector2();
+	_panMagnitude = new Vector3();
+	_rotateAxis = new Vector3();
+	_rotateQuaternion = new Quaternion();
+	_cameraUpDirection = new Vector3();
+	_cameraSidewaysDirection = new Vector3();
+	_moveDirection = new Vector3();
 	constructor( camera, domElement ) {
 
 		super( camera, domElement );
-
-		// Public API
-		this.rotateSpeed = 1.0;
-		this.zoomSpeed = 1.2;
-		this.panSpeed = 1.0;
-		this.noRotate = false;
-		this.noZoom = false;
-		this.noPan = false;
-		this.minDistance = 0;
-		this.maxDistance = Infinity;
-		this.keys = [ 65 /*A*/, 83 /*S*/, 68 /*D*/];
-		this.mouseButtons = { LEFT: MOUSE.ROTATE, MIDDLE: MOUSE.DOLLY, RIGHT: MOUSE.PAN };
-
-		// Internal utility variables
-		this._keyState = STATE.NONE;
-		this._offset = new Vector3();
-		this._rotationMagnitude = new Vector2();
-		this._zoomMagnitude = new Vector2();
-		this._panMagnitude = new Vector3();
-		this._rotateAxis = new Vector3();
-		this._rotateQuaternion = new Quaternion();
-		this._cameraUpDirection = new Vector3();
-		this._cameraSidewaysDirection = new Vector3();
-		this._moveDirection = new Vector3();
 
 
 		// Deprecation warnings
@@ -210,8 +210,6 @@ class TrackballControls extends ControlsCamera {
 			}
 
 		}
-
-
 
 		if ( ! this.noPan ) {
 

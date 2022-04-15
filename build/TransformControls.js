@@ -23,70 +23,75 @@ function getFirstIntersection( intersections, includeInvisible ) {
 // TODO: fix inverted scale rotation axis
 class TransformControls extends ControlsInteractive {
 
+	static isTransformControls = true;
+	static type = 'TransformControls';
+
+	// TransformHelper API
+	size = 1;
+	space = 'local';
+	showX = true;
+	showY = true;
+	showZ = true;
+	showE = true;
+	showTranslate = true;
+	showRotate = true;
+	showScale = true;
+	showOffset = true;
+	dithering = false;
+
+	// TransformControls API
+	object;
+	dragging = false;
+	active = false;
+	activeMode = '';
+	activeAxis = '';
+	translationSnap = 0;
+	rotationSnap = 0;
+	scaleSnap = 0;
+	minGrazingAngle = 30;
+	_pointStart = new Vector3();
+	_pointStartNorm = new Vector3();
+	_point = new Vector3();
+	_pointNorm = new Vector3();
+	_pointOffset = new Vector3();
+	_worldPositionStart = new Vector3();
+	_worldQuaternionStart = new Quaternion();
+	_worldScaleStart = new Vector3();
+	_worldMatrix = new Matrix4();
+	_worldPosition = new Vector3();
+	_worldQuaternion = new Quaternion();
+	_worldQuaternionInv = new Quaternion();
+	_worldScale = new Vector3();
+	_matrixStart = new Matrix4();
+	_positionStart = new Vector3();
+	_quaternionStart = new Quaternion();
+	_quaternionStartInv = new Quaternion();
+	_scaleStart = new Vector3();
+	_matrix = new Matrix4();
+	_position = new Vector3();
+	_quaternion = new Quaternion();
+	_scale = new Vector3();
+	_rotationAxis = new Vector3();
+	_parentWorldPosition = new Vector3();
+	_parentWorldQuaternion = new Quaternion();
+	_parentWorldQuaternionInv = new Quaternion();
+	_parentWorldScale = new Vector3();
+	_tempVector1 = new Vector3();
+	_tempVector2 = new Vector3();
+	_tempQuaternion = new Quaternion();
+	_dirX = new Vector3( 1, 0, 0 );
+	_dirY = new Vector3( 0, 1, 0 );
+	_dirZ = new Vector3( 0, 0, 1 );
+	_normalVector = new Vector3();
+	_identityQuaternion = Object.freeze( new Quaternion() );
+	_viewportCameraPosition = new Vector3();
+	_viewportCameraQuaternion = new Quaternion();
+	_viewportCameraScale = new Vector3();
+	_viewportEye = new Vector3();
+	_cameraHelpers = new Map();
 	constructor( camera, domElement ) {
 
 		super( camera, domElement );
-
-		// TransformHelper API
-		this.size = 1;
-		this.space = 'local';
-		this.showX = true;
-		this.showY = true;
-		this.showZ = true;
-		this.showE = true;
-		this.showTranslate = true;
-		this.showRotate = true;
-		this.showScale = true;
-		this.showOffset = true;
-		this.dithering = false;
-		this.dragging = false;
-		this.active = false;
-		this.activeMode = '';
-		this.activeAxis = '';
-		this.translationSnap = 0;
-		this.rotationSnap = 0;
-		this.scaleSnap = 0;
-		this.minGrazingAngle = 30;
-		this._pointStart = new Vector3();
-		this._pointStartNorm = new Vector3();
-		this._point = new Vector3();
-		this._pointNorm = new Vector3();
-		this._pointOffset = new Vector3();
-		this._worldPositionStart = new Vector3();
-		this._worldQuaternionStart = new Quaternion();
-		this._worldScaleStart = new Vector3();
-		this._worldMatrix = new Matrix4();
-		this._worldPosition = new Vector3();
-		this._worldQuaternion = new Quaternion();
-		this._worldQuaternionInv = new Quaternion();
-		this._worldScale = new Vector3();
-		this._matrixStart = new Matrix4();
-		this._positionStart = new Vector3();
-		this._quaternionStart = new Quaternion();
-		this._quaternionStartInv = new Quaternion();
-		this._scaleStart = new Vector3();
-		this._matrix = new Matrix4();
-		this._position = new Vector3();
-		this._quaternion = new Quaternion();
-		this._scale = new Vector3();
-		this._rotationAxis = new Vector3();
-		this._parentWorldPosition = new Vector3();
-		this._parentWorldQuaternion = new Quaternion();
-		this._parentWorldQuaternionInv = new Quaternion();
-		this._parentWorldScale = new Vector3();
-		this._tempVector1 = new Vector3();
-		this._tempVector2 = new Vector3();
-		this._tempQuaternion = new Quaternion();
-		this._dirX = new Vector3( 1, 0, 0 );
-		this._dirY = new Vector3( 0, 1, 0 );
-		this._dirZ = new Vector3( 0, 0, 1 );
-		this._normalVector = new Vector3();
-		this._identityQuaternion = Object.freeze( new Quaternion() );
-		this._viewportCameraPosition = new Vector3();
-		this._viewportCameraQuaternion = new Quaternion();
-		this._viewportCameraScale = new Vector3();
-		this._viewportEye = new Vector3();
-		this._cameraHelpers = new Map();
 
 		// Define properties with getters/setter
 		// Setting the defined property will automatically trigger change event
@@ -868,8 +873,5 @@ class TransformControls extends ControlsInteractive {
 	}
 
 }
-
-TransformControls.isTransformControls = true;
-TransformControls.type = 'TransformControls';
 
 export { TransformControls };

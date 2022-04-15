@@ -17,64 +17,64 @@ const _movement = new Vector3();
 
 class OrbitControls extends ControlsCamera {
 
+
+	// Public API
+	// How far you can dolly in and out ( PerspectiveCamera only )
+	minDistance = 0;
+	maxDistance = Infinity;
+
+	// How far you can zoom in and out ( OrthographicCamera only )
+	minZoom = 0;
+	maxZoom = Infinity;
+
+	// How far you can orbit vertically, upper and lower limits.
+	// Range is 0 to Math.PI radians.
+	minPolarAngle = 0;
+	maxPolarAngle = Math.PI;
+
+	// How far you can orbit horizontally, upper and lower limits.
+	// If set, the interval [  min, max  ] must be a sub-interval of [  - 2 PI, 2 PI  ], with ( max - min < 2 PI )
+	minAzimuthAngle = - Infinity;
+	maxAzimuthAngle = Infinity;
+
+	// This option actually enables dollying in and out; left as "zoom" for backwards compatibility.
+	// Set to false to disable zooming
+	enableZoom = true;
+	zoomSpeed = 1;
+
+	// Set to false to disable rotating
+	enableRotate = true;
+	rotateSpeed = 1;
+
+	// Set to false to disable panning
+	enablePan = true;
+	panSpeed = 1;
+	screenSpacePanning = true; // if false, pan orthogonal to world-space direction camera.up
+	keyPanSpeed = 7;
+
+	// Set to true to automatically rotate around the target
+	autoRotate = false;
+	autoRotateSpeed = 1; // 30 seconds per round when fps is 60
+	// Set to false to disable use of the keys
+	enableKeys = true;
+
+	// The four arrow keys
+	keys = { LEFT: 37, UP: 38, RIGHT: 39, BOTTOM: 40 };
+
+	// Mouse buttons
+	mouseButtons = { LEFT: MOUSE.ROTATE, MIDDLE: MOUSE.DOLLY, RIGHT: MOUSE.PAN };
+
+	// Touch fingers // TODO: deprecate touches.ONE
+	touches = { ONE: TOUCH.ROTATE, TWO: TOUCH.DOLLY_PAN };
+
+	// Internal utility variables
+	_spherical = new Spherical();
+	_autoRotationMagnitude = 0;
+	_interacting = false;
 	constructor( camera, domElement ) {
 
 		super( camera, domElement );
-
-		// Public API
-		// How far you can dolly in and out ( PerspectiveCamera only )
-		this.minDistance = 0;
-		this.maxDistance = Infinity;
-
-		// How far you can zoom in and out ( OrthographicCamera only )
-		this.minZoom = 0;
-		this.maxZoom = Infinity;
-
-		// How far you can orbit vertically, upper and lower limits.
-		// Range is 0 to Math.PI radians.
-		this.minPolarAngle = 0;
-		this.maxPolarAngle = Math.PI;
-
-		// How far you can orbit horizontally, upper and lower limits.
-		// If set, the interval [  min, max  ] must be a sub-interval of [  - 2 PI, 2 PI  ], with ( max - min < 2 PI )
-		this.minAzimuthAngle = - Infinity;
-		this.maxAzimuthAngle = Infinity;
-
-		// This option actually enables dollying in and out; left as "zoom" for backwards compatibility.
-		// Set to false to disable zooming
-		this.enableZoom = true;
-		this.zoomSpeed = 1;
-
-		// Set to false to disable rotating
-		this.enableRotate = true;
-		this.rotateSpeed = 1;
-
-		// Set to false to disable panning
-		this.enablePan = true;
-		this.panSpeed = 1;
-		this.screenSpacePanning = true; // if false, pan orthogonal to world-space direction camera.up
-		this.keyPanSpeed = 7;
-
-		// Set to true to automatically rotate around the target
-		this.autoRotate = false;
-		this.autoRotateSpeed = 1; // 30 seconds per round when fps is 60
-		// Set to false to disable use of the keys
-		this.enableKeys = true;
-
-		// The four arrow keys
-		this.keys = { LEFT: 37, UP: 38, RIGHT: 39, BOTTOM: 40 };
-
-		// Mouse buttons
-		this.mouseButtons = { LEFT: MOUSE.ROTATE, MIDDLE: MOUSE.DOLLY, RIGHT: MOUSE.PAN };
-
-		// Touch fingers // TODO: deprecate touches.ONE
-		this.touches = { ONE: TOUCH.ROTATE, TWO: TOUCH.DOLLY_PAN };
-
-		// Internal utility variables
-		this._spherical = new Spherical();
-		this._autoRotationMagnitude = 0;
-		this._interacting = false;
-		console.log( 'a' );
+		console.log( 'as' );
 
 		if ( ! ( camera instanceof PerspectiveCamera ) && ! ( camera instanceof OrthographicCamera ) ) {
 

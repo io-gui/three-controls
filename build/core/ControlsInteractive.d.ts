@@ -1,8 +1,6 @@
 import { Plane, WebXRManager } from 'three';
 import { PointerTracker, CenterPointerTracker } from './Pointers';
 import { ControlsBase, Callback, AnyCameraType, ControlsEvent } from './ControlsBase';
-
-
 /**
  * `ControlsInteractive`: Generic class for interactive threejs viewport controls. It solves some of the most common and complex problems in threejs control designs.
  *
@@ -30,51 +28,50 @@ import { ControlsBase, Callback, AnyCameraType, ControlsEvent } from './Controls
  * - Emits lyfecycle events: "enabled", "disabled", "dispose"
  */
 export declare class ControlsInteractive extends ControlsBase {
-
-	xr?: WebXRManager;
-	enabled: boolean;
-	enableDamping: boolean;
-	dampingFactor: number;
-	private _hoverPointer;
-	private _centerPointer;
-	private _simulatedPointer;
-	private _pointers;
-	private _xrControllers;
-	private _xrPointers;
-	private _keys;
-	protected readonly _plane: Plane;
-	protected readonly _viewports: HTMLElement[];
-	protected readonly _viewportCameras: WeakMap<HTMLElement, AnyCameraType>;
-	constructor( camera: AnyCameraType, domElement: HTMLElement );
-	enabledChanged( value: boolean ): void;
-	xrChanged( value: boolean ): void;
-	registerViewport( camera: AnyCameraType, domElement: HTMLElement ): void;
-	_connectViewport( domElement: HTMLElement ): void;
-	_disconnectViewport( domElement: HTMLElement ): void;
-	_connect(): void;
-	_disconnect(): void;
-	_connectXR(): void;
-	_disconnectXR(): void;
-	_onXRControllerMove( controllerEvent: ControlsEvent ): void;
-	_onXRControllerDown( controllerEvent: ControlsEvent ): void;
-	_onXRControllerUp( controllerEvent: ControlsEvent ): void;
-	dispose(): void;
-	addEventListener( type: string, listener: Callback ): void;
-	_preventDefault( event: Event ): void;
-	_onContextMenu( event: Event ): void;
-	_onWheel( event: WheelEvent ): void;
-	_onPointerDown( event: PointerEvent ): void;
-	_onPointerMove( event: PointerEvent ): void;
-	_onPointerSimulation( timeDelta: number ): void;
-	_onPointerUp( event: PointerEvent ): void;
-	_onKeyDown( event: KeyboardEvent ): void;
-	_onKeyUp( event: KeyboardEvent ): void;
-	onTrackedPointerDown( _pointer: PointerTracker, _pointers: PointerTracker[] ): void;
-	onTrackedPointerMove( _pointer: PointerTracker, _pointers: PointerTracker[], _centerPointer: CenterPointerTracker ): void;
-	onTrackedPointerHover( _pointer: PointerTracker, _pointers: PointerTracker[] ): void;
-	onTrackedPointerUp( _pointer: PointerTracker, _pointers: PointerTracker[] ): void;
-	onTrackedKeyDown( code: number, codes: number[] ): void;
-	onTrackedKeyUp( code: number, codes: number[] ): void;
-	onTrackedKeyChange( code: number, codes: number[] ): void;
-
+    xr?: WebXRManager;
+    enabled: boolean;
+    enableDamping: boolean;
+    dampingFactor: number;
+    private _hoverPointer;
+    private _centerPointer;
+    private _simulatedPointer;
+    private _pointers;
+    private _xrControllers;
+    private _xrPointers;
+    private _keys;
+    protected readonly _plane: Plane;
+    protected readonly _viewports: HTMLElement[];
+    protected readonly _viewportCameras: WeakMap<HTMLElement, AnyCameraType>;
+    constructor(camera: AnyCameraType, domElement: HTMLElement);
+    enabledChanged(value: boolean): void;
+    xrChanged(value: boolean): void;
+    registerViewport(camera: AnyCameraType, domElement: HTMLElement): void;
+    _connectViewport(domElement: HTMLElement): void;
+    _disconnectViewport(domElement: HTMLElement): void;
+    _connect(): void;
+    _disconnect(): void;
+    _connectXR(): void;
+    _disconnectXR(): void;
+    _onXRControllerMove(controllerEvent: ControlsEvent): void;
+    _onXRControllerDown(controllerEvent: ControlsEvent): void;
+    _onXRControllerUp(controllerEvent: ControlsEvent): void;
+    dispose(): void;
+    addEventListener(type: string, listener: Callback): void;
+    _preventDefault(event: Event): void;
+    _onContextMenu(event: Event): void;
+    _onWheel(event: WheelEvent): void;
+    _onPointerDown(event: PointerEvent): void;
+    _onPointerMove(event: PointerEvent): void;
+    _onPointerSimulation(timeDelta: number): void;
+    _onPointerUp(event: PointerEvent): void;
+    _onKeyDown(event: KeyboardEvent): void;
+    _onKeyUp(event: KeyboardEvent): void;
+    onTrackedPointerDown(_pointer: PointerTracker, _pointers: PointerTracker[]): void;
+    onTrackedPointerMove(_pointer: PointerTracker, _pointers: PointerTracker[], _centerPointer: CenterPointerTracker): void;
+    onTrackedPointerHover(_pointer: PointerTracker, _pointers: PointerTracker[]): void;
+    onTrackedPointerUp(_pointer: PointerTracker, _pointers: PointerTracker[]): void;
+    onTrackedKeyDown(code: number, codes: number[]): void;
+    onTrackedKeyUp(code: number, codes: number[]): void;
+    onTrackedKeyChange(code: number, codes: number[]): void;
 }
+//# sourceMappingURL=ControlsInteractive.d.ts.map

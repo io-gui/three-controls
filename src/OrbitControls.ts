@@ -66,7 +66,7 @@ class OrbitControls extends ControlsCamera {
 
     super( camera, domElement );
 
-    console.log('a');
+    console.log('as');
 
     if ( !( camera instanceof PerspectiveCamera ) && !( camera instanceof OrthographicCamera ) ) {
       console.warn( 'WARNING: OrbitControls.js encountered an unknown camera type - dolly/zoom disabled.' );

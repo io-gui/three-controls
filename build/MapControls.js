@@ -11,16 +11,11 @@ import { OrbitControls } from './OrbitControls';
 //    Pan - left mouse, or arrow keys / touch: one-finger move
 export class MapControls extends OrbitControls {
 
-	constructor() {
+	screenSpacePanning = false; // pan orthogonal to world-space direction camera.up
+	// Mouse buttons
+	mouseButtons = { LEFT: MOUSE.PAN, MIDDLE: MOUSE.DOLLY, RIGHT: MOUSE.ROTATE };
 
-		super( ...arguments );
-		this.screenSpacePanning = false; // pan orthogonal to world-space direction camera.up
-		// Mouse buttons
-		this.mouseButtons = { LEFT: MOUSE.PAN, MIDDLE: MOUSE.DOLLY, RIGHT: MOUSE.ROTATE };
-
-		// Touch fingers // TODO: deprecate touches.ONE
-		this.touches = { ONE: TOUCH.PAN, TWO: TOUCH.DOLLY_ROTATE };
-
-	}
+	// Touch fingers // TODO: deprecate touches.ONE
+	touches = { ONE: TOUCH.PAN, TWO: TOUCH.DOLLY_ROTATE };
 
 }

@@ -34,26 +34,27 @@ const INERTIA_MOVEMENT_THRESHOLD = 0.01;
  */
 export class ControlsInteractive extends ControlsBase {
 
+	xr;
+
+	// Public API
+	enabled = true;
+	enableDamping = false;
+	dampingFactor = 0.05;
+
+	// Tracked pointers and keys
+	_hoverPointer = null;
+	_centerPointer = null;
+	_simulatedPointer = null;
+	_pointers = [];
+	_xrControllers = [];
+	_xrPointers = [];
+	_keys = [];
+	_plane = new Plane();
+	_viewports = [];
+	_viewportCameras = new WeakMap();
 	constructor( camera, domElement ) {
 
 		super( camera, domElement );
-
-		// Public API
-		this.enabled = true;
-		this.enableDamping = false;
-		this.dampingFactor = 0.05;
-
-		// Tracked pointers and keys
-		this._hoverPointer = null;
-		this._centerPointer = null;
-		this._simulatedPointer = null;
-		this._pointers = [];
-		this._xrControllers = [];
-		this._xrPointers = [];
-		this._keys = [];
-		this._plane = new Plane();
-		this._viewports = [];
-		this._viewportCameras = new WeakMap();
 
 		this.onBeforeRender = ( renderer ) => {
 
@@ -323,7 +324,6 @@ export class ControlsInteractive extends ControlsBase {
 
 		// const domElement = event.target as HTMLElement;
 		const camera = this._viewportCameras.get( domElement );
-
 		const pointers = this._pointers;
 		const index = pointers.findIndex( pointer => pointer.pointerId === event.pointerId );
 		let pointer = pointers[ index ];

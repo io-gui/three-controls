@@ -9,10 +9,13 @@ const _target = new Vector3();
 
 export class DragControls extends ControlsInteractive {
 
+
+	// Public API
+	objects;
+	transformGroup = false;
 	constructor( objects, camera, domElement ) {
 
 		super( camera, domElement );
-		this.transformGroup = false;
 		this.objects = objects;
 
 		this.addEventListener( 'enabled-changed', ( event ) => {
