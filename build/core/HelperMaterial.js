@@ -64,7 +64,7 @@ export class HelperMaterial extends ShaderMaterial {
       void main() {
         float aspect = projectionMatrix[0][0] / projectionMatrix[1][1];
         vColor = color;
-        vec4 pos = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+        vec4 pos = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
         vec3 nor = normalize(vec3(1., 1., 0.) * (normalMatrix * normal));
         gl_Position = pos;
       }
@@ -89,8 +89,8 @@ export class HelperMaterial extends ShaderMaterial {
         opacity = min(dimming, opacity);
         opacity = min(1.0, opacity + highlight);
 
-        vec2 matCoord = ( mod(gl_FragCoord.xy, 4.0) - vec2(0.5) ) / 4.0;
-        vec4 ditherPattern = texture2D( tDitherMatrix, matCoord.xy );
+        vec2 matCoord = (mod(gl_FragCoord.xy, 4.0) - vec2(0.5)) / 4.0;
+        vec4 ditherPattern = texture2D(tDitherMatrix, matCoord.xy);
 
         gl_FragColor = vec4(color, max(opacity, uDithering));
 

@@ -679,22 +679,22 @@ const scaleHelperGeometrySpec = [
 	// Offset visualization
 	// TODO: Design scale offset visualization. Make it work with inverse/flip axis.
 	// [
-	//   new LineSegments( scaleOffsetLineGeometry ),
+	//   new LineSegments(scaleOffsetLineGeometry),
 	//   {
 	//     type: 'scale',
 	//     axis: 'XYZ',
 	//     tag: 'offset-start',
-	//     color: new Vector4( ...colors.white, 1 ),
+	//     color: new Vector4(...colors.white, 1),
 	//   }
-	// ], [
-	//   new LineSegments( scaleOffsetLineGeometry ),
+	//], [
+	//   new LineSegments(scaleOffsetLineGeometry),
 	//   {
 	//     type: 'scale',
 	//     axis: 'XYZ',
 	//     tag: 'offset',
-	//     color: new Vector4( ...colors.white, 1 ),
+	//     color: new Vector4(...colors.white, 1),
 	//   }
-	// ]
+	//]
 ];
 
 export class TransformHelper extends ControlsHelper {
@@ -963,10 +963,10 @@ export class TransformHelper extends ControlsHelper {
 			}
 
 			// TODO: Design scale offset visualization. Make it work with inverse/flip axis.
-			// if ( handleType === 'scale' && handleTag.search( 'offset' ) !== -1 ) {
+			// if (handleType === 'scale' && handleTag.search('offset') !== -1) {
 			//   handle.visible = this.scaleOffset.length() !== 0 && handleType === this.activeMode;
 			//   if (handleTag === 'offset') {
-			//     handle.scale.multiply( this.scaleOffset ) );
+			//     handle.scale.multiply(this.scaleOffset));
 			//   }
 			// }
 

@@ -2,8 +2,8 @@ import { MOUSE, TOUCH, Vector3, Quaternion, Spherical, PerspectiveCamera, Orthog
 import { ControlsCamera } from './core/ControlsCamera';
 
 
-// This set of controls performs orbiting, dollying ( zooming ), and panning.
-// Unlike TrackballControls, it maintains the "up" direction camera.up ( +Y by default ).
+// This set of controls performs orbiting, dollying (zooming), and panning.
+// Unlike TrackballControls, it maintains the "up" direction camera.up (+Y by default).
 //
 //    Orbit - left mouse / touch: one-finger move
 //    Zoom - middle mouse, or mousewheel / touch: two-finger spread or squish
@@ -19,11 +19,11 @@ class OrbitControls extends ControlsCamera {
 
 
 	// Public API
-	// How far you can dolly in and out ( PerspectiveCamera only )
+	// How far you can dolly in and out (PerspectiveCamera only)
 	minDistance = 0;
 	maxDistance = Infinity;
 
-	// How far you can zoom in and out ( OrthographicCamera only )
+	// How far you can zoom in and out (OrthographicCamera only)
 	minZoom = 0;
 	maxZoom = Infinity;
 
@@ -33,7 +33,7 @@ class OrbitControls extends ControlsCamera {
 	maxPolarAngle = Math.PI;
 
 	// How far you can orbit horizontally, upper and lower limits.
-	// If set, the interval [  min, max  ] must be a sub-interval of [  - 2 PI, 2 PI  ], with ( max - min < 2 PI )
+	// If set, the interval [min, max] must be a sub-interval of [- 2 PI, 2 PI], with (max - min < 2 PI)
 	minAzimuthAngle = - Infinity;
 	maxAzimuthAngle = Infinity;
 
@@ -74,7 +74,7 @@ class OrbitControls extends ControlsCamera {
 	constructor( camera, domElement ) {
 
 		super( camera, domElement );
-		console.log( 'as' );
+		console.log( camera );
 
 		if ( ! ( camera instanceof PerspectiveCamera ) && ! ( camera instanceof OrthographicCamera ) ) {
 

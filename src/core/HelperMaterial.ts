@@ -34,8 +34,8 @@ export class HelperMaterial extends ShaderMaterial {
       13.0 / 17.0, 0,0,0, 5.0 / 17.0, 0,0,0, 15.0 / 17.0, 0,0,0, 7.0 / 17.0, 0,0,0,
       4.0 / 17.0, 0,0,0, 12.0 / 17.0, 0,0,0, 2.0 / 17.0, 0,0,0, 10.0 / 17.0, 0,0,0,
       16.0 / 17.0, 0,0,0, 8.0 / 17.0, 0,0,0, 14.0 / 17.0, 0,0,0, 6.0 / 17.0, 0,0,0,
-    ]);
-    const ditherPatternTex = new DataTexture( data, 4, 4, RGBAFormat, FloatType );
+   ]);
+    const ditherPatternTex = new DataTexture(data, 4, 4, RGBAFormat, FloatType);
     ditherPatternTex.magFilter = NearestFilter;
     ditherPatternTex.minFilter = NearestFilter;
 
@@ -63,7 +63,7 @@ export class HelperMaterial extends ShaderMaterial {
       void main() {
         float aspect = projectionMatrix[0][0] / projectionMatrix[1][1];
         vColor = color;
-        vec4 pos = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+        vec4 pos = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
         vec3 nor = normalize(vec3(1., 1., 0.) * (normalMatrix * normal));
         gl_Position = pos;
       }
@@ -87,8 +87,8 @@ export class HelperMaterial extends ShaderMaterial {
         opacity = min(dimming, opacity);
         opacity = min(1.0, opacity + highlight);
 
-        vec2 matCoord = ( mod(gl_FragCoord.xy, 4.0) - vec2(0.5) ) / 4.0;
-        vec4 ditherPattern = texture2D( tDitherMatrix, matCoord.xy );
+        vec2 matCoord = (mod(gl_FragCoord.xy, 4.0) - vec2(0.5)) / 4.0;
+        vec4 ditherPattern = texture2D(tDitherMatrix, matCoord.xy);
 
         gl_FragColor = vec4(color, max(opacity, uDithering));
 

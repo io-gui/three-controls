@@ -264,10 +264,10 @@ export class PointerTracker {
 	// Used to distinguish a special "simulated" pointer used to actuate inertial gestures with damping.
 	isSimulated = false;
 
-	// 2D pointer with coordinates in view-space ( [-1...1] range )
+	// 2D pointer with coordinates in view-space ([-1...1] range)
 	view = new Pointer2D();
 
-	// 6D pointer with coordinates in world-space ( origin, direction )
+	// 6D pointer with coordinates in world-space (origin, direction)
 	ray = new Pointer6D();
 	camera;
 	_viewCoord = new Vector2();

@@ -23,7 +23,7 @@ const INERTIA_MOVEMENT_THRESHOLD = 0.01;
  * ### Internal Update and Animation Loop ###
  *
  * - Removes the necessity to call `.update()` method externally from external animation loop for damping calculations.
- * - Developers can start and stop per-frame function invocations via `private startAnimation( callback )` and `stopAnimation( callback )`.
+ * - Developers can start and stop per-frame function invocations via `private startAnimation(callback)` and `stopAnimation(callback)`.
  *
  * ### ControlsInteractive Livecycle ###
  *

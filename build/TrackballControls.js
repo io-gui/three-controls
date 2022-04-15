@@ -4,7 +4,7 @@ import { ControlsCamera } from './core/ControlsCamera';
 const STATE = { NONE: - 1, ROTATE: 0, ZOOM: 1, PAN: 2 };
 
 
-// TODO: make sure events are always fired in right order ( start > change > end )
+// TODO: make sure events are always fired in right order (start > change > end)
 class TrackballControls extends ControlsCamera {
 
 
