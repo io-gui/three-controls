@@ -1,5 +1,5 @@
 import { Vector2, Vector3, Plane, Intersection, Object3D, Ray } from 'three';
-import { AnyCameraType } from './ControlsBase.js';
+import { AnyCameraType } from './ControlsBase';
 
 declare class Pointer2D {
 

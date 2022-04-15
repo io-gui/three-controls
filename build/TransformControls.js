@@ -1,7 +1,7 @@
 import { Quaternion, Vector3, Matrix4, OrthographicCamera } from 'three';
-import { UNIT } from './core/ControlsBase.js';
-import { ControlsInteractive } from './core/ControlsInteractive.js';
-import { TransformHelper } from './TransformHelper.js';
+import { UNIT } from './core/ControlsBase';
+import { ControlsInteractive } from './core/ControlsInteractive';
+import { TransformHelper } from './TransformHelper';
 
 function getFirstIntersection( intersections, includeInvisible ) {
 

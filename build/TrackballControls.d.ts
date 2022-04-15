@@ -1,7 +1,7 @@
 import { MOUSE } from 'three';
-import { ControlsCamera } from './core/ControlsCamera.js';
-import { PointerTracker } from './core/Pointers.js';
-import { AnyCameraType } from './core/ControlsBase.js';
+import { ControlsCamera } from './core/ControlsCamera';
+import { PointerTracker } from './core/Pointers';
+import { AnyCameraType } from './core/ControlsBase';
 
 declare class TrackballControls extends ControlsCamera {
 

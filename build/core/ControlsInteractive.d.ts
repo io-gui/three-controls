@@ -1,6 +1,6 @@
 import { Plane, WebXRManager } from 'three';
-import { PointerTracker, CenterPointerTracker } from './Pointers.js';
-import { ControlsBase, Callback, AnyCameraType, ControlsEvent } from './ControlsBase.js';
+import { PointerTracker, CenterPointerTracker } from './Pointers';
+import { ControlsBase, Callback, AnyCameraType, ControlsEvent } from './ControlsBase';
 
 
 /**

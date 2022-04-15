@@ -1,6 +1,6 @@
 import { Object3D, PerspectiveCamera, OrthographicCamera } from 'three';
-import { PointerTracker } from './core/Pointers.js';
-import { ControlsInteractive } from './core/ControlsInteractive.js';
+import { PointerTracker } from './core/Pointers';
+import { ControlsInteractive } from './core/ControlsInteractive';
 
 export declare class DragControls extends ControlsInteractive {
 

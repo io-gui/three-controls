@@ -1,7 +1,7 @@
 import { Quaternion, Mesh, Euler, Vector3, Vector4, Matrix4, LineSegments, OctahedronGeometry, TorusGeometry, SphereGeometry, BoxGeometry, PlaneGeometry, CylinderGeometry, BufferGeometry, Float32BufferAttribute } from 'three';
-import { UNIT } from './core/ControlsBase.js';
-import { ControlsHelper } from './core/ControlsHelper.js';
-import { colors } from './core/HelperMaterial.js';
+import { UNIT } from './core/ControlsBase';
+import { ControlsHelper } from './core/ControlsHelper';
+import { colors } from './core/HelperMaterial';
 
 const CircleGeometry = function ( radius, arc ) {
 
@@ -675,6 +675,26 @@ const scaleHelperGeometrySpec = [
 			rotation: new Euler( Math.PI / 2, Math.PI / 4, 0 ),
 		}
 	],
+
+	// Offset visualization
+	// TODO: Design scale offset visualization. Make it work with inverse/flip axis.
+	// [
+	//   new LineSegments( scaleOffsetLineGeometry ),
+	//   {
+	//     type: 'scale',
+	//     axis: 'XYZ',
+	//     tag: 'offset-start',
+	//     color: new Vector4( ...colors.white, 1 ),
+	//   }
+	// ], [
+	//   new LineSegments( scaleOffsetLineGeometry ),
+	//   {
+	//     type: 'scale',
+	//     axis: 'XYZ',
+	//     tag: 'offset',
+	//     color: new Vector4( ...colors.white, 1 ),
+	//   }
+	// ]
 ];
 
 export class TransformHelper extends ControlsHelper {

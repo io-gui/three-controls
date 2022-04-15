@@ -1,6 +1,6 @@
 import { OrthographicCamera, PerspectiveCamera } from 'three';
-import { ControlsBase } from './ControlsBase.js';
-import { HelperMaterial } from './HelperMaterial.js';
+import { ControlsBase } from './ControlsBase';
+import { HelperMaterial } from './HelperMaterial';
 
 
 // TODO: depth bias and dithered transparency.

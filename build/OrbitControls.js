@@ -1,5 +1,5 @@
 import { MOUSE, TOUCH, Vector3, Quaternion, Spherical, PerspectiveCamera, OrthographicCamera } from 'three';
-import { ControlsCamera } from './core/ControlsCamera.js';
+import { ControlsCamera } from './core/ControlsCamera';
 
 
 // This set of controls performs orbiting, dollying ( zooming ), and panning.
@@ -74,6 +74,7 @@ class OrbitControls extends ControlsCamera {
 		this._spherical = new Spherical();
 		this._autoRotationMagnitude = 0;
 		this._interacting = false;
+		console.log( 'a' );
 
 		if ( ! ( camera instanceof PerspectiveCamera ) && ! ( camera instanceof OrthographicCamera ) ) {
 
