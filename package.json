@@ -15,7 +15,7 @@
     "lint": "eslint -c ./eslint.typescript.json src --fix",
     "lint:build": "eslint build -c ./eslint.mdcs.json build --fix",
     "build": "yarn clean && yarn lint && tsc && yarn lint:build",
-    "watch": "yarn clean && yarn lint && tsc -w"
+    "watch": "yarn clean && yarn lint && tsc -w --declarationMap --sourceMap"
   },
   "sideEffects": false,
   "repository": {

@@ -111,7 +111,7 @@ export class ThreeRenderer extends IoElement {
         gl.flush();
         host.ishost = false;
       }
-      /* eslint-disable @typescript-eslint/no-this-alias */
+      /* eslint-disable-next-line */
       host = this;
       this.appendChild(this.renderer.domElement);
       this.ishost = true;

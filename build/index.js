@@ -1,11 +1,1 @@
-export * from './DragControls';
-
-export * from './MapControls';
-
-export * from './OrbitControls';
-
-export * from './TrackballControls';
-
-export * from './TransformControls';
-
-export * from './TransformHelper';
+export * from './controls/index.js';
