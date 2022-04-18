@@ -1,6 +1,6 @@
 import { Vector2, Vector3, Vector4, Quaternion, PerspectiveCamera, OrthographicCamera } from 'three';
-import { ControlsInteractive } from './ControlsInteractive';
-import { AnyCameraType } from './ControlsBase';
+import { ControlsInteractive } from './ControlsInteractive.js';
+import { AnyCameraType } from './ControlsBase.js';
 
 const STATES = new WeakMap();
 

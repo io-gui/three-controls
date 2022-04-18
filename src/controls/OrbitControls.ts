@@ -1,7 +1,7 @@
 import { MOUSE, TOUCH, Vector3, Quaternion, Spherical, PerspectiveCamera, OrthographicCamera } from 'three';
-import { ControlsCamera } from './core/ControlsCamera';
-import { PointerTracker } from './core/Pointers';
-import { Callback } from './core/ControlsBase';
+import { ControlsCamera } from './core/ControlsCamera.js';
+import { PointerTracker } from './core/Pointers.js';
+import { Callback } from './core/ControlsBase.js';
 
 // This set of controls performs orbiting, dollying (zooming), and panning.
 // Unlike TrackballControls, it maintains the "up" direction camera.up (+Y by default).
@@ -65,8 +65,6 @@ class OrbitControls extends ControlsCamera {
   constructor(camera: PerspectiveCamera | OrthographicCamera, domElement: HTMLElement) {
 
     super(camera, domElement);
-
-    console.log(camera);
 
     if (!(camera instanceof PerspectiveCamera) && !(camera instanceof OrthographicCamera)) {
       console.warn('WARNING: OrbitControls.js encountered an unknown camera type - dolly/zoom disabled.');
@@ -152,6 +150,7 @@ class OrbitControls extends ControlsCamera {
   onTrackedPointerDown(pointer: PointerTracker, pointers: PointerTracker[]): void {
     if (pointers.length === 1) {
       this.dispatchEvent({ type: 'start'});
+      // this.saveCameraState();
     }
   }
 

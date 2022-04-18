@@ -66,7 +66,8 @@ export class ControlsBase extends Object3D {
     if (type === 'change') {
       this.changed();
     } else if (type.endsWith('-changed')) {
-      const handler = this[event.property + 'Changed' as keyof ControlsBase] as Callback;
+      let handler = this[event.property + 'Changed' as keyof ControlsBase] as Callback;
+      if (handler) handler = handler.bind(this);
       handler && handler(event.value, event.oldValue);
     }
   }

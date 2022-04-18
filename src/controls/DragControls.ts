@@ -1,7 +1,7 @@
 import { Vector3, Object3D, Intersection, PerspectiveCamera, OrthographicCamera } from 'three';
-import { PointerTracker } from './core/Pointers';
-import { ControlsInteractive } from './core/ControlsInteractive';
-import { ControlsEvent } from './core/ControlsBase';
+import { PointerTracker } from './core/Pointers.js';
+import { ControlsInteractive } from './core/ControlsInteractive.js';
+import { ControlsEvent } from './core/ControlsBase.js';
 
 let _intersections: Intersection[];
 const _hoveredObjects: Record<string, Object3D> = {};

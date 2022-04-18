@@ -294,6 +294,7 @@ export class PointerTracker {
   intersectObjects(objects: Object3D[]): Intersection[] {
     this._raycaster.set(this.ray.current.origin, this.ray.current.direction);
     this._intersectedObjects.length = 0;
+    this._raycaster.layers.mask = objects[0].layers.mask;
     this._raycaster.intersectObjects(objects, true, this._intersectedObjects);
     return this._intersectedObjects;
   }

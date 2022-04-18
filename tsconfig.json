@@ -7,7 +7,7 @@
     "checkJs": true,
     "declaration": true,
     "declarationMap": true,
-    "sourceMap": false,
+    "sourceMap": true,
     "rootDir": "./src",
     "outDir": "./build",
     /* Strict Type-Checking Options */
@@ -33,5 +33,9 @@
   "include": [
     "src/**/*",
   ],
-  "exclude": ["./src/_HelperGeometry.ts", "./src/_BufferGeometryUtils.ts"]
+  "exclude": [
+    "./src/_HelperGeometry.ts",
+    "./src/_BufferGeometryUtils.ts",
+    "./src/elements/renderer.ts"
+  ]
 }

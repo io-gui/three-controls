@@ -1,6 +1,6 @@
 {
   "name": "@io-gui/controls",
-  "version": "1.0.12",
+  "version": "1.1.1",
   "main": "index.js",
   "files": [
     "src",
@@ -12,8 +12,8 @@
   ],
   "scripts": {
     "clean": "rm -rf build",
-    "lint": "eslint -c ./eslint.typescript.json --no-ignore src --fix",
-    "lint:build": "eslint build -c ./eslint.build.json --no-ignore build --fix",
+    "lint": "eslint -c ./eslint.typescript.json src --fix",
+    "lint:build": "eslint build -c ./eslint.mdcs.json build --fix",
     "build": "yarn clean && yarn lint && tsc && yarn lint:build",
     "watch": "yarn clean && yarn lint && tsc -w"
   },
@@ -41,7 +41,8 @@
     "tslib": "^2.3.1",
     "typescript": "^4.5.5"
   },
-  "peerDependencies": {
+  "dependencies": {
+    "@iogui/iogui": "https://github.com/io-gui/iogui.git",
     "@types/three": "^0.139",
     "three": "^0.139.2"
   }
