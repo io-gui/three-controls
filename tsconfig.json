@@ -33,9 +33,5 @@
   "include": [
     "src/**/*",
   ],
-  "exclude": [
-    "./src/_HelperGeometry.ts",
-    "./src/_BufferGeometryUtils.ts",
-    "./src/elements/renderer.ts"
-  ]
+  "exclude": []
 }
