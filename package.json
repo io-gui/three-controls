@@ -1,12 +1,13 @@
 {
   "name": "io-gui-three-controls",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "main": "index.js",
   "module": "index.js",
   "files": [
     "src",
     "build",
     "index.js",
+    "index.d.ts",
     "LICENSE",
     "README.md"
   ],
@@ -42,7 +43,6 @@
     "typescript": "^4.5.5"
   },
   "dependencies": {
-    "@iogui/iogui": "https://github.com/io-gui/iogui.git",
     "three": "^0.139.2"
   }
 }
