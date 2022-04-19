@@ -6,8 +6,8 @@
     "allowJs": true,
     "checkJs": true,
     "declaration": true,
-    "declarationMap": false,
-    "sourceMap": false,
+    "declarationMap": true,
+    "sourceMap": true,
     "rootDir": "./src",
     "outDir": "./build",
     /* Strict Type-Checking Options */

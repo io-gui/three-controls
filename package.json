@@ -1,12 +1,12 @@
 {
-  "name": "@io-gui/controls",
+  "name": "io-gui-three-controls",
   "version": "1.1.1",
   "main": "index.js",
+  "module": "index.js",
   "files": [
     "src",
     "build",
     "index.js",
-    "index.ts",
     "LICENSE",
     "README.md"
   ],
@@ -20,22 +20,22 @@
   "sideEffects": false,
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/io-gui/controls.git"
+    "url": "git+https://github.com/io-gui/three-controls.git"
   },
   "keywords": [
-    "typescript",
     "threejs",
     "controls"
   ],
   "author": "Aleksandar (Aki) Rodic",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/io-gui/controls/issues"
+    "url": "https://github.com/io-gui/three-controls/issues"
   },
-  "homepage": "https://github.com/io-gui/controls",
+  "homepage": "https://github.com/io-gui/three-controls",
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^5.19.0",
     "@typescript-eslint/parser": "^5.19.0",
+    "@types/three": "^0.139",
     "eslint": "^8.13.0",
     "eslint-config-mdcs": "^5.0.0",
     "tslib": "^2.3.1",
@@ -43,7 +43,6 @@
   },
   "dependencies": {
     "@iogui/iogui": "https://github.com/io-gui/iogui.git",
-    "@types/three": "^0.139",
     "three": "^0.139.2"
   }
 }
