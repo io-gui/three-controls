@@ -64,6 +64,8 @@ export class ControlsInteractive extends ControlsBase {
     this._onPointerUp = this._onPointerUp.bind(this);
     this._onKeyDown = this._onKeyDown.bind(this);
     this._onKeyUp = this._onKeyUp.bind(this);
+    this._onDragOver = this._onDragOver.bind(this);
+    this._onDrop = this._onDrop.bind(this);
     this._connect = this._connect.bind(this);
     this._disconnect = this._disconnect.bind(this);
     this._connectXR = this._connectXR.bind(this);
@@ -98,6 +100,8 @@ export class ControlsInteractive extends ControlsBase {
     domElement.addEventListener('pointerup', this._onPointerUp, false);
     domElement.addEventListener('keydown', this._onKeyDown, false);
     domElement.addEventListener('keyup', this._onKeyUp, false);
+    domElement.addEventListener('dragover', this._onDragOver, false);
+    domElement.addEventListener('drop', this._onDrop, false);
   }
   _disconnectViewport(domElement: HTMLElement) {
     domElement.removeEventListener('contextmenu', this._onContextMenu, false);
@@ -109,6 +113,8 @@ export class ControlsInteractive extends ControlsBase {
     domElement.removeEventListener('pointerup', this._onPointerUp, false);
     domElement.removeEventListener('keydown', this._onKeyDown, false);
     domElement.removeEventListener('keyup', this._onKeyUp, false);
+    domElement.removeEventListener('dragover', this._onDragOver, false);
+    domElement.removeEventListener('drop', this._onDrop, false);
     // Release all captured pointers
     for (let i = 0; i < this._pointers.length; i++) {
       domElement.releasePointerCapture(this._pointers[i].pointerId);
@@ -341,6 +347,24 @@ export class ControlsInteractive extends ControlsBase {
     this.onTrackedKeyChange(code, keys);
     this.dispatchEvent(event);
   }
+  _onDragOver(event: DragEvent) {
+    event.preventDefault();
+    const path = ((event as any).path || (event.composedPath && event.composedPath())) as HTMLElement[];
+    const domElement = path.find(element => this._viewports.indexOf(element) !== -1) as HTMLElement;
+    const camera = this._viewportCameras.get(domElement) as AnyCameraType;
+    const pointer = new PointerTracker(event as unknown as PointerEvent, camera);
+    this.onTrackedDragOver(pointer, [pointer]);
+    this.dispatchEvent(event);
+  }
+  _onDrop(event: DragEvent) {
+    event.preventDefault();
+    const path = ((event as any).path || (event.composedPath && event.composedPath())) as HTMLElement[];
+    const domElement = path.find(element => this._viewports.indexOf(element) !== -1) as HTMLElement;
+    const camera = this._viewportCameras.get(domElement) as AnyCameraType;
+    const pointer = new PointerTracker(event as unknown as PointerEvent, camera);
+    this.onTrackedDrop(pointer, [pointer]);
+    this.dispatchEvent(event);
+  }
 
   // Tracked pointer handlers
   onTrackedPointerDown(_pointer: PointerTracker, _pointers: PointerTracker[]) {}
@@ -350,4 +374,6 @@ export class ControlsInteractive extends ControlsBase {
   onTrackedKeyDown(code: number, codes: number[]) {}
   onTrackedKeyUp(code: number, codes: number[]) {}
   onTrackedKeyChange(code: number, codes: number[]) {}
+  onTrackedDragOver(_pointer: PointerTracker, _pointers: PointerTracker[]) {}
+  onTrackedDrop(_pointer: PointerTracker, _pointers: PointerTracker[]) {}
 }

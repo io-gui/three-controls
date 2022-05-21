@@ -1,3 +1,4 @@
+export * from './core/index.js';
 export * from './DragControls.js';
 export * from './MapControls.js';
 export * from './OrbitControls.js';
