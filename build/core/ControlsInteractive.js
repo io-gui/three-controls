@@ -73,6 +73,8 @@ export class ControlsInteractive extends ControlsBase {
 		this._onPointerUp = this._onPointerUp.bind( this );
 		this._onKeyDown = this._onKeyDown.bind( this );
 		this._onKeyUp = this._onKeyUp.bind( this );
+		this._onDragOver = this._onDragOver.bind( this );
+		this._onDrop = this._onDrop.bind( this );
 		this._connect = this._connect.bind( this );
 		this._disconnect = this._disconnect.bind( this );
 		this._connectXR = this._connectXR.bind( this );
@@ -113,6 +115,8 @@ export class ControlsInteractive extends ControlsBase {
 		domElement.addEventListener( 'pointerup', this._onPointerUp, false );
 		domElement.addEventListener( 'keydown', this._onKeyDown, false );
 		domElement.addEventListener( 'keyup', this._onKeyUp, false );
+		domElement.addEventListener( 'dragover', this._onDragOver, false );
+		domElement.addEventListener( 'drop', this._onDrop, false );
 
 	}
 	_disconnectViewport( domElement ) {
@@ -126,6 +130,8 @@ export class ControlsInteractive extends ControlsBase {
 		domElement.removeEventListener( 'pointerup', this._onPointerUp, false );
 		domElement.removeEventListener( 'keydown', this._onKeyDown, false );
 		domElement.removeEventListener( 'keyup', this._onKeyUp, false );
+		domElement.removeEventListener( 'dragover', this._onDragOver, false );
+		domElement.removeEventListener( 'drop', this._onDrop, false );
 
 
 		// Release all captured pointers
@@ -481,6 +487,28 @@ export class ControlsInteractive extends ControlsBase {
 		this.dispatchEvent( event );
 
 	}
+	_onDragOver( event ) {
+
+		event.preventDefault();
+		const path = ( event.path || ( event.composedPath && event.composedPath() ) );
+		const domElement = path.find( element => this._viewports.indexOf( element ) !== - 1 );
+		const camera = this._viewportCameras.get( domElement );
+		const pointer = new PointerTracker( event, camera );
+		this.onTrackedDragOver( pointer, [ pointer ] );
+		this.dispatchEvent( event );
+
+	}
+	_onDrop( event ) {
+
+		event.preventDefault();
+		const path = ( event.path || ( event.composedPath && event.composedPath() ) );
+		const domElement = path.find( element => this._viewports.indexOf( element ) !== - 1 );
+		const camera = this._viewportCameras.get( domElement );
+		const pointer = new PointerTracker( event, camera );
+		this.onTrackedDrop( pointer, [ pointer ] );
+		this.dispatchEvent( event );
+
+	}
 
 	// Tracked pointer handlers
 	onTrackedPointerDown( _pointer, _pointers ) { }
@@ -490,6 +518,8 @@ export class ControlsInteractive extends ControlsBase {
 	onTrackedKeyDown( code, codes ) { }
 	onTrackedKeyUp( code, codes ) { }
 	onTrackedKeyChange( code, codes ) { }
+	onTrackedDragOver( _pointer, _pointers ) { }
+	onTrackedDrop( _pointer, _pointers ) { }
 
 }
 

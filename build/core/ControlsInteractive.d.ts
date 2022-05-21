@@ -66,6 +66,8 @@ export declare class ControlsInteractive extends ControlsBase {
     _onPointerUp(event: PointerEvent): void;
     _onKeyDown(event: KeyboardEvent): void;
     _onKeyUp(event: KeyboardEvent): void;
+    _onDragOver(event: DragEvent): void;
+    _onDrop(event: DragEvent): void;
     onTrackedPointerDown(_pointer: PointerTracker, _pointers: PointerTracker[]): void;
     onTrackedPointerMove(_pointer: PointerTracker, _pointers: PointerTracker[], _centerPointer: CenterPointerTracker): void;
     onTrackedPointerHover(_pointer: PointerTracker, _pointers: PointerTracker[]): void;
@@ -73,5 +75,7 @@ export declare class ControlsInteractive extends ControlsBase {
     onTrackedKeyDown(code: number, codes: number[]): void;
     onTrackedKeyUp(code: number, codes: number[]): void;
     onTrackedKeyChange(code: number, codes: number[]): void;
+    onTrackedDragOver(_pointer: PointerTracker, _pointers: PointerTracker[]): void;
+    onTrackedDrop(_pointer: PointerTracker, _pointers: PointerTracker[]): void;
 }
 //# sourceMappingURL=ControlsInteractive.d.ts.map
