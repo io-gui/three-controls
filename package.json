@@ -1,6 +1,6 @@
 {
   "name": "io-gui-three-controls",
-  "version": "1.1.6",
+  "version": "1.1.7",
   "main": "index.js",
   "module": "index.js",
   "files": [
@@ -44,10 +44,10 @@
   },
   "dependencies": {
     "@types/three": "^0.140.0",
-    "three": "^0.140.2"
+    "three": "^0.141.0"
   },
   "peerDependencies": {
     "@types/three": "^0.140.0",
-    "three": "^0.140.2"
+    "three": "^0.141.0"
   }
 }
