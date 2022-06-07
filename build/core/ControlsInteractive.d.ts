@@ -64,6 +64,7 @@ export declare class ControlsInteractive extends ControlsBase {
     _onPointerMove(event: PointerEvent): void;
     _onPointerSimulation(timeDelta: number): void;
     _onPointerUp(event: PointerEvent): void;
+    _onPointerCancel(event: PointerEvent): void;
     _onKeyDown(event: KeyboardEvent): void;
     _onKeyUp(event: KeyboardEvent): void;
     _onDragOver(event: DragEvent): void;

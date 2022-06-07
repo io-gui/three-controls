@@ -71,6 +71,7 @@ export class ControlsInteractive extends ControlsBase {
 		this._onPointerMove = this._onPointerMove.bind( this );
 		this._onPointerSimulation = this._onPointerSimulation.bind( this );
 		this._onPointerUp = this._onPointerUp.bind( this );
+		this._onPointerCancel = this._onPointerCancel.bind( this );
 		this._onKeyDown = this._onKeyDown.bind( this );
 		this._onKeyUp = this._onKeyUp.bind( this );
 		this._onDragOver = this._onDragOver.bind( this );
@@ -113,6 +114,7 @@ export class ControlsInteractive extends ControlsBase {
 		domElement.addEventListener( 'pointerdown', this._onPointerDown );
 		domElement.addEventListener( 'pointermove', this._onPointerMove, { capture: true } );
 		domElement.addEventListener( 'pointerup', this._onPointerUp, false );
+		domElement.addEventListener( 'pointercancel', this._onPointerCancel, false );
 		domElement.addEventListener( 'keydown', this._onKeyDown, false );
 		domElement.addEventListener( 'keyup', this._onKeyUp, false );
 		domElement.addEventListener( 'dragover', this._onDragOver, false );
@@ -128,6 +130,7 @@ export class ControlsInteractive extends ControlsBase {
 		domElement.removeEventListener( 'pointerdown', this._onPointerDown );
 		domElement.removeEventListener( 'pointermove', this._onPointerMove );
 		domElement.removeEventListener( 'pointerup', this._onPointerUp, false );
+		domElement.removeEventListener( 'pointercancel', this._onPointerCancel, false );
 		domElement.removeEventListener( 'keydown', this._onKeyDown, false );
 		domElement.removeEventListener( 'keyup', this._onKeyUp, false );
 		domElement.removeEventListener( 'dragover', this._onDragOver, false );
@@ -452,6 +455,11 @@ export class ControlsInteractive extends ControlsBase {
 		}
 
 		this.dispatchEvent( event );
+
+	}
+	_onPointerCancel( event ) {
+
+		this._onPointerUp( event );
 
 	}
 	_onKeyDown( event ) {
