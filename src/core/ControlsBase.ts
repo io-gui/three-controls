@@ -1,13 +1,7 @@
-import { Vector3, Quaternion, PerspectiveCamera, OrthographicCamera, Camera, Object3D } from 'three';
+import { Vector3, Quaternion, PerspectiveCamera, OrthographicCamera, Camera, Object3D, BaseEvent, Object3DEventMap } from 'three';
 
 export type Callback = (callbackValue?: any, callbackOldValue?: any) => void;
 export type AnyCameraType = Camera | PerspectiveCamera | OrthographicCamera | Object3D;
-
-export interface ControlsEvent {
-  type: string;
-  target?: any;
-  [attachment: string]: any;
-}
 
 export const UNIT = {
   ZERO: Object.freeze(new Vector3(0, 0, 0)),
@@ -18,10 +12,32 @@ export const UNIT = {
 
 // TODO: make rAF compatible with WebXR
 
+export interface ControlsEventMap extends Object3DEventMap {
+  start: object;
+  end: object;
+  drag: object;
+  dragstart: object;
+  dragend: object;
+  change: object;
+  hoveron: object;
+  hoveroff: object;
+  dispose: object;
+  selectstart: object;
+  selectend: object;
+  controllermove: object;
+  transform: object;
+}
+
+export interface ControlsEvent extends BaseEvent {
+  type: keyof ControlsEventMap;
+  target?: any;
+  [attachment: string]: any;
+}
+
 /**
  * `ControlsBase`: Base class for Objects with observable properties, change events and animation.
  */
-export class ControlsBase extends Object3D {
+export class ControlsBase extends Object3D<ControlsEventMap> {
   camera: AnyCameraType;
   domElement: HTMLElement;
   readonly eye = new Vector3();
@@ -74,7 +90,7 @@ export class ControlsBase extends Object3D {
   dispatchEvent(event: ControlsEvent) {
     const type = event.type;
     if (!this._eventTimeout[type]) {
-      super.dispatchEvent(event);
+      super.dispatchEvent(event as any);
       this._invokeChangeHandlers(event);
       this._eventTimeout[type] = -1;
       requestAnimationFrame(() => { this._eventTimeout[type] = 0});
@@ -82,7 +98,7 @@ export class ControlsBase extends Object3D {
       cancelAnimationFrame(this._eventTimeout[type]);
       this._eventTimeout[type] = requestAnimationFrame(() => {
         this._eventTimeout[type] = 0;
-        super.dispatchEvent(event);
+        super.dispatchEvent(event as any);
         this._invokeChangeHandlers(event);
      });
     }

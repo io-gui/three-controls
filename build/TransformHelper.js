@@ -751,6 +751,7 @@ export class TransformHelper extends ControlsHelper {
 		this.observeProperty( 'showOffset' );
 		this.observeProperty( 'dithering' );
 		this._animate = this._animate.bind( this );
+		this.updateMatrixWorld();
 
 	}
 	changed() {

@@ -18,49 +18,18 @@
         background: var(--io-background-color);
       }
     </style>
-    <!-- Import maps polyfill -->
-    <!-- Remove this when import maps will be widely supported -->
-    <script async src="https://unpkg.com/es-module-shims@1.5.4/dist/es-module-shims.js"></script>
     <script type="importmap">
       {
         "imports": {
-          "io-gui": "../io/index.js",
-          "three": "../three.js/build/three.module.js",
-          "three/": "../three.js/"
+          "io-gui": "./node_modules/io-gui/build/iogui.js",
+          "three": "./node_modules/three/build/three.module.js",
+          "three/": "./node_modules/three/"
         }
       }
     </script>
-    <script type="module">
-      import { IoElement, RegisterIoElement } from 'io-gui';
-      import { Object3D, Scene } from 'three';
-
-      export class ThreeUiDemo extends IoElement {
-        static get Style() {
-          return /* css */`
-            :host {
-              display: flex;
-              position: relative;
-              height: 100%;
-              flex-direction: column;
-              overflow: hidden;
-            }
-            :host > div {
-              margin: auto;
-            }
-          `;
-        }
-        static get Properties() {
-          return {};
-        }
-        constructor(properties = {}) {
-          super(properties);
-          this.template([['div', 'This page is not ready yet.']]);
-        }
-      }
-      RegisterIoElement(ThreeUiDemo);
-    </script>
+    <script src="index.js" type="module"></script>
   </head>
   <body>
-    <three-ui-demo></three-ui-demo>
+    <three-controls-demo></three-controls-demo>
   </body>
 </html>

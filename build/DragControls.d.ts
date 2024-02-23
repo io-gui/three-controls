@@ -9,7 +9,7 @@ export declare class DragControls extends ControlsInteractive {
     onTrackedPointerDown(pointer: PointerTracker): void;
     onTrackedPointerMove(pointer: PointerTracker): void;
     onTrackedPointerUp(pointer: PointerTracker, pointers: PointerTracker[]): void;
-    getObjects(): Object3D<import("three").Event>[];
+    getObjects(): Object3D<import("three").Object3DEventMap>[];
     activate(): void;
     deactivate(): void;
 }

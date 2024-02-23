@@ -1,21 +1,36 @@
-import { Vector3, Quaternion, PerspectiveCamera, OrthographicCamera, Camera, Object3D } from 'three';
-export declare type Callback = (callbackValue?: any, callbackOldValue?: any) => void;
-export declare type AnyCameraType = Camera | PerspectiveCamera | OrthographicCamera | Object3D;
-export interface ControlsEvent {
-    type: string;
-    target?: any;
-    [attachment: string]: any;
-}
+import { Vector3, Quaternion, PerspectiveCamera, OrthographicCamera, Camera, Object3D, BaseEvent, Object3DEventMap } from 'three';
+export type Callback = (callbackValue?: any, callbackOldValue?: any) => void;
+export type AnyCameraType = Camera | PerspectiveCamera | OrthographicCamera | Object3D;
 export declare const UNIT: {
     ZERO: Readonly<Vector3>;
     X: Readonly<Vector3>;
     Y: Readonly<Vector3>;
     Z: Readonly<Vector3>;
 };
+export interface ControlsEventMap extends Object3DEventMap {
+    start: object;
+    end: object;
+    drag: object;
+    dragstart: object;
+    dragend: object;
+    change: object;
+    hoveron: object;
+    hoveroff: object;
+    dispose: object;
+    selectstart: object;
+    selectend: object;
+    controllermove: object;
+    transform: object;
+}
+export interface ControlsEvent extends BaseEvent {
+    type: keyof ControlsEventMap;
+    target?: any;
+    [attachment: string]: any;
+}
 /**
  * `ControlsBase`: Base class for Objects with observable properties, change events and animation.
  */
-export declare class ControlsBase extends Object3D {
+export declare class ControlsBase extends Object3D<ControlsEventMap> {
     camera: AnyCameraType;
     domElement: HTMLElement;
     readonly eye: Vector3;

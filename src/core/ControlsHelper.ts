@@ -4,7 +4,6 @@ import { HelperMaterial } from './HelperMaterial.js';
 
 // TODO: depth bias and dithered transparency.
 
-
 export const helperMaterial = new HelperMaterial();
 
 export interface HelperGeometrySpec {

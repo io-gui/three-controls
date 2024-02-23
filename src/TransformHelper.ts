@@ -2,7 +2,7 @@ import { Quaternion, Mesh, Euler, Vector3, Vector4, Matrix4, LineSegments, Octah
   TorusGeometry, SphereGeometry, BoxGeometry, PlaneGeometry, CylinderGeometry,
   BufferGeometry, Float32BufferAttribute } from 'three';
 
-import { AnyCameraType, UNIT } from './core/ControlsBase.js';
+import { AnyCameraType, ControlsBase, UNIT } from './core/ControlsBase.js';
 import { ControlsHelper, HelperGeometrySpec } from './core/ControlsHelper.js';
 import { HelperMaterial, colors } from './core/HelperMaterial.js';
 
@@ -750,6 +750,7 @@ export class TransformHelper extends ControlsHelper {
     this.observeProperty('dithering');
 
     this._animate = this._animate.bind(this);
+    this.updateMatrixWorld();
   }
   changed() {
     this.startAnimation(this._animate);
@@ -992,7 +993,7 @@ export class TransformHelper extends ControlsHelper {
     }
 
     if (!needsUpdate) this.stopAnimation(this._animate);
-    if (this.parent) this.parent.dispatchEvent({ type: 'change'});
+    if (this.parent) (this.parent as ControlsBase).dispatchEvent({ type: 'change'});
   }
   updateMatrixWorld() {
     super.updateMatrixWorld();

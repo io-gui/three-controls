@@ -221,10 +221,10 @@ export class ControlsInteractive extends ControlsBase {
     event.preventDefault();
   }
   _onContextMenu(event: Event) {
-    this.dispatchEvent(event);
+    // this.dispatchEvent(event);
   }
   _onWheel(event: WheelEvent) {
-    this.dispatchEvent(event);
+    // this.dispatchEvent(event);
   }
   _onPointerDown(event: PointerEvent) {
     const path = ((event as any).path || (event.composedPath && event.composedPath())) as HTMLElement[];
@@ -243,7 +243,7 @@ export class ControlsInteractive extends ControlsBase {
     pointer.clearMovement(); // TODO: investigate why this is necessary
     pointers.push(pointer);
     this.onTrackedPointerDown(pointer, pointers);
-    this.dispatchEvent(event);
+    // this.dispatchEvent(event);
   }
   _onPointerMove(event: PointerEvent) {
     const path = ((event as any).path || (event.composedPath && event.composedPath())) as HTMLElement[];
@@ -261,7 +261,7 @@ export class ControlsInteractive extends ControlsBase {
       if (pointer.button !== 0 && (x > 1 || x < 0 || y > 1 || y < 0)) {
         pointers.splice(index, 1);
         domElement.releasePointerCapture(event.pointerId);
-        this.dispatchEvent(event);
+        // this.dispatchEvent(event);
         this.onTrackedPointerUp(pointer, pointers);
         return;
       }
@@ -288,7 +288,7 @@ export class ControlsInteractive extends ControlsBase {
       pointer = this._hoverPointer = new PointerTracker(event, camera);
       this.onTrackedPointerHover(pointer, [pointer]);
     }
-    this.dispatchEvent(event);
+    // this.dispatchEvent(event);
   }
   _onPointerSimulation(timeDelta: number) {
     if (this._simulatedPointer) {
@@ -328,7 +328,7 @@ export class ControlsInteractive extends ControlsBase {
         this.onTrackedPointerHover(pointer, pointers);
       }
     }
-    this.dispatchEvent(event);
+    // this.dispatchEvent(event);
   }
   _onPointerCancel(event: PointerEvent) {
     this._onPointerUp(event);
@@ -342,7 +342,7 @@ export class ControlsInteractive extends ControlsBase {
       this.onTrackedKeyDown(code, keys);
       this.onTrackedKeyChange(code, keys);
     }
-    this.dispatchEvent(event);
+    // this.dispatchEvent(event);
   }
   _onKeyUp(event: KeyboardEvent) {
     const code = Number(event.code);
@@ -351,7 +351,7 @@ export class ControlsInteractive extends ControlsBase {
     if (index !== -1) keys.splice(index, 1);
     this.onTrackedKeyUp(code, keys);
     this.onTrackedKeyChange(code, keys);
-    this.dispatchEvent(event);
+    // this.dispatchEvent(event);
   }
   _onDragOver(event: DragEvent) {
     event.preventDefault();
@@ -360,7 +360,7 @@ export class ControlsInteractive extends ControlsBase {
     const camera = this._viewportCameras.get(domElement) as AnyCameraType;
     const pointer = new PointerTracker(event as unknown as PointerEvent, camera);
     this.onTrackedDragOver(pointer, [pointer]);
-    this.dispatchEvent(event);
+    // this.dispatchEvent(event);
   }
   _onDrop(event: DragEvent) {
     event.preventDefault();
@@ -369,7 +369,7 @@ export class ControlsInteractive extends ControlsBase {
     const camera = this._viewportCameras.get(domElement) as AnyCameraType;
     const pointer = new PointerTracker(event as unknown as PointerEvent, camera);
     this.onTrackedDrop(pointer, [pointer]);
-    this.dispatchEvent(event);
+    // this.dispatchEvent(event);
   }
 
   // Tracked pointer handlers

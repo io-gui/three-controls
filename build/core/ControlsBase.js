@@ -8,7 +8,6 @@ export const UNIT = {
 };
 
 
-// TODO: make rAF compatible with WebXR
 /**
  * `ControlsBase`: Base class for Objects with observable properties, change events and animation.
  */

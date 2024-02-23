@@ -292,13 +292,11 @@ export class ControlsInteractive extends ControlsBase {
 	}
 	_onContextMenu( event ) {
 
-		this.dispatchEvent( event );
-
+		// this.dispatchEvent(event);
 	}
 	_onWheel( event ) {
 
-		this.dispatchEvent( event );
-
+		// this.dispatchEvent(event);
 	}
 	_onPointerDown( event ) {
 
@@ -323,7 +321,8 @@ export class ControlsInteractive extends ControlsBase {
 		pointer.clearMovement(); // TODO: investigate why this is necessary
 		pointers.push( pointer );
 		this.onTrackedPointerDown( pointer, pointers );
-		this.dispatchEvent( event );
+
+		// this.dispatchEvent(event);
 
 	}
 	_onPointerMove( event ) {
@@ -349,7 +348,8 @@ export class ControlsInteractive extends ControlsBase {
 
 				pointers.splice( index, 1 );
 				domElement.releasePointerCapture( event.pointerId );
-				this.dispatchEvent( event );
+
+				// this.dispatchEvent(event);
 				this.onTrackedPointerUp( pointer, pointers );
 				return;
 
@@ -390,7 +390,7 @@ export class ControlsInteractive extends ControlsBase {
 
 		}
 
-		this.dispatchEvent( event );
+		// this.dispatchEvent(event);
 
 	}
 	_onPointerSimulation( timeDelta ) {
@@ -454,7 +454,7 @@ export class ControlsInteractive extends ControlsBase {
 
 		}
 
-		this.dispatchEvent( event );
+		// this.dispatchEvent(event);
 
 	}
 	_onPointerCancel( event ) {
@@ -478,7 +478,7 @@ export class ControlsInteractive extends ControlsBase {
 
 		}
 
-		this.dispatchEvent( event );
+		// this.dispatchEvent(event);
 
 	}
 	_onKeyUp( event ) {
@@ -492,7 +492,8 @@ export class ControlsInteractive extends ControlsBase {
 
 		this.onTrackedKeyUp( code, keys );
 		this.onTrackedKeyChange( code, keys );
-		this.dispatchEvent( event );
+
+		// this.dispatchEvent(event);
 
 	}
 	_onDragOver( event ) {
@@ -503,7 +504,8 @@ export class ControlsInteractive extends ControlsBase {
 		const camera = this._viewportCameras.get( domElement );
 		const pointer = new PointerTracker( event, camera );
 		this.onTrackedDragOver( pointer, [ pointer ] );
-		this.dispatchEvent( event );
+
+		// this.dispatchEvent(event);
 
 	}
 	_onDrop( event ) {
@@ -514,7 +516,8 @@ export class ControlsInteractive extends ControlsBase {
 		const camera = this._viewportCameras.get( domElement );
 		const pointer = new PointerTracker( event, camera );
 		this.onTrackedDrop( pointer, [ pointer ] );
-		this.dispatchEvent( event );
+
+		// this.dispatchEvent(event);
 
 	}
 
