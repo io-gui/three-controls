@@ -5,7 +5,10 @@ node_modules/
 .git/
 .idea/
 .vscode/
+.yarn/
 .vs/
+.jshintrc
 .project
 *.swp
 *.iml
+
